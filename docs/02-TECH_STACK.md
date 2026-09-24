@@ -84,7 +84,7 @@ packages/database/   Prisma schema, migrations, and database tooling
 | Local/shared UI state | React state/context first; Zustand only for justified cross-tree client state | Conditional | Avoid duplicating authoritative API state in a global client store. |
 | Forms | React Hook Form plus approved runtime schema library, or Server Actions where architecture permits | TBD | Choose per form complexity and API boundary; the NestJS API remains authoritative for validation. |
 | Images | `next/image` | Proposed | Remote-host allowlists and storage/CDN behavior require provider configuration. |
-| Internationalization | `next-intl` or equivalent | Conditional | Languages, locale routing, and RTL needs must come from the BRIEF. |
+| Internationalization | `next-intl` or an approved equivalent | Required capability; library proposed | Multilingual UI is an MVP foundation. Confirm launch locales, fallback behavior, locale routing, formatting, and RTL requirements before implementation. |
 | SEO/metadata | Next.js Metadata API and JSON-LD where public discovery matters | Conditional | Internal authenticated CRM screens do not need public SEO work. |
 | Realtime client | WebSocket/SSE client selected with gateway design | Conditional | Realtime messages are UI hints, not the durable business-event path. |
 
