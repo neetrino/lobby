@@ -22,6 +22,10 @@ npm-debug.log*
 tmp/
 temp/
 .cache/
+.turbo/
+
+# Generated clients
+packages/database/generated/
 
 # IDE (optional, uncomment if needed)
 # .idea/

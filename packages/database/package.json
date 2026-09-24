@@ -1,0 +1,23 @@
+{
+  "name": "@lobby/database",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "cross-env DATABASE_URL=postgresql://user:password@localhost:5432/lobby prisma generate",
+    "lint": "cross-env DATABASE_URL=postgresql://user:password@localhost:5432/lobby prisma validate",
+    "typecheck": "cross-env DATABASE_URL=postgresql://user:password@localhost:5432/lobby prisma validate",
+    "test": "vitest run --passWithNoTests",
+    "db:generate": "cross-env DATABASE_URL=postgresql://user:password@localhost:5432/lobby prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.0.0"
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0",
+    "dotenv": "^17.0.0",
+    "prisma": "^7.0.0",
+    "vitest": "^3.2.4"
+  }
+}
