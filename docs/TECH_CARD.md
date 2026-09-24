@@ -44,13 +44,14 @@
 | 2.4 | UI components | Custom/existing primitives or shadcn/ui | Unresolved | Select before broad UI implementation. |
 | 2.5 | Client state | React state/context first; Zustand only when justified | Proposed | Do not duplicate authoritative API state. |
 | 2.6 | Data fetching | Server-side access to NestJS API; client query library only when needed | Proposed | TanStack Query remains conditional. |
-| 2.7 | Forms | React Hook Form plus approved runtime schemas, or appropriate server actions | Unresolved | Choose after form and API-validation design. |
+| 2.7 | Forms | React Hook Form with Zod schemas, or appropriate Server Actions using the same schemas | Confirmed | Reuse Zod schemas where client and server share the same contract; the server always validates again. |
 | 2.8 | Internationalization | Multilingual i18n using `next-intl` or approved equivalent | Confirmed | Required from the MVP foundation. |
 | 2.9 | Launch locales | Armenian (`hy`), Russian (`ru`), English (`en`) | Confirmed | All three languages are supported from the initial release. |
-| 2.10 | Locale behavior | Default locale, fallback locale, URL strategy, RTL | Unresolved | Must be decided before interface-copy implementation. |
-| 2.11 | SEO | Metadata API/JSON-LD only for public routes that require discovery | Proposed | Authenticated CRM screens do not require public SEO. |
-| 2.12 | Theme | Light only or light/dark using tokens and CSS variables | Unresolved | Decide before finalizing UI tokens. |
-| 2.13 | PWA | Not required for initial MVP | Not needed | Revisit only with an offline/installability requirement. |
+| 2.10 | Default and fallback locale | English (`en`) | Confirmed | Requests without a supported locale fall back to English. |
+| 2.11 | Locale routing and RTL | URL strategy and RTL requirement | Unresolved | Decide before interface-copy implementation. |
+| 2.12 | SEO | Metadata API/JSON-LD only for public routes that require discovery | Proposed | Authenticated CRM screens do not require public SEO. |
+| 2.13 | Theme | Light only or light/dark using tokens and CSS variables | Unresolved | Decide before finalizing UI tokens. |
+| 2.14 | PWA | Not required for initial MVP | Not needed | Revisit only with an offline/installability requirement. |
 
 ---
 
@@ -62,7 +63,7 @@
 | 3.2 | Topology | One modular-monolith API deployment | Proposed | Functional modules retain ownership and public boundaries. |
 | 3.3 | API style | Versioned REST | Proposed | Contracts documented through OpenAPI and `04-API.md`. |
 | 3.4 | HTTP adapter | Express or Fastify | Unresolved | Select after middleware, upload, observability, and hosting review. |
-| 3.5 | Runtime validation | NestJS DTOs with `class-validator`/`class-transformer`, or one schema-based alternative | Unresolved | Adopt one consistent approach for external inputs. |
+| 3.5 | Runtime validation | Zod schemas at every external boundary | Confirmed | Integrate Zod through an approved NestJS pipe/adapter; do not rely on TypeScript types for runtime validation. |
 | 3.6 | API documentation | `@nestjs/swagger` / OpenAPI | Proposed | Required if REST direction is approved. |
 | 3.7 | Configuration | `@nestjs/config` with startup validation | Proposed | Invalid or missing required configuration fails startup. |
 | 3.8 | Rate limiting | Shared-state, tenant-aware limits | Proposed | Edge vs NestJS ownership depends on hosting. |
@@ -172,7 +173,7 @@
 
 | # | Control | Decision | Status | Approval note |
 |---|---|---|---|---|
-| 10.1 | Input validation | Runtime validation at every external boundary | Confirmed | Required architecture constraint. |
+| 10.1 | Input validation | Zod runtime validation at every external boundary | Confirmed | Validate body, path, query, headers, configuration, and external payloads with the appropriate schema. |
 | 10.2 | Tenant isolation | Authorization checks plus database constraints | Confirmed | Cross-tenant access is a release blocker. |
 | 10.3 | CORS/trusted origins | Explicit environment allowlist | Proposed | No permissive production wildcard with credentials. |
 | 10.4 | Security headers | NestJS/edge headers and CSP appropriate to deployment | Proposed | Exact policy defined before production. |
@@ -210,8 +211,8 @@ The following decisions materially change the implementation and must be resolve
 
 1. Confirm Size C and the monorepo/modular-monolith topology.
 2. Confirm exact compatible runtime/framework/tool versions.
-3. Select the default locale, fallback locale, locale routing, and RTL requirement for the confirmed `hy`, `ru`, and `en` launch languages.
-4. Select the NestJS HTTP adapter and runtime-validation approach.
+3. Select locale routing and the RTL requirement for the confirmed `hy`, `ru`, and `en` launch languages; default and fallback are `en`.
+4. Select the NestJS HTTP adapter and the Zod integration approach.
 5. Approve login methods, session lifecycle, and role/custom-permission scope.
 6. Select database/Redis/API hosting and environment regions.
 7. Confirm which conditional MVP capabilities require email, files, realtime, queues, workers, or scheduling.
