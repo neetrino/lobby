@@ -122,6 +122,18 @@ Presents enabled modules, queries the API, and responds to authorized realtime u
 
 One initial REST API deployment implements authentication, tenant context, authorization, business operations, transactions, and outbox writes. Module boundaries are enforced in code review and tests, not merely by folder naming.
 
+### Database
+
+PostgreSQL is the **proposed** Stage 1 system of record for tenant, business, audit, and outbox data. The API and approved background processes access it through module-owned persistence boundaries; clients never connect to it directly. Tenant-scoped relations must carry the agreed organization key, and composite constraints must prevent references across organizations. Critical concurrent writes—including inventory changes, state transitions, and outbox claims—require an explicit transaction, locking, optimistic-concurrency, or idempotency strategy appropriate to the operation.
+
+Schema changes are versioned migrations and follow expand/deploy/backfill/contract when a rolling deployment could observe mixed application versions. Production migrations run once through the approved release process, never independently on every API startup. Provider, PostgreSQL version, ORM, connection-pooling design, backup policy, and any RLS implementation remain pending TECH_CARD and database-design approval.
+
+### Cache
+
+Redis is the **proposed** store for bounded, non-authoritative state such as revocable sessions, rate-limit counters, short-lived cache entries, and queue metadata. Each purpose must have explicit key namespacing, tenant scoping where applicable, TTL and size limits, invalidation rules, and outage behavior. Cached authorization or entitlement data must not silently preserve revoked access; security-sensitive checks fail closed or use an approved authoritative fallback.
+
+Sessions, caching, rate limiting, queues, and realtime fan-out are separate logical concerns even if Stage 1 uses one Redis deployment. Their clients and key spaces remain isolated so a later availability, security, or load requirement can move a workload without changing business-module contracts. Redis provider, version, persistence, eviction, high-availability, and workload-separation decisions remain pending TECH_CARD approval.
+
 ### Functional modules
 
 | Area | Modules / responsibility |
@@ -247,7 +259,7 @@ One event may trigger multiple consumer-specific jobs. Several workers on **one 
 | Catalog/inventory | products/variants, locations, stock balances/movements, transfers/items |
 | System history | outbox events, processed events, audit logs |
 
-### Conceptual relationships
+### ER diagram
 
 ```text
 User ──< Membership >── Organization ──< enabled modules
@@ -257,6 +269,10 @@ Product ──< Variants ──< Stock levels >── Locations
 Transfer ──< Transfer items >── Variants
 Channel account ──< Conversations ──< Messages
 ```
+
+This is a conceptual ER view: it identifies ownership and cardinality direction but does not define physical table names, nullable fields, join-table columns, or indexes.
+
+### Detailed schema
 
 **Rules:** use one agreed tenant key; enforce organization scope and cross-tenant FK integrity; implement RLS only with safe per-transaction context when using transaction pooling; maintain append-only stock movements and safe concurrent inventory updates. Use measured query shapes for indexes and expand/deploy/backfill/contract for schema changes. If replicas are later introduced, strong-consistency/read-after-write reads remain on primary.
 
@@ -268,32 +284,67 @@ Executable schema, constraints, ERD, and indexes belong in [`05-DATABASE.md`](./
 
 Messaging channels, email/SMS, file storage, observability, and billing are integrated **only to the extent approved by BRIEF and TECH_CARD**. Provider-specific choices and versions belong in [`02-TECH_STACK.md`](./02-TECH_STACK.md); endpoint and webhook contracts belong in [`04-API.md`](./04-API.md). Inbound webhooks require supported signature checks and deduplication.
 
+| Integration boundary | Purpose | Current status | Architectural requirements | Detailed documentation |
+|---|---|---|---|---|
+| Messaging channels | Synchronize approved external conversations and messages. | Conditional; channels and providers TBD | Signed/verified inbound requests where supported, deduplication, idempotent processing, tenant-scoped credentials, bounded retries. | `04-API.md` and provider-specific integration record, planned |
+| Email and SMS | Deliver transactional notifications approved by product scope. | Conditional; providers TBD | Template/version ownership, consent and suppression rules, delivery-status handling, secret isolation, retry limits. | `02-TECH_STACK.md` and `04-API.md`, planned |
+| Object storage | Store approved attachments, exports, and media. | Conditional; provider TBD | Tenant-scoped keys, content/type/size validation, short-lived access, malware policy where risk requires it, lifecycle/deletion rules. | `02-TECH_STACK.md`, planned |
+| Billing and payments | Manage subscriptions or business payments if included in the BRIEF. | Not approved; provider and flows TBD | Server-verified amounts, signed webhooks, idempotency, immutable transaction references, reconciliation, no sensitive payment data in logs. | Payment ADR/API contract, planned |
+| Observability | Collect operational telemetry and alert on service health. | Required capability; products TBD | Correlation IDs, secret/PII filtering, retention policy, actionable alerts, separation of operational logs and audit records. | `02-TECH_STACK.md`, planned |
+| Identity provider | Support external login only if selected in the TECH_CARD. | Not approved | OAuth/OIDC state and nonce validation, redirect allowlist, account-linking policy, provider-token protection. | Authentication ADR/API contract, planned |
+
+Integration credentials remain server-side and tenant-scoped when tenants bring their own accounts. An integration must define ownership, timeout, retry, idempotency, rate-limit, failure-recovery, observability, and data-retention behavior before production enablement.
+
 ---
 
 ## 🔐 SECURITY
 
-- **Authentication:** opaque, high-entropy server-side sessions; secure web cookies and CSRF/Origin protection. Mobile, if approved, may use opaque bearer session credentials in OS secure storage—not self-contained JWTs.
-- **Authorization:** organization-aware Owner/Admin/Member templates plus live membership, permissions, resource checks, and module entitlement. Platform-operator permissions are distinct.
-- **Revocation:** revoke affected organization access synchronously; do not put the security-critical action solely behind a queue. Define session expiry/rotation and outage policy in the approved security design.
-- **Protection:** TLS, constrained CORS, validated input, tiered rate limits, worker-level tenant fairness, idempotency where duplicate effects are dangerous, secret-safe structured logs, auditable sensitive actions.
+### Authentication
+
+The proposed web flow uses opaque, high-entropy server-side sessions delivered through `HttpOnly`, `Secure`, appropriately scoped cookies with CSRF/Origin protection. Session creation, rotation, absolute/idle expiry, device/session management, and Redis-outage behavior must be finalized in the security design. Mobile, if approved, may use opaque bearer session credentials in OS secure storage—not self-contained JWTs.
+
+### Authorization
+
+Every tenant-scoped operation checks the selected organization, current membership, permission, module entitlement, and resource scope. Owner/Admin/Member are role templates rather than substitutes for those live checks; platform-operator permissions remain separate. Removing access from one organization synchronously denies subsequent access to that organization and revalidates affected realtime connections without disturbing separately authorized memberships.
+
+### Protection
+
+- Require TLS, constrained CORS, trusted-host/origin configuration, validated inputs, and safe output handling.
+- Apply tiered rate limits and worker-level tenant fairness so one tenant cannot exhaust shared capacity.
+- Use idempotency where retries or duplicate delivery could create duplicate effects.
+- Keep secrets out of source, browser bundles, URLs, and logs; rotate them through an approved process.
+- Record security-sensitive actions in tamper-resistant audit history distinct from operational logs.
+- Define upload validation, webhook verification, dependency scanning, backup restoration, and incident response before enabling the corresponding risk surface.
 
 ---
 
 ## 🚀 DEPLOYMENT
 
-| Environment | Status |
-|---|---|
-| Development | Local developer environment; commands/ports specified in README and TECH_CARD. |
-| Staging | Endpoint/provider TBD; integration and deployment validation. |
-| Production | Endpoint/provider TBD; verified backups, monitoring, and controlled migrations. |
+### Environments
+
+| Environment | Endpoint | Purpose | Promotion/data policy |
+|---|---|---|---|
+| Development | Local endpoints; ports TBD | Implementation and automated/local verification. | Synthetic or approved development data only; local secrets remain uncommitted. |
+| Staging | TBD | Production-like integration, migration, security, and deployment validation. | Promoted from reviewed commits; no unapproved production-data copy. |
+| Production | TBD | Customer traffic and authoritative business processing. | Controlled promotion with monitoring, rollback/recovery plan, and one migration owner. |
+
+### Infrastructure
 
 Stage 1 uses one logical web app, one modular API, one primary database, and one Redis deployment, plus only approved worker/scheduler/storage needs. Apply bounded DB pooling; PgBouncer deployment and provider selection require TECH_CARD alignment. Run controlled, compatible migrations once per release, not independently on each API startup. See [`02-TECH_STACK.md`](./02-TECH_STACK.md) for technology/provider decisions.
+
+Each runnable component must expose an appropriate health signal, emit correlated telemetry, receive secrets through the approved environment mechanism, and have documented ownership. Hosting regions, network boundaries, backup/restore targets, deployment ordering, rollback behavior, and disaster-recovery objectives remain pending TECH_CARD approval.
 
 ---
 
 ## 📈 SCALING — SIZE C
 
 **Current architecture: Stage 1 only.** The roadmap's active-user bands are illustrations; they are not validated capacity limits or mandatory upgrade dates.
+
+### Current baseline
+
+No deployed application or production workload exists yet, so there is no measured baseline for active users, request rate, latency, database size, connection utilization, cache hit rate, queue throughput/age, error rate, or tenant fairness. Stage 1 capacity targets and service-level objectives must be defined in the approved TECH_CARD; measurements begin in staging and are revalidated with production telemetry. Until evidence exists, this document makes no capacity guarantee.
+
+### Scaling plan
 
 | Stage | Conditional evolution (requires demonstrated need and approval) |
 |---|---|
@@ -309,16 +360,18 @@ Stage 1 uses one logical web app, one modular API, one primary database, and one
 
 ## 📋 KEY DECISIONS
 
-| Decision | Architectural position | Approval note |
-|---|---|---|
-| Project classification | Size C | Established project classification. |
-| Initial backend topology | Modular monolith | Stage 1 architecture target. |
-| Functional organization | Every capability is a module | No Core/Extension split. |
-| Multi-tenancy | Shared primary DB with organization-aware isolation | Detailed constraints in database design. |
-| Sessions | Revocable server-side credentials | Organization-scoped denial is mandatory. |
-| Asynchronous work | Transactional outbox + queue + idempotent consumers | Enable jobs demanded by approved MVP scope. |
-| Versions/providers/hosting | Listed in `02-TECH_STACK.md` | Pending items remain **TBD** until TECH_CARD approval. |
-| Future architecture | Metrics-driven conditional options | Later-stage services are **not** current components. |
+The identifiers below reserve traceable decision records; they are not accepted ADRs until the corresponding files are created and approved under `docs/architecture/` or recorded in `DECISIONS.md`.
+
+| Decision | Architectural position | Rationale | Status | ADR reference |
+|---|---|---|---|---|
+| Project classification | Size C | The proposed domain has multiple bounded capabilities, tenant isolation, background processing, and expected long-term evolution; the completed BRIEF must validate that complexity. | Proposed | `ADR-001-project-size`, planned |
+| Initial backend topology | Modular monolith | Provides one manageable MVP deployment while enforcing module ownership and leaving evidence-based extraction possible later. | Proposed | `ADR-002-modular-monolith`, planned |
+| Functional organization | Every capability is a module | Keeps activation, dependency, and ownership concerns explicit without creating an artificial Core/Extension hierarchy. | Proposed | `ADR-003-module-model`, planned |
+| Multi-tenancy | Shared primary database with organization-aware isolation | Minimizes initial operational complexity while composite constraints and authorization checks protect tenant boundaries. | Proposed; threat/data review required | `ADR-004-multi-tenancy`, planned |
+| Sessions | Revocable server-side credentials | Supports immediate membership/session revocation without relying on long-lived self-contained authorization claims. | Proposed; security approval required | `ADR-005-session-strategy`, planned |
+| Asynchronous work | Transactional outbox, durable queue, idempotent consumers | Couples business state and event intent atomically while allowing retryable effects outside request latency. | Conditional on approved async use cases | `ADR-006-async-delivery`, planned |
+| Versions, providers, and hosting | Defined in TECH_CARD and `02-TECH_STACK.md` | Keeps replaceable technology selections out of architectural invariants and makes approval ownership explicit. | Pending | No ADR until a choice has architectural consequences |
+| Future architecture | Metrics-driven conditional evolution | Avoids premature services, replicas, sharding, or multi-region complexity without measured bottlenecks or business requirements. | Accepted as a decision principle; formal approval pending | `ADR-007-scaling-gates`, planned |
 
 ---
 
