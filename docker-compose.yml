@@ -8,6 +8,8 @@ services:
       POSTGRES_DB: lobby
     ports:
       - "5432:5432"
+      # Host port 5432 is often taken by a local Postgres service. 54329 reaches this container directly.
+      - "54329:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

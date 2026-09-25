@@ -2,8 +2,21 @@
   "name": "@lobby/database",
   "private": true,
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./testing.d.ts",
+      "import": "./src/testing/create-test-database.ts",
+      "default": "./src/testing/create-test-database.ts"
+    }
+  },
   "scripts": {
-    "build": "cross-env DATABASE_URL=postgresql://user:password@localhost:5432/lobby prisma generate",
+    "build": "cross-env DATABASE_URL=postgresql://user:password@localhost:5432/lobby prisma generate && tsup",
     "lint": "cross-env DATABASE_URL=postgresql://user:password@localhost:5432/lobby prisma validate",
     "typecheck": "cross-env DATABASE_URL=postgresql://user:password@localhost:5432/lobby prisma validate",
     "test": "vitest run --passWithNoTests",
@@ -12,12 +25,16 @@
     "db:deploy": "prisma migrate deploy"
   },
   "dependencies": {
-    "@prisma/client": "^7.0.0"
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.0.0",
+    "pg": "^8.23.0"
   },
   "devDependencies": {
+    "@types/pg": "^8.23.1",
     "cross-env": "^10.0.0",
     "dotenv": "^17.0.0",
     "prisma": "^7.0.0",
+    "tsup": "^8.5.1",
     "vitest": "^3.2.4"
   }
 }

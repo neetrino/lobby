@@ -11,12 +11,14 @@ datasource db {
 /// Shared-database tenant root. Row-Level Security is not enabled.
 /// `current_tenant_id()` is a SQL helper for a future policy, not a column.
 model Tenant {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name      String
-  subdomain String   @unique
-  plan      String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  users     User[]
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  subdomain    String        @unique
+  plan         String
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  users        User[]
+  contacts     Contact[]
+  outboxEvents OutboxEvent[]
 
   @@map("tenants")
 }
@@ -32,4 +34,50 @@ model User {
 
   @@unique([tenantId, email])
   @@map("users")
+}
+
+/// Tenant-owned contact. One user still belongs to exactly one tenant.
+model Contact {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tenantId])
+  @@map("contacts")
+}
+
+enum OutboxEventStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+}
+
+model OutboxEvent {
+  id            String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String            @map("tenant_id") @db.Uuid
+  eventType     String            @map("event_type")
+  eventVersion  Int               @map("event_version")
+  aggregateType String            @map("aggregate_type")
+  aggregateId   String            @map("aggregate_id") @db.Uuid
+  payload       Json
+  status        OutboxEventStatus @default(PENDING)
+  occurredAt    DateTime          @map("occurred_at") @db.Timestamptz(3)
+  availableAt   DateTime          @default(now()) @map("available_at") @db.Timestamptz(3)
+  attempts      Int               @default(0)
+  lockedAt      DateTime?         @map("locked_at") @db.Timestamptz(3)
+  lockedBy      String?           @map("locked_by")
+  publishedAt   DateTime?         @map("published_at") @db.Timestamptz(3)
+  lastError     String?           @map("last_error")
+  createdAt     DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt     DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+
+  @@index([status, availableAt])
+  @@index([tenantId, occurredAt])
+  @@index([aggregateType, aggregateId])
+  @@map("outbox_events")
 }

@@ -131,11 +131,11 @@ The runtime uses least-privilege `DATABASE_URL`; privileged migration access suc
 | Module | Tables/models | Status | Notes |
 |---|---|---|---|
 | Organizations and access | TBD | Planned | Design first because other tenant-scoped models depend on it. |
-| Contacts | TBD | Planned | MVP high priority. |
+| Contacts | `contacts` | Implemented | Tenant-owned contacts. Written in the same transaction as `contact.created` outbox rows. |
 | Tasks | TBD | Planned | MVP high priority; relationship model requires approval. |
 | Deals and pipelines | TBD | Planned | MVP high priority. |
 | Orders and delivery | TBD | Conditional | Add only if promoted into MVP. |
-| Audit and outbox | TBD | Planned | Exact retention and processing model unresolved. |
+| Audit and outbox | `outbox_events` | Implemented | Pending rows are claimed with `FOR UPDATE SKIP LOCKED`. Retry, batch size, poll interval, and lock timeout are worker configuration. |
 
 Replace `TBD` entries with links to approved model/ERD sections when schema design begins.
 

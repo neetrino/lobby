@@ -74,7 +74,7 @@ Lobby/
 |---|---|---|
 | `apps/web/` | Next.js routes, layouts, presentation, localized content, browser interactions, and API/realtime clients. | Proposed |
 | `apps/api/` | NestJS HTTP boundary, authentication, tenant context, authorization, validation, and business-module composition. | Proposed |
-| `apps/worker/` | Outbox relay and idempotent queue consumers. It contains runtime composition, not duplicated business rules. | Conditional |
+| `apps/worker/` | Outbox relay and idempotent queue consumers. It contains runtime composition, not duplicated business rules. | Implemented for the transactional outbox relay |
 | `apps/scheduler/` | Registers recurring/delayed jobs and submits work to the appropriate queue/module boundary. | Conditional |
 | `packages/contracts/` | Framework-light contracts shared across independently runnable applications. | Proposed when a cross-app contract exists |
 | `packages/database/` | Prisma schema/migrations and narrowly scoped database tooling, subject to TECH_CARD approval. | Proposed |
