@@ -1,8 +1,10 @@
 import {
   contactCreatedEventSchema,
   tenantCreatedEventSchema,
+  tenantCreatedEventV1Schema,
   type ContactCreatedEvent,
   type TenantCreatedEvent,
+  type TenantCreatedEventV1,
 } from '@lobby/contracts';
 import type { OutboxEventRecord, OutboxWorkerConfig } from '@lobby/database';
 
@@ -11,7 +13,7 @@ import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js
 import type { OutboxRepository } from './outbox-repository.js';
 import { sanitizeOutboxError } from './sanitize-outbox-error.js';
 
-type DeliveredEvent = ContactCreatedEvent | TenantCreatedEvent;
+type DeliveredEvent = ContactCreatedEvent | TenantCreatedEvent | TenantCreatedEventV1;
 
 export class OutboxProcessor {
   constructor(
@@ -67,6 +69,9 @@ function parseStoredEvent(record: OutboxEventRecord): DeliveredEvent {
     occurredAt: record.occurredAt.toISOString(),
     payload: record.payload,
   };
+  if (record.eventType === 'tenant.created' && record.eventVersion === 1) {
+    return tenantCreatedEventV1Schema.parse(raw);
+  }
   if (record.eventType === 'tenant.created') {
     return tenantCreatedEventSchema.parse(raw);
   }

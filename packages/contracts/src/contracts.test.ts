@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  TENANT_CREATED_EVENT_VERSION,
   contactCreatedEventSchema,
   defaultLocale,
   localeSchema,
   moduleKeySchema,
+  passwordHashSchema,
   tenantCreatedEventSchema,
+  tenantCreatedEventV1Schema,
 } from './index.js';
 
 const validContactCreatedEvent = {
@@ -66,10 +69,60 @@ describe('contactCreatedEventSchema', () => {
 });
 
 describe('tenantCreatedEventSchema', () => {
-  it('accepts the tenant and its first user', () => {
-    const result = tenantCreatedEventSchema.safeParse({
+  const ownerUserId = '33333333-3333-4333-8333-333333333333';
+  const validTenantCreatedEvent = {
+    ...validContactCreatedEvent,
+    eventType: 'tenant.created',
+    eventVersion: TENANT_CREATED_EVENT_VERSION,
+    aggregateType: 'tenant',
+    payload: {
+      name: 'Acme',
+      subdomain: 'acme',
+      plan: 'starter',
+      ownerUserId,
+    },
+  };
+
+  it('accepts the tenant and its owner without credentials', () => {
+    const result = tenantCreatedEventSchema.safeParse(validTenantCreatedEvent);
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.payload.ownerUserId).toBe(ownerUserId);
+      expect(result.data.eventVersion).toBe(2);
+      expect(JSON.stringify(result.data.payload)).not.toContain('password');
+    }
+  });
+
+  it('rejects a credential, an old owner field, and an unsupported plan', () => {
+    const withHash = tenantCreatedEventSchema.safeParse({
+      ...validTenantCreatedEvent,
+      payload: { ...validTenantCreatedEvent.payload, passwordHash: 'secret' },
+    });
+    const oldField = tenantCreatedEventSchema.safeParse({
+      ...validTenantCreatedEvent,
+      payload: { name: 'Acme', subdomain: 'acme', plan: 'starter', userId: ownerUserId },
+    });
+    const oldVersion = tenantCreatedEventSchema.safeParse({
+      ...validTenantCreatedEvent,
+      eventVersion: 1,
+    });
+    const unsupportedPlan = tenantCreatedEventSchema.safeParse({
+      ...validTenantCreatedEvent,
+      payload: { ...validTenantCreatedEvent.payload, plan: 'professional' },
+    });
+
+    expect(withHash.success).toBe(false);
+    expect(oldField.success).toBe(false);
+    expect(oldVersion.success).toBe(false);
+    expect(unsupportedPlan.success).toBe(false);
+  });
+
+  it('still accepts an unpublished version 1 event', () => {
+    const result = tenantCreatedEventV1Schema.safeParse({
       ...validContactCreatedEvent,
       eventType: 'tenant.created',
+      eventVersion: 1,
       aggregateType: 'tenant',
       payload: {
         name: 'Acme',
@@ -81,16 +134,16 @@ describe('tenantCreatedEventSchema', () => {
 
     expect(result.success).toBe(true);
   });
+});
 
-  it('rejects a tenant event without the founding user', () => {
-    const result = tenantCreatedEventSchema.safeParse({
-      ...validContactCreatedEvent,
-      eventType: 'tenant.created',
-      aggregateType: 'tenant',
-      payload: { name: 'Acme', subdomain: 'acme', plan: 'starter' },
-    });
+describe('passwordHashSchema', () => {
+  it('accepts an Argon2id hash and rejects a non-hash', () => {
+    const argon2id =
+      '$argon2id$v=19$m=65536,p=4,t=3$PEbBsUzxZ+rLvTW4czR4Ww$GiSsH9i7n0l40OGimI/KV+2Gf6GNJvf5MiPpVuIqXb8';
 
-    expect(result.success).toBe(false);
+    expect(passwordHashSchema.safeParse(argon2id).success).toBe(true);
+    expect(passwordHashSchema.safeParse('md5-placeholder').success).toBe(false);
+    expect(passwordHashSchema.safeParse('plaintext-password').success).toBe(false);
   });
 });
 

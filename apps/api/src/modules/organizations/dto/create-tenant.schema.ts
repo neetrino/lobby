@@ -1,22 +1,25 @@
 import { z } from 'zod';
-
-/** Single DNS label. Stored lowercase so subdomain uniqueness is case-insensitive. */
-const subdomainSchema = z
-  .string()
-  .trim()
-  .toLowerCase()
-  .regex(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/);
+import { passwordHashSchema, tenantPlanSchema, tenantSubdomainSchema } from '@lobby/contracts';
 
 const requiredName = z.string().trim().min(1);
 
-export const createTenantSchema = z.object({
-  name: requiredName,
-  subdomain: subdomainSchema,
-  plan: requiredName,
-  user: z.object({
+const normalizedEmail = z.string().trim().toLowerCase().pipe(z.email());
+
+/**
+ * Command accepted from Auth. The client cannot set identity, role, or status.
+ * `passwordHash` is produced by Auth; this module never accepts a plaintext password.
+ */
+export const createTenantWithOwnerSchema = z.strictObject({
+  tenant: z.strictObject({
     name: requiredName,
-    email: z.string().trim().toLowerCase().pipe(z.email()),
+    subdomain: tenantSubdomainSchema,
+    plan: tenantPlanSchema,
+  }),
+  owner: z.strictObject({
+    name: requiredName,
+    email: normalizedEmail,
+    passwordHash: passwordHashSchema,
   }),
 });
 
-export type CreateTenantInput = z.infer<typeof createTenantSchema>;
+export type CreateTenantWithOwnerInput = z.infer<typeof createTenantWithOwnerSchema>;

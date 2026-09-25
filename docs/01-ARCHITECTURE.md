@@ -311,7 +311,20 @@ The proposed web flow uses opaque, high-entropy server-side sessions delivered t
 
 ### Authorization
 
-Every tenant-scoped operation derives the user's single tenant from the authenticated identity and checks permission, module entitlement, and resource scope. Owner/Admin/Member are role templates rather than substitutes for those live checks; platform-operator permissions remain separate. Users cannot select, join, or switch to another organization tenant.
+Every tenant-scoped operation derives the user's single tenant from the authenticated identity and checks permission, module entitlement, and resource scope. Owner/Admin/Member are stored on `users.role` for the current foundation and are not a substitute for those live checks; platform-operator permissions remain separate. Users cannot select, join, or switch to another organization tenant.
+
+### Tenant registration boundary
+
+Auth accepts registration input, validates the password, and hashes it. Organizations is the only module that writes `tenants` and the founding user. `createWithOwner` commits the tenant, the active owner, and the `tenant.created` outbox event in one PostgreSQL transaction. The event payload never contains a password or password hash.
+
+- Each User belongs to exactly one Tenant.
+- The same normalized email may identify separate User records in different tenants.
+- Authentication therefore requires tenant context plus email.
+- The first user created with a tenant is always its Owner.
+- Tenant, Owner, and `tenant.created` outbox event are committed atomically.
+- Password hashing belongs to Auth; Organizations receives only `passwordHash`.
+
+The login identifier is tenant subdomain + email + password. Login finds the user, rejects a non-ACTIVE user, and only then verifies the Argon2id hash. An unknown user still runs verification against a fixed unusable Argon2id hash so the failure timing matches. Public registration will be `POST /api/v1/auth/register` on the Auth module. Organizations does not expose `POST /organizations` or `POST /tenants`. If session creation fails after the tenant transaction commits, the tenant stays created, registration returns a controlled error, and the owner can log in later. The only approved plan value is `starter`. The outbox worker accepts both `tenant.created` version 1 (`userId`) and version 2 (`ownerUserId`).
 
 ### Protection
 

@@ -1,12 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { tenantCreatedEventSchema } from '@lobby/contracts';
+import { TENANT_CREATED_EVENT_VERSION, tenantCreatedEventSchema } from '@lobby/contracts';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { PRISMA_CLIENT } from '../../../common/outbox';
 import { OutboxService } from '../../../common/outbox/outbox.service';
-import { createTenantSchema, type CreateTenantInput } from '../dto/create-tenant.schema';
-
-const TENANT_CREATED_EVENT_VERSION = 1;
+import {
+  createTenantWithOwnerSchema,
+  type CreateTenantWithOwnerInput,
+} from '../dto/create-tenant.schema';
 
 @Injectable()
 export class CreateTenantService {
@@ -15,22 +16,30 @@ export class CreateTenantService {
     private readonly outbox: OutboxService,
   ) {}
 
-  async create(input: CreateTenantInput) {
-    const data = createTenantSchema.parse(input);
+  /**
+   * Public operation for Auth. Writes the tenant, its owner, and the outbox event together.
+   * Role and status are assigned here. Callers cannot choose them.
+   */
+  async createWithOwner(input: CreateTenantWithOwnerInput) {
+    const data = createTenantWithOwnerSchema.parse(input);
 
     return this.prisma.$transaction(async (tx) => {
       const tenant = await tx.tenant.create({
         data: {
-          name: data.name,
-          subdomain: data.subdomain,
-          plan: data.plan,
+          name: data.tenant.name,
+          subdomain: data.tenant.subdomain,
+          plan: 'STARTER',
         },
       });
       const user = await tx.user.create({
         data: {
           tenantId: tenant.id,
-          name: data.user.name,
-          email: data.user.email,
+          name: data.owner.name,
+          email: data.owner.email,
+          passwordHash: data.owner.passwordHash,
+          status: 'ACTIVE',
+          role: 'OWNER',
+          authenticationVersion: 1,
         },
       });
       const event = tenantCreatedEventSchema.parse({
@@ -44,8 +53,8 @@ export class CreateTenantService {
         payload: {
           name: tenant.name,
           subdomain: tenant.subdomain,
-          plan: tenant.plan,
-          userId: user.id,
+          plan: data.tenant.plan,
+          ownerUserId: user.id,
         },
       });
       await this.outbox.enqueue(tx, event);

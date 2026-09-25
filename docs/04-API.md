@@ -92,8 +92,8 @@ Exact envelopes remain proposed until the first API contract is approved.
 
 | Module | Base resource | Status | Contract location |
 |---|---|---|---|
-| Authentication and sessions | TBD | Planned | OpenAPI + module documentation |
-| Tenant organization and users | TBD | Planned | OpenAPI + module documentation |
+| Authentication and sessions | `POST /api/v1/auth/register` | Planned | Auth module. Not implemented. Organizations does not expose registration. |
+| Tenant organization and users | none | Foundation only | `Organizations.createWithOwner`. No `POST /organizations` or `POST /tenants`. |
 | Contacts | TBD | Planned | OpenAPI + module documentation |
 | Tasks | TBD | Planned | OpenAPI + module documentation |
 | Deals and pipelines | TBD | Planned | OpenAPI + module documentation |
@@ -102,6 +102,27 @@ Exact envelopes remain proposed until the first API contract is approved.
 | Notifications | TBD | Conditional | OpenAPI + module documentation |
 
 Add exact methods, paths, permissions, request schemas, response schemas, and error codes only when the corresponding module contract is designed.
+
+Registration, when implemented, belongs to Auth:
+
+```text
+POST /api/v1/auth/register
+→ validate input
+→ normalize subdomain and email
+→ hash the password in Auth
+→ Organizations.createWithOwner()
+→ create the Redis session
+→ set a secure HttpOnly cookie
+```
+
+- Each User belongs to exactly one Tenant.
+- The same normalized email may identify separate User records in different tenants.
+- Authentication therefore requires tenant context plus email: subdomain + email + password.
+- The first user created with a tenant is always its Owner.
+- Tenant, Owner, and `tenant.created` outbox event are committed atomically.
+- Password hashing belongs to Auth; Organizations receives only `passwordHash`.
+- If session creation fails after that transaction commits, the tenant remains and registration returns a controlled error so the owner can log in later.
+- Login finds the user, rejects a non-ACTIVE status, and only then verifies the password hash. An unknown email still verifies a fixed unusable Argon2id hash so the two failures take similar time.
 
 Reservation endpoints must derive the tenant from the authenticated session, accept UTC timestamps, and never trust a client-provided tenant identifier. The venue timezone controls staff-facing calendar interpretation. Conflict responses must use a stable error code; the exact HTTP contract is deferred until the application service is implemented.
 

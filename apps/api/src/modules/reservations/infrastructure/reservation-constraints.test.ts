@@ -71,7 +71,7 @@ describe('reservation database constraints', () => {
 
 async function createVenueWithTable(subdomain: string) {
   const tenant = await prisma.tenant.create({
-    data: { name: subdomain, subdomain, plan: 'starter' },
+    data: { name: subdomain, subdomain, plan: 'STARTER' },
   });
   const { venue, table } = await createVenueWithTableForTenant(tenant.id, subdomain);
   return { tenant, venue, table };

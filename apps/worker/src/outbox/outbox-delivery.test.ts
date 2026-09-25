@@ -159,10 +159,49 @@ describe('outbox delivery', () => {
       data: {
         tenantId: tenant.id,
         eventType: 'tenant.created',
+        eventVersion: 2,
+        aggregateType: 'tenant',
+        aggregateId: tenant.id,
+        payload: {
+          name: tenant.name,
+          subdomain: tenant.subdomain,
+          plan: 'starter',
+          ownerUserId: userId,
+        },
+        occurredAt: new Date('2026-09-25T09:00:00.000Z'),
+        availableAt: new Date(0),
+      },
+    });
+    const repository = new OutboxRepository(prisma, config);
+    const tenantHandler = new TenantCreatedHandler();
+    const processor = new OutboxProcessor(repository, new ContactCreatedHandler(), tenantHandler, config);
+    const [claimed] = await repository.claimBatch();
+    if (!claimed) {
+      throw new Error('expected a claimed event');
+    }
+
+    await processor.process(claimed);
+
+    expect(tenantHandler.deliveryCount()).toBe(1);
+    const stored = await prisma.outboxEvent.findUniqueOrThrow({ where: { id: claimed.id } });
+    expect(stored.status).toBe('PUBLISHED');
+  });
+
+  it('publishes a version 1 tenant-created event', async () => {
+    const tenant = await createTenant();
+    await prisma.outboxEvent.create({
+      data: {
+        tenantId: tenant.id,
+        eventType: 'tenant.created',
         eventVersion: 1,
         aggregateType: 'tenant',
         aggregateId: tenant.id,
-        payload: { name: tenant.name, subdomain: tenant.subdomain, plan: tenant.plan, userId },
+        payload: {
+          name: tenant.name,
+          subdomain: tenant.subdomain,
+          plan: 'starter',
+          userId: crypto.randomUUID(),
+        },
         occurredAt: new Date('2026-09-25T09:00:00.000Z'),
         availableAt: new Date(0),
       },
@@ -215,7 +254,7 @@ function failingHandler(): ContactCreatedHandler {
 async function createTenant() {
   const subdomain = `tenant-${crypto.randomUUID()}`;
   return prisma.tenant.create({
-    data: { name: subdomain, subdomain, plan: 'starter' },
+    data: { name: subdomain, subdomain, plan: 'STARTER' },
   });
 }
 

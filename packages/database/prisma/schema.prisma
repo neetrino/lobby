@@ -8,13 +8,29 @@ datasource db {
   // Prisma 7 keeps connection URLs in prisma.config.ts instead of this schema.
 }
 
+/// Current foundation allows only the starter plan. Additional plans need a product decision.
+enum TenantPlan {
+  STARTER @map("starter")
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum TenantRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
 /// Shared-database tenant root. Row-Level Security is not enabled.
 /// `current_tenant_id()` is a SQL helper for a future policy, not a column.
 model Tenant {
   id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name                     String
   subdomain                String                     @unique
-  plan                     String
+  plan                     TenantPlan
   createdAt                DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
   users                    User[]
   contacts                 Contact[]
@@ -31,12 +47,20 @@ model Tenant {
 }
 
 /// Tenant member identity. Email is unique inside one tenant, not globally.
+/// One user row belongs to exactly one tenant. There is no membership join.
 model User {
-  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId                 String                     @map("tenant_id") @db.Uuid
-  email                    String
-  name                     String
-  createdAt                DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  id                    String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId              String     @map("tenant_id") @db.Uuid
+  email                 String
+  name                  String
+  passwordHash          String     @map("password_hash")
+  status                UserStatus @default(ACTIVE)
+  role                  TenantRole
+  authenticationVersion Int        @default(1) @map("authentication_version")
+  passwordChangedAt     DateTime?  @map("password_changed_at") @db.Timestamptz(3)
+  createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
   tenant                   Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   createdReservations      Reservation[]              @relation("ReservationCreatedBy")
   reservationStatusChanges ReservationStatusHistory[] @relation("ReservationStatusChangedBy")

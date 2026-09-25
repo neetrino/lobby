@@ -88,7 +88,17 @@ An approved physical ERD will replace or extend this view when models are design
 
 ## Tenant isolation
 
-- Each user belongs to exactly one tenant through the required `users.tenant_id` foreign key.
+- Each User belongs to exactly one Tenant through the required `users.tenant_id` foreign key.
+- The same normalized email may identify separate User records in different tenants.
+- Authentication therefore requires tenant context plus email.
+- The first user created with a tenant is always its Owner (`users.role = OWNER`, `users.status = ACTIVE`).
+- Tenant, Owner, and `tenant.created` outbox event are committed atomically.
+- Password hashing belongs to Auth; Organizations receives only an Argon2id `passwordHash`.
+- Login finds the user, rejects a non-ACTIVE status, and only then verifies the hash.
+- `tenant.created` version 1 events stay deliverable. The worker accepts version 1 (`userId`) and version 2 (`ownerUserId`).
+- The owner-authentication migration stops before changing data when two subdomains or two emails in one tenant fold to the same lowercase value, a plan is not `starter`, or a tenant already has more than one user. A single pre-existing user becomes a DISABLED owner with a fixed Argon2id hash whose plaintext is unknown.
+- `subdomain` and `email` are stored lowercase, enforced by database check constraints.
+- The only approved tenant plan is `starter`. Additional plans need a product decision.
 - Multi-organization membership and organization switching are intentionally unsupported; do not add a membership join table.
 - Email uniqueness is tenant-scoped through `(tenant_id, email)`.
 - Resolve the organization from the authenticated request context, not from unchecked client input alone.
@@ -115,6 +125,7 @@ An approved physical ERD will replace or extend this view when models are design
 - Inventory, state transitions, uniqueness-sensitive writes, and outbox claiming require an explicit locking, optimistic-concurrency, or idempotency strategy.
 - Business data and its critical outbox event are committed in the same transaction.
 - Consumers tolerate at-least-once delivery and record idempotent processing where needed.
+- `TenantCreatedHandler` is a placeholder with no external side effect. Its in-memory event set is not durable idempotency. A `processed_events` table is required before that consumer performs a real side effect.
 - Active table assignments use a PostgreSQL exclusion constraint over tenant, table, and half-open UTC time range (`[start, end)`) so concurrent requests cannot double-book a table.
 - Reservation status and each assignment's `blocks_availability` flag change in one transaction; terminal outcomes release availability according to module policy.
 
@@ -137,7 +148,7 @@ The runtime uses least-privilege `DATABASE_URL`; privileged migration access suc
 
 | Module | Tables/models | Status | Notes |
 |---|---|---|---|
-| Organizations | `tenants`, `users` | Implemented | A tenant and its first user are created in one transaction with a `tenant.created` outbox row. Roles, sessions, and module entitlements are separate. |
+| Organizations | `tenants`, `users` | Implemented | `createWithOwner` writes the tenant, the ACTIVE OWNER (`password_hash` only), and `tenant.created` version 2 in one transaction. Sessions and module entitlements are separate. Auth hashes the password and calls this operation. |
 | Contacts | `contacts` | Implemented | Tenant-owned contacts. Written in the same transaction as `contact.created` outbox rows. |
 | Tasks | TBD | Planned | MVP high priority; relationship model requires approval. |
 | Deals and pipelines | TBD | Planned | MVP high priority. |

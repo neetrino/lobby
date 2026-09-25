@@ -88,7 +88,7 @@ describe('CreateContactService', () => {
 
 async function createTenant(subdomain: string) {
   return prisma.tenant.create({
-    data: { name: subdomain, subdomain, plan: 'starter' },
+    data: { name: subdomain, subdomain, plan: 'STARTER' },
   });
 }
 

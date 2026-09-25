@@ -78,7 +78,7 @@
 |---|---|---|---|---|
 | 4.1 | Primary database | PostgreSQL | Confirmed technology / Proposed version | Select the managed provider and pin its supported PostgreSQL version. |
 | 4.2 | ORM/migrations | Prisma | Confirmed technology / Proposed version | Verify generated migrations and compatibility before pinning an exact version. |
-| 4.3 | Tenant model | Shared database with organization-aware isolation | Proposed | Composite constraints and authorization checks are mandatory; threat/data review required. |
+| 4.3 | Tenant model | Shared database; one user belongs to exactly one tenant; plan is `starter` only | Confirmed for this foundation | No membership table. The same normalized email may exist in different tenants. Additional plans need a product decision. |
 | 4.4 | Runtime credentials | Least-privilege `DATABASE_URL` | Proposed | Runtime identities receive no schema-owner privileges. |
 | 4.5 | Migration credentials | `DIRECT_URL` available only to migration job | Proposed | Never expose it to web/API/worker runtimes. |
 | 4.6 | Connection pooling | Provider-compatible bounded pool | Unresolved | Define after provider and concurrency assumptions are known. |
@@ -99,11 +99,11 @@
 | 5.2 | Session storage | Redis-backed state | Proposed | Define outage, rotation, expiry, and device-management behavior. |
 | 5.3 | Browser transport | Secure `HttpOnly` cookie | Proposed | Final SameSite, domain, and expiry settings depend on deployment. |
 | 5.4 | CSRF protection | SameSite plus Origin/CSRF validation appropriate to the flow | Proposed | Document trusted origins per environment. |
-| 5.5 | Login methods | Email/password, magic link, OAuth/OIDC, or combination | Unresolved | Product owner must choose. |
-| 5.6 | Password hashing | Argon2id | Proposed conditional | Required only if password credentials are approved. |
+| 5.5 | Login methods | Tenant subdomain + email + password for registration | Confirmed identifier / other methods unresolved | Magic link and OAuth remain unresolved. Login cannot use email alone. |
+| 5.6 | Password hashing | Argon2id in Auth; Organizations stores only `passwordHash` | Proposed algorithm / confirmed boundary | The hashing algorithm is still the proposed Argon2id choice. Organizations must not receive a plaintext password. |
 | 5.7 | External providers | None selected | Unresolved | Select required providers and account-linking policy. |
 | 5.8 | Authorization | Single tenant ownership + permissions + module entitlement + resource scope | Confirmed | Each user belongs to exactly one organization tenant; multi-organization membership is prohibited. |
-| 5.9 | Role model | Owner/Admin/Member templates; custom roles TBD | Proposed | Confirm whether custom roles are required in MVP. |
+| 5.9 | Role model | `OWNER`, `ADMIN`, `MEMBER` on `users.role` | Confirmed for the founding owner | The first user created with a tenant is always `OWNER` and `ACTIVE`. Custom permission tables remain undecided. |
 | 5.10 | Verification/recovery | Email verification and account recovery | Unresolved | Depends on selected login methods and email provider. |
 
 ---
