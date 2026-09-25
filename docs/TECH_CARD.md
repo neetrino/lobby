@@ -25,10 +25,10 @@
 |---|---|---|---|---|
 | 1.1 | Project size | Size C | Proposed | Proposed from multi-tenancy, bounded modules, async work, and long-term scope; timeline/team size are still unknown. |
 | 1.2 | Architecture | TypeScript monorepo; modular-monolith API | Proposed | Confirm before scaffolding `apps/*` and `packages/*`. |
-| 1.3 | Package manager | pnpm | Proposed | One workspace lockfile; exact version pinned at initialization. |
+| 1.3 | Package manager | pnpm | Confirmed | Use one workspace lockfile; pin the exact compatible pnpm version at initialization. |
 | 1.4 | Runtime | Node.js 24 LTS target | Proposed | Verify support across selected Next.js, NestJS, Prisma, and deployment providers. |
 | 1.5 | Language | TypeScript 5.9 family with `strict: true` | Proposed | Pin one compatible exact version across workspaces. |
-| 1.6 | Monorepo orchestration | Turborepo | Proposed | Use only deterministic task caching; exact version TBD. |
+| 1.6 | Monorepo orchestration | Turborepo | Confirmed | Use only deterministic task caching; pin the exact compatible version at initialization. |
 | 1.7 | Git strategy | Short-lived feature branches or trunk-based | Unresolved | Repository owner must select one. |
 | 1.8 | Commit convention | Conventional Commits + commitlint | Proposed | Existing repository configuration supports this direction. |
 
@@ -38,18 +38,20 @@
 
 | # | Decision area | Selected direction | Status | Approval note |
 |---|---|---|---|---|
-| 2.1 | Framework | Next.js App Router, Next.js 16 family, React 19 family | Confirmed direction / Proposed versions | Next.js is confirmed; pin exact compatible versions at initialization. |
+| 2.1 | Framework | Next.js App Router with React | Confirmed framework / Proposed versions | Next.js is confirmed; verify and pin exact compatible Next.js and React versions at initialization. |
 | 2.2 | Rendering | React Server Components by default | Proposed | Client components only at the smallest interactive boundary. |
 | 2.3 | Styling | Tailwind CSS 4 family | Proposed | Confirm with the design-system choice. |
 | 2.4 | UI components | Custom/existing primitives or shadcn/ui | Unresolved | Select before broad UI implementation. |
 | 2.5 | Client state | React state/context first; Zustand only when justified | Proposed | Do not duplicate authoritative API state. |
 | 2.6 | Data fetching | Server-side access to NestJS API; client query library only when needed | Proposed | TanStack Query remains conditional. |
-| 2.7 | Forms | React Hook Form plus approved runtime schemas, or appropriate server actions | Unresolved | Choose after form and API-validation design. |
+| 2.7 | Forms | React Hook Form with Zod schemas, or appropriate Server Actions using the same schemas | Confirmed | Reuse Zod schemas where client and server share the same contract; the server always validates again. |
 | 2.8 | Internationalization | Multilingual i18n using `next-intl` or approved equivalent | Confirmed | Required from the MVP foundation. |
-| 2.9 | Launch locales | Default, fallback, supported locales, URL strategy, RTL | Unresolved | Must be decided before interface-copy implementation. |
-| 2.10 | SEO | Metadata API/JSON-LD only for public routes that require discovery | Proposed | Authenticated CRM screens do not require public SEO. |
-| 2.11 | Theme | Light only or light/dark using tokens and CSS variables | Unresolved | Decide before finalizing UI tokens. |
-| 2.12 | PWA | Not required for initial MVP | Not needed | Revisit only with an offline/installability requirement. |
+| 2.9 | Launch locales | Armenian (`hy`), Russian (`ru`), English (`en`) | Confirmed | All three languages are supported from the initial release. |
+| 2.10 | Default and fallback locale | English (`en`) | Confirmed | Requests without a supported locale fall back to English. |
+| 2.11 | Locale routing and RTL | URL strategy and RTL requirement | Unresolved | Decide before interface-copy implementation. |
+| 2.12 | SEO | Metadata API/JSON-LD only for public routes that require discovery | Proposed | Authenticated CRM screens do not require public SEO. |
+| 2.13 | Theme | Light only or light/dark using tokens and CSS variables | Unresolved | Decide before finalizing UI tokens. |
+| 2.14 | PWA | Not required for initial MVP | Not needed | Revisit only with an offline/installability requirement. |
 
 ---
 
@@ -57,11 +59,11 @@
 
 | # | Decision area | Selected direction | Status | Approval note |
 |---|---|---|---|---|
-| 3.1 | Framework | NestJS 11 family | Confirmed direction / Proposed version | NestJS is confirmed; exact version must match Node.js and supporting packages. |
+| 3.1 | Framework | NestJS | Confirmed framework / Proposed version | NestJS is confirmed; verify and pin an exact version compatible with Node.js and supporting packages. |
 | 3.2 | Topology | One modular-monolith API deployment | Proposed | Functional modules retain ownership and public boundaries. |
 | 3.3 | API style | Versioned REST | Proposed | Contracts documented through OpenAPI and `04-API.md`. |
 | 3.4 | HTTP adapter | Express or Fastify | Unresolved | Select after middleware, upload, observability, and hosting review. |
-| 3.5 | Runtime validation | NestJS DTOs with `class-validator`/`class-transformer`, or one schema-based alternative | Unresolved | Adopt one consistent approach for external inputs. |
+| 3.5 | Runtime validation | Zod schemas at every external boundary | Confirmed | Integrate Zod through an approved NestJS pipe/adapter; do not rely on TypeScript types for runtime validation. |
 | 3.6 | API documentation | `@nestjs/swagger` / OpenAPI | Proposed | Required if REST direction is approved. |
 | 3.7 | Configuration | `@nestjs/config` with startup validation | Proposed | Invalid or missing required configuration fails startup. |
 | 3.8 | Rate limiting | Shared-state, tenant-aware limits | Proposed | Edge vs NestJS ownership depends on hosting. |
@@ -74,8 +76,8 @@
 
 | # | Decision area | Selected direction | Status | Approval note |
 |---|---|---|---|---|
-| 4.1 | Primary database | PostgreSQL 17 family | Proposed | Managed provider and exact supported version TBD. |
-| 4.2 | ORM/migrations | Prisma 7 family | Proposed | Verify generated migrations and compatibility before pinning. |
+| 4.1 | Primary database | PostgreSQL | Confirmed technology / Proposed version | Select the managed provider and pin its supported PostgreSQL version. |
+| 4.2 | ORM/migrations | Prisma | Confirmed technology / Proposed version | Verify generated migrations and compatibility before pinning an exact version. |
 | 4.3 | Tenant model | Shared database with organization-aware isolation | Proposed | Composite constraints and authorization checks are mandatory; threat/data review required. |
 | 4.4 | Runtime credentials | Least-privilege `DATABASE_URL` | Proposed | Runtime identities receive no schema-owner privileges. |
 | 4.5 | Migration credentials | `DIRECT_URL` available only to migration job | Proposed | Never expose it to web/API/worker runtimes. |
@@ -93,7 +95,7 @@
 
 | # | Decision area | Selected direction | Status | Approval note |
 |---|---|---|---|---|
-| 5.1 | Session strategy | Opaque, revocable server-side sessions | Proposed | Supports organization access revocation; security approval required. |
+| 5.1 | Session strategy | Opaque, revocable server-side sessions | Confirmed | Authentication uses server-managed sessions so organization access and individual sessions can be revoked. |
 | 5.2 | Session storage | Redis-backed state | Proposed | Define outage, rotation, expiry, and device-management behavior. |
 | 5.3 | Browser transport | Secure `HttpOnly` cookie | Proposed | Final SameSite, domain, and expiry settings depend on deployment. |
 | 5.4 | CSRF protection | SameSite plus Origin/CSRF validation appropriate to the flow | Proposed | Document trusted origins per environment. |
@@ -171,7 +173,7 @@
 
 | # | Control | Decision | Status | Approval note |
 |---|---|---|---|---|
-| 10.1 | Input validation | Runtime validation at every external boundary | Confirmed | Required architecture constraint. |
+| 10.1 | Input validation | Zod runtime validation at every external boundary | Confirmed | Validate body, path, query, headers, configuration, and external payloads with the appropriate schema. |
 | 10.2 | Tenant isolation | Authorization checks plus database constraints | Confirmed | Cross-tenant access is a release blocker. |
 | 10.3 | CORS/trusted origins | Explicit environment allowlist | Proposed | No permissive production wildcard with credentials. |
 | 10.4 | Security headers | NestJS/edge headers and CSP appropriate to deployment | Proposed | Exact policy defined before production. |
@@ -209,8 +211,8 @@ The following decisions materially change the implementation and must be resolve
 
 1. Confirm Size C and the monorepo/modular-monolith topology.
 2. Confirm exact compatible runtime/framework/tool versions.
-3. Select launch locales, fallback locale, locale routing, and RTL requirement.
-4. Select the NestJS HTTP adapter and runtime-validation approach.
+3. Select locale routing and the RTL requirement for the confirmed `hy`, `ru`, and `en` launch languages; default and fallback are `en`.
+4. Select the NestJS HTTP adapter and the Zod integration approach.
 5. Approve login methods, session lifecycle, and role/custom-permission scope.
 6. Select database/Redis/API hosting and environment regions.
 7. Confirm which conditional MVP capabilities require email, files, realtime, queues, workers, or scheduling.
