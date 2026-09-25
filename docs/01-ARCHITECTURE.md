@@ -15,11 +15,11 @@
 
 ### Purpose
 
-Give multiple organizations isolated workspaces for customer relationships, deals, tasks, delivery operations, communications, and inventory-related workflows. A person may belong to several organizations, with separate permissions and module availability in each.
+Give organizations isolated workspaces for customer relationships, deals, tasks, delivery operations, communications, and inventory-related workflows. Each user belongs to exactly one organization tenant and cannot join or switch between organizations.
 
 ### Main capabilities
 
-- Organization-aware users, memberships, permissions, and revocable sessions.
+- Tenant-owned users, permissions, and revocable sessions.
 - Contacts, leads (when enabled), deals, configurable pipelines, tasks, and orders/delivery.
 - Tenant-configurable messenger, catalog, inventory, branch transfers, notifications, analytics, and dashboards.
 - Reliable event processing without delaying routine API requests.
@@ -87,7 +87,7 @@ This diagram is logical, not a physical deployment inventory. One API service, o
 |---|---|
 | `ARCH-MOD-001` | Every capability is a module; no Core/Extension classification. |
 | `ARCH-MOD-002` | Modules own their business data; cross-module access uses public contracts or domain events, never private-table shortcuts. |
-| `ARCH-TEN-001` | Each tenant-scoped operation checks organization, current membership, authorization, module entitlement, and resource scope. |
+| `ARCH-TEN-001` | Each user has exactly one tenant ownership relation; each tenant-scoped operation checks that tenant, authorization, module entitlement, and resource scope. |
 | `ARCH-TEN-002` | Composite constraints prevent cross-tenant references; RLS may provide correctly configured defense in depth. |
 | `ARCH-SEC-001` | Web auth uses revocable, opaque server-side sessions; organization removal blocks that organization's subsequent access. |
 | `ARCH-EVT-001` | Business-critical writes and outbox records are atomic; consumers tolerate at-least-once delivery. |
@@ -110,7 +110,7 @@ The entries below describe **logical responsibilities and boundaries**, not a fi
 | Redis services | Hold bounded ephemeral state such as sessions, rate-limit counters, cache entries, and queue state. | Shared infrastructure; client adapters remain near their owning application | Redis is **proposed**. One initial deployment may serve multiple namespaced purposes, subject to security and availability review. | Used by the API, workers, scheduler, and realtime layer as approved; never treated as the business source of truth. |
 | Outbox relay and workers | Publish committed outbox records and execute retryable, idempotent background effects without delaying API requests. | `apps/worker/` | **Conditional MVP component**; queue library and process topology are pending. | Reads/claims outbox work, submits consumer-specific jobs, and records processing outcomes. |
 | Scheduler | Register recurring or delayed jobs with explicit ownership and duplicate-execution protection. | `apps/scheduler/` or an approved platform scheduler | **Conditional MVP component**; deployment mechanism is pending. | Enqueues work for workers rather than duplicating business logic. |
-| Realtime gateway | Deliver authorized, non-authoritative UI updates and revalidate access when tenant membership changes. | API-hosted gateway or separate process, to be decided | **Conditional MVP component**; protocol and provider are pending. | Receives approved events and pushes hints to connected clients; durable business delivery uses the outbox/queue path. |
+| Realtime gateway | Deliver authorized, non-authoritative UI updates and revalidate access when a tenant-owned user's status changes. | API-hosted gateway or separate process, to be decided | **Conditional MVP component**; protocol and provider are pending. | Receives approved events and pushes hints to connected clients; durable business delivery uses the outbox/queue path. |
 | Object storage | Store approved user files using tenant-scoped object keys and authorized upload/download flows. | Shared storage adapter plus owning-module integration | **Optional**; provider and file requirements are pending BRIEF and TECH_CARD approval. | The API authorizes operations; direct uploads use short-lived scoped credentials when supported. |
 | Observability | Collect structured logs, metrics, traces, health signals, and security-relevant audit events without exposing secrets. | Shared instrumentation package/configuration, location TBD | Required capability; products, retention, and alerting are pending. | Every runnable component emits correlated telemetry; business audit records remain distinct from operational logs. |
 
@@ -213,8 +213,8 @@ The application paths below are part of the **proposed Size C layout**. They des
 ### User request
 
 ```text
-Client → Web → REST API → validate opaque session → select organization
-       → current membership + permission + entitlement + resource checks
+Client → Web → REST API → validate opaque session → derive the user's tenant
+       → permission + entitlement + resource checks
        → validate input → owning module → transaction/DB → response
 ```
 
@@ -225,14 +225,13 @@ If a business-critical event is produced, the business write and event record co
 ```text
 Login → validate credentials → create opaque session → store in Redis
       → deliver HttpOnly/Secure cookie to the web client
-Request → session valid? → tenant membership active? → authorized? → execute
+Request → session valid? → tenant-owned user active? → authorized? → execute
 Owner removes employee from Organization A
-      → synchronously disable A membership and invalidate its auth state
+      → synchronously disable that tenant-owned user and invalidate its auth state
       → deny later A requests and terminate/revalidate A realtime access
-      → keep Organization B membership intact if separately authorized
 ```
 
-**Fail closed:** Redis/cache outages cannot silently reactivate stale rights. Define a policy for requests already in flight when a membership is deactivated.
+**Fail closed:** Redis/cache outages cannot silently reactivate stale rights. Define a policy for requests already in flight when a tenant-owned user is deactivated.
 
 ### Reliable domain events
 
@@ -253,7 +252,7 @@ One event may trigger multiple consumer-specific jobs. Several workers on **one 
 
 | Group | Representative entities |
 |---|---|
-| Tenancy/access | `users`, `organizations`, `memberships`, roles, permissions, module entitlements |
+| Tenancy/access | `tenants`, tenant-owned `users`, roles, permissions, module entitlements |
 | CRM/work | contacts, leads, deals, pipelines/stages, tasks and links, orders/items |
 | Communication | channel accounts, conversations, messages, notifications |
 | Catalog/inventory | products/variants, locations, stock balances/movements, transfers/items |
@@ -262,7 +261,8 @@ One event may trigger multiple consumer-specific jobs. Several workers on **one 
 ### ER diagram
 
 ```text
-User ──< Membership >── Organization ──< enabled modules
+Tenant/Organization ──< Users
+Tenant/Organization ──< enabled modules
 Organization ──< Contacts ──< Deals >── Pipeline stages
 Organization ──< Tasks; Organization ──< Orders
 Product ──< Variants ──< Stock levels >── Locations
@@ -305,7 +305,7 @@ The proposed web flow uses opaque, high-entropy server-side sessions delivered t
 
 ### Authorization
 
-Every tenant-scoped operation checks the selected organization, current membership, permission, module entitlement, and resource scope. Owner/Admin/Member are role templates rather than substitutes for those live checks; platform-operator permissions remain separate. Removing access from one organization synchronously denies subsequent access to that organization and revalidates affected realtime connections without disturbing separately authorized memberships.
+Every tenant-scoped operation derives the user's single tenant from the authenticated identity and checks permission, module entitlement, and resource scope. Owner/Admin/Member are role templates rather than substitutes for those live checks; platform-operator permissions remain separate. Users cannot select, join, or switch to another organization tenant.
 
 ### Protection
 
@@ -368,7 +368,7 @@ The identifiers below reserve traceable decision records; they are not accepted 
 | Initial backend topology | Modular monolith | Provides one manageable MVP deployment while enforcing module ownership and leaving evidence-based extraction possible later. | Proposed | `ADR-002-modular-monolith`, planned |
 | Functional organization | Every capability is a module | Keeps activation, dependency, and ownership concerns explicit without creating an artificial Core/Extension hierarchy. | Proposed | `ADR-003-module-model`, planned |
 | Multi-tenancy | Shared primary database with organization-aware isolation | Minimizes initial operational complexity while composite constraints and authorization checks protect tenant boundaries. | Proposed; threat/data review required | `ADR-004-multi-tenancy`, planned |
-| Sessions | Revocable server-side credentials | Supports immediate membership/session revocation without relying on long-lived self-contained authorization claims. | Proposed; security approval required | `ADR-005-session-strategy`, planned |
+| Sessions | Revocable server-side credentials | Supports immediate tenant-user/session revocation without relying on long-lived self-contained authorization claims. | Proposed; security approval required | `ADR-005-session-strategy`, planned |
 | Asynchronous work | Transactional outbox, durable queue, idempotent consumers | Couples business state and event intent atomically while allowing retryable effects outside request latency. | Conditional on approved async use cases | `ADR-006-async-delivery`, planned |
 | Versions, providers, and hosting | Defined in TECH_CARD and `02-TECH_STACK.md` | Keeps replaceable technology selections out of architectural invariants and makes approval ownership explicit. | Pending | No ADR until a choice has architectural consequences |
 | Future architecture | Metrics-driven conditional evolution | Avoids premature services, replicas, sharding, or multi-region complexity without measured bottlenecks or business requirements. | Accepted as a decision principle; formal approval pending | `ADR-007-scaling-gates`, planned |

@@ -102,7 +102,7 @@
 | 5.5 | Login methods | Email/password, magic link, OAuth/OIDC, or combination | Unresolved | Product owner must choose. |
 | 5.6 | Password hashing | Argon2id | Proposed conditional | Required only if password credentials are approved. |
 | 5.7 | External providers | None selected | Unresolved | Select required providers and account-linking policy. |
-| 5.8 | Authorization | Organization membership + permissions + module entitlement + resource scope | Confirmed | Core product requirement. |
+| 5.8 | Authorization | Single tenant ownership + permissions + module entitlement + resource scope | Confirmed | Each user belongs to exactly one organization tenant; multi-organization membership is prohibited. |
 | 5.9 | Role model | Owner/Admin/Member templates; custom roles TBD | Proposed | Confirm whether custom roles are required in MVP. |
 | 5.10 | Verification/recovery | Email verification and account recovery | Unresolved | Depends on selected login methods and email provider. |
 

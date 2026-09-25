@@ -48,6 +48,8 @@ Understand the ask → inspect existing code → propose for large/risky changes
 
 ## Decisions
 
+**Lobby tenant invariant:** one user belongs to exactly one organization tenant through `users.tenant_id`. Multi-organization membership, organization switching, a `Membership` join table, and a `User <-> Organization` many-to-many relation are prohibited. Changing this requires explicit supervisor approval, an ADR, and a reviewed data-migration plan.
+
 **Hard (apply without asking):** protect secrets, validate external input, use secure password hashing when passwords are stored, preserve security controls, keep TypeScript strict where TypeScript is used, and handle errors without leaking sensitive internals.
 
 **Technology precedence:** explicit approved task or migration decision → approved `docs/TECH_CARD.md` → existing project implementation → template recommendation → generic fallback. Preserve the existing implementation unless the task or approved TECH_CARD explicitly requires a migration.

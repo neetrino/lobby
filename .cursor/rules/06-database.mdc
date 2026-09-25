@@ -6,6 +6,15 @@ alwaysApply: false
 
 # Database
 
+## Lobby tenant ownership invariant
+
+- One `Tenant` represents one organization workspace, and every `User` belongs to exactly one tenant through the required `users.tenant_id` foreign key.
+- A user must never belong to, join, or switch between multiple tenants/organizations. Do not introduce a `Membership` join table or any `User <-> Organization` many-to-many relation.
+- Email identity is tenant-scoped: enforce uniqueness on `(tenant_id, email)`. The same email may represent separate user records in different tenants.
+- Resolve tenant context from the authenticated user's fixed `tenant_id`; do not accept an arbitrary organization selector as proof of access.
+- Preserve `Tenant 1 -> N User` in Prisma models, migrations, contracts, authorization, and tests. Ordinary feature work must not replace it with global users plus memberships.
+- Changing this invariant requires explicit supervisor approval, an architecture decision record, a reviewed data migration plan, and synchronized documentation. Never infer or perform that change from a feature request.
+
 ## Principles
 
 - Follow the existing database and migration framework or the approved TECH_CARD; PostgreSQL and Prisma are template defaults, not universal requirements.

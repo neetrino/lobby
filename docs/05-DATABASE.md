@@ -35,7 +35,7 @@
 
 | Group | Representative entities | Owning area |
 |---|---|---|
-| Tenancy and access | users, organizations, memberships, roles, permissions, module entitlements | Organizations / Identity / Access Management |
+| Tenancy and access | tenants, tenant-owned users, roles, permissions, module entitlements | Organizations / Identity / Access Management |
 | CRM | contacts, deals, pipelines, stages | Contacts / Deals / Pipelines |
 | Work management | tasks and task links | Tasks |
 | Operations | orders, order items, delivery state | Orders and Delivery; conditional |
@@ -50,7 +50,7 @@ These names are conceptual, not final table names.
 ## Conceptual relationships
 
 ```text
-User ──< Membership >── Organization
+Tenant/Organization ──< Users
 Organization ──< Contacts
 Organization ──< Pipelines ──< Stages
 Contact ──< Deals >── Stage
@@ -83,6 +83,9 @@ An approved physical ERD will replace or extend this view when models are design
 
 ## Tenant isolation
 
+- Each user belongs to exactly one tenant through the required `users.tenant_id` foreign key.
+- Multi-organization membership and organization switching are intentionally unsupported; do not add a membership join table.
+- Email uniqueness is tenant-scoped through `(tenant_id, email)`.
 - Resolve the organization from the authenticated request context, not from unchecked client input alone.
 - Include the organization key in tenant-scoped uniqueness and relationship constraints where necessary.
 - Every tenant query is scoped explicitly and tested against cross-tenant access.
@@ -158,4 +161,3 @@ Replace `TBD` entries with links to approved model/ERD sections when schema desi
 - [`02-TECH_STACK.md`](./02-TECH_STACK.md) — proposed database and Redis stack.
 - [`03-STRUCTURE.md`](./03-STRUCTURE.md) — schema and migration package location.
 - [`04-API.md`](./04-API.md) — request contracts that drive query and transaction design.
-

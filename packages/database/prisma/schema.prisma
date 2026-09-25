@@ -5,4 +5,31 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  // Prisma 7 keeps connection URLs in prisma.config.ts instead of this schema.
+}
+
+/// Shared-database tenant root. Row-Level Security is not enabled.
+/// `current_tenant_id()` is a SQL helper for a future policy, not a column.
+model Tenant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  subdomain String   @unique
+  plan      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  users     User[]
+
+  @@map("tenants")
+}
+
+/// Tenant member identity. Email is unique inside one tenant, not globally.
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  email     String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([tenantId, email])
+  @@map("users")
 }

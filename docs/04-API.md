@@ -38,8 +38,8 @@
 ```text
 Request
 → authenticate session
-→ resolve organization
-→ verify membership, permission, entitlement, and resource scope
+→ derive the user's single tenant
+→ verify user status, permission, entitlement, and resource scope
 → validate input
 → execute owning module operation
 → return documented response or error
@@ -93,7 +93,7 @@ Exact envelopes remain proposed until the first API contract is approved.
 | Module | Base resource | Status | Contract location |
 |---|---|---|---|
 | Authentication and sessions | TBD | Planned | OpenAPI + module documentation |
-| Organizations and memberships | TBD | Planned | OpenAPI + module documentation |
+| Tenant organization and users | TBD | Planned | OpenAPI + module documentation |
 | Contacts | TBD | Planned | OpenAPI + module documentation |
 | Tasks | TBD | Planned | OpenAPI + module documentation |
 | Deals and pipelines | TBD | Planned | OpenAPI + module documentation |
@@ -138,4 +138,3 @@ Rate limit:
 - [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) — system and module boundaries.
 - [`02-TECH_STACK.md`](./02-TECH_STACK.md) — API technology choices.
 - [`05-DATABASE.md`](./05-DATABASE.md) — persistence rules and schema documentation.
-

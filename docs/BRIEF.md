@@ -40,14 +40,14 @@ The MVP should establish the shared workspace and access model first, then deliv
 
 | Priority    | Capability                                                      | MVP outcome                                                                                                       |
 | ----------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| High        | Organizations and memberships                                   | A user can create or join an organization and switch between authorized organizations.                            |
+| High        | Organization users and access                                   | Each user belongs to exactly one organization tenant; multi-organization membership and switching are unsupported. |
 | High        | Authentication and access control                               | Owners can invite/remove members and assign approved roles or permissions; revoked access stops working promptly. |
 | High        | Contacts                                                        | Authorized members can create, view, update, search, and archive organization contacts.                           |
 | High        | Tasks                                                           | Members can create, assign, prioritize, update, and complete tasks linked to relevant records.                    |
 | High        | Deals and pipeline                                              | Teams can track deals through organization-defined pipeline stages with ownership and status history.             |
 | Medium      | Orders and delivery                                             | Teams can record an order and track its operational status if confirmed for the first release.                    |
 | Medium      | Notifications                                                   | Users receive approved in-app notifications for important assignments and status changes.                         |
-| Medium      | Audit history                                                   | Sensitive membership, permission, and important business changes are traceable.                                   |
+| Medium      | Audit history                                                   | Sensitive user-access, permission, and important business changes are traceable.                                  |
 | Low / later | Messenger, catalog, inventory, transfers, analytics, dashboards | Enable only after their detailed workflows and MVP necessity are approved.                                        |
 
 
@@ -87,9 +87,9 @@ The MVP should establish the shared workspace and access model first, then deliv
 
 ### 4. Access removal
 
-1. An Owner or authorized Admin removes or disables a membership.
-2. The user's later requests and realtime access to that organization are denied.
-3. Access to other organizations remains unchanged when separately authorized.
+1. An Owner or authorized Admin removes or disables a tenant-owned user.
+2. The user's later requests and realtime access to that tenant are denied.
+3. The user cannot switch to or retain access in another organization.
 4. The change is recorded in the audit history.
 
 
@@ -175,8 +175,7 @@ Exact versions, providers, hosting, authentication implementation, and condition
 - An Owner can create and administer an isolated organization workspace.
 - Invited members can access only authorized organizations and records.
 - A team can manage contacts, deals, pipeline stages, and tasks through their core lifecycle.
-- Membership removal prevents subsequent access to the affected organization.
+- Disabling or removing a tenant-owned user prevents subsequent access to that tenant.
 - Important access and business changes are auditable.
 - Critical workflows pass approved functional, tenant-isolation, and authorization tests.
 - The system can be deployed and migrated through the approved release process with documented environment variables and recovery procedures.
-

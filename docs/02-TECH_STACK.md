@@ -102,7 +102,7 @@ The Next.js application is a presentation and interaction boundary. It does not 
 | Validation | DTO pipes with `class-validator`/`class-transformer`, or one approved schema-based alternative | TBD | Adopt one consistent strategy; all external input receives runtime validation. |
 | API documentation | `@nestjs/swagger` / OpenAPI | Proposed | Keep the generated contract aligned with controllers and DTOs. |
 | Configuration | `@nestjs/config` plus startup validation | Proposed | Fail startup when required configuration is missing or invalid. |
-| Authorization | Guards plus module/application policies | Proposed | Every tenant request checks membership, permissions, entitlement, and resource scope. |
+| Authorization | Guards plus module/application policies | Proposed | Every request derives the user's single tenant and checks user status, permissions, entitlement, and resource scope. |
 | Errors | Typed application errors mapped by exception filters | Proposed | Stable client-safe error shape; no stack traces or internal details in production responses. |
 | Rate limiting | NestJS throttling or an approved edge/API policy backed by shared state | Proposed | Limits must work across multiple API instances and support tenant-aware tiers. |
 | Health | NestJS Terminus or lightweight equivalent | Proposed | Separate liveness/readiness when deployment topology requires it. |
@@ -139,7 +139,7 @@ Production migrations run once per release through a designated job after build 
 | CSRF protection | SameSite policy plus Origin/CSRF validation appropriate to the flow | Required practice |
 | Password hashing | Argon2id when password credentials are approved | Conditional |
 | External login | OAuth/OIDC provider integration | Conditional; providers TBD |
-| Authorization | Organization membership + permissions + module entitlement + resource scope | Required architecture constraint |
+| Authorization | Single tenant ownership + permissions + module entitlement + resource scope | Required architecture constraint |
 | Audit | Persistent records for security-sensitive actions | Required capability |
 
 The exact login methods, expiry/rotation policy, account linking, recovery, verification, and mobile authentication flow remain pending BRIEF and TECH_CARD approval.
@@ -156,7 +156,7 @@ The exact login methods, expiry/rotation policy, account linking, recovery, veri
 | Queue | BullMQ on Redis | Conditional | Use only for approved async effects; consumers are idempotent with bounded retries. |
 | Outbox relay | PostgreSQL outbox + worker | Conditional but required for critical async events | Business write and event intent commit atomically. |
 | Scheduler | Platform scheduler or Nest schedule owner | TBD | One registration owner; scheduled work enters the queue rather than duplicating business logic. |
-| Realtime | WebSocket or SSE gateway | Conditional | Authenticate connections, revalidate revoked memberships, and treat messages as non-authoritative hints. |
+| Realtime | WebSocket or SSE gateway | Conditional | Authenticate connections, revalidate disabled tenant users, and treat messages as non-authoritative hints. |
 
 Stage 1 may use one Redis deployment with isolated clients, key prefixes, quotas, and policies. Sessions, cache, queues, limits, and realtime fan-out remain separate logical workloads so they can be split later without changing module contracts.
 
