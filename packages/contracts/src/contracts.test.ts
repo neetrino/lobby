@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { contactCreatedEventSchema, defaultLocale, localeSchema, moduleKeySchema } from './index.js';
+import {
+  contactCreatedEventSchema,
+  defaultLocale,
+  localeSchema,
+  moduleKeySchema,
+  tenantCreatedEventSchema,
+} from './index.js';
 
 const validContactCreatedEvent = {
   eventId: '11111111-1111-4111-8111-111111111111',
@@ -56,6 +62,35 @@ describe('contactCreatedEventSchema', () => {
     expect(missing.success).toBe(false);
     expect(zero.success).toBe(false);
     expect(negative.success).toBe(false);
+  });
+});
+
+describe('tenantCreatedEventSchema', () => {
+  it('accepts the tenant and its first user', () => {
+    const result = tenantCreatedEventSchema.safeParse({
+      ...validContactCreatedEvent,
+      eventType: 'tenant.created',
+      aggregateType: 'tenant',
+      payload: {
+        name: 'Acme',
+        subdomain: 'acme',
+        plan: 'starter',
+        userId: '33333333-3333-4333-8333-333333333333',
+      },
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a tenant event without the founding user', () => {
+    const result = tenantCreatedEventSchema.safeParse({
+      ...validContactCreatedEvent,
+      eventType: 'tenant.created',
+      aggregateType: 'tenant',
+      payload: { name: 'Acme', subdomain: 'acme', plan: 'starter' },
+    });
+
+    expect(result.success).toBe(false);
   });
 });
 

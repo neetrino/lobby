@@ -137,7 +137,7 @@ The runtime uses least-privilege `DATABASE_URL`; privileged migration access suc
 
 | Module | Tables/models | Status | Notes |
 |---|---|---|---|
-| Organizations and access | TBD | Planned | Design first because other tenant-scoped models depend on it. |
+| Organizations | `tenants`, `users` | Implemented | A tenant and its first user are created in one transaction with a `tenant.created` outbox row. Roles, sessions, and module entitlements are separate. |
 | Contacts | `contacts` | Implemented | Tenant-owned contacts. Written in the same transaction as `contact.created` outbox rows. |
 | Tasks | TBD | Planned | MVP high priority; relationship model requires approval. |
 | Deals and pipelines | TBD | Planned | MVP high priority. |

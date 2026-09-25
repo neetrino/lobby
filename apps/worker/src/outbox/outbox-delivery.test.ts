@@ -3,6 +3,7 @@ import { createTestPrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
+import { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import { OutboxProcessor } from './outbox-processor.js';
 import { OutboxRepository } from './outbox-repository.js';
 
@@ -65,7 +66,7 @@ describe('outbox delivery', () => {
     const tenant = await createTenant();
     await seedEvent(tenant.id);
     const repository = new OutboxRepository(prisma, config);
-    const processor = new OutboxProcessor(repository, new ContactCreatedHandler(), config);
+    const processor = createProcessor(repository, new ContactCreatedHandler());
     const [claimed] = await repository.claimBatch();
     if (!claimed) {
       throw new Error('expected a claimed event');
@@ -84,7 +85,7 @@ describe('outbox delivery', () => {
     const tenant = await createTenant();
     await seedEvent(tenant.id);
     const repository = new OutboxRepository(prisma, config);
-    const processor = new OutboxProcessor(repository, failingHandler(), config);
+    const processor = createProcessor(repository, failingHandler());
     const [claimed] = await repository.claimBatch();
     if (!claimed) {
       throw new Error('expected a claimed event');
@@ -137,7 +138,7 @@ describe('outbox delivery', () => {
     const event = await seedEvent(tenant.id, { name: '' });
     const repository = new OutboxRepository(prisma, config);
     const handler = new ContactCreatedHandler();
-    const processor = new OutboxProcessor(repository, handler, config);
+    const processor = createProcessor(repository, handler);
     const [claimed] = await repository.claimBatch();
     if (!claimed) {
       throw new Error('expected a claimed event');
@@ -149,6 +150,36 @@ describe('outbox delivery', () => {
     const stored = await prisma.outboxEvent.findUniqueOrThrow({ where: { id: event.id } });
     expect(stored.status).toBe('PENDING');
     expect(stored.lastError).not.toBeNull();
+  });
+
+  it('publishes a tenant-created event', async () => {
+    const tenant = await createTenant();
+    const userId = crypto.randomUUID();
+    await prisma.outboxEvent.create({
+      data: {
+        tenantId: tenant.id,
+        eventType: 'tenant.created',
+        eventVersion: 1,
+        aggregateType: 'tenant',
+        aggregateId: tenant.id,
+        payload: { name: tenant.name, subdomain: tenant.subdomain, plan: tenant.plan, userId },
+        occurredAt: new Date('2026-09-25T09:00:00.000Z'),
+        availableAt: new Date(0),
+      },
+    });
+    const repository = new OutboxRepository(prisma, config);
+    const tenantHandler = new TenantCreatedHandler();
+    const processor = new OutboxProcessor(repository, new ContactCreatedHandler(), tenantHandler, config);
+    const [claimed] = await repository.claimBatch();
+    if (!claimed) {
+      throw new Error('expected a claimed event');
+    }
+
+    await processor.process(claimed);
+
+    expect(tenantHandler.deliveryCount()).toBe(1);
+    const stored = await prisma.outboxEvent.findUniqueOrThrow({ where: { id: claimed.id } });
+    expect(stored.status).toBe('PUBLISHED');
   });
 
   it('tolerates at-least-once handler delivery', async () => {
@@ -170,6 +201,10 @@ describe('outbox delivery', () => {
     expect(handler.deliveryCount()).toBe(1);
   });
 });
+
+function createProcessor(repository: OutboxRepository, contactHandler: ContactCreatedHandler) {
+  return new OutboxProcessor(repository, contactHandler, new TenantCreatedHandler(), config);
+}
 
 function failingHandler(): ContactCreatedHandler {
   const handler = new ContactCreatedHandler();
