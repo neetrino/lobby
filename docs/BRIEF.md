@@ -45,6 +45,7 @@ The MVP should establish the shared workspace and access model first, then deliv
 | High        | Contacts                                                        | Authorized members can create, view, update, search, and archive organization contacts.                           |
 | High        | Tasks                                                           | Members can create, assign, prioritize, update, and complete tasks linked to relevant records.                    |
 | High        | Deals and pipeline                                              | Teams can track deals through organization-defined pipeline stages with ownership and status history.             |
+| High        | Restaurant reservations                                         | Staff configure venues and tables, then manage conflict-free reservations and service status.                     |
 | Medium      | Orders and delivery                                             | Teams can record an order and track its operational status if confirmed for the first release.                    |
 | Medium      | Notifications                                                   | Users receive approved in-app notifications for important assignments and status changes.                         |
 | Medium      | Audit history                                                   | Sensitive user-access, permission, and important business changes are traceable.                                  |
@@ -101,6 +102,13 @@ The MVP should establish the shared workspace and access model first, then deliv
 3. Authorized members gain access to that module without receiving unrelated privileges.
 4. Disabling a module hides access but does not automatically delete its data.
 
+### 6. Restaurant reservation workflow
+
+1. Authorized staff selects a venue, date, time, party size, and one or more tables.
+2. The system validates tenant ownership, table capacity, service periods, and time conflicts.
+3. The reservation moves through pending, confirmed, arrived, seated, and completed, with cancellation and no-show exits.
+4. Status changes retain history; notifications and external booking channels remain separate integrations.
+
 
 
 ## Outside the initial MVP
@@ -112,6 +120,7 @@ The MVP should establish the shared workspace and access model first, then deliv
 - Marketplace or third-party extension platform.
 - Complex billing, payment processing, or usage-based subscriptions until business rules are approved.
 - AI features unless a specific user problem and data policy are approved.
+- Public self-service booking, deposits, waitlists, floor-plan editing, and automatic table optimization until separately designed.
 
 
 

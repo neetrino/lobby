@@ -38,6 +38,7 @@
 | Tenancy and access | tenants, tenant-owned users, roles, permissions, module entitlements | Organizations / Identity / Access Management |
 | CRM | contacts, deals, pipelines, stages | Contacts / Deals / Pipelines |
 | Work management | tasks and task links | Tasks |
+| Restaurant reservations | venues, dining areas, restaurant tables, service periods, reservations, table assignments, status history | Reservations |
 | Operations | orders, order items, delivery state | Orders and Delivery; conditional |
 | Communication | channel accounts, conversations, messages, notifications | Messaging / Notifications; conditional |
 | Catalog and inventory | products, variants, locations, stock movements, transfers | Catalog / Inventory; later scope |
@@ -58,6 +59,10 @@ Organization ──< Tasks
 Task ── optional links ──> Contact / Deal / Order
 Organization ──< Audit records
 Business transaction ──> Outbox event
+Organization ──< Venues ──< Dining areas ──< Restaurant tables
+Venue ──< Service periods
+Venue ──< Reservations ──< Table assignments >── Restaurant tables
+Reservation ──< Reservation status history
 ```
 
 An approved physical ERD will replace or extend this view when models are designed.
@@ -110,6 +115,8 @@ An approved physical ERD will replace or extend this view when models are design
 - Inventory, state transitions, uniqueness-sensitive writes, and outbox claiming require an explicit locking, optimistic-concurrency, or idempotency strategy.
 - Business data and its critical outbox event are committed in the same transaction.
 - Consumers tolerate at-least-once delivery and record idempotent processing where needed.
+- Active table assignments use a PostgreSQL exclusion constraint over tenant, table, and half-open UTC time range (`[start, end)`) so concurrent requests cannot double-book a table.
+- Reservation status and each assignment's `blocks_availability` flag change in one transaction; terminal outcomes release availability according to module policy.
 
 ---
 
@@ -134,8 +141,18 @@ The runtime uses least-privilege `DATABASE_URL`; privileged migration access suc
 | Contacts | `contacts` | Implemented | Tenant-owned contacts. Written in the same transaction as `contact.created` outbox rows. |
 | Tasks | TBD | Planned | MVP high priority; relationship model requires approval. |
 | Deals and pipelines | TBD | Planned | MVP high priority. |
+| Restaurant reservations | `venues`, `dining_areas`, `restaurant_tables`, `service_periods`, `reservations`, `reservation_tables`, `reservation_status_history` | Foundation implemented | Tenant-safe relations and database-enforced overlap prevention; API operations are not implemented. |
 | Orders and delivery | TBD | Conditional | Add only if promoted into MVP. |
 | Audit and outbox | `outbox_events` | Implemented | Pending rows are claimed with `FOR UPDATE SKIP LOCKED`. Retry, batch size, poll interval, and lock timeout are worker configuration. |
+
+### Reservation data rules
+
+- Store instants in UTC; each venue stores an IANA timezone for calendar display and local opening-hour interpretation.
+- A reservation belongs to one tenant and one venue. Optional contact and creator references belong to that same tenant.
+- Every assigned table belongs to the reservation's venue and tenant; one party may use several tables.
+- Capacity and service-period checks belong to the reservation application transaction; the overlap exclusion constraint is the final concurrency guard.
+- Same-day service windows are supported initially. Represent overnight service as split periods until a dedicated rule is approved.
+- The reservation migration requires PostgreSQL `btree_gist`; production deployment follows the controlled migration process.
 
 Replace `TBD` entries with links to approved model/ERD sections when schema design begins.
 

@@ -140,6 +140,7 @@ Sessions, caching, rate limiting, queues, and realtime fan-out are separate logi
 |---|---|
 | Workspace & access | Organizations; Identity & Sessions; Access Management; Module Management |
 | Customer work | Contacts; Leads; Deals; Pipelines; Tasks; Orders & Delivery |
+| Hospitality operations | Reservations; Venues; Dining Areas; Tables; Service Periods |
 | Communication | Messenger; Notifications |
 | Commerce operations | Catalog; Inventory; Inventory Transfers (including optional serial/IMEI tracking) |
 | Insights | Analytics; Dashboard |
@@ -256,6 +257,7 @@ One event may trigger multiple consumer-specific jobs. Several workers on **one 
 | CRM/work | contacts, leads, deals, pipelines/stages, tasks and links, orders/items |
 | Communication | channel accounts, conversations, messages, notifications |
 | Catalog/inventory | products/variants, locations, stock balances/movements, transfers/items |
+| Reservations | venues, dining areas, restaurant tables, service periods, reservations, table assignments, status history |
 | System history | outbox events, processed events, audit logs |
 
 ### ER diagram
@@ -268,6 +270,8 @@ Organization ──< Tasks; Organization ──< Orders
 Product ──< Variants ──< Stock levels >── Locations
 Transfer ──< Transfer items >── Variants
 Channel account ──< Conversations ──< Messages
+Organization ──< Venues ──< Dining areas ──< Restaurant tables
+Venue ──< Reservations ──< Table assignments >── Restaurant tables
 ```
 
 This is a conceptual ER view: it identifies ownership and cardinality direction but does not define physical table names, nullable fields, join-table columns, or indexes.
@@ -275,6 +279,8 @@ This is a conceptual ER view: it identifies ownership and cardinality direction 
 ### Detailed schema
 
 **Rules:** use one agreed tenant key; enforce organization scope and cross-tenant FK integrity; implement RLS only with safe per-transaction context when using transaction pooling; maintain append-only stock movements and safe concurrent inventory updates. Use measured query shapes for indexes and expand/deploy/backfill/contract for schema changes. If replicas are later introduced, strong-consistency/read-after-write reads remain on primary.
+
+For reservations, PostgreSQL is the final guard against overlapping active assignments to the same table. The module owns venue/table configuration, availability checks, reservation lifecycle, and status history. Times cross API boundaries as UTC instants, while each venue's IANA timezone defines local calendar and service-period interpretation. Public booking, deposits, waitlists, external booking portals, and automatic table allocation are outside this foundation.
 
 Executable schema, constraints, ERD, and indexes belong in [`05-DATABASE.md`](./05-DATABASE.md) and migrations—not here.
 

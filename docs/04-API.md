@@ -97,10 +97,13 @@ Exact envelopes remain proposed until the first API contract is approved.
 | Contacts | TBD | Planned | OpenAPI + module documentation |
 | Tasks | TBD | Planned | OpenAPI + module documentation |
 | Deals and pipelines | TBD | Planned | OpenAPI + module documentation |
+| Restaurant reservations | `/reservations` | Foundation only | Runtime schemas in `@lobby/contracts`; endpoints not implemented |
 | Orders and delivery | TBD | Conditional | OpenAPI + module documentation |
 | Notifications | TBD | Conditional | OpenAPI + module documentation |
 
 Add exact methods, paths, permissions, request schemas, response schemas, and error codes only when the corresponding module contract is designed.
+
+Reservation endpoints must derive the tenant from the authenticated session, accept UTC timestamps, and never trust a client-provided tenant identifier. The venue timezone controls staff-facing calendar interpretation. Conflict responses must use a stable error code; the exact HTTP contract is deferred until the application service is implemented.
 
 ---
 

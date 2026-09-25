@@ -11,39 +11,51 @@ datasource db {
 /// Shared-database tenant root. Row-Level Security is not enabled.
 /// `current_tenant_id()` is a SQL helper for a future policy, not a column.
 model Tenant {
-  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name         String
-  subdomain    String        @unique
-  plan         String
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
-  users        User[]
-  contacts     Contact[]
-  outboxEvents OutboxEvent[]
+  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                     String
+  subdomain                String                     @unique
+  plan                     String
+  createdAt                DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  users                    User[]
+  contacts                 Contact[]
+  outboxEvents             OutboxEvent[]
+  venues                   Venue[]
+  diningAreas              DiningArea[]
+  tables                   RestaurantTable[]
+  servicePeriods           ServicePeriod[]
+  reservations             Reservation[]
+  reservationTables        ReservationTable[]
+  reservationStatusHistory ReservationStatusHistory[]
 
   @@map("tenants")
 }
 
 /// Tenant member identity. Email is unique inside one tenant, not globally.
 model User {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
-  email     String
-  name      String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id                       String                     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId                 String                     @map("tenant_id") @db.Uuid
+  email                    String
+  name                     String
+  createdAt                DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant                   Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdReservations      Reservation[]              @relation("ReservationCreatedBy")
+  reservationStatusChanges ReservationStatusHistory[] @relation("ReservationStatusChangedBy")
 
   @@unique([tenantId, email])
+  @@unique([id, tenantId])
   @@map("users")
 }
 
 /// Tenant-owned contact. One user still belongs to exactly one tenant.
 model Contact {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
-  name      String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String        @map("tenant_id") @db.Uuid
+  name         String
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reservations Reservation[]
 
+  @@unique([id, tenantId])
   @@index([tenantId])
   @@map("contacts")
 }
@@ -80,4 +92,178 @@ model OutboxEvent {
   @@index([tenantId, occurredAt])
   @@index([aggregateType, aggregateId])
   @@map("outbox_events")
+}
+
+enum ReservationStatus {
+  HOLD
+  PENDING
+  CONFIRMED
+  ARRIVED
+  SEATED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model Venue {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  timezone  String
+  address   String?
+  phone     String?
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  diningAreas    DiningArea[]
+  tables         RestaurantTable[]
+  servicePeriods ServicePeriod[]
+  reservations   Reservation[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, isActive])
+  @@map("venues")
+}
+
+model DiningArea {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  venueId   String   @map("venue_id") @db.Uuid
+  name      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  venue  Venue             @relation(fields: [venueId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  tables RestaurantTable[]
+
+  @@unique([id, tenantId])
+  @@unique([id, tenantId, venueId])
+  @@unique([venueId, name])
+  @@index([tenantId, venueId, isActive])
+  @@map("dining_areas")
+}
+
+model RestaurantTable {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  venueId         String   @map("venue_id") @db.Uuid
+  diningAreaId    String   @map("dining_area_id") @db.Uuid
+  label           String
+  minimumCapacity Int      @map("minimum_capacity")
+  maximumCapacity Int      @map("maximum_capacity")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  venue        Venue              @relation(fields: [venueId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  diningArea   DiningArea         @relation(fields: [diningAreaId, tenantId, venueId], references: [id, tenantId, venueId], onDelete: Restrict, onUpdate: Cascade)
+  reservations ReservationTable[]
+
+  @@unique([id, tenantId])
+  @@unique([id, tenantId, venueId])
+  @@unique([venueId, label])
+  @@index([tenantId, venueId, diningAreaId, isActive])
+  @@map("restaurant_tables")
+}
+
+model ServicePeriod {
+  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId                  String   @map("tenant_id") @db.Uuid
+  venueId                   String   @map("venue_id") @db.Uuid
+  name                      String
+  dayOfWeek                 Int      @map("day_of_week")
+  opensAtMinute             Int      @map("opens_at_minute")
+  closesAtMinute            Int      @map("closes_at_minute")
+  defaultReservationMinutes Int      @map("default_reservation_minutes")
+  slotIntervalMinutes       Int      @map("slot_interval_minutes")
+  isActive                  Boolean  @default(true) @map("is_active")
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                 DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  venue  Venue  @relation(fields: [venueId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tenantId, venueId, dayOfWeek, isActive])
+  @@map("service_periods")
+}
+
+model Reservation {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String            @map("tenant_id") @db.Uuid
+  venueId            String            @map("venue_id") @db.Uuid
+  contactId          String?           @map("contact_id") @db.Uuid
+  createdByUserId    String?           @map("created_by_user_id") @db.Uuid
+  startsAt           DateTime          @map("starts_at") @db.Timestamptz(3)
+  endsAt             DateTime          @map("ends_at") @db.Timestamptz(3)
+  partySize          Int               @map("party_size")
+  status             ReservationStatus @default(PENDING)
+  customerName       String            @map("customer_name")
+  customerPhone      String?           @map("customer_phone")
+  customerEmail      String?           @map("customer_email")
+  specialRequests    String?           @map("special_requests")
+  internalNotes      String?           @map("internal_notes")
+  confirmedAt        DateTime?         @map("confirmed_at") @db.Timestamptz(3)
+  seatedAt           DateTime?         @map("seated_at") @db.Timestamptz(3)
+  completedAt        DateTime?         @map("completed_at") @db.Timestamptz(3)
+  cancelledAt        DateTime?         @map("cancelled_at") @db.Timestamptz(3)
+  cancellationReason String?           @map("cancellation_reason")
+  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant        Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  venue         Venue                      @relation(fields: [venueId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  contact       Contact?                   @relation(fields: [contactId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy     User?                      @relation("ReservationCreatedBy", fields: [createdByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  tables        ReservationTable[]
+  statusHistory ReservationStatusHistory[]
+
+  @@unique([id, tenantId])
+  @@unique([id, tenantId, venueId])
+  @@index([tenantId, venueId, startsAt])
+  @@index([tenantId, contactId, startsAt])
+  @@index([tenantId, status, startsAt])
+  @@map("reservations")
+}
+
+model ReservationTable {
+  tenantId           String   @map("tenant_id") @db.Uuid
+  venueId            String   @map("venue_id") @db.Uuid
+  reservationId      String   @map("reservation_id") @db.Uuid
+  tableId            String   @map("table_id") @db.Uuid
+  startsAt           DateTime @map("starts_at") @db.Timestamptz(3)
+  endsAt             DateTime @map("ends_at") @db.Timestamptz(3)
+  blocksAvailability Boolean  @default(true) @map("blocks_availability")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reservation Reservation     @relation(fields: [reservationId, tenantId, venueId], references: [id, tenantId, venueId], onDelete: Cascade, onUpdate: Cascade)
+  table       RestaurantTable @relation(fields: [tableId, tenantId, venueId], references: [id, tenantId, venueId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([reservationId, tableId])
+  @@index([tenantId, tableId, startsAt])
+  @@map("reservation_tables")
+}
+
+model ReservationStatusHistory {
+  id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String             @map("tenant_id") @db.Uuid
+  reservationId   String             @map("reservation_id") @db.Uuid
+  fromStatus      ReservationStatus? @map("from_status")
+  toStatus        ReservationStatus  @map("to_status")
+  changedByUserId String?            @map("changed_by_user_id") @db.Uuid
+  reason          String?
+  changedAt       DateTime           @default(now()) @map("changed_at") @db.Timestamptz(3)
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reservation Reservation @relation(fields: [reservationId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  changedBy   User?       @relation("ReservationStatusChangedBy", fields: [changedByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tenantId, reservationId, changedAt])
+  @@map("reservation_status_history")
 }
