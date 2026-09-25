@@ -1,7 +1,6 @@
-import { z } from 'zod';
-
-export const supportedLocales = ['hy', 'ru', 'en'] as const;
-export const defaultLocale = 'en' as const;
-export const localeSchema = z.enum(supportedLocales);
-
-export type Locale = z.infer<typeof localeSchema>;
+export { moduleKeySchema, moduleKeys } from './enums/index.js';
+export type { ModuleKey } from './enums/index.js';
+export { contactCreatedEventSchema, versionedEventSchema } from './events/index.js';
+export type { ContactCreatedEvent, VersionedEvent } from './events/index.js';
+export { defaultLocale, localeSchema, supportedLocales } from './locales.js';
+export type { Locale } from './locales.js';
