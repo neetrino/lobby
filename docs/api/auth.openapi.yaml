@@ -158,6 +158,8 @@ paths:
           $ref: '#/components/responses/Unauthenticated'
         '403':
           $ref: '#/components/responses/OriginRejected'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/v1/auth/users/{userId}/sessions/terminate:
     post:
       tags: [Auth]
@@ -186,6 +188,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/v1/auth/logout:
     post:
       tags: [Auth]
@@ -205,6 +209,8 @@ paths:
                 type: string
         '403':
           $ref: '#/components/responses/OriginRejected'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 components:
   parameters:
     Origin:
@@ -391,6 +397,16 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: Session store timed out or could not be reached
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: SERVICE_UNAVAILABLE
+              message: The session store is unavailable.
     RateLimited:
       description: Auth rate limit exceeded
       content:

@@ -202,9 +202,9 @@ Logout sends a clearing `Set-Cookie` (`Expires` at the epoch, no `Max-Age`).
 | `RATE_LIMIT_REGISTER_IP_LIMIT` / `RATE_LIMIT_REGISTER_IP_WINDOW_MS` | Default 5 attempts / 1 hour |
 | `RATE_LIMIT_INVALID_SESSION_IP_LIMIT` / `RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS` | Default 30 attempts / 5 minutes |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Session and rate-limit store |
-| `SESSION_REDIS_TIMEOUT_MS` | Upstash session command timeout. Default 3000, maximum 30000 |
+| `SESSION_REDIS_TIMEOUT_MS` | Upstash session and rate-limit command timeout. Default 3000, maximum 30000 |
 | `DATABASE_URL` | Tenant and user rows |
-| `TRUST_PROXY` | Off by default. Hop count or proxy address only. `true` is rejected |
+| `TRUST_PROXY` | Off by default. Production should list proxy IPs or CIDRs. A hop count is only for a topology where every request crosses the same number of proxies. `true` is rejected |
 
 Reservation endpoints must derive the tenant from the authenticated session, accept UTC timestamps, and never trust a client-provided tenant identifier. The venue timezone controls staff-facing calendar interpretation. Conflict responses must use a stable error code; the exact HTTP contract is deferred until the application service is implemented.
 

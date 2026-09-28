@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 import type { RateLimitRedis } from './rate-limit-redis';
-import { readUpstashSessionConfig } from './upstash-session-redis';
+import { readSessionRedisTimeoutMs, readUpstashSessionConfig } from './upstash-session-redis';
 import { UnavailableRateLimitRedis } from './unavailable-rate-limit-redis';
 
 const RATE_LIMIT_STORE_UNAVAILABLE = 'Rate limit store is unavailable.';
@@ -23,7 +23,10 @@ const upstashResponseSchema = z.object({
   error: z.string().optional(),
 });
 
-type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<Response>;
+type FetchLike = (
+  url: string,
+  init: { method: string; headers: Record<string, string>; body: string; signal: AbortSignal },
+) => Promise<Response>;
 
 /**
  * Rate-limit counters on the shared Upstash deployment.
@@ -33,6 +36,7 @@ export class UpstashRateLimitRedis implements RateLimitRedis {
   constructor(
     private readonly config: { url: string; token: string },
     private readonly fetchImpl: FetchLike = fetch,
+    private readonly timeoutMs: number = readSessionRedisTimeoutMs(),
   ) {}
 
   async increment(key: string, windowMs: number): Promise<number> {
@@ -53,6 +57,7 @@ export class UpstashRateLimitRedis implements RateLimitRedis {
           'content-type': 'application/json',
         },
         body: JSON.stringify(command),
+        signal: AbortSignal.timeout(this.timeoutMs),
       });
       if (!response.ok) {
         throw new Error(RATE_LIMIT_STORE_UNAVAILABLE);
@@ -73,7 +78,9 @@ export class UpstashRateLimitRedis implements RateLimitRedis {
 
 export function createRateLimitRedisClient(env: NodeJS.ProcessEnv = process.env): RateLimitRedis {
   const config = readUpstashSessionConfig(env);
-  return config === null ? new UnavailableRateLimitRedis() : new UpstashRateLimitRedis(config);
+  return config === null
+    ? new UnavailableRateLimitRedis()
+    : new UpstashRateLimitRedis(config, fetch, readSessionRedisTimeoutMs(env));
 }
 
 function requireCount(result: unknown): number {

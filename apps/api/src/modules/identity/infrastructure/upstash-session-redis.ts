@@ -115,7 +115,10 @@ export function readUpstashSessionConfig(env: NodeJS.ProcessEnv = process.env): 
   return { url, token };
 }
 
-/** Blank means the 3 second default. An invalid value fails startup instead of hanging a request. */
+/**
+ * Shared Upstash timeout for session and rate-limit commands.
+ * Blank means 3 seconds. An invalid value fails startup instead of hanging a request.
+ */
 export function readSessionRedisTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
   const raw = env.SESSION_REDIS_TIMEOUT_MS?.trim() ?? '';
   if (raw.length === 0) {
