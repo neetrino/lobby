@@ -7,6 +7,7 @@ import {
   shouldRefresh,
   isExpired,
 } from '../domain/session-policy';
+import { type SessionVersionReader } from './prisma-session-user';
 import {
   createRawSessionId,
   hashSessionId,
@@ -24,6 +25,14 @@ import { SESSION_REDIS, type SessionRedisClient } from './session-redis';
 
 export type { CreateSessionInput } from './session-record';
 
+/** Raised when a session was stored and then removed because its version is no longer current. */
+export class StaleSessionError extends Error {
+  constructor() {
+    super('Session authentication version is no longer current.');
+    this.name = 'StaleSessionError';
+  }
+}
+
 export type SessionInspection =
   | { status: 'invalid' }
   | { status: 'missing' }
@@ -33,7 +42,10 @@ export type SessionInspection =
 
 @Injectable()
 export class RedisSessionStore {
-  constructor(@Inject(SESSION_REDIS) private readonly redis: SessionRedisClient) {}
+  constructor(
+    @Inject(SESSION_REDIS) private readonly redis: SessionRedisClient,
+    private readonly versions?: SessionVersionReader,
+  ) {}
 
   /** Confirms the client answers before a tenant is committed. */
   async ping(): Promise<void> {
@@ -56,8 +68,22 @@ export class RedisSessionStore {
       ...lifetime,
     };
 
-    await this.save(session);
+    if (!(await this.saveCurrent(session))) {
+      throw new StaleSessionError();
+    }
     return { rawSessionId, session };
+  }
+
+  /**
+   * Deletes one session key, then removes its hash from the user's reverse index.
+   * A missing or malformed id is a no-op so logout can be repeated safely.
+   */
+  async revoke(rawSessionId: string): Promise<void> {
+    if (!isRawSessionId(rawSessionId)) {
+      return;
+    }
+
+    await this.delete(hashSessionId(rawSessionId));
   }
 
   async get(rawSessionId: string, now: Date): Promise<StoredSession | null> {
@@ -84,17 +110,17 @@ export class RedisSessionStore {
       lastSeenAt: now,
       idleExpiresAt: nextIdleExpiresAt(now, inspected.session.absoluteExpiresAt),
     };
-    await this.save(refreshed);
-    return refreshed;
+    const kept = await this.saveCurrent(refreshed);
+    return kept ? refreshed : null;
   }
 
   async delete(sessionIdHash: string): Promise<void> {
     const key = sessionKey(sessionIdHash);
     const payload = await this.redis.get(key);
+    await this.redis.del(key);
     if (payload !== null) {
       await this.removeIndex(payload, sessionIdHash);
     }
-    await this.redis.del(key);
   }
 
   async deleteAllForUser(userId: string): Promise<void> {
@@ -133,6 +159,19 @@ export class RedisSessionStore {
     return { status: 'active', session };
   }
 
+  private async saveCurrent(session: StoredSession): Promise<boolean> {
+    await this.save(session);
+    try {
+      await this.discardIfSuperseded(session);
+      return true;
+    } catch (error) {
+      if (error instanceof StaleSessionError) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
   private async save(session: StoredSession): Promise<void> {
     await this.redis.set(
       sessionKey(session.sessionIdHash),
@@ -144,6 +183,29 @@ export class RedisSessionStore {
       session.sessionIdHash,
       session.absoluteExpiresAt.getTime(),
     );
+  }
+
+  /**
+   * Drops a session written with a version that termination already replaced.
+   * The user row is read after the Redis write, so a terminate that committed first cannot leave a usable old session.
+   */
+  private async discardIfSuperseded(session: StoredSession): Promise<void> {
+    if (this.versions === undefined) {
+      return;
+    }
+
+    const current = await this.versions.findSecurity(session.userId, session.tenantId);
+    const versionMatches =
+      current !== null &&
+      current.status === 'ACTIVE' &&
+      current.authenticationVersion === session.authenticationVersion;
+    const stored = await this.redis.get(sessionKey(session.sessionIdHash));
+    if (versionMatches && stored !== null) {
+      return;
+    }
+
+    await this.delete(session.sessionIdHash);
+    throw new StaleSessionError();
   }
 
   private async removeIndex(payload: string, sessionIdHash: string): Promise<void> {

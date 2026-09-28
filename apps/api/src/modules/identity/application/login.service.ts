@@ -5,7 +5,7 @@ import { PASSWORD_HASHER, type PasswordHasher } from '../domain/password-hasher'
 import { sessionRoles, type SessionRole } from '../domain/authenticated-session';
 import { INCIDENT_LOGGER, type IncidentLogger } from '../infrastructure/incident-logger';
 import { PrismaLoginAccountStore, type LoginAccount } from '../infrastructure/prisma-login-account';
-import { RedisSessionStore } from '../infrastructure/redis-session.store';
+import { RedisSessionStore, StaleSessionError } from '../infrastructure/redis-session.store';
 import { UNKNOWN_USER_PASSWORD_HASH } from '../infrastructure/unknown-user-password-hash';
 import { type LoginInput } from '../presentation/dto/login.schema';
 
@@ -78,7 +78,10 @@ export class LoginService {
         new Date(),
       );
       return { account: toSignedInAccount(account, role), rawSessionId: opened.rawSessionId };
-    } catch {
+    } catch (error) {
+      if (error instanceof StaleSessionError) {
+        throw new IdentityError(identityErrorCodes.SESSION_REVOKED);
+      }
       this.incidents.error(
         `Login succeeded but the session was not created. tenantId=${account.tenant.id} userId=${account.user.id}`,
       );

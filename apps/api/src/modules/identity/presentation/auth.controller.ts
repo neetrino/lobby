@@ -1,10 +1,9 @@
-import { Body, Controller, HttpCode, Post, Res, UseFilters } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, Req, Res, UseFilters } from '@nestjs/common';
 
 import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
 import { LoginService, type SignedInAccount } from '../application/login.service';
 import { LogoutService } from '../application/logout.service';
 import { RegisterService, type RegisteredAccount } from '../application/register.service';
-import { TerminateUserSessionsService } from '../application/terminate-user-sessions.service';
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
 import { loginSchema, type LoginInput } from './dto/login.schema';
 import { registerSchema, type RegisterInput } from './dto/register.schema';
@@ -17,7 +16,6 @@ export class AuthController {
     private readonly registerUser: RegisterService,
     private readonly loginUser: LoginService,
     private readonly logoutUser: LogoutService,
-    private readonly terminateUserSessions: TerminateUserSessionsService,
     private readonly sessionCookie: SessionCookie,
   ) {}
 
@@ -42,5 +40,16 @@ export class AuthController {
     const signedIn = await this.loginUser.login(body);
     this.sessionCookie.set(response, signedIn.rawSessionId);
     return { data: signedIn.account };
+  }
+
+  /** Idempotent. A missing or already revoked session still clears the cookie and returns success. */
+  @Post('logout')
+  @HttpCode(204)
+  async logout(
+    @Req() request: { headers: { cookie?: string | readonly string[] } },
+    @Res({ passthrough: true }) response: SessionCookieWriter,
+  ): Promise<void> {
+    await this.logoutUser.logout(this.sessionCookie.read(request.headers.cookie));
+    this.sessionCookie.clear(response);
   }
 }

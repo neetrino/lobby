@@ -166,6 +166,56 @@ export function invoke(exception: unknown): { statusCode: number; body: unknown 
   return state;
 }
 
+/** In-memory Redis that records session keys and the user reverse index. */
+export class IndexedSessionRedis implements SessionRedisClient {
+  readonly strings = new Map<string, string>();
+  readonly sets = new Map<string, Set<string>>();
+  holdNextSet = false;
+  heldKey: string | null = null;
+  private releaseHold: (() => void) | undefined;
+
+  get(key: string): Promise<string | null> {
+    return Promise.resolve(this.strings.get(key) ?? null);
+  }
+
+  async set(key: string, value: string): Promise<void> {
+    if (this.holdNextSet) {
+      this.holdNextSet = false;
+      this.heldKey = key;
+      await new Promise<void>((resolve) => {
+        this.releaseHold = resolve;
+      });
+    }
+    this.strings.set(key, value);
+  }
+
+  release(): void {
+    this.releaseHold?.();
+  }
+
+  del(key: string): Promise<void> {
+    this.strings.delete(key);
+    this.sets.delete(key);
+    return Promise.resolve();
+  }
+
+  sadd(key: string, member: string): Promise<void> {
+    const members = this.sets.get(key) ?? new Set<string>();
+    members.add(member);
+    this.sets.set(key, members);
+    return Promise.resolve();
+  }
+
+  srem(key: string, member: string): Promise<void> {
+    this.sets.get(key)?.delete(member);
+    return Promise.resolve();
+  }
+
+  smembers(key: string): Promise<readonly string[]> {
+    return Promise.resolve([...(this.sets.get(key) ?? [])]);
+  }
+}
+
 export async function clearTenantRows(database: PrismaClient | undefined): Promise<void> {
   if (!database) {
     return;

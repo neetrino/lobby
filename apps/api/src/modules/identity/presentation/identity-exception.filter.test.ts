@@ -11,6 +11,7 @@ describe('IdentityExceptionFilter', () => {
       [identityErrorCodes.UNAUTHENTICATED, 401, 'Authentication is required.'],
       [identityErrorCodes.SESSION_EXPIRED, 401, 'The session has expired.'],
       [identityErrorCodes.SESSION_REVOKED, 401, 'The session is no longer valid.'],
+      [identityErrorCodes.FORBIDDEN, 403, 'You do not have permission to perform this action.'],
       [identityErrorCodes.REGISTRATION_DISABLED, 403, 'Registration is disabled.'],
       [identityErrorCodes.TENANT_SUBDOMAIN_TAKEN, 409, 'This subdomain is already taken.'],
       [

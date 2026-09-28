@@ -57,6 +57,7 @@ function statusFor(code: IdentityErrorCode): number {
     case 'SESSION_EXPIRED':
     case 'SESSION_REVOKED':
       return 401;
+    case 'FORBIDDEN':
     case 'REGISTRATION_DISABLED':
       return 403;
     case 'TENANT_SUBDOMAIN_TAKEN':

@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
 import { SESSION_IDLE_TTL_MS, SESSION_REFRESH_INTERVAL_MS } from '../domain/session-policy';
-import { RedisSessionStore } from './redis-session.store';
+import { RedisSessionStore, StaleSessionError } from './redis-session.store';
 import { createRawSessionId, hashSessionId, sessionKey, userSessionsKey } from './session-id';
 import type { SessionRedisClient } from './session-redis';
 
@@ -99,6 +99,28 @@ describe('RedisSessionStore', () => {
     expect(redis.sets.has(userSessionsKey(userId))).toBe(false);
     await expect(redis.get(sessionKey(other.session.sessionIdHash))).resolves.not.toBeNull();
     expect(redis.sets.get(userSessionsKey(otherUserId))?.members.has(other.session.sessionIdHash)).toBe(true);
+  });
+
+  it('drops a session when the user version changed before the write was confirmed', async () => {
+    const redis = new MemorySessionRedis();
+    const store = new RedisSessionStore(redis, {
+      findSecurity: () => Promise.resolve({ status: 'ACTIVE', authenticationVersion: 2 }),
+    });
+
+    await expect(store.create(subject, now)).rejects.toBeInstanceOf(StaleSessionError);
+    expect(redis.strings.size).toBe(0);
+    await expect(redis.smembers(userSessionsKey(userId))).resolves.toEqual([]);
+  });
+
+  it('keeps a session when the stored authentication version still matches', async () => {
+    const redis = new MemorySessionRedis();
+    const store = new RedisSessionStore(redis, {
+      findSecurity: () => Promise.resolve({ status: 'ACTIVE', authenticationVersion: 1 }),
+    });
+
+    const created = await store.create(subject, now);
+
+    await expect(store.get(created.rawSessionId, now)).resolves.toEqual(created.session);
   });
 });
 

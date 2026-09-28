@@ -20,7 +20,6 @@ import { registerSchema } from '../presentation/dto/register.schema';
 import { LoginService } from './login.service';
 import { LogoutService } from './logout.service';
 import { RegisterService } from './register.service';
-import { TerminateUserSessionsService } from './terminate-user-sessions.service';
 
 const password = 'correct-horse-battery';
 const invalidCredentials = {
@@ -192,8 +191,7 @@ function build(redis: SessionRedisClient, incidents: IncidentLogger) {
   const controller = new AuthController(
     registerUser,
     new LoginService(new PrismaLoginAccountStore(prisma), new Argon2PasswordHasher(), sessions, incidents),
-    new LogoutService(),
-    new TerminateUserSessionsService(),
+    new LogoutService(sessions),
     new SessionCookie(true),
   );
   return { controller };

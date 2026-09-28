@@ -6,7 +6,7 @@ import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
 import { PASSWORD_HASHER, type PasswordHasher } from '../domain/password-hasher';
 import { sessionRoles, type SessionRole } from '../domain/authenticated-session';
 import { INCIDENT_LOGGER, type IncidentLogger } from '../infrastructure/incident-logger';
-import { RedisSessionStore } from '../infrastructure/redis-session.store';
+import { RedisSessionStore, StaleSessionError } from '../infrastructure/redis-session.store';
 import { REGISTRATION_ENABLED } from '../infrastructure/registration-config';
 import { type RegisterInput } from '../presentation/dto/register.schema';
 
@@ -107,10 +107,12 @@ export class RegisterService {
         new Date(),
       );
       rawSessionId = opened.rawSessionId;
-    } catch {
-      this.incidents.error(
-        `Registration committed but the session was not created. tenantId=${created.tenant.id} userId=${created.user.id}`,
-      );
+    } catch (error) {
+      if (!(error instanceof StaleSessionError)) {
+        this.incidents.error(
+          `Registration committed but the session was not created. tenantId=${created.tenant.id} userId=${created.user.id}`,
+        );
+      }
       throw new IdentityError(identityErrorCodes.ACCOUNT_CREATED_SIGN_IN_REQUIRED);
     }
 

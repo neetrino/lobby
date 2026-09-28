@@ -20,7 +20,6 @@ import { registerSchema } from '../presentation/dto/register.schema';
 import { LoginService } from './login.service';
 import { LogoutService } from './logout.service';
 import { RegisterService } from './register.service';
-import { TerminateUserSessionsService } from './terminate-user-sessions.service';
 
 const password = 'correct-horse-battery';
 
@@ -144,23 +143,18 @@ function registration(subdomain: string, email: string) {
 }
 
 function build(redis: SessionRedisClient, enabled: boolean, incidents: IncidentLogger) {
+  const sessions = new RedisSessionStore(redis);
   const service = new RegisterService(
     new CreateTenantService(prisma, new OutboxService()),
     new Argon2PasswordHasher(),
-    new RedisSessionStore(redis),
+    sessions,
     enabled,
     incidents,
   );
   const controller = new AuthController(
     service,
-    new LoginService(
-      new PrismaLoginAccountStore(prisma),
-      new Argon2PasswordHasher(),
-      new RedisSessionStore(redis),
-      incidents,
-    ),
-    new LogoutService(),
-    new TerminateUserSessionsService(),
+    new LoginService(new PrismaLoginAccountStore(prisma), new Argon2PasswordHasher(), sessions, incidents),
+    new LogoutService(sessions),
     new SessionCookie(true),
   );
   return { controller };

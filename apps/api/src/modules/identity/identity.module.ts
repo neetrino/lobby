@@ -18,7 +18,7 @@ import {
   REGISTRATION_ENABLED,
 } from './infrastructure/registration-config';
 import { readSessionCookieSecure, SessionCookie } from './infrastructure/session-cookie';
-import { SESSION_REDIS } from './infrastructure/session-redis';
+import { SESSION_REDIS, type SessionRedisClient } from './infrastructure/session-redis';
 import { createSessionRedisClient } from './infrastructure/upstash-session-redis';
 import { AuthController } from './presentation/auth.controller';
 import { SessionGuard } from './presentation/session.guard';
@@ -32,7 +32,12 @@ import { SessionGuard } from './presentation/session.guard';
     { provide: REGISTRATION_ENABLED, useFactory: () => readRegistrationEnabled() },
     { provide: SESSION_REDIS, useFactory: () => createSessionRedisClient() },
     { provide: INCIDENT_LOGGER, useClass: NestIncidentLogger },
-    RedisSessionStore,
+    {
+      provide: RedisSessionStore,
+      useFactory: (redis: SessionRedisClient, users: PrismaSessionUserStore): RedisSessionStore =>
+        new RedisSessionStore(redis, users),
+      inject: [SESSION_REDIS, PrismaSessionUserStore],
+    },
     PrismaLoginAccountStore,
     PrismaSessionUserStore,
     RegisterService,
@@ -42,6 +47,6 @@ import { SessionGuard } from './presentation/session.guard';
     LogoutService,
     TerminateUserSessionsService,
   ],
-  exports: [PASSWORD_HASHER, SessionGuard],
+  exports: [PASSWORD_HASHER, SessionGuard, TerminateUserSessionsService],
 })
 export class IdentityModule {}
