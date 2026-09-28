@@ -6,9 +6,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { AuthenticatedTenantContext } from '../../../common/tenant/authenticated-tenant-context';
 import { canRevokeUserSessions } from '../domain/session-revocation';
 import { identityErrorCodes } from '../domain/identity.errors';
-import { SESSION_REFRESH_INTERVAL_MS } from '../domain/session-policy';
+import { SESSION_IDLE_TTL_MS, SESSION_REFRESH_INTERVAL_MS } from '../domain/session-policy';
 import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
-import { RedisSessionStore } from '../infrastructure/redis-session.store';
 import { hashSessionId, sessionKey } from '../infrastructure/session-id';
 import {
   CurrentTenant,
@@ -18,6 +17,7 @@ import {
 import {
   activate,
   clearTenantRows,
+  createAdmin,
   createGuard,
   createOwner,
   httpContext,
@@ -181,6 +181,23 @@ describe('SessionGuard', () => {
     });
   });
 
+  it('rewrites the cookie with a new Max-Age when the idle window slides', async () => {
+    const redis = new MemorySessionRedis();
+    const owner = await createOwner(prisma, 'slide', redis);
+    const seenAt = new Date(Date.now() - SESSION_REFRESH_INTERVAL_MS - 1_000).toISOString();
+    rewrite(redis, owner.rawSessionId, { lastSeenAt: seenAt });
+    const response = new RecordingCookieWriter();
+
+    await createGuard(prisma, redis).canActivate(httpContext(requestFor(owner.rawSessionId), response));
+    const quiet = new RecordingCookieWriter();
+    await createGuard(prisma, redis).canActivate(httpContext(requestFor(owner.rawSessionId), quiet));
+
+    expect(response.setCall?.value).toBe(owner.rawSessionId);
+    expect(response.setCall?.options.maxAge).toBeGreaterThan(SESSION_IDLE_TTL_MS - 60_000);
+    expect(response.setCall?.options.maxAge).toBeLessThanOrEqual(SESSION_IDLE_TTL_MS);
+    expect(quiet.setCall).toBeUndefined();
+  });
+
   it('stops a demoted admin from revoking another user with the old session', async () => {
     const redis = new MemorySessionRedis();
     const admin = await createAdmin(prisma, redis);
@@ -239,39 +256,6 @@ describe('SessionGuard', () => {
     });
   });
 });
-
-async function createAdmin(database: PrismaClient, redis: MemorySessionRedis) {
-  const tenant = await database.tenant.create({
-    data: { name: 'Acme', subdomain: 'acme-admin', plan: 'STARTER' },
-  });
-  const user = await database.user.create({
-    data: {
-      tenantId: tenant.id,
-      email: 'admin@example.com',
-      name: 'Ada',
-      passwordHash: 'stored-hash',
-      status: 'ACTIVE',
-      role: 'ADMIN',
-      authenticationVersion: 1,
-    },
-  });
-  const other = await database.user.create({
-    data: {
-      tenantId: tenant.id,
-      email: 'member@example.com',
-      name: 'Bea',
-      passwordHash: 'stored-hash',
-      status: 'ACTIVE',
-      role: 'MEMBER',
-      authenticationVersion: 1,
-    },
-  });
-  const opened = await new RedisSessionStore(redis).create(
-    { userId: user.id, tenantId: tenant.id, role: 'ADMIN', authenticationVersion: 1 },
-    new Date(),
-  );
-  return { tenantId: tenant.id, userId: user.id, otherUserId: other.id, rawSessionId: opened.rawSessionId };
-}
 
 @Controller('probe')
 class TenantProbeController {

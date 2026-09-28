@@ -25,11 +25,12 @@ import { SESSION_REDIS, type SessionRedisClient } from './infrastructure/session
 import { createRateLimitRedisClient } from './infrastructure/upstash-rate-limit-redis';
 import { createSessionRedisClient } from './infrastructure/upstash-session-redis';
 import { AuthController } from './presentation/auth.controller';
+import { SessionController } from './presentation/session.controller';
 import { SessionGuard } from './presentation/session.guard';
 
 @Module({
   imports: [OrganizationsModule, OutboxModule],
-  controllers: [AuthController],
+  controllers: [AuthController, SessionController],
   providers: [
     { provide: PASSWORD_HASHER, useClass: Argon2PasswordHasher },
     { provide: SessionCookie, useFactory: () => new SessionCookie(readSessionCookieSecure()) },

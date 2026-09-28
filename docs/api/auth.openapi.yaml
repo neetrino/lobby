@@ -117,6 +117,65 @@ paths:
           $ref: '#/components/responses/OriginRejected'
         '429':
           $ref: '#/components/responses/RateLimited'
+  /api/v1/auth/session:
+    get:
+      tags: [Auth]
+      operationId: readSession
+      summary: Return the signed-in user and tenant
+      parameters:
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Safe principal. No password hash or raw session id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+  /api/v1/auth/sessions/terminate-all:
+    post:
+      tags: [Auth]
+      operationId: terminateOwnSessions
+      summary: Revoke every session of the caller
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '204':
+          description: Sessions deleted and the current cookie cleared
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+  /api/v1/auth/users/{userId}/sessions/terminate:
+    post:
+      tags: [Auth]
+      operationId: terminateUserSessions
+      summary: Revoke one user's sessions in the caller's tenant
+      description: >
+        Owner and Admin may target another user. A user may target themselves.
+        The user id is resolved inside the caller's tenant, so another tenant is rejected.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: That user's sessions were deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Origin rejected, or the caller may not revoke that user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /api/v1/auth/logout:
     post:
       tags: [Auth]
@@ -248,6 +307,31 @@ components:
                 role:
                   type: string
                   enum: [OWNER, ADMIN, MEMBER]
+    SessionView:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [user, tenant]
+          properties:
+            user:
+              type: object
+              required: [id, role]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                role:
+                  type: string
+                  enum: [OWNER, ADMIN, MEMBER]
+            tenant:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: string
+                  format: uuid
     ErrorResponse:
       type: object
       required: [error]
@@ -261,6 +345,16 @@ components:
             message:
               type: string
   responses:
+    Unauthenticated:
+      description: The session cookie is missing, expired, or revoked
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: UNAUTHENTICATED
+              message: Authentication is required.
     RequestRejected:
       description: Validation failed. The body does not echo the input.
       content:

@@ -138,6 +138,39 @@ export async function createOwner(
   return { tenantId: tenant.id, userId: user.id, rawSessionId: opened.rawSessionId };
 }
 
+export async function createAdmin(database: PrismaClient, redis: MemorySessionRedis) {
+  const tenant = await database.tenant.create({
+    data: { name: 'Acme', subdomain: 'acme-admin', plan: 'STARTER' },
+  });
+  const user = await database.user.create({
+    data: {
+      tenantId: tenant.id,
+      email: 'admin@example.com',
+      name: 'Ada',
+      passwordHash: 'stored-hash',
+      status: 'ACTIVE',
+      role: 'ADMIN',
+      authenticationVersion: 1,
+    },
+  });
+  const other = await database.user.create({
+    data: {
+      tenantId: tenant.id,
+      email: 'member@example.com',
+      name: 'Bea',
+      passwordHash: 'stored-hash',
+      status: 'ACTIVE',
+      role: 'MEMBER',
+      authenticationVersion: 1,
+    },
+  });
+  const opened = await new RedisSessionStore(redis).create(
+    { userId: user.id, tenantId: tenant.id, role: 'ADMIN', authenticationVersion: 1 },
+    new Date(),
+  );
+  return { tenantId: tenant.id, userId: user.id, otherUserId: other.id, rawSessionId: opened.rawSessionId };
+}
+
 export function rewrite(
   redis: MemorySessionRedis,
   rawSessionId: string,

@@ -100,9 +100,11 @@ describe('RedisSessionStore', () => {
     const touched = await store.touch(created.rawSessionId, early);
 
     expect(redis.setCalls).toBe(writesAfterCreate);
-    expect(touched?.lastSeenAt).toEqual(created.session.lastSeenAt);
-    expect(touched?.idleExpiresAt).toEqual(created.session.idleExpiresAt);
-    expect(touched?.absoluteExpiresAt).toEqual(created.session.absoluteExpiresAt);
+    expect(touched).toEqual({
+      status: 'present',
+      refreshed: false,
+      session: created.session,
+    });
   });
 
   it('deletes every session key and the reverse index for a user', async () => {
