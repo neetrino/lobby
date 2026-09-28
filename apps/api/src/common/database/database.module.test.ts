@@ -107,8 +107,9 @@ describe('DatabaseModule', () => {
     const database = moduleRef.get(DatabaseModule);
 
     await moduleRef.close();
-    await database.onModuleDestroy();
+    expect(client.$disconnect).toHaveBeenCalledTimes(1);
 
+    await database.onModuleDestroy();
     expect(client.$disconnect).toHaveBeenCalledTimes(1);
   });
 

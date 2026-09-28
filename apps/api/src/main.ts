@@ -11,7 +11,6 @@ async function bootstrap() {
   applyTrustProxy(app);
   app.setGlobalPrefix('api');
   // CORS allows credentialed browser reads. It is not the CSRF control; OriginGuard is.
-  app.enableShutdownHooks();
   enableCredentialedCors(
     {
       enableCors(options) {
@@ -25,6 +24,7 @@ async function bootstrap() {
     },
     readAllowedOrigins(),
   );
+  app.enableShutdownHooks();
   await app.listen(process.env.PORT ?? 3001);
 }
 
