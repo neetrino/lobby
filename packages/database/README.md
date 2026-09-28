@@ -1,12 +1,16 @@
 # Database package
 
-This package owns the Prisma schema, generated client, and database migrations.
+This package owns the Prisma schema, the generated client, and the SQL migrations. Callers open a client with `createPrismaClient(readDatabaseUrl())`. The connection string is `DATABASE_URL`. Prisma 7 reads it from `prisma.config.ts`, not from `schema.prisma`.
 
-The foundation schema is two tables:
+One user row belongs to exactly one tenant through `users.tenant_id`. There is no membership join.
 
-- `tenants` — `id`, `name`, `subdomain` (unique), `plan`, `created_at`
-- `users` — `id`, `tenant_id` (foreign key to `tenants.id`), `email` (unique with `tenant_id`), `name`, `created_at`
+Current tables:
+
+- Identity: `tenants`, `users`
+- Contacts: `contacts`
+- Outbox: `outbox_events`
+- Reservations: `venues`, `dining_areas`, `restaurant_tables`, `service_periods`, `reservations`, `reservation_tables`, `reservation_status_history`
 
 `current_tenant_id()` reads the `app.current_tenant_id` session setting for a future Row-Level Security policy. No table has RLS enabled.
 
-Business entities will be added module by module after their data model is approved.
+Tenant plans are limited to `starter` until a product decision adds more.

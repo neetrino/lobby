@@ -113,10 +113,11 @@ describe('DatabaseModule', () => {
     expect(client.$disconnect).toHaveBeenCalledTimes(1);
   });
 
-  it('does not throw when disconnect fails because the client is already closed', async () => {
+  it('logs a fixed disconnect failure and leaves the driver message out of the log', async () => {
+    const secret = 'postgresql://lobby:s3cret-password@db.internal:5432/lobby';
     const errorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     try {
-      const client = disconnectableClient(() => Promise.reject(new Error('already disconnected')));
+      const client = disconnectableClient(() => Promise.reject(new Error(`connect failed ${secret}`)));
       const moduleRef = await compileWithClient(client, [DatabaseModule]);
       modules.push(moduleRef);
       const database = moduleRef.get(DatabaseModule);
@@ -124,6 +125,9 @@ describe('DatabaseModule', () => {
       await expect(database.onModuleDestroy()).resolves.toBeUndefined();
       await expect(database.onModuleDestroy()).resolves.toBeUndefined();
       expect(client.$disconnect).toHaveBeenCalledTimes(1);
+      const logged = errorSpy.mock.calls.flat().join('\n');
+      expect(logged).toBe('Prisma client disconnect failed');
+      expect(logged.includes(secret)).toBe(false);
     } finally {
       errorSpy.mockRestore();
     }

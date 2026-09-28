@@ -21,9 +21,8 @@ export class DatabaseModule implements OnModuleDestroy {
     this.closed = true;
     try {
       await this.prisma.$disconnect();
-    } catch (error: unknown) {
-      const detail = error instanceof Error ? error.stack : String(error);
-      this.logger.error('Prisma client disconnect failed', detail);
+    } catch {
+      this.logger.error('Prisma client disconnect failed');
     }
   }
 }
