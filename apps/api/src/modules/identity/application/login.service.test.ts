@@ -157,6 +157,22 @@ describe('login', () => {
     expect(response.setCall?.name).toBe('session');
     expect(redis.strings.has(sessionKey(response.setCall?.value ?? ''))).toBe(true);
   });
+
+  it('returns 503 when the session store fails during login', async () => {
+    const ready = build(new MemorySessionRedis(), { error() {} });
+    await ready.controller.register(registration('timeout-shop', 'ada@example.com'), new RecordingCookieWriter());
+    const failed = build(new FailingSessionRedis(), { error() {} });
+    const response = new RecordingCookieWriter();
+
+    const error = await rejected(failed.controller.login(credentials('timeout-shop', 'ada@example.com'), response));
+
+    expect(invoke(error)).toMatchObject({
+      statusCode: 503,
+      body: { error: { code: identityErrorCodes.SERVICE_UNAVAILABLE, message: 'The session store is unavailable.' } },
+    });
+    expect(JSON.stringify(invoke(error).body)).not.toContain('super-secret-redis');
+    expect(response.setCall).toBeUndefined();
+  });
 });
 
 function registration(subdomain: string, email: string) {

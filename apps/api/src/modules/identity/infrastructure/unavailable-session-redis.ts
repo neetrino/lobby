@@ -1,6 +1,5 @@
+import { SessionStoreUnavailableError } from './session-store-error';
 import type { SessionRedisClient } from './session-redis';
-
-const SESSION_STORE_UNAVAILABLE = 'Session store is unavailable.';
 
 /** Used when Upstash credentials are not configured. Every command fails closed. */
 export class UnavailableSessionRedis implements SessionRedisClient {
@@ -34,5 +33,5 @@ export class UnavailableSessionRedis implements SessionRedisClient {
 }
 
 function rejectUnavailable(): Promise<never> {
-  return Promise.reject(new Error(SESSION_STORE_UNAVAILABLE));
+  return Promise.reject(new SessionStoreUnavailableError());
 }

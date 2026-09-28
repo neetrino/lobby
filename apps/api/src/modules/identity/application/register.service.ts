@@ -11,7 +11,6 @@ import { REGISTRATION_ENABLED } from '../infrastructure/registration-config';
 import { type RegisterInput } from '../presentation/dto/register.schema';
 
 const REGISTRATION_FAILED = 'Tenant registration failed.';
-const SESSION_STORE_UNAVAILABLE = 'Session store is unavailable.';
 
 const prismaConflictSchema = z.object({
   code: z.literal('P2002'),
@@ -68,8 +67,8 @@ export class RegisterService {
     try {
       await this.sessions.ping();
     } catch {
-      this.incidents.error(SESSION_STORE_UNAVAILABLE);
-      throw new Error(SESSION_STORE_UNAVAILABLE);
+      this.incidents.error('Session store is unavailable.');
+      throw new IdentityError(identityErrorCodes.SERVICE_UNAVAILABLE);
     }
   }
 

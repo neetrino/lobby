@@ -7,6 +7,7 @@ import {
 } from '../domain/session-revocation';
 import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
 import { RedisSessionStore } from '../infrastructure/redis-session.store';
+import { SessionStoreUnavailableError } from '../infrastructure/session-store-error';
 
 @Injectable()
 export class TerminateUserSessionsService {
@@ -31,6 +32,13 @@ export class TerminateUserSessionsService {
       throw new IdentityError(identityErrorCodes.FORBIDDEN);
     }
 
-    await this.sessions.deleteAllForUser(targetUserId);
+    try {
+      await this.sessions.deleteAllForUser(targetUserId);
+    } catch (error) {
+      if (error instanceof SessionStoreUnavailableError) {
+        throw new IdentityError(identityErrorCodes.SERVICE_UNAVAILABLE);
+      }
+      throw error;
+    }
   }
 }

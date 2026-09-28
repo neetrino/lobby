@@ -7,6 +7,7 @@ export const identityErrorCodes = {
   REGISTRATION_DISABLED: 'REGISTRATION_DISABLED',
   TENANT_SUBDOMAIN_TAKEN: 'TENANT_SUBDOMAIN_TAKEN',
   ACCOUNT_CREATED_SIGN_IN_REQUIRED: 'ACCOUNT_CREATED_SIGN_IN_REQUIRED',
+  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
 } as const;
 
 export type IdentityErrorCode = (typeof identityErrorCodes)[keyof typeof identityErrorCodes];
@@ -20,6 +21,7 @@ const identityErrorMessages: Record<IdentityErrorCode, string> = {
   REGISTRATION_DISABLED: 'Registration is disabled.',
   TENANT_SUBDOMAIN_TAKEN: 'This subdomain is already taken.',
   ACCOUNT_CREATED_SIGN_IN_REQUIRED: 'The account was created. Sign in to continue.',
+  SERVICE_UNAVAILABLE: 'The session store is unavailable.',
 };
 
 /** Domain failure with a stable code. The message is fixed and never includes caller data. */

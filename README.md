@@ -74,6 +74,15 @@ API-ն cookie session է օգտագործում։ `POST` / `PUT` / `PATCH` / `DE
 
 Login, register և անվավեր session սահմանները `RATE_LIMIT_*` env-ով են։ Redis-ի հաշվիչները `rate_limit:` namespace-ում են և raw IP կամ email չեն պարունակում։
 
+Rate limit-ի հասցեն socket-ից է։ `X-Forwarded-For`-ը ինքնին չի կարդացվում, որովհետև հաճախորդը կարող է այդ header-ը ինքը դնել և ուրիշ հասցեով սահմանը շրջանցել։ `TRUST_PROXY`-ն default-ով անջատված է (`false`)։ `true` և `*` արգելված են. դրանք կնշանակեին վստահել ցանկացած `X-Forwarded-For`-ի։
+
+Deploy-ի ժամանակ միացրու միայն այն proxy-ին, որին իրոք վստահում ես.
+
+- API-ն ուղիղ է լսում (local, առանց proxy)՝ թող unset կամ `TRUST_PROXY=false`
+- Մեկ reverse proxy (nginx, Caddy, Fly, Render, Railway)՝ `TRUST_PROXY=1`
+- Այդ proxy-ից առաջ նաև Cloudflare՝ `TRUST_PROXY=2`
+- Կոնկրետ proxy հասցե՝ `TRUST_PROXY=10.0.0.1` կամ `10.0.0.0/8`
+
 Auth endpoint-ների request/response օրինակները, error code-երը, cookie-ն և env-ը՝ [`docs/04-API.md`](docs/04-API.md) և [`docs/api/auth.openapi.yaml`](docs/api/auth.openapi.yaml)։
 
 ---

@@ -20,6 +20,7 @@ describe('IdentityExceptionFilter', () => {
         503,
         'The account was created. Sign in to continue.',
       ],
+      [identityErrorCodes.SERVICE_UNAVAILABLE, 503, 'The session store is unavailable.'],
     ] as const;
 
     for (const [code, statusCode, message] of cases) {

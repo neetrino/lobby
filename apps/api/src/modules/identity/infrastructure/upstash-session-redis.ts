@@ -1,10 +1,14 @@
 import { z } from 'zod';
 
+import { SessionStoreUnavailableError } from './session-store-error';
 import type { SessionRedisClient } from './session-redis';
 import { UnavailableSessionRedis } from './unavailable-session-redis';
 
 const PLACEHOLDER_URL = 'https://...';
-const SESSION_STORE_UNAVAILABLE = 'Session store is unavailable.';
+const DEFAULT_SESSION_REDIS_TIMEOUT_MS = 3_000;
+const MAX_SESSION_REDIS_TIMEOUT_MS = 30_000;
+
+const timeoutSchema = z.coerce.number().int().positive().max(MAX_SESSION_REDIS_TIMEOUT_MS);
 
 const upstashResponseSchema = z.object({
   result: z.unknown().optional(),
@@ -16,12 +20,16 @@ export type UpstashSessionConfig = {
   token: string;
 };
 
-type FetchLike = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<Response>;
+type FetchLike = (
+  url: string,
+  init: { method: string; headers: Record<string, string>; body: string; signal: AbortSignal },
+) => Promise<Response>;
 
 export class UpstashSessionRedis implements SessionRedisClient {
   constructor(
     private readonly config: UpstashSessionConfig,
     private readonly fetchImpl: FetchLike = fetch,
+    private readonly timeoutMs: number = DEFAULT_SESSION_REDIS_TIMEOUT_MS,
   ) {}
 
   async get(key: string): Promise<string | null> {
@@ -59,7 +67,7 @@ export class UpstashSessionRedis implements SessionRedisClient {
   async smembers(key: string): Promise<readonly string[]> {
     const result = await this.command(['SMEMBERS', key]);
     if (!Array.isArray(result) || result.some((member) => typeof member !== 'string')) {
-      throw new Error(SESSION_STORE_UNAVAILABLE);
+      throw new SessionStoreUnavailableError();
     }
     return result.filter((member): member is string => typeof member === 'string');
   }
@@ -68,7 +76,7 @@ export class UpstashSessionRedis implements SessionRedisClient {
     const body = await this.post(command);
     const parsed = upstashResponseSchema.safeParse(body);
     if (!parsed.success || parsed.data.error !== undefined) {
-      throw new Error(SESSION_STORE_UNAVAILABLE);
+      throw new SessionStoreUnavailableError();
     }
     return parsed.data.result ?? null;
   }
@@ -82,16 +90,17 @@ export class UpstashSessionRedis implements SessionRedisClient {
           'content-type': 'application/json',
         },
         body: JSON.stringify(command),
+        signal: AbortSignal.timeout(this.timeoutMs),
       });
       if (!response.ok) {
-        throw new Error(SESSION_STORE_UNAVAILABLE);
+        throw new SessionStoreUnavailableError();
       }
       return (await response.json()) as unknown;
     } catch (error) {
-      if (error instanceof Error && error.message === SESSION_STORE_UNAVAILABLE) {
+      if (error instanceof SessionStoreUnavailableError) {
         throw error;
       }
-      throw new Error(SESSION_STORE_UNAVAILABLE);
+      throw new SessionStoreUnavailableError();
     }
   }
 }
@@ -106,7 +115,22 @@ export function readUpstashSessionConfig(env: NodeJS.ProcessEnv = process.env): 
   return { url, token };
 }
 
+/** Blank means the 3 second default. An invalid value fails startup instead of hanging a request. */
+export function readSessionRedisTimeoutMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = env.SESSION_REDIS_TIMEOUT_MS?.trim() ?? '';
+  if (raw.length === 0) {
+    return DEFAULT_SESSION_REDIS_TIMEOUT_MS;
+  }
+  const parsed = timeoutSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new Error('SESSION_REDIS_TIMEOUT_MS is invalid.');
+  }
+  return parsed.data;
+}
+
 export function createSessionRedisClient(env: NodeJS.ProcessEnv = process.env): SessionRedisClient {
   const config = readUpstashSessionConfig(env);
-  return config === null ? new UnavailableSessionRedis() : new UpstashSessionRedis(config);
+  return config === null
+    ? new UnavailableSessionRedis()
+    : new UpstashSessionRedis(config, fetch, readSessionRedisTimeoutMs(env));
 }

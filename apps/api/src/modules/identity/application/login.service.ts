@@ -10,7 +10,6 @@ import { UNKNOWN_USER_PASSWORD_HASH } from '../infrastructure/unknown-user-passw
 import { type LoginInput } from '../presentation/dto/login.schema';
 
 const LOGIN_FAILED = 'Login could not be completed.';
-const SESSION_STORE_UNAVAILABLE = 'Session store is unavailable.';
 
 export type SignedInAccount = {
   tenant: {
@@ -85,7 +84,7 @@ export class LoginService {
       this.incidents.error(
         `Login succeeded but the session was not created. tenantId=${account.tenant.id} userId=${account.user.id}`,
       );
-      throw new Error(SESSION_STORE_UNAVAILABLE);
+      throw new IdentityError(identityErrorCodes.SERVICE_UNAVAILABLE);
     }
   }
 }

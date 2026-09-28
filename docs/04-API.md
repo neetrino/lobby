@@ -162,7 +162,7 @@ Content-Type: application/json
 | Code | Status | When |
 | --- | --- | --- |
 | `INVALID_CREDENTIALS` | 401 | Login could not authenticate the account |
-| `UNAUTHENTICATED` | 401 | No usable session cookie |
+| `UNAUTHENTICATED` | 401 | No usable session cookie, or the session store timed out while checking it |
 | `SESSION_EXPIRED` | 401 | Idle or absolute expiry |
 | `SESSION_REVOKED` | 401 | Session deleted, version changed, or user disabled |
 | `ORIGIN_REJECTED` | 403 | Mutating request without an allowed Origin or Referer |
@@ -172,6 +172,7 @@ Content-Type: application/json
 | `TENANT_SUBDOMAIN_TAKEN` | 409 | Subdomain already exists |
 | `RATE_LIMITED` | 429 | Login, register, or invalid-session limit exceeded |
 | `ACCOUNT_CREATED_SIGN_IN_REQUIRED` | 503 | Tenant committed, but the session was not stored |
+| `SERVICE_UNAVAILABLE` | 503 | Session store timed out or could not be reached. Login, logout, and registration before the tenant is saved use this code |
 | `INTERNAL_ERROR` | 500 | Unexpected failure. The body has no internal text |
 
 ### Session cookie
@@ -201,7 +202,9 @@ Logout sends a clearing `Set-Cookie` (`Expires` at the epoch, no `Max-Age`).
 | `RATE_LIMIT_REGISTER_IP_LIMIT` / `RATE_LIMIT_REGISTER_IP_WINDOW_MS` | Default 5 attempts / 1 hour |
 | `RATE_LIMIT_INVALID_SESSION_IP_LIMIT` / `RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS` | Default 30 attempts / 5 minutes |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Session and rate-limit store |
+| `SESSION_REDIS_TIMEOUT_MS` | Upstash session command timeout. Default 3000, maximum 30000 |
 | `DATABASE_URL` | Tenant and user rows |
+| `TRUST_PROXY` | Off by default. Hop count or proxy address only. `true` is rejected |
 
 Reservation endpoints must derive the tenant from the authenticated session, accept UTC timestamps, and never trust a client-provided tenant identifier. The venue timezone controls staff-facing calendar interpretation. Conflict responses must use a stable error code; the exact HTTP contract is deferred until the application service is implemented.
 

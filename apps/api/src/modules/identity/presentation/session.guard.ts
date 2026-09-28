@@ -7,6 +7,7 @@ import { AuthRateLimitService } from '../application/auth-rate-limit.service';
 import { SessionAccessService } from '../application/session-access.service';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
+import { SessionStoreUnavailableError } from '../infrastructure/session-store-error';
 
 export type SessionRequest = {
   headers: { cookie?: string | readonly string[] };
@@ -40,6 +41,9 @@ export class SessionGuard implements CanActivate {
       }
       return true;
     } catch (error) {
+      if (error instanceof SessionStoreUnavailableError) {
+        throw new IdentityError(identityErrorCodes.UNAUTHENTICATED);
+      }
       return this.reject(response, presented ? readClientAddress(request) : null, error);
     }
   }

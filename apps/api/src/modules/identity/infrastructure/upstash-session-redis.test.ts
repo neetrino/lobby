@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { createSessionRedisClient, UpstashSessionRedis } from './upstash-session-redis';
+import { SessionStoreUnavailableError } from './session-store-error';
+import { createSessionRedisClient, readSessionRedisTimeoutMs, UpstashSessionRedis } from './upstash-session-redis';
 
 describe('UpstashSessionRedis', () => {
   it('stores a session with an absolute expiry and hides transport failures', async () => {
@@ -33,6 +34,29 @@ describe('UpstashSessionRedis', () => {
 
     await expect(client.get('session:abc')).rejects.toThrow('Session store is unavailable.');
     await expect(client.get('session:abc')).rejects.toThrow(/^Session store is unavailable\.$/);
+  });
+
+  it('aborts a slow command and hides the timeout reason', async () => {
+    const client = new UpstashSessionRedis(
+      { url: 'https://example.upstash.io', token: 'secret-token' },
+      (_url, init) =>
+        new Promise((_resolve, reject) => {
+          init.signal.addEventListener('abort', () => {
+            reject(init.signal.reason ?? new Error('secret-token timed out'));
+          });
+        }),
+      20,
+    );
+
+    await expect(client.get('session:abc')).rejects.toBeInstanceOf(SessionStoreUnavailableError);
+    await expect(client.get('session:abc')).rejects.toThrow(/^Session store is unavailable\.$/);
+  });
+
+  it('uses a three second default and rejects an invalid timeout', () => {
+    expect(readSessionRedisTimeoutMs({})).toBe(3_000);
+    expect(() => readSessionRedisTimeoutMs({ SESSION_REDIS_TIMEOUT_MS: 'secret-token' })).toThrow(
+      /^SESSION_REDIS_TIMEOUT_MS is invalid\.$/,
+    );
   });
 
   it('stays closed when Upstash credentials are missing', () => {

@@ -8,7 +8,8 @@ import { canRevokeUserSessions } from '../domain/session-revocation';
 import { identityErrorCodes } from '../domain/identity.errors';
 import { SESSION_IDLE_TTL_MS, SESSION_REFRESH_INTERVAL_MS } from '../domain/session-policy';
 import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
-import { hashSessionId, sessionKey } from '../infrastructure/session-id';
+import { createRawSessionId, hashSessionId, sessionKey } from '../infrastructure/session-id';
+import { SessionStoreUnavailableError } from '../infrastructure/session-store-error';
 import {
   CurrentTenant,
   readAuthenticatedSession,
@@ -255,7 +256,26 @@ describe('SessionGuard', () => {
       tenantId: other.id,
     });
   });
+
+  it('returns 401 when the session store times out and keeps the cookie', async () => {
+    const response = new RecordingCookieWriter();
+    const error = await activate(prisma, new TimingOutSessionRedis(), createRawSessionId(), response);
+    const body = JSON.stringify(invoke(error).body);
+
+    expect(invoke(error)).toMatchObject({
+      statusCode: 401,
+      body: { error: { code: identityErrorCodes.UNAUTHENTICATED, message: 'Authentication is required.' } },
+    });
+    expect(body).not.toContain('TimeoutError');
+    expect(response.cleared).toBe(false);
+  });
 });
+
+class TimingOutSessionRedis extends MemorySessionRedis {
+  override get(): Promise<never> {
+    return Promise.reject(new SessionStoreUnavailableError());
+  }
+}
 
 @Controller('probe')
 class TenantProbeController {

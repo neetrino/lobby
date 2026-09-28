@@ -71,6 +71,7 @@ function statusFor(code: IdentityErrorCode): number {
     case 'TENANT_SUBDOMAIN_TAKEN':
       return 409;
     case 'ACCOUNT_CREATED_SIGN_IN_REQUIRED':
+    case 'SERVICE_UNAVAILABLE':
       return 503;
   }
 }
