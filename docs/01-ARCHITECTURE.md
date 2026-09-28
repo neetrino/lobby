@@ -29,11 +29,11 @@ Give organizations isolated workspaces for customer relationships, deals, tasks,
 
 ### Users
 
-| Actor | Responsibility |
-|---|---|
-| Owner | Controls an organization's members, settings, and permitted modules. |
-| Admin | Manages delegated organization operations within granted permissions. |
-| Member | Uses authorized records and enabled modules. |
+| Actor             | Responsibility                                                                  |
+| ----------------- | ------------------------------------------------------------------------------- |
+| Owner             | Controls an organization's members, settings, and permitted modules.            |
+| Admin             | Manages delegated organization operations within granted permissions.           |
+| Member            | Uses authorized records and enabled modules.                                    |
 | Platform operator | Manages SaaS-level organizations and plans under distinct platform permissions. |
 
 ---
@@ -83,17 +83,17 @@ This diagram is logical, not a physical deployment inventory. One API service, o
 
 ### Architectural invariants
 
-| Rule | Mandatory constraint |
-|---|---|
-| `ARCH-MOD-001` | Every capability is a module; no Core/Extension classification. |
-| `ARCH-MOD-002` | Modules own their business data; cross-module access uses public contracts or domain events, never private-table shortcuts. |
-| `ARCH-TEN-001` | Each user has exactly one tenant ownership relation; each tenant-scoped operation checks that tenant, authorization, module entitlement, and resource scope. |
-| `ARCH-TEN-002` | Composite constraints prevent cross-tenant references; RLS may provide correctly configured defense in depth. |
-| `ARCH-SEC-001` | Web auth uses revocable, opaque server-side sessions; organization removal blocks that organization's subsequent access. |
-| `ARCH-EVT-001` | Business-critical writes and outbox records are atomic; consumers tolerate at-least-once delivery. |
-| `ARCH-DB-001` | Critical concurrent writes have a conflict strategy; schema changes remain compatible with rolling deploys. |
-| `ARCH-RUN-001` | Shared correctness-critical state cannot exist only in one API process's memory. |
-| `ARCH-SCALE-001` | Scaling changes require evidence, approval, testing, and a rollback/recovery plan. |
+| Rule             | Mandatory constraint                                                                                                                                         |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ARCH-MOD-001`   | Every capability is a module; no Core/Extension classification.                                                                                              |
+| `ARCH-MOD-002`   | Modules own their business data; cross-module access uses public contracts or domain events, never private-table shortcuts.                                  |
+| `ARCH-TEN-001`   | Each user has exactly one tenant ownership relation; each tenant-scoped operation checks that tenant, authorization, module entitlement, and resource scope. |
+| `ARCH-TEN-002`   | Composite constraints prevent cross-tenant references; RLS may provide correctly configured defense in depth.                                                |
+| `ARCH-SEC-001`   | Web auth uses revocable, opaque server-side sessions; organization removal blocks that organization's subsequent access.                                     |
+| `ARCH-EVT-001`   | Business-critical writes and outbox records are atomic; consumers tolerate at-least-once delivery.                                                           |
+| `ARCH-DB-001`    | Critical concurrent writes have a conflict strategy; schema changes remain compatible with rolling deploys.                                                  |
+| `ARCH-RUN-001`   | Shared correctness-critical state cannot exist only in one API process's memory.                                                                             |
+| `ARCH-SCALE-001` | Scaling changes require evidence, approval, testing, and a rollback/recovery plan.                                                                           |
 
 ---
 
@@ -101,18 +101,18 @@ This diagram is logical, not a physical deployment inventory. One API service, o
 
 The entries below describe **logical responsibilities and boundaries**, not a final deployment inventory. Locations and technologies marked **Proposed** must be reconciled with the approved `TECH_CARD.md`; optional components are introduced only when an approved MVP use case requires them.
 
-| Component | Responsibility | Proposed location | Technology / decision state | Runtime relationship |
-|---|---|---|---|---|
-| Web application | Render the product UI, initiate authenticated API requests, and consume authorized realtime updates. It does not enforce access by itself. | `apps/web/` | Next.js is **proposed**; version and hosting are pending TECH_CARD approval. | Calls the API over HTTPS; may subscribe to the realtime gateway. Never connects directly to PostgreSQL or Redis. |
-| API application | Own the request boundary, authentication, tenant context, authorization, validation, business transactions, and outbox writes. | `apps/api/` | NestJS REST API is **proposed**; runtime and version are pending TECH_CARD approval. | Calls module application interfaces and shared infrastructure through explicit boundaries. |
-| Functional modules | Own business rules, writes, public contracts, and emitted events for one capability. | `apps/api/src/modules/<module>/` | Modular-monolith organization is the **proposed Stage 1** design. Exact module scope comes from the approved BRIEF. | A module may use another module's public interface or versioned event; it must not mutate another module's private data. |
-| Primary database | Store authoritative tenant, business, audit, and outbox data with transactional consistency. | `packages/database/` for schema/migrations, if approved | PostgreSQL is **proposed**; provider, version, ORM, pooling, and RLS policy are pending. | Used by the API and approved background processes through bounded database access. |
-| Redis services | Hold bounded ephemeral state such as sessions, rate-limit counters, cache entries, and queue state. | Shared infrastructure; client adapters remain near their owning application | Redis is **proposed**. One initial deployment may serve multiple namespaced purposes, subject to security and availability review. | Used by the API, workers, scheduler, and realtime layer as approved; never treated as the business source of truth. |
-| Outbox relay and workers | Publish committed outbox records and execute retryable, idempotent background effects without delaying API requests. | `apps/worker/` | **Conditional MVP component**; queue library and process topology are pending. | Reads/claims outbox work, submits consumer-specific jobs, and records processing outcomes. |
-| Scheduler | Register recurring or delayed jobs with explicit ownership and duplicate-execution protection. | `apps/scheduler/` or an approved platform scheduler | **Conditional MVP component**; deployment mechanism is pending. | Enqueues work for workers rather than duplicating business logic. |
-| Realtime gateway | Deliver authorized, non-authoritative UI updates and revalidate access when a tenant-owned user's status changes. | API-hosted gateway or separate process, to be decided | **Conditional MVP component**; protocol and provider are pending. | Receives approved events and pushes hints to connected clients; durable business delivery uses the outbox/queue path. |
-| Object storage | Store approved user files using tenant-scoped object keys and authorized upload/download flows. | Shared storage adapter plus owning-module integration | **Optional**; provider and file requirements are pending BRIEF and TECH_CARD approval. | The API authorizes operations; direct uploads use short-lived scoped credentials when supported. |
-| Observability | Collect structured logs, metrics, traces, health signals, and security-relevant audit events without exposing secrets. | Shared instrumentation package/configuration, location TBD | Required capability; products, retention, and alerting are pending. | Every runnable component emits correlated telemetry; business audit records remain distinct from operational logs. |
+| Component                | Responsibility                                                                                                                             | Proposed location                                                           | Technology / decision state                                                                                                        | Runtime relationship                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Web application          | Render the product UI, initiate authenticated API requests, and consume authorized realtime updates. It does not enforce access by itself. | `apps/web/`                                                                 | Next.js is **proposed**; version and hosting are pending TECH_CARD approval.                                                       | Calls the API over HTTPS; may subscribe to the realtime gateway. Never connects directly to PostgreSQL or Redis.         |
+| API application          | Own the request boundary, authentication, tenant context, authorization, validation, business transactions, and outbox writes.             | `apps/api/`                                                                 | NestJS REST API is **proposed**; runtime and version are pending TECH_CARD approval.                                               | Calls module application interfaces and shared infrastructure through explicit boundaries.                               |
+| Functional modules       | Own business rules, writes, public contracts, and emitted events for one capability.                                                       | `apps/api/src/modules/<module>/`                                            | Modular-monolith organization is the **proposed Stage 1** design. Exact module scope comes from the approved BRIEF.                | A module may use another module's public interface or versioned event; it must not mutate another module's private data. |
+| Primary database         | Store authoritative tenant, business, audit, and outbox data with transactional consistency.                                               | `packages/database/` for schema/migrations, if approved                     | PostgreSQL is **proposed**; provider, version, ORM, pooling, and RLS policy are pending.                                           | Used by the API and approved background processes through bounded database access.                                       |
+| Redis services           | Hold bounded ephemeral state such as sessions, rate-limit counters, cache entries, and queue state.                                        | Shared infrastructure; client adapters remain near their owning application | Redis is **proposed**. One initial deployment may serve multiple namespaced purposes, subject to security and availability review. | Used by the API, workers, scheduler, and realtime layer as approved; never treated as the business source of truth.      |
+| Outbox relay and workers | Publish committed outbox records and execute retryable, idempotent background effects without delaying API requests.                       | `apps/worker/`                                                              | **Conditional MVP component**; queue library and process topology are pending.                                                     | Reads/claims outbox work, submits consumer-specific jobs, and records processing outcomes.                               |
+| Scheduler                | Register recurring or delayed jobs with explicit ownership and duplicate-execution protection.                                             | `apps/scheduler/` or an approved platform scheduler                         | **Conditional MVP component**; deployment mechanism is pending.                                                                    | Enqueues work for workers rather than duplicating business logic.                                                        |
+| Realtime gateway         | Deliver authorized, non-authoritative UI updates and revalidate access when a tenant-owned user's status changes.                          | API-hosted gateway or separate process, to be decided                       | **Conditional MVP component**; protocol and provider are pending.                                                                  | Receives approved events and pushes hints to connected clients; durable business delivery uses the outbox/queue path.    |
+| Object storage           | Store approved user files using tenant-scoped object keys and authorized upload/download flows.                                            | Shared storage adapter plus owning-module integration                       | **Optional**; provider and file requirements are pending BRIEF and TECH_CARD approval.                                             | The API authorizes operations; direct uploads use short-lived scoped credentials when supported.                         |
+| Observability            | Collect structured logs, metrics, traces, health signals, and security-relevant audit events without exposing secrets.                     | Shared instrumentation package/configuration, location TBD                  | Required capability; products, retention, and alerting are pending.                                                                | Every runnable component emits correlated telemetry; business audit records remain distinct from operational logs.       |
 
 ### Frontend
 
@@ -136,14 +136,14 @@ Sessions, caching, rate limiting, queues, and realtime fan-out are separate logi
 
 ### Functional modules
 
-| Area | Modules / responsibility |
-|---|---|
-| Workspace & access | Organizations; Identity & Sessions; Access Management; Module Management |
-| Customer work | Contacts; Leads; Deals; Pipelines; Tasks; Orders & Delivery |
-| Hospitality operations | Reservations; Venues; Dining Areas; Tables; Service Periods |
-| Communication | Messenger; Notifications |
-| Commerce operations | Catalog; Inventory; Inventory Transfers (including optional serial/IMEI tracking) |
-| Insights | Analytics; Dashboard |
+| Area                   | Modules / responsibility                                                          |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| Workspace & access     | Organizations; Identity & Sessions; Access Management; Module Management          |
+| Customer work          | Contacts; Leads; Deals; Pipelines; Tasks; Orders & Delivery                       |
+| Hospitality operations | Reservations; Venues; Dining Areas; Tables; Service Periods                       |
+| Communication          | Messenger; Notifications                                                          |
+| Commerce operations    | Catalog; Inventory; Inventory Transfers (including optional serial/IMEI tracking) |
+| Insights               | Analytics; Dashboard                                                              |
 
 Some modules require other modules' **published capabilities**. Enabled/disabled status is an organization entitlement; disabling a module does not automatically erase its data. Module behavior and dependency requirements are specified in `BRIEF.md` and module contracts.
 
@@ -192,20 +192,20 @@ Lobby/
 
 The application paths below are part of the **proposed Size C layout**. They describe ownership boundaries, not permission to create every package or process before its MVP need and technology choice are approved.
 
-| Folder | Purpose |
-|---|---|
-| `apps/web/` | Web application: routes, layouts, presentation components, browser interactions, and API/realtime clients. It must not contain database access or server secrets. |
-| `apps/api/` | Main backend application: HTTP entry points, authentication, tenant context, authorization, validation, and composition of functional modules. |
-| `apps/api/src/modules/<module>/` | Private implementation of one functional capability. Each module owns its business rules and data writes and exposes only documented public contracts. |
-| `apps/worker/` | Conditional background runtime for the outbox relay and idempotent queue consumers. Create it only when approved asynchronous work requires an independently runnable process. |
-| `apps/scheduler/` | Conditional runtime for registering recurring and delayed jobs. It schedules owned work but does not duplicate module business logic. |
-| `packages/contracts/` | Framework-light, versioned API and event contracts shared only where a real cross-application boundary exists. It must not become a collection of module internals. |
-| `packages/database/` | Proposed home for database schema, migrations, generated-client configuration, and narrowly scoped database utilities. Final ORM and migration layout require TECH_CARD approval. |
-| `docs/` | Product documentation and delivery records, including the BRIEF, TECH_CARD, architecture, API, database, decisions, and progress documents that are actually needed. |
-| `docs/architecture/` | Optional Size C supporting material such as module dependency diagrams and ADRs that would make the main architecture document too detailed. |
-| `.agents/` | Agent workflows, catalog, references, and governance. It remains separate from product architecture and product requirements. |
-| `.cursor/rules/` | Cursor-specific permanent coding standards. Rules define ongoing constraints; repeatable task procedures belong in `.agents/skills/`. |
-| `.github/` | Repository collaboration and automation configuration, including issue/PR templates, dependency updates, and approved CI workflows. |
+| Folder                           | Purpose                                                                                                                                                                           |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/`                      | Web application: routes, layouts, presentation components, browser interactions, and API/realtime clients. It must not contain database access or server secrets.                 |
+| `apps/api/`                      | Main backend application: HTTP entry points, authentication, tenant context, authorization, validation, and composition of functional modules.                                    |
+| `apps/api/src/modules/<module>/` | Private implementation of one functional capability. Each module owns its business rules and data writes and exposes only documented public contracts.                            |
+| `apps/worker/`                   | Conditional background runtime for the outbox relay and idempotent queue consumers. Create it only when approved asynchronous work requires an independently runnable process.    |
+| `apps/scheduler/`                | Conditional runtime for registering recurring and delayed jobs. It schedules owned work but does not duplicate module business logic.                                             |
+| `packages/contracts/`            | Framework-light, versioned API and event contracts shared only where a real cross-application boundary exists. It must not become a collection of module internals.               |
+| `packages/database/`             | Proposed home for database schema, migrations, generated-client configuration, and narrowly scoped database utilities. Final ORM and migration layout require TECH_CARD approval. |
+| `docs/`                          | Product documentation and delivery records, including the BRIEF, TECH_CARD, architecture, API, database, decisions, and progress documents that are actually needed.              |
+| `docs/architecture/`             | Optional Size C supporting material such as module dependency diagrams and ADRs that would make the main architecture document too detailed.                                      |
+| `.agents/`                       | Agent workflows, catalog, references, and governance. It remains separate from product architecture and product requirements.                                                     |
+| `.cursor/rules/`                 | Cursor-specific permanent coding standards. Rules define ongoing constraints; repeatable task procedures belong in `.agents/skills/`.                                             |
+| `.github/`                       | Repository collaboration and automation configuration, including issue/PR templates, dependency updates, and approved CI workflows.                                               |
 
 ---
 
@@ -251,14 +251,14 @@ One event may trigger multiple consumer-specific jobs. Several workers on **one 
 
 ### Main entities
 
-| Group | Representative entities |
-|---|---|
-| Tenancy/access | `tenants`, tenant-owned `users`, roles, permissions, module entitlements |
-| CRM/work | contacts, leads, deals, pipelines/stages, tasks and links, orders/items |
-| Communication | channel accounts, conversations, messages, notifications |
-| Catalog/inventory | products/variants, locations, stock balances/movements, transfers/items |
-| Reservations | venues, dining areas, restaurant tables, service periods, reservations, table assignments, status history |
-| System history | outbox events, processed events, audit logs |
+| Group             | Representative entities                                                                                   |
+| ----------------- | --------------------------------------------------------------------------------------------------------- |
+| Tenancy/access    | `tenants`, tenant-owned `users`, roles, permissions, module entitlements                                  |
+| CRM/work          | contacts, leads, deals, pipelines/stages, tasks and links, orders/items                                   |
+| Communication     | channel accounts, conversations, messages, notifications                                                  |
+| Catalog/inventory | products/variants, locations, stock balances/movements, transfers/items                                   |
+| Reservations      | venues, dining areas, restaurant tables, service periods, reservations, table assignments, status history |
+| System history    | outbox events, processed events, audit logs                                                               |
 
 ### ER diagram
 
@@ -290,14 +290,14 @@ Executable schema, constraints, ERD, and indexes belong in [`05-DATABASE.md`](./
 
 Messaging channels, email/SMS, file storage, observability, and billing are integrated **only to the extent approved by BRIEF and TECH_CARD**. Provider-specific choices and versions belong in [`02-TECH_STACK.md`](./02-TECH_STACK.md); endpoint and webhook contracts belong in [`04-API.md`](./04-API.md). Inbound webhooks require supported signature checks and deduplication.
 
-| Integration boundary | Purpose | Current status | Architectural requirements | Detailed documentation |
-|---|---|---|---|---|
-| Messaging channels | Synchronize approved external conversations and messages. | Conditional; channels and providers TBD | Signed/verified inbound requests where supported, deduplication, idempotent processing, tenant-scoped credentials, bounded retries. | `04-API.md` and provider-specific integration record, planned |
-| Email and SMS | Deliver transactional notifications approved by product scope. | Conditional; providers TBD | Template/version ownership, consent and suppression rules, delivery-status handling, secret isolation, retry limits. | `02-TECH_STACK.md` and `04-API.md`, planned |
-| Object storage | Store approved attachments, exports, and media. | Conditional; provider TBD | Tenant-scoped keys, content/type/size validation, short-lived access, malware policy where risk requires it, lifecycle/deletion rules. | `02-TECH_STACK.md`, planned |
-| Billing and payments | Manage subscriptions or business payments if included in the BRIEF. | Not approved; provider and flows TBD | Server-verified amounts, signed webhooks, idempotency, immutable transaction references, reconciliation, no sensitive payment data in logs. | Payment ADR/API contract, planned |
-| Observability | Collect operational telemetry and alert on service health. | Required capability; products TBD | Correlation IDs, secret/PII filtering, retention policy, actionable alerts, separation of operational logs and audit records. | `02-TECH_STACK.md`, planned |
-| Identity provider | Support external login only if selected in the TECH_CARD. | Not approved | OAuth/OIDC state and nonce validation, redirect allowlist, account-linking policy, provider-token protection. | Authentication ADR/API contract, planned |
+| Integration boundary | Purpose                                                             | Current status                          | Architectural requirements                                                                                                                  | Detailed documentation                                        |
+| -------------------- | ------------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Messaging channels   | Synchronize approved external conversations and messages.           | Conditional; channels and providers TBD | Signed/verified inbound requests where supported, deduplication, idempotent processing, tenant-scoped credentials, bounded retries.         | `04-API.md` and provider-specific integration record, planned |
+| Email and SMS        | Deliver transactional notifications approved by product scope.      | Conditional; providers TBD              | Template/version ownership, consent and suppression rules, delivery-status handling, secret isolation, retry limits.                        | `02-TECH_STACK.md` and `04-API.md`, planned                   |
+| Object storage       | Store approved attachments, exports, and media.                     | Conditional; provider TBD               | Tenant-scoped keys, content/type/size validation, short-lived access, malware policy where risk requires it, lifecycle/deletion rules.      | `02-TECH_STACK.md`, planned                                   |
+| Billing and payments | Manage subscriptions or business payments if included in the BRIEF. | Not approved; provider and flows TBD    | Server-verified amounts, signed webhooks, idempotency, immutable transaction references, reconciliation, no sensitive payment data in logs. | Payment ADR/API contract, planned                             |
+| Observability        | Collect operational telemetry and alert on service health.          | Required capability; products TBD       | Correlation IDs, secret/PII filtering, retention policy, actionable alerts, separation of operational logs and audit records.               | `02-TECH_STACK.md`, planned                                   |
+| Identity provider    | Support external login only if selected in the TECH_CARD.           | Not approved                            | OAuth/OIDC state and nonce validation, redirect allowlist, account-linking policy, provider-token protection.                               | Authentication ADR/API contract, planned                      |
 
 Integration credentials remain server-side and tenant-scoped when tenants bring their own accounts. An integration must define ownership, timeout, retry, idempotency, rate-limit, failure-recovery, observability, and data-retention behavior before production enablement.
 
@@ -324,7 +324,7 @@ Auth accepts registration input, validates the password, and hashes it. Organiza
 - Tenant, Owner, and `tenant.created` outbox event are committed atomically.
 - Password hashing belongs to Auth; Organizations receives only `passwordHash`.
 
-The login identifier is tenant subdomain + email + password on `POST /api/v1/auth/login`. Login finds the user, rejects a non-ACTIVE user, and only then verifies the Argon2id hash. A missing tenant, missing user, or disabled user still runs verification against a fixed unusable Argon2id hash, and those failures return the same error. Each success creates a new session id. Public registration will be `POST /api/v1/auth/register` on the Auth module. Organizations does not expose `POST /organizations` or `POST /tenants`. If session creation fails after the tenant transaction commits, the tenant stays created, registration returns a controlled error, and the owner can log in later. The only approved plan value is `starter`. The outbox worker accepts both `tenant.created` version 1 (`userId`) and version 2 (`ownerUserId`).
+The login identifier is tenant subdomain + email + password on `POST /api/v1/auth/login`. Login finds the user, rejects a non-ACTIVE user, and only then verifies the Argon2id hash. A missing tenant, missing user, or disabled user still runs verification against a fixed unusable Argon2id hash, and those failures return the same error. Each success creates a new session id. Later requests pass through SessionGuard: the cookie is hashed, loaded from Redis, checked for idle and absolute expiry, then accepted only when the user is still ACTIVE and the session authenticationVersion matches the user row. AuthenticatedTenantContext is copied from that session alone. Public registration will be `POST /api/v1/auth/register` on the Auth module. Organizations does not expose `POST /organizations` or `POST /tenants`. If session creation fails after the tenant transaction commits, the tenant stays created, registration returns a controlled error, and the owner can log in later. The only approved plan value is `starter`. The outbox worker accepts both `tenant.created` version 1 (`userId`) and version 2 (`ownerUserId`).
 
 ### Protection
 
@@ -341,11 +341,11 @@ The login identifier is tenant subdomain + email + password on `POST /api/v1/aut
 
 ### Environments
 
-| Environment | Endpoint | Purpose | Promotion/data policy |
-|---|---|---|---|
-| Development | Local endpoints; ports TBD | Implementation and automated/local verification. | Synthetic or approved development data only; local secrets remain uncommitted. |
-| Staging | TBD | Production-like integration, migration, security, and deployment validation. | Promoted from reviewed commits; no unapproved production-data copy. |
-| Production | TBD | Customer traffic and authoritative business processing. | Controlled promotion with monitoring, rollback/recovery plan, and one migration owner. |
+| Environment | Endpoint                   | Purpose                                                                      | Promotion/data policy                                                                  |
+| ----------- | -------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Development | Local endpoints; ports TBD | Implementation and automated/local verification.                             | Synthetic or approved development data only; local secrets remain uncommitted.         |
+| Staging     | TBD                        | Production-like integration, migration, security, and deployment validation. | Promoted from reviewed commits; no unapproved production-data copy.                    |
+| Production  | TBD                        | Customer traffic and authoritative business processing.                      | Controlled promotion with monitoring, rollback/recovery plan, and one migration owner. |
 
 ### Infrastructure
 
@@ -365,13 +365,13 @@ No deployed application or production workload exists yet, so there is no measur
 
 ### Scaling plan
 
-| Stage | Conditional evolution (requires demonstrated need and approval) |
-|---|---|
-| 1 — MVP | Modular monolith, primary PostgreSQL, single Redis, relevant workers, basic monitoring/security. |
+| Stage            | Conditional evolution (requires demonstrated need and approval)                                                          |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| 1 — MVP          | Modular monolith, primary PostgreSQL, single Redis, relevant workers, basic monitoring/security.                         |
 | 2 — Early growth | Additional stateless API/worker instances, load balancing, stronger Redis availability, DB connection management/tuning. |
-| 3 — Scale | Selective read replicas, workload-specific Redis split, specialized search or module extraction only if justified. |
-| 4 — Large scale | Tenant-specific DB isolation, independently deployed services, advanced events/DR if bottlenecks require them. |
-| 5 — Enterprise | Multi-region and stronger compliance/data-residency architecture only for real business requirements. |
+| 3 — Scale        | Selective read replicas, workload-specific Redis split, specialized search or module extraction only if justified.       |
+| 4 — Large scale  | Tenant-specific DB isolation, independently deployed services, advanced events/DR if bottlenecks require them.           |
+| 5 — Enterprise   | Multi-region and stronger compliance/data-residency architecture only for real business requirements.                    |
 
 **Change gate:** measure (latency, errors, DB saturation, queue age, tenant fairness) → diagnose → record alternatives and approval → load/recovery test → deploy → update actual-state architecture. Kafka is not a direct BullMQ replacement, and user count alone never triggers sharding or microservices.
 
@@ -381,16 +381,16 @@ No deployed application or production workload exists yet, so there is no measur
 
 The identifiers below reserve traceable decision records; they are not accepted ADRs until the corresponding files are created and approved under `docs/architecture/` or recorded in `DECISIONS.md`.
 
-| Decision | Architectural position | Rationale | Status | ADR reference |
-|---|---|---|---|---|
-| Project classification | Size C | The proposed domain has multiple bounded capabilities, tenant isolation, background processing, and expected long-term evolution; the completed BRIEF must validate that complexity. | Proposed | `ADR-001-project-size`, planned |
-| Initial backend topology | Modular monolith | Provides one manageable MVP deployment while enforcing module ownership and leaving evidence-based extraction possible later. | Proposed | `ADR-002-modular-monolith`, planned |
-| Functional organization | Every capability is a module | Keeps activation, dependency, and ownership concerns explicit without creating an artificial Core/Extension hierarchy. | Proposed | `ADR-003-module-model`, planned |
-| Multi-tenancy | Shared primary database with organization-aware isolation | Minimizes initial operational complexity while composite constraints and authorization checks protect tenant boundaries. | Proposed; threat/data review required | `ADR-004-multi-tenancy`, planned |
-| Sessions | Revocable server-side credentials | Supports immediate tenant-user/session revocation without relying on long-lived self-contained authorization claims. | Proposed; security approval required | `ADR-005-session-strategy`, planned |
-| Asynchronous work | Transactional outbox, durable queue, idempotent consumers | Couples business state and event intent atomically while allowing retryable effects outside request latency. | Conditional on approved async use cases | `ADR-006-async-delivery`, planned |
-| Versions, providers, and hosting | Defined in TECH_CARD and `02-TECH_STACK.md` | Keeps replaceable technology selections out of architectural invariants and makes approval ownership explicit. | Pending | No ADR until a choice has architectural consequences |
-| Future architecture | Metrics-driven conditional evolution | Avoids premature services, replicas, sharding, or multi-region complexity without measured bottlenecks or business requirements. | Accepted as a decision principle; formal approval pending | `ADR-007-scaling-gates`, planned |
+| Decision                         | Architectural position                                    | Rationale                                                                                                                                                                            | Status                                                    | ADR reference                                        |
+| -------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------------------------------------- |
+| Project classification           | Size C                                                    | The proposed domain has multiple bounded capabilities, tenant isolation, background processing, and expected long-term evolution; the completed BRIEF must validate that complexity. | Proposed                                                  | `ADR-001-project-size`, planned                      |
+| Initial backend topology         | Modular monolith                                          | Provides one manageable MVP deployment while enforcing module ownership and leaving evidence-based extraction possible later.                                                        | Proposed                                                  | `ADR-002-modular-monolith`, planned                  |
+| Functional organization          | Every capability is a module                              | Keeps activation, dependency, and ownership concerns explicit without creating an artificial Core/Extension hierarchy.                                                               | Proposed                                                  | `ADR-003-module-model`, planned                      |
+| Multi-tenancy                    | Shared primary database with organization-aware isolation | Minimizes initial operational complexity while composite constraints and authorization checks protect tenant boundaries.                                                             | Proposed; threat/data review required                     | `ADR-004-multi-tenancy`, planned                     |
+| Sessions                         | Revocable server-side credentials                         | Supports immediate tenant-user/session revocation without relying on long-lived self-contained authorization claims.                                                                 | Proposed; security approval required                      | `ADR-005-session-strategy`, planned                  |
+| Asynchronous work                | Transactional outbox, durable queue, idempotent consumers | Couples business state and event intent atomically while allowing retryable effects outside request latency.                                                                         | Conditional on approved async use cases                   | `ADR-006-async-delivery`, planned                    |
+| Versions, providers, and hosting | Defined in TECH_CARD and `02-TECH_STACK.md`               | Keeps replaceable technology selections out of architectural invariants and makes approval ownership explicit.                                                                       | Pending                                                   | No ADR until a choice has architectural consequences |
+| Future architecture              | Metrics-driven conditional evolution                      | Avoids premature services, replicas, sharding, or multi-region complexity without measured bottlenecks or business requirements.                                                     | Accepted as a decision principle; formal approval pending | `ADR-007-scaling-gates`, planned                     |
 
 ---
 

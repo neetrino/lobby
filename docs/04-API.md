@@ -20,16 +20,16 @@
 
 ## Base contract
 
-| Concern | Proposed rule |
-|---|---|
-| Base path | `/api/v1` |
-| Format | JSON over HTTPS |
-| Authentication | Opaque server-side session. `POST /api/v1/auth/login` sets the session cookie. |
+| Concern        | Proposed rule                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------ |
+| Base path      | `/api/v1`                                                                                                    |
+| Format         | JSON over HTTPS                                                                                              |
+| Authentication | Opaque server-side session. `POST /api/v1/auth/login` sets the session cookie.                               |
 | Tenant context | Every tenant-scoped request identifies an authorized organization using the approved routing/header strategy |
-| Validation | Validate path, query, headers, and body at runtime |
-| Dates | ISO 8601 UTC in API payloads unless a contract explicitly states otherwise |
-| Identifiers | Opaque stable IDs; exact format TBD |
-| Localization | API returns stable codes; clients translate user-facing messages where practical |
+| Validation     | Validate path, query, headers, and body at runtime                                                           |
+| Dates          | ISO 8601 UTC in API payloads unless a contract explicitly states otherwise                                   |
+| Identifiers    | Opaque stable IDs; exact format TBD                                                                          |
+| Localization   | API returns stable codes; clients translate user-facing messages where practical                             |
 
 ---
 
@@ -37,15 +37,16 @@
 
 ```text
 Request
-→ authenticate session
-→ derive the user's single tenant
-→ verify user status, permission, entitlement, and resource scope
+→ SessionGuard reads the session cookie
+→ hash the raw session id and load the Redis record
+→ reject a missing, expired, revoked, disabled, or version-mismatched session
+→ copy AuthenticatedTenantContext only from that session
 → validate input
-→ execute owning module operation
-→ return documented response or error
+→ execute the owning module operation with { tenantId, userId, role } plus the validated input
+→ return the documented response or error
 ```
 
-The client must never rely on hidden UI state as proof of authorization.
+Handlers do not read a tenant id from the body, query, or headers. The client must never rely on hidden UI state as proof of authorization.
 
 ---
 
@@ -90,16 +91,16 @@ Exact envelopes remain proposed until the first API contract is approved.
 
 ## Endpoint index
 
-| Module | Base resource | Status | Contract location |
-|---|---|---|---|
-| Authentication and sessions | `POST /api/v1/auth/register`, `POST /api/v1/auth/login` | Implemented | Auth module. Organizations does not expose registration or login. |
-| Tenant organization and users | none | Foundation only | `Organizations.createWithOwner`. No `POST /organizations` or `POST /tenants`. |
-| Contacts | TBD | Planned | OpenAPI + module documentation |
-| Tasks | TBD | Planned | OpenAPI + module documentation |
-| Deals and pipelines | TBD | Planned | OpenAPI + module documentation |
-| Restaurant reservations | `/reservations` | Foundation only | Runtime schemas in `@lobby/contracts`; endpoints not implemented |
-| Orders and delivery | TBD | Conditional | OpenAPI + module documentation |
-| Notifications | TBD | Conditional | OpenAPI + module documentation |
+| Module                        | Base resource                                           | Status          | Contract location                                                             |
+| ----------------------------- | ------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------- |
+| Authentication and sessions   | `POST /api/v1/auth/register`, `POST /api/v1/auth/login` | Implemented     | Auth module. Organizations does not expose registration or login.             |
+| Tenant organization and users | none                                                    | Foundation only | `Organizations.createWithOwner`. No `POST /organizations` or `POST /tenants`. |
+| Contacts                      | TBD                                                     | Planned         | OpenAPI + module documentation                                                |
+| Tasks                         | TBD                                                     | Planned         | OpenAPI + module documentation                                                |
+| Deals and pipelines           | TBD                                                     | Planned         | OpenAPI + module documentation                                                |
+| Restaurant reservations       | `/reservations`                                         | Foundation only | Runtime schemas in `@lobby/contracts`; endpoints not implemented              |
+| Orders and delivery           | TBD                                                     | Conditional     | OpenAPI + module documentation                                                |
+| Notifications                 | TBD                                                     | Conditional     | OpenAPI + module documentation                                                |
 
 Add exact methods, paths, permissions, request schemas, response schemas, and error codes only when the corresponding module contract is designed.
 

@@ -3,6 +3,7 @@ import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testi
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { OutboxService } from '../../../common/outbox/outbox.service';
+import type { AuthenticatedTenantContext } from '../../../common/tenant/authenticated-tenant-context';
 import { CreateContactService } from './create-contact.service';
 
 let prisma: PrismaClient;
@@ -26,14 +27,18 @@ describe('CreateContactService', () => {
     const tenant = await createTenant('acme');
     const service = new CreateContactService(prisma, new OutboxService());
 
-    const contact = await service.create({ tenantId: tenant.id }, { name: 'Ada' });
+    const contact = await service.create(tenantContext(tenant.id), { name: 'Ada' });
 
     const storedContact = await prisma.contact.findUniqueOrThrow({ where: { id: contact.id } });
-    const storedEvent = await prisma.outboxEvent.findFirstOrThrow({ where: { aggregateId: contact.id } });
+    const storedEvent = await prisma.outboxEvent.findFirstOrThrow({
+      where: { aggregateId: contact.id },
+    });
     expect(storedContact.tenantId).toBe(tenant.id);
     expect(storedEvent.tenantId).toBe(tenant.id);
     expect(storedEvent.eventType).toBe('contact.created');
-    expect(contactCreatedEventSchema.safeParse(toEvent(storedEvent, storedContact.name)).success).toBe(true);
+    expect(
+      contactCreatedEventSchema.safeParse(toEvent(storedEvent, storedContact.name)).success,
+    ).toBe(true);
   });
 
   it('rolls back both writes when the outbox insert fails', async () => {
@@ -42,7 +47,7 @@ describe('CreateContactService', () => {
     outbox.enqueue = () => Promise.reject(new Error('outbox unavailable'));
     const service = new CreateContactService(prisma, outbox);
 
-    await expect(service.create({ tenantId: tenant.id }, { name: 'Ada' })).rejects.toThrow(
+    await expect(service.create(tenantContext(tenant.id), { name: 'Ada' })).rejects.toThrow(
       'outbox unavailable',
     );
     expect(await prisma.contact.count()).toBe(0);
@@ -53,7 +58,7 @@ describe('CreateContactService', () => {
     const service = new CreateContactService(prisma, new OutboxService());
 
     await expect(
-      service.create({ tenantId: '99999999-9999-4999-8999-999999999999' }, { name: 'Ada' }),
+      service.create(tenantContext('99999999-9999-4999-8999-999999999999'), { name: 'Ada' }),
     ).rejects.toThrow();
     expect(await prisma.outboxEvent.count()).toBe(0);
     expect(await prisma.contact.count()).toBe(0);
@@ -63,7 +68,7 @@ describe('CreateContactService', () => {
     const tenant = await createTenant('invalid');
     const service = new CreateContactService(prisma, new OutboxService());
 
-    await expect(service.create({ tenantId: tenant.id }, { name: '   ' })).rejects.toThrow();
+    await expect(service.create(tenantContext(tenant.id), { name: '   ' })).rejects.toThrow();
     expect(await prisma.contact.count()).toBe(0);
     expect(await prisma.outboxEvent.count()).toBe(0);
   });
@@ -73,7 +78,7 @@ describe('CreateContactService', () => {
     const other = await createTenant('other');
     const service = new CreateContactService(prisma, new OutboxService());
 
-    const contact = await service.create({ tenantId: tenant.id }, {
+    const contact = await service.create(tenantContext(tenant.id), {
       name: 'Ada',
       tenantId: other.id,
     } as { name: string });
@@ -85,6 +90,10 @@ describe('CreateContactService', () => {
     expect(event.tenantId).not.toBe(other.id);
   });
 });
+
+function tenantContext(tenantId: string): AuthenticatedTenantContext {
+  return { tenantId, userId: '11111111-1111-4111-8111-111111111111', role: 'OWNER' };
+}
 
 async function createTenant(subdomain: string) {
   return prisma.tenant.create({

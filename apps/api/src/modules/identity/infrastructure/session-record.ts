@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { sessionRoles, type AuthenticatedSession } from '../domain/authenticated-session';
+import { sessionRoles, type StoredSession } from '../domain/authenticated-session';
 
 const INVALID_SESSION_SUBJECT = 'Invalid session subject.';
 
@@ -37,7 +37,7 @@ export function parseCreateSessionInput(input: unknown): CreateSessionInput {
   return result.data;
 }
 
-export function serializeStoredSession(session: AuthenticatedSession): string {
+export function serializeStoredSession(session: StoredSession): string {
   return JSON.stringify({
     userId: session.userId,
     tenantId: session.tenantId,
@@ -51,7 +51,7 @@ export function serializeStoredSession(session: AuthenticatedSession): string {
 }
 
 /** Returns null when the payload is missing, malformed, or idle exceeds absolute. */
-export function parseStoredSession(payload: string, sessionIdHash: string): AuthenticatedSession | null {
+export function parseStoredSession(payload: string, sessionIdHash: string): StoredSession | null {
   const raw = parseJson(payload);
   const parsed = storedSessionSchema.safeParse(raw);
   if (!parsed.success) {

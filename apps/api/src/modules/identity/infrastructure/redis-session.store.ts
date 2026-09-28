@@ -1,12 +1,35 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import type { AuthenticatedSession } from '../domain/authenticated-session';
-import { createSessionLifetime, nextIdleExpiresAt, shouldRefresh, isExpired } from '../domain/session-policy';
-import { createRawSessionId, hashSessionId, isRawSessionId, sessionKey, userSessionsKey } from './session-id';
-import { parseCreateSessionInput, parseStoredSession, readStoredUserId, serializeStoredSession } from './session-record';
+import type { StoredSession } from '../domain/authenticated-session';
+import {
+  createSessionLifetime,
+  nextIdleExpiresAt,
+  shouldRefresh,
+  isExpired,
+} from '../domain/session-policy';
+import {
+  createRawSessionId,
+  hashSessionId,
+  isRawSessionId,
+  sessionKey,
+  userSessionsKey,
+} from './session-id';
+import {
+  parseCreateSessionInput,
+  parseStoredSession,
+  readStoredUserId,
+  serializeStoredSession,
+} from './session-record';
 import { SESSION_REDIS, type SessionRedisClient } from './session-redis';
 
 export type { CreateSessionInput } from './session-record';
+
+export type SessionInspection =
+  | { status: 'invalid' }
+  | { status: 'missing' }
+  | { status: 'malformed' }
+  | { status: 'expired' }
+  | { status: 'active'; session: StoredSession };
 
 @Injectable()
 export class RedisSessionStore {
@@ -17,11 +40,14 @@ export class RedisSessionStore {
     await this.redis.get('session:health');
   }
 
-  async create(input: unknown, now: Date): Promise<{ rawSessionId: string; session: AuthenticatedSession }> {
+  async create(
+    input: unknown,
+    now: Date,
+  ): Promise<{ rawSessionId: string; session: StoredSession }> {
     const subject = parseCreateSessionInput(input);
     const rawSessionId = createRawSessionId();
     const lifetime = createSessionLifetime(now);
-    const session: AuthenticatedSession = {
+    const session: StoredSession = {
       sessionIdHash: hashSessionId(rawSessionId),
       userId: subject.userId,
       tenantId: subject.tenantId,
@@ -34,20 +60,29 @@ export class RedisSessionStore {
     return { rawSessionId, session };
   }
 
-  get(rawSessionId: string, now: Date): Promise<AuthenticatedSession | null> {
+  async get(rawSessionId: string, now: Date): Promise<StoredSession | null> {
+    const inspected = await this.inspect(rawSessionId, now);
+    return inspected.status === 'active' ? inspected.session : null;
+  }
+
+  /**
+   * Distinguishes a bad cookie, a missing record, a corrupt payload, and expiry.
+   * Expired and corrupt records are deleted.
+   */
+  inspect(rawSessionId: string, now: Date): Promise<SessionInspection> {
     return this.read(rawSessionId, now);
   }
 
-  async touch(rawSessionId: string, now: Date): Promise<AuthenticatedSession | null> {
-    const session = await this.read(rawSessionId, now);
-    if (session === null || !shouldRefresh(session, now)) {
-      return session;
+  async touch(rawSessionId: string, now: Date): Promise<StoredSession | null> {
+    const inspected = await this.inspect(rawSessionId, now);
+    if (inspected.status !== 'active' || !shouldRefresh(inspected.session, now)) {
+      return inspected.status === 'active' ? inspected.session : null;
     }
 
-    const refreshed: AuthenticatedSession = {
-      ...session,
+    const refreshed: StoredSession = {
+      ...inspected.session,
       lastSeenAt: now,
-      idleExpiresAt: nextIdleExpiresAt(now, session.absoluteExpiresAt),
+      idleExpiresAt: nextIdleExpiresAt(now, inspected.session.absoluteExpiresAt),
     };
     await this.save(refreshed);
     return refreshed;
@@ -71,34 +106,34 @@ export class RedisSessionStore {
     await this.redis.del(indexKey);
   }
 
-  private async read(rawSessionId: string, now: Date): Promise<AuthenticatedSession | null> {
+  private async read(rawSessionId: string, now: Date): Promise<SessionInspection> {
     if (!isRawSessionId(rawSessionId)) {
-      return null;
+      return { status: 'invalid' };
     }
 
     const sessionIdHash = hashSessionId(rawSessionId);
     const key = sessionKey(sessionIdHash);
     const payload = await this.redis.get(key);
     if (payload === null) {
-      return null;
+      return { status: 'missing' };
     }
 
     const session = parseStoredSession(payload, sessionIdHash);
     if (session === null) {
       await this.removeIndex(payload, sessionIdHash);
       await this.redis.del(key);
-      return null;
+      return { status: 'malformed' };
     }
 
     if (isExpired(session, now)) {
       await this.delete(sessionIdHash);
-      return null;
+      return { status: 'expired' };
     }
 
-    return session;
+    return { status: 'active', session };
   }
 
-  private async save(session: AuthenticatedSession): Promise<void> {
+  private async save(session: StoredSession): Promise<void> {
     await this.redis.set(
       sessionKey(session.sessionIdHash),
       serializeStoredSession(session),

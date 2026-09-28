@@ -1,16 +1,19 @@
-export const sessionRoles = ['OWNER', 'ADMIN', 'MEMBER'] as const;
+import type { TenantRole } from '../../../common/tenant/authenticated-tenant-context';
 
-export type SessionRole = (typeof sessionRoles)[number];
+export {
+  tenantRoles as sessionRoles,
+  type TenantRole as SessionRole,
+} from '../../../common/tenant/authenticated-tenant-context';
 
 /**
- * Session established from Redis, not from the client.
+ * Session record stored in Redis.
  * `sessionIdHash` is the Redis key digest. The raw session id is not part of this object.
  */
-export type AuthenticatedSession = {
+export type StoredSession = {
   sessionIdHash: string;
   userId: string;
   tenantId: string;
-  role: SessionRole;
+  role: TenantRole;
   authenticationVersion: number;
   createdAt: Date;
   lastSeenAt: Date;
