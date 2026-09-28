@@ -242,6 +242,14 @@ class MemorySessionRedis implements SessionRedisClient {
     this.strings.set(key, value);
   }
 
+  async replaceIfPresent(key: string, value: string): Promise<boolean> {
+    if (!this.strings.has(key)) {
+      return false;
+    }
+    this.strings.set(key, value);
+    return true;
+  }
+
   async del(key: string): Promise<void> {
     this.strings.delete(key);
   }
@@ -261,6 +269,10 @@ class FailingSessionRedis implements SessionRedisClient {
   }
 
   async set(): Promise<void> {
+    throw new Error('redis down super-secret-redis');
+  }
+
+  async replaceIfPresent(): Promise<boolean> {
     throw new Error('redis down super-secret-redis');
   }
 

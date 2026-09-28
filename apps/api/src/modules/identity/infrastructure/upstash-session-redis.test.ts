@@ -15,6 +15,17 @@ describe('UpstashSessionRedis', () => {
     expect(calls).toEqual([['SET', 'session:abc', 'payload', 'PXAT', '1700000000000']]);
   });
 
+  it('refreshes with SET XX and reports a missing key as not replaced', async () => {
+    const calls: unknown[] = [];
+    const client = new UpstashSessionRedis({ url: 'https://example.upstash.io', token: 'secret-token' }, async (_url, init) => {
+      calls.push(JSON.parse(init.body));
+      return new Response(JSON.stringify({ result: null }), { status: 200 });
+    });
+
+    await expect(client.replaceIfPresent('session:abc', 'payload', 1_700_000_000_000)).resolves.toBe(false);
+    expect(calls).toEqual([['SET', 'session:abc', 'payload', 'PXAT', '1700000000000', 'XX']]);
+  });
+
   it('does not include the token when the command fails', async () => {
     const client = new UpstashSessionRedis({ url: 'https://example.upstash.io', token: 'secret-token' }, async () => {
       return new Response(JSON.stringify({ error: 'WRONGPASS secret-token' }), { status: 401 });

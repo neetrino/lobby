@@ -8,15 +8,18 @@ import { MemoryRateLimitRedis } from '../infrastructure/memory-rate-limit-redis'
 import { permissiveAuthRateLimits } from '../infrastructure/rate-limit-config';
 import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
 import { RedisSessionStore } from '../infrastructure/redis-session.store';
-import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
+import { SessionCookie, type SessionCookieOptions, type SessionCookieWriter } from '../infrastructure/session-cookie';
 import type { SessionRedisClient } from '../infrastructure/session-redis';
 import { hashSessionId, sessionKey } from '../infrastructure/session-id';
 import { SessionGuard, type SessionRequest } from './session.guard';
 
 export class RecordingCookieWriter implements SessionCookieWriter {
   cleared = false;
+  setCall?: { name: string; value: string; options: SessionCookieOptions };
 
-  cookie(): void {}
+  cookie(name: string, value: string, options: SessionCookieOptions): void {
+    this.setCall = { name, value, options };
+  }
 
   clearCookie(): void {
     this.cleared = true;
@@ -33,6 +36,14 @@ export class MemorySessionRedis implements SessionRedisClient {
   set(key: string, value: string): Promise<void> {
     this.strings.set(key, value);
     return Promise.resolve();
+  }
+
+  replaceIfPresent(key: string, value: string): Promise<boolean> {
+    if (!this.strings.has(key)) {
+      return Promise.resolve(false);
+    }
+    this.strings.set(key, value);
+    return Promise.resolve(true);
   }
 
   del(key: string): Promise<void> {
@@ -192,6 +203,14 @@ export class IndexedSessionRedis implements SessionRedisClient {
       });
     }
     this.strings.set(key, value);
+  }
+
+  replaceIfPresent(key: string, value: string): Promise<boolean> {
+    if (!this.strings.has(key)) {
+      return Promise.resolve(false);
+    }
+    this.strings.set(key, value);
+    return Promise.resolve(true);
   }
 
   release(): void {

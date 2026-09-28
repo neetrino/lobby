@@ -33,7 +33,11 @@ export class SessionGuard implements CanActivate {
       if (rawSessionId === null) {
         throw new IdentityError(identityErrorCodes.UNAUTHENTICATED);
       }
-      request.auth = await this.access.establish(rawSessionId, new Date());
+      const established = await this.access.establish(rawSessionId, new Date());
+      request.auth = established.session;
+      if (established.refreshed && established.maxAgeMs > 0) {
+        this.cookies.set(response, rawSessionId, established.maxAgeMs);
+      }
       return true;
     } catch (error) {
       return this.reject(response, presented ? readClientAddress(request) : null, error);

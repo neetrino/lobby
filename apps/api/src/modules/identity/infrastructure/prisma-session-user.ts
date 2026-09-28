@@ -2,10 +2,19 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { PRISMA_CLIENT } from '../../../common/outbox';
+import { tenantRoles, type TenantRole } from '../../../common/tenant/authenticated-tenant-context';
 
 export type SessionUserSecurity = {
   status: 'ACTIVE' | 'DISABLED';
+  role: TenantRole;
   authenticationVersion: number;
+};
+
+/** Fields that invalidate existing sessions. Each change increments the version. */
+export type UserSecurityChange = {
+  role?: TenantRole;
+  status?: 'ACTIVE' | 'DISABLED';
+  passwordHash?: string;
 };
 
 /** Reads the live authentication version after a session write. */
@@ -21,13 +30,51 @@ export class PrismaSessionUserStore {
   async findSecurity(userId: string, tenantId: string): Promise<SessionUserSecurity | null> {
     const user = await this.prisma.user.findUnique({
       where: { id_tenantId: { id: userId, tenantId } },
-      select: { status: true, authenticationVersion: true },
+      select: { status: true, role: true, authenticationVersion: true },
     });
     if (user === null) {
       return null;
     }
 
-    return { status: user.status, authenticationVersion: user.authenticationVersion };
+    const role = tenantRoles.find((value) => value === user.role);
+    if (role === undefined) {
+      return null;
+    }
+
+    return { status: user.status, role, authenticationVersion: user.authenticationVersion };
+  }
+
+  /**
+   * Changes role, status, or password and increments authenticationVersion together.
+   * One update is atomic, so a session cannot keep the previous privilege.
+   */
+  async applySecurityChange(
+    userId: string,
+    tenantId: string,
+    change: UserSecurityChange,
+  ): Promise<number | null> {
+    if (!hasSecurityChange(change)) {
+      throw new Error('Role, status, or password must change with the authentication version.');
+    }
+
+    try {
+      const user = await this.prisma.user.update({
+        where: { id_tenantId: { id: userId, tenantId } },
+        data: {
+          role: change.role,
+          status: change.status,
+          passwordHash: change.passwordHash,
+          authenticationVersion: { increment: 1 },
+        },
+        select: { authenticationVersion: true },
+      });
+      return user.authenticationVersion;
+    } catch (error) {
+      if (isMissingRecord(error)) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   /**
@@ -49,6 +96,10 @@ export class PrismaSessionUserStore {
       throw error;
     }
   }
+}
+
+function hasSecurityChange(change: UserSecurityChange): boolean {
+  return change.role !== undefined || change.status !== undefined || change.passwordHash !== undefined;
 }
 
 function isMissingRecord(error: unknown): boolean {

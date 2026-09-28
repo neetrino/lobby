@@ -25,16 +25,16 @@ export type SessionCookieWriter = {
 export class SessionCookie {
   constructor(private readonly secure: boolean) {}
 
-  set(response: SessionCookieWriter, rawSessionId: string): void {
+  set(response: SessionCookieWriter, rawSessionId: string, maxAgeMs = SESSION_IDLE_TTL_MS): void {
     if (!isRawSessionId(rawSessionId)) {
       throw new Error(OPAQUE_SESSION_ID_REQUIRED);
     }
 
-    response.cookie(SESSION_COOKIE_NAME, rawSessionId, this.options());
+    response.cookie(SESSION_COOKIE_NAME, rawSessionId, this.options(maxAgeMs));
   }
 
   clear(response: SessionCookieWriter): void {
-    response.clearCookie(SESSION_COOKIE_NAME, this.options());
+    response.clearCookie(SESSION_COOKIE_NAME, this.options(SESSION_IDLE_TTL_MS));
   }
 
   read(cookieHeader: string | readonly string[] | undefined): string | null {
@@ -51,14 +51,14 @@ export class SessionCookie {
     return value;
   }
 
-  private options(): SessionCookieOptions {
+  private options(maxAgeMs: number): SessionCookieOptions {
     return {
       httpOnly: true,
       secure: this.secure,
       // Lax does not replace the Origin guard. Cross-site frontends need a CSRF token.
       sameSite: 'lax',
       path: '/',
-      maxAge: SESSION_IDLE_TTL_MS,
+      maxAge: maxAgeMs,
     };
   }
 }

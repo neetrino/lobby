@@ -33,6 +33,12 @@ export class UpstashSessionRedis implements SessionRedisClient {
     await this.command(['SET', key, value, 'PXAT', String(expiresAtMs)]);
   }
 
+  /** `XX` keeps a missing key missing, so a refresh cannot recreate a logged-out session. */
+  async replaceIfPresent(key: string, value: string, expiresAtMs: number): Promise<boolean> {
+    const result = await this.command(['SET', key, value, 'PXAT', String(expiresAtMs), 'XX']);
+    return result === 'OK';
+  }
+
   async del(key: string): Promise<void> {
     await this.command(['DEL', key]);
   }

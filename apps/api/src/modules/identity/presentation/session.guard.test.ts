@@ -4,8 +4,11 @@ import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { AuthenticatedTenantContext } from '../../../common/tenant/authenticated-tenant-context';
+import { canRevokeUserSessions } from '../domain/session-revocation';
 import { identityErrorCodes } from '../domain/identity.errors';
 import { SESSION_REFRESH_INTERVAL_MS } from '../domain/session-policy';
+import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
+import { RedisSessionStore } from '../infrastructure/redis-session.store';
 import { hashSessionId, sessionKey } from '../infrastructure/session-id';
 import {
   CurrentTenant,
@@ -178,6 +181,40 @@ describe('SessionGuard', () => {
     });
   });
 
+  it('stops a demoted admin from revoking another user with the old session', async () => {
+    const redis = new MemorySessionRedis();
+    const admin = await createAdmin(prisma, redis);
+    const version = await new PrismaSessionUserStore(prisma).applySecurityChange(admin.userId, admin.tenantId, {
+      role: 'MEMBER',
+    });
+    const row = await prisma.user.findUniqueOrThrow({ where: { id: admin.userId } });
+    const error = await activate(prisma, redis, admin.rawSessionId, new RecordingCookieWriter());
+
+    expect(version).toBe(2);
+    expect(row).toMatchObject({ role: 'MEMBER', authenticationVersion: 2 });
+    expect(invoke(error)).toMatchObject({
+      statusCode: 401,
+      body: { error: { code: identityErrorCodes.SESSION_REVOKED } },
+    });
+    expect(canRevokeUserSessions(
+      { userId: admin.userId, tenantId: admin.tenantId, role: row.role },
+      admin.otherUserId,
+    )).toBe(false);
+  });
+
+  it('uses the live database role when Redis still says ADMIN', async () => {
+    const redis = new MemorySessionRedis();
+    const admin = await createAdmin(prisma, redis);
+    await prisma.user.update({ where: { id: admin.userId }, data: { role: 'MEMBER' } });
+    const request = requestFor(admin.rawSessionId);
+
+    await createGuard(prisma, redis).canActivate(httpContext(request, new RecordingCookieWriter()));
+    const session = readAuthenticatedSession(request);
+
+    expect(session.role).toBe('MEMBER');
+    expect(canRevokeUserSessions(session, admin.otherUserId)).toBe(false);
+  });
+
   it('rejects tenant A when the requested contact belongs to tenant B', async () => {
     const redis = new MemorySessionRedis();
     const owner = await createOwner(prisma, 'acme', redis);
@@ -202,6 +239,39 @@ describe('SessionGuard', () => {
     });
   });
 });
+
+async function createAdmin(database: PrismaClient, redis: MemorySessionRedis) {
+  const tenant = await database.tenant.create({
+    data: { name: 'Acme', subdomain: 'acme-admin', plan: 'STARTER' },
+  });
+  const user = await database.user.create({
+    data: {
+      tenantId: tenant.id,
+      email: 'admin@example.com',
+      name: 'Ada',
+      passwordHash: 'stored-hash',
+      status: 'ACTIVE',
+      role: 'ADMIN',
+      authenticationVersion: 1,
+    },
+  });
+  const other = await database.user.create({
+    data: {
+      tenantId: tenant.id,
+      email: 'member@example.com',
+      name: 'Bea',
+      passwordHash: 'stored-hash',
+      status: 'ACTIVE',
+      role: 'MEMBER',
+      authenticationVersion: 1,
+    },
+  });
+  const opened = await new RedisSessionStore(redis).create(
+    { userId: user.id, tenantId: tenant.id, role: 'ADMIN', authenticationVersion: 1 },
+    new Date(),
+  );
+  return { tenantId: tenant.id, userId: user.id, otherUserId: other.id, rawSessionId: opened.rawSessionId };
+}
 
 @Controller('probe')
 class TenantProbeController {

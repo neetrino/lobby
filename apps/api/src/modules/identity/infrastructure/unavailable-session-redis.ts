@@ -12,6 +12,10 @@ export class UnavailableSessionRedis implements SessionRedisClient {
     return rejectUnavailable();
   }
 
+  replaceIfPresent(): Promise<boolean> {
+    return rejectUnavailable();
+  }
+
   del(): Promise<void> {
     return rejectUnavailable();
   }

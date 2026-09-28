@@ -10,6 +10,11 @@ export const SESSION_REDIS = Symbol('SESSION_REDIS');
 export interface SessionRedisClient {
   get(key: string): Promise<string | null>;
   set(key: string, value: string, expiresAtMs: number): Promise<void>;
+  /**
+   * Replaces the value only when the key is still present.
+   * A missing key stays missing, so a refresh cannot recreate a logged-out session.
+   */
+  replaceIfPresent(key: string, value: string, expiresAtMs: number): Promise<boolean>;
   del(key: string): Promise<void>;
   sadd(key: string, member: string, expiresAtMs: number): Promise<void>;
   srem(key: string, member: string): Promise<void>;

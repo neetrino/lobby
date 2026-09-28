@@ -33,6 +33,10 @@ export class StaleSessionError extends Error {
   }
 }
 
+export type SessionTouch =
+  | { status: 'absent' }
+  | { status: 'present'; session: StoredSession; refreshed: boolean };
+
 export type SessionInspection =
   | { status: 'invalid' }
   | { status: 'missing' }
@@ -99,19 +103,16 @@ export class RedisSessionStore {
     return this.read(rawSessionId, now);
   }
 
-  async touch(rawSessionId: string, now: Date): Promise<StoredSession | null> {
+  async touch(rawSessionId: string, now: Date): Promise<SessionTouch> {
     const inspected = await this.inspect(rawSessionId, now);
-    if (inspected.status !== 'active' || !shouldRefresh(inspected.session, now)) {
-      return inspected.status === 'active' ? inspected.session : null;
+    if (inspected.status !== 'active') {
+      return { status: 'absent' };
+    }
+    if (!shouldRefresh(inspected.session, now)) {
+      return { status: 'present', session: inspected.session, refreshed: false };
     }
 
-    const refreshed: StoredSession = {
-      ...inspected.session,
-      lastSeenAt: now,
-      idleExpiresAt: nextIdleExpiresAt(now, inspected.session.absoluteExpiresAt),
-    };
-    const kept = await this.saveCurrent(refreshed);
-    return kept ? refreshed : null;
+    return this.refresh(inspected.session, now);
   }
 
   async delete(sessionIdHash: string): Promise<void> {
@@ -159,8 +160,48 @@ export class RedisSessionStore {
     return { status: 'active', session };
   }
 
+  /**
+   * Slides idle expiry only while the session key still exists.
+   * Logout can delete the key after the read; `SET XX` then leaves it deleted.
+   */
+  private async refresh(session: StoredSession, now: Date): Promise<SessionTouch> {
+    const refreshed: StoredSession = {
+      ...session,
+      lastSeenAt: now,
+      idleExpiresAt: nextIdleExpiresAt(now, session.absoluteExpiresAt),
+    };
+    const replaced = await this.redis.replaceIfPresent(
+      sessionKey(session.sessionIdHash),
+      serializeStoredSession(refreshed),
+      refreshed.idleExpiresAt.getTime(),
+    );
+    if (!replaced) {
+      return { status: 'absent' };
+    }
+
+    await this.redis.sadd(
+      userSessionsKey(session.userId),
+      session.sessionIdHash,
+      session.absoluteExpiresAt.getTime(),
+    );
+    const kept = await this.keepCurrent(refreshed);
+    if (kept === null) {
+      return { status: 'absent' };
+    }
+    return { status: 'present', session: kept, refreshed: true };
+  }
+
   private async saveCurrent(session: StoredSession): Promise<boolean> {
     await this.save(session);
+    return this.saveCurrentVersion(session);
+  }
+
+  private async keepCurrent(session: StoredSession): Promise<StoredSession | null> {
+    const kept = await this.saveCurrentVersion(session);
+    return kept ? session : null;
+  }
+
+  private async saveCurrentVersion(session: StoredSession): Promise<boolean> {
     try {
       await this.discardIfSuperseded(session);
       return true;

@@ -57,17 +57,38 @@ describe('RedisSessionStore', () => {
       const touchAt = new Date(current.idleExpiresAt.getTime() - 1);
       const touched = await store.touch(created.rawSessionId, touchAt);
 
-      expect(touched?.absoluteExpiresAt).toEqual(created.session.absoluteExpiresAt);
-      if (touched === null) {
+      expect(touched.status).toBe('present');
+      if (touched.status !== 'present') {
         throw new Error('Session expired before the absolute deadline.');
       }
-      current = touched;
+      expect(touched.refreshed).toBe(true);
+      expect(touched.session.absoluteExpiresAt).toEqual(created.session.absoluteExpiresAt);
+      current = touched.session;
     }
 
     expect(current.idleExpiresAt).toEqual(created.session.absoluteExpiresAt);
     expect(redis.strings.get(sessionKey(created.session.sessionIdHash))?.expiresAtMs).toBe(
       created.session.absoluteExpiresAt.getTime(),
     );
+  });
+
+  it('does not recreate a session when logout lands during refresh', async () => {
+    const redis = new MemorySessionRedis();
+    const store = new RedisSessionStore(redis);
+    const created = await store.create(subject, now);
+    const key = sessionKey(created.session.sessionIdHash);
+    redis.holdNextReplace = true;
+    const held = redis.untilReplaceHeld();
+    const touchAt = new Date(now.getTime() + SESSION_REFRESH_INTERVAL_MS);
+    const touching = store.touch(created.rawSessionId, touchAt);
+    await held;
+
+    await store.revoke(created.rawSessionId);
+    redis.release();
+
+    await expect(touching).resolves.toEqual({ status: 'absent' });
+    await expect(redis.get(key)).resolves.toBeNull();
+    await expect(redis.smembers(userSessionsKey(userId))).resolves.toEqual([]);
   });
 
   it('does not write before the refresh interval', async () => {
@@ -128,6 +149,9 @@ class MemorySessionRedis implements SessionRedisClient {
   readonly strings = new Map<string, { value: string; expiresAtMs: number }>();
   readonly sets = new Map<string, { members: Set<string>; expiresAtMs: number }>();
   setCalls = 0;
+  holdNextReplace = false;
+  private releaseHold: (() => void) | undefined;
+  private markHeld: (() => void) | undefined;
 
   async get(key: string): Promise<string | null> {
     return this.strings.get(key)?.value ?? null;
@@ -136,6 +160,31 @@ class MemorySessionRedis implements SessionRedisClient {
   async set(key: string, value: string, expiresAtMs: number): Promise<void> {
     this.setCalls += 1;
     this.strings.set(key, { value, expiresAtMs });
+  }
+
+  async replaceIfPresent(key: string, value: string, expiresAtMs: number): Promise<boolean> {
+    if (this.holdNextReplace) {
+      this.holdNextReplace = false;
+      this.markHeld?.();
+      await new Promise<void>((resolve) => {
+        this.releaseHold = resolve;
+      });
+    }
+    if (!this.strings.has(key)) {
+      return false;
+    }
+    await this.set(key, value, expiresAtMs);
+    return true;
+  }
+
+  untilReplaceHeld(): Promise<void> {
+    return new Promise((resolve) => {
+      this.markHeld = resolve;
+    });
+  }
+
+  release(): void {
+    this.releaseHold?.();
   }
 
   async del(key: string): Promise<void> {
