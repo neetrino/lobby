@@ -4,8 +4,8 @@
 
 - **Style:** Versioned REST
 - **Owner:** NestJS API
-- **Version:** 0.1-draft
-- **Status:** DRAFT — no endpoints are approved or implemented yet
+- **Version:** 0.2
+- **Status:** Auth endpoints are implemented. Other modules remain planned.
 
 ---
 
@@ -74,7 +74,7 @@ Errors use a stable machine-readable code and do not expose stack traces or inte
 }
 ```
 
-Exact envelopes remain proposed until the first API contract is approved.
+Auth responses use this envelope. `requestId` is not attached yet.
 
 ---
 
@@ -94,7 +94,7 @@ Exact envelopes remain proposed until the first API contract is approved.
 
 | Module                        | Base resource                                           | Status          | Contract location                                                             |
 | ----------------------------- | ------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------- |
-| Authentication and sessions   | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout` | Implemented     | Auth module. Logout is idempotent. Revoking every session is synchronous.    |
+| Authentication and sessions   | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout` | Implemented     | [`api/auth.openapi.yaml`](./api/auth.openapi.yaml). Logout is idempotent. Revoking every session is synchronous and has no public route. |
 | Tenant organization and users | none                                                    | Foundation only | `Organizations.createWithOwner`. No `POST /organizations` or `POST /tenants`. |
 | Contacts                      | TBD                                                     | Planned         | OpenAPI + module documentation                                                |
 | Tasks                         | TBD                                                     | Planned         | OpenAPI + module documentation                                                |
@@ -128,7 +128,80 @@ POST /api/v1/auth/register
 - Logout is `POST /api/v1/auth/logout`. It deletes `session:<hash>`, removes that hash from `user_sessions:<userId>`, and clears the cookie. A repeated logout, or a logout with a missing or invalid session, still returns `204`. The same cookie on the next protected request is `401`.
 - Mutating methods require an allowed `Origin`. A missing `Origin` falls back to the `Referer` origin. Missing both is rejected with `403 ORIGIN_REJECTED`. `SameSite=Lax` and CORS do not replace that check. CORS uses the explicit origin list with credentials and never `*`. If the frontend and API are different sites, a CSRF token is required.
 - Login is limited per hashed IP and per hashed subdomain + normalized email. Registration is limited per hashed IP. Repeated invalid session cookies are limited per hashed IP. Counters live in the `rate_limit:` Redis key space. Exceeding a limit returns `429 RATE_LIMITED`. The account limit uses the same response whether or not the account exists. A successful login clears only that account counter.
-- Terminating every session for a user increments `users.authentication_version`, then deletes that user's session keys and the `user_sessions:<userId>` index before the call returns. The outbox does not revoke sessions. An audit, notification, or analytics event may be written only after revocation finishes. A user may terminate their own sessions. Owner and Admin may terminate another user in the same tenant; that permission is checked in the application service. A session saved with the previous version cannot authenticate.
+- Terminating every session for a user increments `users.authentication_version`, then deletes that user's session keys and the `user_sessions:<userId>` index before the call returns. The outbox does not revoke sessions. An audit, notification, or analytics event may be written only after revocation finishes. A user may terminate their own sessions. Owner and Admin may terminate another user in the same tenant; that permission is checked in the application service. A session saved with the previous version cannot authenticate. There is no public terminate route yet.
+
+### Authentication examples
+
+The executable contract is [`api/auth.openapi.yaml`](./api/auth.openapi.yaml). Registration stays closed unless `REGISTRATION_ENABLED` is exactly `true`.
+
+```http
+POST /api/v1/auth/register
+Origin: http://localhost:3000
+Content-Type: application/json
+
+{
+  "tenant": { "name": "Acme", "subdomain": "acme", "plan": "starter" },
+  "owner": { "name": "Ada", "email": "ada@example.com", "password": "correct-horse-battery" }
+}
+```
+
+`201` returns `{ "data": { "tenant": { "id", "name", "subdomain", "plan": "starter" }, "user": { "id", "name", "email", "role": "OWNER" } } }` and `Set-Cookie`. The body does not include the password, `passwordHash`, or the raw session id.
+
+```http
+POST /api/v1/auth/login
+Origin: http://localhost:3000
+Content-Type: application/json
+
+{ "subdomain": "acme", "email": "ada@example.com", "password": "correct-horse-battery" }
+```
+
+`200` has the same `data` shape and sets a new session cookie. A missing tenant, missing user, disabled user, or wrong password is `401 INVALID_CREDENTIALS`.
+
+`POST /api/v1/auth/logout` with the session cookie returns `204` and clears it. Repeating logout is still `204`. The same cookie on the next protected request is `401`.
+
+| Code | Status | When |
+| --- | --- | --- |
+| `INVALID_CREDENTIALS` | 401 | Login could not authenticate the account |
+| `UNAUTHENTICATED` | 401 | No usable session cookie |
+| `SESSION_EXPIRED` | 401 | Idle or absolute expiry |
+| `SESSION_REVOKED` | 401 | Session deleted, version changed, or user disabled |
+| `ORIGIN_REJECTED` | 403 | Mutating request without an allowed Origin or Referer |
+| `FORBIDDEN` | 403 | Caller may not revoke that user's sessions |
+| `REGISTRATION_DISABLED` | 403 | `REGISTRATION_ENABLED` is not `true` |
+| `REQUEST_REJECTED` | 4xx | Input failed validation, or another non-auth client error |
+| `TENANT_SUBDOMAIN_TAKEN` | 409 | Subdomain already exists |
+| `RATE_LIMITED` | 429 | Login, register, or invalid-session limit exceeded |
+| `ACCOUNT_CREATED_SIGN_IN_REQUIRED` | 503 | Tenant committed, but the session was not stored |
+| `INTERNAL_ERROR` | 500 | Unexpected failure. The body has no internal text |
+
+### Session cookie
+
+| Attribute | Value |
+| --- | --- |
+| Name | `session` |
+| Value | Opaque random id. Redis stores only `session:<sha256>` |
+| `HttpOnly` | always |
+| `SameSite` | `Lax`. This does not replace the Origin check |
+| `Secure` | set when `NODE_ENV=production` |
+| `Path` | `/` |
+| `Max-Age` | idle lifetime, 7 days |
+
+Logout sends a clearing `Set-Cookie` (`Expires` at the epoch, no `Max-Age`).
+
+### Auth environment
+
+| Variable | Role |
+| --- | --- |
+| `REGISTRATION_ENABLED` | Public registration runs only when the value is `true` |
+| `ALLOWED_ORIGINS` | Comma-separated browser origins. No `*` |
+| `APP_URL` | Origin used when `ALLOWED_ORIGINS` is unset |
+| `NODE_ENV` | `production` marks the session cookie `Secure` |
+| `RATE_LIMIT_LOGIN_IP_LIMIT` / `RATE_LIMIT_LOGIN_IP_WINDOW_MS` | Default 20 attempts / 15 minutes |
+| `RATE_LIMIT_LOGIN_ACCOUNT_LIMIT` / `RATE_LIMIT_LOGIN_ACCOUNT_WINDOW_MS` | Default 10 attempts / 15 minutes |
+| `RATE_LIMIT_REGISTER_IP_LIMIT` / `RATE_LIMIT_REGISTER_IP_WINDOW_MS` | Default 5 attempts / 1 hour |
+| `RATE_LIMIT_INVALID_SESSION_IP_LIMIT` / `RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS` | Default 30 attempts / 5 minutes |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Session and rate-limit store |
+| `DATABASE_URL` | Tenant and user rows |
 
 Reservation endpoints must derive the tenant from the authenticated session, accept UTC timestamps, and never trust a client-provided tenant identifier. The venue timezone controls staff-facing calendar interpretation. Conflict responses must use a stable error code; the exact HTTP contract is deferred until the application service is implemented.
 
@@ -168,3 +241,4 @@ Rate limit:
 - [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) — system and module boundaries.
 - [`02-TECH_STACK.md`](./02-TECH_STACK.md) — API technology choices.
 - [`05-DATABASE.md`](./05-DATABASE.md) — persistence rules and schema documentation.
+- [`api/auth.openapi.yaml`](./api/auth.openapi.yaml) — auth request, response, and error contract.

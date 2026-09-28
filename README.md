@@ -74,6 +74,8 @@ API-ն cookie session է օգտագործում։ `POST` / `PUT` / `PATCH` / `DE
 
 Login, register և անվավեր session սահմանները `RATE_LIMIT_*` env-ով են։ Redis-ի հաշվիչները `rate_limit:` namespace-ում են և raw IP կամ email չեն պարունակում։
 
+Auth endpoint-ների request/response օրինակները, error code-երը, cookie-ն և env-ը՝ [`docs/04-API.md`](docs/04-API.md) և [`docs/api/auth.openapi.yaml`](docs/api/auth.openapi.yaml)։
+
 ---
 
 [MIT](LICENSE) — ազատ օգտագործում և հարմարեցում։

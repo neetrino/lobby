@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  title: Lobby Auth API
+  version: 0.2.0
+  description: >
+    Cookie session authentication. Mutating requests require an allowed Origin.
+    CORS is not CSRF protection. A cross-site frontend needs a CSRF token.
+servers:
+  - url: http://localhost:3001
+tags:
+  - name: Auth
+paths:
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      operationId: registerOwner
+      summary: Create a tenant, its owner, and a session
+      description: >
+        Enabled only when REGISTRATION_ENABLED is true. The response never
+        includes the password, passwordHash, or raw session id.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              tenant:
+                name: Acme
+                subdomain: acme
+                plan: starter
+              owner:
+                name: Ada
+                email: ada@example.com
+                password: correct-horse-battery
+      responses:
+        '201':
+          description: Tenant and owner created, session cookie set
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SessionCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400':
+          $ref: '#/components/responses/RequestRejected'
+        '403':
+          $ref: '#/components/responses/ForbiddenAuth'
+        '409':
+          description: Subdomain is already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: TENANT_SUBDOMAIN_TAKEN
+                  message: This subdomain is already taken.
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Tenant committed, but the session was not stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: ACCOUNT_CREATED_SIGN_IN_REQUIRED
+                  message: The account was created. Sign in to continue.
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Open a new session
+      description: >
+        Always mints a new session id. Missing and existing accounts share the
+        same INVALID_CREDENTIALS response and the same account rate-limit bucket.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              subdomain: acme
+              email: ada@example.com
+              password: correct-horse-battery
+      responses:
+        '200':
+          description: New session cookie set
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SessionCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400':
+          $ref: '#/components/responses/RequestRejected'
+        '401':
+          description: Credentials were not accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: INVALID_CREDENTIALS
+                  message: Invalid credentials.
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Delete the current session and clear the cookie
+      description: A missing or already revoked session still returns 204.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '204':
+          description: Cookie cleared
+          headers:
+            Set-Cookie:
+              description: Expired session cookie
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+components:
+  parameters:
+    Origin:
+      name: Origin
+      in: header
+      required: true
+      schema:
+        type: string
+        example: http://localhost:3000
+    SessionCookie:
+      name: session
+      in: cookie
+      required: false
+      schema:
+        type: string
+  headers:
+    SessionCookie:
+      description: >
+        HttpOnly SameSite=Lax cookie. Secure is set when NODE_ENV is production.
+        Max-Age is the idle lifetime (7 days). The value is an opaque id.
+      schema:
+        type: string
+  schemas:
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [tenant, owner]
+      properties:
+        tenant:
+          $ref: '#/components/schemas/TenantInput'
+        owner:
+          $ref: '#/components/schemas/OwnerInput'
+    TenantInput:
+      type: object
+      additionalProperties: false
+      required: [name, subdomain, plan]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        subdomain:
+          type: string
+          description: Single DNS label, stored lowercase
+        plan:
+          type: string
+          enum: [starter]
+    OwnerInput:
+      type: object
+      additionalProperties: false
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+          maxLength: 128
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [subdomain, email, password]
+      properties:
+        subdomain:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+    AccountResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [tenant, user]
+          properties:
+            tenant:
+              type: object
+              required: [id, name, subdomain, plan]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                subdomain:
+                  type: string
+                plan:
+                  type: string
+                  enum: [starter]
+            user:
+              type: object
+              required: [id, name, email, role]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [OWNER, ADMIN, MEMBER]
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+  responses:
+    RequestRejected:
+      description: Validation failed. The body does not echo the input.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: REQUEST_REJECTED
+              message: The request could not be processed.
+    OriginRejected:
+      description: Origin was missing or not allowed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: ORIGIN_REJECTED
+              message: The request origin is not allowed.
+    ForbiddenAuth:
+      description: Registration is disabled, or the origin was rejected
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: Auth rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: RATE_LIMITED
+              message: Too many requests.
