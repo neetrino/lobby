@@ -24,7 +24,7 @@
 |---|---|
 | Base path | `/api/v1` |
 | Format | JSON over HTTPS |
-| Authentication | Opaque server-side session; exact login endpoints remain TBD |
+| Authentication | Opaque server-side session. `POST /api/v1/auth/login` sets the session cookie. |
 | Tenant context | Every tenant-scoped request identifies an authorized organization using the approved routing/header strategy |
 | Validation | Validate path, query, headers, and body at runtime |
 | Dates | ISO 8601 UTC in API payloads unless a contract explicitly states otherwise |
@@ -92,7 +92,7 @@ Exact envelopes remain proposed until the first API contract is approved.
 
 | Module | Base resource | Status | Contract location |
 |---|---|---|---|
-| Authentication and sessions | `POST /api/v1/auth/register` | Planned | Auth module. Not implemented. Organizations does not expose registration. |
+| Authentication and sessions | `POST /api/v1/auth/register`, `POST /api/v1/auth/login` | Implemented | Auth module. Organizations does not expose registration or login. |
 | Tenant organization and users | none | Foundation only | `Organizations.createWithOwner`. No `POST /organizations` or `POST /tenants`. |
 | Contacts | TBD | Planned | OpenAPI + module documentation |
 | Tasks | TBD | Planned | OpenAPI + module documentation |
@@ -122,7 +122,7 @@ POST /api/v1/auth/register
 - Tenant, Owner, and `tenant.created` outbox event are committed atomically.
 - Password hashing belongs to Auth; Organizations receives only `passwordHash`.
 - If session creation fails after that transaction commits, the tenant remains and registration returns a controlled error so the owner can log in later.
-- Login finds the user, rejects a non-ACTIVE status, and only then verifies the password hash. An unknown email still verifies a fixed unusable Argon2id hash so the two failures take similar time.
+- Login is `POST /api/v1/auth/login` with subdomain, email, and password. It finds the user, rejects a non-ACTIVE status, and only then verifies the password hash. A missing tenant, missing user, or disabled user still verifies a fixed unusable Argon2id hash, and every failure returns the same `INVALID_CREDENTIALS` error. Each success creates a new session id.
 
 Reservation endpoints must derive the tenant from the authenticated session, accept UTC timestamps, and never trust a client-provided tenant identifier. The venue timezone controls staff-facing calendar interpretation. Conflict responses must use a stable error code; the exact HTTP contract is deferred until the application service is implemented.
 

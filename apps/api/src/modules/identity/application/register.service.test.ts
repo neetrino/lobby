@@ -10,6 +10,7 @@ import type { PasswordHasher } from '../domain/password-hasher';
 import { SESSION_IDLE_TTL_MS } from '../domain/session-policy';
 import { Argon2PasswordHasher } from '../infrastructure/argon2-password-hasher';
 import type { IncidentLogger } from '../infrastructure/incident-logger';
+import { PrismaLoginAccountStore } from '../infrastructure/prisma-login-account';
 import { RedisSessionStore } from '../infrastructure/redis-session.store';
 import { SessionCookie, type SessionCookieOptions, type SessionCookieWriter } from '../infrastructure/session-cookie';
 import type { SessionRedisClient } from '../infrastructure/session-redis';
@@ -152,7 +153,12 @@ function build(redis: SessionRedisClient, enabled: boolean, incidents: IncidentL
   );
   const controller = new AuthController(
     service,
-    new LoginService(),
+    new LoginService(
+      new PrismaLoginAccountStore(prisma),
+      new Argon2PasswordHasher(),
+      new RedisSessionStore(redis),
+      incidents,
+    ),
     new LogoutService(),
     new TerminateUserSessionsService(),
     new SessionCookie(true),
