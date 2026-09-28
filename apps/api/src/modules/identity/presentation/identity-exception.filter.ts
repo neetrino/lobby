@@ -1,5 +1,6 @@
 import { Catch, HttpException, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 
+import { ApiError } from '../../../common/http/api-error';
 import { IdentityError, type IdentityErrorCode } from '../domain/identity.errors';
 
 type ErrorBody = {
@@ -31,6 +32,13 @@ export class IdentityExceptionFilter implements ExceptionFilter {
 }
 
 function mapIdentityException(exception: unknown): { statusCode: number; body: ErrorBody } {
+  if (exception instanceof ApiError) {
+    return {
+      statusCode: exception.statusCode,
+      body: { error: { code: exception.code, message: exception.message } },
+    };
+  }
+
   if (exception instanceof IdentityError) {
     return {
       statusCode: statusFor(exception.code),

@@ -66,4 +66,14 @@ Template-ի կանոնները թարմացվում են։ Գոյություն 
 
 ---
 
+## Cookie, Origin և rate limit
+
+API-ն cookie session է օգտագործում։ `POST` / `PUT` / `PATCH` / `DELETE` request-ը պետք է ունենա `ALLOWED_ORIGINS` ցանկի `Origin`։ Եթե `Origin` չկա, ստուգվում է `Referer`-ի origin-ը։ Երկուսն էլ բացակայելիս mutating request-ը մերժվում է։ CORS-ը միայն թույլատրված origin-ներին է credentials տալիս և wildcard չի օգտագործում։ CORS-ը CSRF պաշտպանություն չէ։
+
+Եթե frontend-ը և API-ն տարբեր site-եր են, `SameSite=Lax` cookie-ն cross-site mutation-ին չի ուղարկվի։ Այդ դեպքում պետք է CSRF token strategy (`SameSite=None` և token)։
+
+Login, register և անվավեր session սահմանները `RATE_LIMIT_*` env-ով են։ Redis-ի հաշվիչները `rate_limit:` namespace-ում են և raw IP կամ email չեն պարունակում։
+
+---
+
 [MIT](LICENSE) — ազատ օգտագործում և հարմարեցում։

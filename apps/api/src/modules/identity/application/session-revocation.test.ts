@@ -8,6 +8,8 @@ import type { SessionRole } from '../domain/authenticated-session';
 import { Argon2PasswordHasher } from '../infrastructure/argon2-password-hasher';
 import type { IncidentLogger } from '../infrastructure/incident-logger';
 import { PrismaLoginAccountStore } from '../infrastructure/prisma-login-account';
+import { MemoryRateLimitRedis } from '../infrastructure/memory-rate-limit-redis';
+import { permissiveAuthRateLimits } from '../infrastructure/rate-limit-config';
 import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
 import { RedisSessionStore, StaleSessionError } from '../infrastructure/redis-session.store';
 import { SessionCookie } from '../infrastructure/session-cookie';
@@ -23,6 +25,7 @@ import {
   requestFor,
 } from '../presentation/session-guard.fixtures';
 import { SessionGuard } from '../presentation/session.guard';
+import { AuthRateLimitService } from './auth-rate-limit.service';
 import { LoginService } from './login.service';
 import { LogoutService } from './logout.service';
 import { RegisterService } from './register.service';
@@ -197,6 +200,7 @@ function controllerFor(sessions: RedisSessionStore): AuthController {
     new LoginService(new PrismaLoginAccountStore(prisma), new Argon2PasswordHasher(), sessions, incidents),
     new LogoutService(sessions),
     new SessionCookie(true),
+    new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
   );
 }
 
@@ -205,6 +209,7 @@ function guardFor(redis: SessionRedisClient): SessionGuard {
   return new SessionGuard(
     new SessionAccessService(sessions, new PrismaSessionUserStore(prisma)),
     new SessionCookie(true),
+    new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
   );
 }
 

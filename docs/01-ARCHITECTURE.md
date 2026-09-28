@@ -328,8 +328,8 @@ The login identifier is tenant subdomain + email + password on `POST /api/v1/aut
 
 ### Protection
 
-- Require TLS, constrained CORS, trusted-host/origin configuration, validated inputs, and safe output handling.
-- Apply tiered rate limits and worker-level tenant fairness so one tenant cannot exhaust shared capacity.
+- Require TLS, constrained CORS, trusted-host/origin configuration, validated inputs, and safe output handling. CORS allows credentialed reads from `ALLOWED_ORIGINS` and is not CSRF protection. Mutating methods fail closed unless `Origin` or, when `Origin` is absent, the `Referer` origin is on that list. `SameSite=Lax` does not replace the check. A cross-site frontend needs a CSRF token.
+- Apply tiered rate limits and worker-level tenant fairness so one tenant cannot exhaust shared capacity. Login, registration, and invalid-session counters use the `rate_limit:` key space, separate from session keys, and store only hashes of the IP or normalized account.
 - Use idempotency where retries or duplicate delivery could create duplicate effects.
 - Keep secrets out of source, browser bundles, URLs, and logs; rotate them through an approved process.
 - Record security-sensitive actions in tamper-resistant audit history distinct from operational logs.

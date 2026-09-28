@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { OutboxModule } from '../../common/outbox';
 import { OrganizationsModule } from '../organizations';
+import { AuthRateLimitService } from './application/auth-rate-limit.service';
 import { LoginService } from './application/login.service';
 import { LogoutService } from './application/logout.service';
 import { RegisterService } from './application/register.service';
@@ -12,6 +13,8 @@ import { Argon2PasswordHasher } from './infrastructure/argon2-password-hasher';
 import { INCIDENT_LOGGER, NestIncidentLogger } from './infrastructure/incident-logger';
 import { PrismaLoginAccountStore } from './infrastructure/prisma-login-account';
 import { PrismaSessionUserStore } from './infrastructure/prisma-session-user';
+import { AUTH_RATE_LIMITS, readAuthRateLimitConfig } from './infrastructure/rate-limit-config';
+import { RATE_LIMIT_REDIS } from './infrastructure/rate-limit-redis';
 import { RedisSessionStore } from './infrastructure/redis-session.store';
 import {
   readRegistrationEnabled,
@@ -19,6 +22,7 @@ import {
 } from './infrastructure/registration-config';
 import { readSessionCookieSecure, SessionCookie } from './infrastructure/session-cookie';
 import { SESSION_REDIS, type SessionRedisClient } from './infrastructure/session-redis';
+import { createRateLimitRedisClient } from './infrastructure/upstash-rate-limit-redis';
 import { createSessionRedisClient } from './infrastructure/upstash-session-redis';
 import { AuthController } from './presentation/auth.controller';
 import { SessionGuard } from './presentation/session.guard';
@@ -31,6 +35,8 @@ import { SessionGuard } from './presentation/session.guard';
     { provide: SessionCookie, useFactory: () => new SessionCookie(readSessionCookieSecure()) },
     { provide: REGISTRATION_ENABLED, useFactory: () => readRegistrationEnabled() },
     { provide: SESSION_REDIS, useFactory: () => createSessionRedisClient() },
+    { provide: RATE_LIMIT_REDIS, useFactory: () => createRateLimitRedisClient() },
+    { provide: AUTH_RATE_LIMITS, useFactory: () => readAuthRateLimitConfig() },
     { provide: INCIDENT_LOGGER, useClass: NestIncidentLogger },
     {
       provide: RedisSessionStore,
@@ -46,6 +52,7 @@ import { SessionGuard } from './presentation/session.guard';
     SessionGuard,
     LogoutService,
     TerminateUserSessionsService,
+    AuthRateLimitService,
   ],
   exports: [PASSWORD_HASHER, SessionGuard, TerminateUserSessionsService],
 })

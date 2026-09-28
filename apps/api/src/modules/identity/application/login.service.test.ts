@@ -17,9 +17,12 @@ import { AuthController } from '../presentation/auth.controller';
 import { loginSchema } from '../presentation/dto/login.schema';
 import { IdentityExceptionFilter } from '../presentation/identity-exception.filter';
 import { registerSchema } from '../presentation/dto/register.schema';
+import { AuthRateLimitService } from './auth-rate-limit.service';
 import { LoginService } from './login.service';
 import { LogoutService } from './logout.service';
 import { RegisterService } from './register.service';
+import { MemoryRateLimitRedis } from '../infrastructure/memory-rate-limit-redis';
+import { permissiveAuthRateLimits } from '../infrastructure/rate-limit-config';
 
 const password = 'correct-horse-battery';
 const invalidCredentials = {
@@ -193,8 +196,17 @@ function build(redis: SessionRedisClient, incidents: IncidentLogger) {
     new LoginService(new PrismaLoginAccountStore(prisma), new Argon2PasswordHasher(), sessions, incidents),
     new LogoutService(sessions),
     new SessionCookie(true),
+    new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
   );
-  return { controller };
+  const caller = { ip: '203.0.113.10' };
+  return {
+    controller: {
+      register: (body: Parameters<AuthController['register']>[0], response: SessionCookieWriter) =>
+        controller.register(body, response, caller),
+      login: (body: Parameters<AuthController['login']>[0], response: SessionCookieWriter) =>
+        controller.login(body, response, caller),
+    },
+  };
 }
 
 async function rejected(result: Promise<unknown>): Promise<unknown> {

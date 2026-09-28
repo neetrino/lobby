@@ -1,6 +1,7 @@
 import { BadRequestException, InternalServerErrorException, type ArgumentsHost } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
 
+import { ApiError, apiErrorCodes } from '../../../common/http/api-error';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
 import { IdentityExceptionFilter } from './identity-exception.filter';
 
@@ -27,6 +28,17 @@ describe('IdentityExceptionFilter', () => {
         body: { error: { code, message } },
       });
     }
+  });
+
+  it('maps origin and rate-limit failures to stable codes', () => {
+    expect(invoke(new ApiError(apiErrorCodes.ORIGIN_REJECTED))).toEqual({
+      statusCode: 403,
+      body: { error: { code: apiErrorCodes.ORIGIN_REJECTED, message: 'The request origin is not allowed.' } },
+    });
+    expect(invoke(new ApiError(apiErrorCodes.RATE_LIMITED))).toEqual({
+      statusCode: 429,
+      body: { error: { code: apiErrorCodes.RATE_LIMITED, message: 'Too many requests.' } },
+    });
   });
 
   it('hides internal and validation details', () => {

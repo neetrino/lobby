@@ -1,6 +1,8 @@
 import { Body, Controller, HttpCode, Post, Req, Res, UseFilters } from '@nestjs/common';
 
 import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
+import { readClientAddress } from '../../../common/security/client-address';
+import { AuthRateLimitService } from '../application/auth-rate-limit.service';
 import { LoginService, type SignedInAccount } from '../application/login.service';
 import { LogoutService } from '../application/logout.service';
 import { RegisterService, type RegisteredAccount } from '../application/register.service';
@@ -8,6 +10,11 @@ import { SessionCookie, type SessionCookieWriter } from '../infrastructure/sessi
 import { loginSchema, type LoginInput } from './dto/login.schema';
 import { registerSchema, type RegisterInput } from './dto/register.schema';
 import { IdentityExceptionFilter } from './identity-exception.filter';
+
+type ClientRequest = {
+  ip?: string;
+  socket?: { remoteAddress?: string };
+};
 
 @Controller('v1/auth')
 @UseFilters(IdentityExceptionFilter)
@@ -17,6 +24,7 @@ export class AuthController {
     private readonly loginUser: LoginService,
     private readonly logoutUser: LogoutService,
     private readonly sessionCookie: SessionCookie,
+    private readonly rates: AuthRateLimitService,
   ) {}
 
   @Post('register')
@@ -24,7 +32,9 @@ export class AuthController {
   async register(
     @Body(new ZodValidationPipe(registerSchema)) body: RegisterInput,
     @Res({ passthrough: true }) response: SessionCookieWriter,
+    @Req() request: ClientRequest,
   ): Promise<{ data: RegisteredAccount }> {
+    await this.rates.consumeRegister(readClientAddress(request));
     const created = await this.registerUser.register(body);
     this.sessionCookie.set(response, created.rawSessionId);
     return { data: created.account };
@@ -36,8 +46,11 @@ export class AuthController {
   async login(
     @Body(new ZodValidationPipe(loginSchema)) body: LoginInput,
     @Res({ passthrough: true }) response: SessionCookieWriter,
+    @Req() request: ClientRequest,
   ): Promise<{ data: SignedInAccount }> {
+    await this.rates.consumeLogin(readClientAddress(request), body.subdomain, body.email);
     const signedIn = await this.loginUser.login(body);
+    await this.rates.resetLoginAccount(body.subdomain, body.email);
     this.sessionCookie.set(response, signedIn.rawSessionId);
     return { data: signedIn.account };
   }

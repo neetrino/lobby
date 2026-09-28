@@ -1,8 +1,11 @@
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 import { type ArgumentsHost, type ExecutionContext } from '@nestjs/common';
 
+import { AuthRateLimitService } from '../application/auth-rate-limit.service';
 import { SessionAccessService } from '../application/session-access.service';
 import { IdentityExceptionFilter } from './identity-exception.filter';
+import { MemoryRateLimitRedis } from '../infrastructure/memory-rate-limit-redis';
+import { permissiveAuthRateLimits } from '../infrastructure/rate-limit-config';
 import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
 import { RedisSessionStore } from '../infrastructure/redis-session.store';
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
@@ -55,6 +58,7 @@ export function createGuard(database: PrismaClient, redis: MemorySessionRedis): 
   return new SessionGuard(
     new SessionAccessService(sessions, new PrismaSessionUserStore(database)),
     new SessionCookie(true),
+    new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
   );
 }
 
@@ -67,6 +71,7 @@ export function requestFor(
   headers: { cookie?: string; 'x-tenant-id'?: string };
 } {
   return {
+    ip: '203.0.113.50',
     headers: { cookie: `session=${rawSessionId}`, 'x-tenant-id': override?.header },
     body: override?.body,
     query: override?.query,

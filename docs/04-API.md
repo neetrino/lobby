@@ -37,6 +37,7 @@
 
 ```text
 Request
+→ Origin guard rejects a mutating method unless Origin, or a Referer origin when Origin is absent, is in ALLOWED_ORIGINS
 → SessionGuard reads the session cookie
 → hash the raw session id and load the Redis record
 → reject a missing, expired, revoked, disabled, or version-mismatched session
@@ -125,6 +126,8 @@ POST /api/v1/auth/register
 - If session creation fails after that transaction commits, the tenant remains and registration returns a controlled error so the owner can log in later.
 - Login is `POST /api/v1/auth/login` with subdomain, email, and password. It finds the user, rejects a non-ACTIVE status, and only then verifies the password hash. A missing tenant, missing user, or disabled user still verifies a fixed unusable Argon2id hash, and every failure returns the same `INVALID_CREDENTIALS` error. Each success creates a new session id.
 - Logout is `POST /api/v1/auth/logout`. It deletes `session:<hash>`, removes that hash from `user_sessions:<userId>`, and clears the cookie. A repeated logout, or a logout with a missing or invalid session, still returns `204`. The same cookie on the next protected request is `401`.
+- Mutating methods require an allowed `Origin`. A missing `Origin` falls back to the `Referer` origin. Missing both is rejected with `403 ORIGIN_REJECTED`. `SameSite=Lax` and CORS do not replace that check. CORS uses the explicit origin list with credentials and never `*`. If the frontend and API are different sites, a CSRF token is required.
+- Login is limited per hashed IP and per hashed subdomain + normalized email. Registration is limited per hashed IP. Repeated invalid session cookies are limited per hashed IP. Counters live in the `rate_limit:` Redis key space. Exceeding a limit returns `429 RATE_LIMITED`. The account limit uses the same response whether or not the account exists. A successful login clears only that account counter.
 - Terminating every session for a user increments `users.authentication_version`, then deletes that user's session keys and the `user_sessions:<userId>` index before the call returns. The outbox does not revoke sessions. An audit, notification, or analytics event may be written only after revocation finishes. A user may terminate their own sessions. Owner and Admin may terminate another user in the same tenant; that permission is checked in the application service. A session saved with the previous version cannot authenticate.
 
 Reservation endpoints must derive the tenant from the authenticated session, accept UTC timestamps, and never trust a client-provided tenant identifier. The venue timezone controls staff-facing calendar interpretation. Conflict responses must use a stable error code; the exact HTTP contract is deferred until the application service is implemented.

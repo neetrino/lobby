@@ -55,6 +55,7 @@ export class SessionCookie {
     return {
       httpOnly: true,
       secure: this.secure,
+      // Lax does not replace the Origin guard. Cross-site frontends need a CSRF token.
       sameSite: 'lax',
       path: '/',
       maxAge: SESSION_IDLE_TTL_MS,
