@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { OutboxModule } from '../../common/outbox';
+import { DatabaseModule } from '../../common/database/database.module';
 import { OrganizationsModule } from '../organizations';
 import { AuthRateLimitService } from './application/auth-rate-limit.service';
 import { LoginService } from './application/login.service';
@@ -29,7 +29,7 @@ import { SessionController } from './presentation/session.controller';
 import { SessionGuard } from './presentation/session.guard';
 
 @Module({
-  imports: [OrganizationsModule, OutboxModule],
+  imports: [OrganizationsModule, DatabaseModule],
   controllers: [AuthController, SessionController],
   providers: [
     { provide: PASSWORD_HASHER, useClass: Argon2PasswordHasher },

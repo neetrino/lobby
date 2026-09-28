@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { TENANT_CREATED_EVENT_VERSION, tenantCreatedEventSchema } from '@lobby/contracts';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
-import { PRISMA_CLIENT } from '../../../common/outbox';
+import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import {
   createTenantWithOwnerSchema,

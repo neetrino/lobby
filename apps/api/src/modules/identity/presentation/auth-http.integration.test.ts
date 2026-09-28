@@ -6,7 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 
 import { AppModule } from '../../../app.module';
-import { PRISMA_CLIENT } from '../../../common/outbox';
+import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
 import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../infrastructure/rate-limit-config';
 import { RATE_LIMIT_REDIS } from '../infrastructure/rate-limit-redis';

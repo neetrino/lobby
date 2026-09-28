@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
-import { PRISMA_CLIENT } from '../../../common/outbox';
+import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 
 /** Credential row used only inside login. The password hash never leaves Identity. */
 export type LoginAccount = {
