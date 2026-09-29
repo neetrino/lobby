@@ -13,7 +13,7 @@ import {
   type WorkerEventRegistry,
 } from '../dispatch/event-registry.js';
 import { runRegisteredHandlers } from '../dispatch/run-handlers.js';
-import { handlerFailureIsPermanent } from '../dispatch/retry-classification.js';
+import { outboxFailureAction } from '../dispatch/retry-classification.js';
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import type { OutboxRepository } from './outbox-repository.js';
@@ -49,7 +49,7 @@ export class OutboxProcessor {
       await runRegisteredHandlers(entry.handlers, parsed.event);
       await this.repository.markPublished(record.id, this.now());
     } catch (error) {
-      await this.recordHandlerFailure(record, entry, error);
+      await this.recordHandlerFailure(record, error);
     }
   }
 
@@ -65,12 +65,8 @@ export class OutboxProcessor {
     }
   }
 
-  private async recordHandlerFailure(
-    record: OutboxEventRecord,
-    entry: EventRegistryEntry,
-    error: unknown,
-  ): Promise<void> {
-    if (!handlerFailureIsPermanent(entry.retry, error)) {
+  private async recordHandlerFailure(record: OutboxEventRecord, error: unknown): Promise<void> {
+    if (outboxFailureAction(error) === 'retry') {
       await this.recordFailure(record, error);
       return;
     }

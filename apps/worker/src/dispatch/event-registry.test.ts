@@ -8,9 +8,15 @@ import {
   buildEventRegistry,
   createWorkerEventRegistry,
   defineEventRegistryEntry,
+  defineExternalHandler,
   eventRegistryKey,
 } from './event-registry.js';
-import { handlerFailureIsPermanent, PermanentDispatchError } from './retry-classification.js';
+import { MemoryProcessedEventStore } from './processed-event-store.js';
+import {
+  handlerFailureIsPermanent,
+  outboxFailureAction,
+  PermanentDispatchError,
+} from './retry-classification.js';
 
 type AssertTrue<T extends true> = T;
 type ListedVersion = ReturnType<ReturnType<typeof createWorkerEventRegistry>['list']>[number]['eventVersion'];
@@ -25,8 +31,12 @@ describe('event registry', () => {
       'tenant.created@1',
       'tenant.created@2',
     ]);
-    expect(registry.list().map((entry) => entry.retry)).toEqual(['transient', 'transient', 'transient']);
-    expect(registry.list().map((entry) => entry.handlers.map((handler) => handler.name))).toEqual([
+    expect(registry.list().map((entry) => entry.handlers.map((handler) => handler.retryClassification))).toEqual([
+      ['transient'],
+      ['transient'],
+      ['transient'],
+    ]);
+    expect(registry.list().map((entry) => entry.handlers.map((handler) => handler.handler.name))).toEqual([
       ['ContactCreatedHandler'],
       ['TenantCreatedHandler'],
       ['TenantCreatedHandler'],
@@ -34,7 +44,8 @@ describe('event registry', () => {
     for (const entry of registry.list()) {
       for (const handler of entry.handlers) {
         expect(handler.hasExternalSideEffect).toBe(false);
-        expect('wasAlreadyApplied' in handler).toBe(false);
+        expect('delivery' in handler).toBe(false);
+        expect('retry' in entry).toBe(false);
       }
     }
   });
@@ -45,7 +56,6 @@ describe('event registry', () => {
       eventVersion: 1,
       schema: contactCreatedEventSchema,
       handlers: [],
-      retry: 'transient',
     });
 
     expect(() => buildEventRegistry([entry, entry])).toThrow(
@@ -59,30 +69,28 @@ describe('event registry', () => {
         eventType: 'tenant.created',
         eventVersion: 1,
         schema: tenantCreatedEventV1Schema,
-        handlers: [],
-        retry: 'permanent',
+        handlers: [sideEffectFree('V1', 'permanent')],
       }),
       defineEventRegistryEntry({
         eventType: 'tenant.created',
         eventVersion: 2,
         schema: tenantCreatedEventSchema,
-        handlers: [],
-        retry: 'transient',
+        handlers: [sideEffectFree('V2', 'transient')],
       }),
     ]);
 
-    expect(registry.get('tenant.created', 1)?.retry).toBe('permanent');
-    expect(registry.get('tenant.created', 2)?.retry).toBe('transient');
+    expect(registry.get('tenant.created', 1)?.handlers[0]?.retryClassification).toBe('permanent');
+    expect(registry.get('tenant.created', 2)?.handlers[0]?.retryClassification).toBe('transient');
     expect(registry.get('tenant.created', 3)).toBeUndefined();
   });
 
-  it('requires idempotency only for an external side effect', () => {
+  it('requires durable idempotency only for an external side effect', () => {
     expect(() =>
       assertHandlerIdempotency({
         name: 'Mailer',
         hasExternalSideEffect: true,
       }),
-    ).toThrow('Handler Mailer has an external side effect without idempotency');
+    ).toThrow('Handler Mailer has an external side effect without durable idempotency');
 
     expect(() =>
       assertHandlerIdempotency({
@@ -90,6 +98,15 @@ describe('event registry', () => {
         hasExternalSideEffect: false,
       }),
     ).not.toThrow();
+
+    const registered = defineExternalHandler({
+      handler: { name: 'Mailer', handle: () => Promise.resolve() },
+      store: new MemoryProcessedEventStore(),
+      eventType: 'contact.created',
+      eventVersion: 1,
+    });
+    expect(() => assertHandlerIdempotency(registered)).not.toThrow();
+    expect(registered.retryClassification).toBe('idempotent-side-effect');
   });
 
   it('treats validation as permanent and leaves side-effect retries retryable', () => {
@@ -98,8 +115,27 @@ describe('event registry', () => {
     expect(handlerFailureIsPermanent('idempotent-side-effect', transient)).toBe(false);
     expect(handlerFailureIsPermanent('permanent', transient)).toBe(true);
     expect(handlerFailureIsPermanent('transient', new PermanentDispatchError('invalid'))).toBe(true);
+    expect(outboxFailureAction(new PermanentDispatchError('invalid'))).toBe('fail');
   });
 });
+
+function sideEffectFree(
+  name: string,
+  retryClassification: 'transient' | 'permanent',
+): {
+  handler: { name: string; handle: () => Promise<void> };
+  retryClassification: 'transient' | 'permanent';
+  hasExternalSideEffect: false;
+} {
+  return {
+    handler: {
+      name,
+      handle: () => Promise.resolve(),
+    },
+    retryClassification,
+    hasExternalSideEffect: false,
+  };
+}
 
 function createRegistry() {
   return createWorkerEventRegistry({

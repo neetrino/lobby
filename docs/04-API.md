@@ -235,7 +235,7 @@ HTTP bootstrap lives in `configureHttpApp`. New controllers inherit it.
 - Return `{ data }` for a successful JSON body. Do not add `requestId` to that JSON.
 - Throw a module error with a stable `UPPER_SNAKE_CASE` code, or `NotFoundException` for a missing resource. The global filter writes `{ error: { code, message, requestId } }`.
 - Global codes live in `apps/api/src/common/http/http-error-codes.ts` (`VALIDATION_ERROR`, `INTERNAL_ERROR`, `NOT_FOUND`, `REQUEST_REJECTED`). Thrown platform codes live in `api-error.ts` (`ORIGIN_REJECTED`, `RATE_LIMITED`). Module codes stay in that module, as Identity does in `identity.errors.ts`.
-- Unexpected failures become `INTERNAL_ERROR`. The server log includes the request id and the original error. The client does not receive the driver message or stack.
+- Unexpected failures become `INTERNAL_ERROR`. The server log records the time, request id, method, path, and exception name. It does not record the exception message or stack. The client does not receive the driver message or stack.
 - `GET /health` stays outside `/api/v1` for process probes.
 - CORS uses the explicit `ALLOWED_ORIGINS` list with credentials. `OriginGuard` is global for mutating methods.
 - `helmet` sets the baseline security headers. `Cross-Origin-Resource-Policy` is `cross-origin` because the browser app and the API are different origins. The allowlist still decides who may read the response.

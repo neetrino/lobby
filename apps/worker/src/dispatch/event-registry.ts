@@ -6,28 +6,36 @@ import {
 
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
+import { bindIdempotentDelivery, isDurableDelivery, type DurableDelivery } from './idempotent-delivery.js';
+import type { ProcessedEventStore } from './processed-event-store.js';
 import { PermanentDispatchError, type RetryClassification } from './retry-classification.js';
 
 type EventSchema<T = unknown> = {
   parse(data: unknown): T;
 };
 
+/** Work performed for one registry entry. Retry policy lives on the registration, not here. */
+export type EventHandler = {
+  readonly name: string;
+  handle(event: unknown): Promise<void>;
+};
+
 /** Handler with no external effect. Dispatch does not require an idempotency key. */
 export type SideEffectFreeHandler = {
-  readonly name: string;
+  readonly handler: EventHandler;
+  readonly retryClassification: RetryClassification;
   readonly hasExternalSideEffect: false;
-  handle(event: unknown): Promise<void>;
 };
 
 /**
  * Email, SMS, webhook, push, or another third-party call.
- * `wasAlreadyApplied` runs before `handle` and is required at registration.
+ * `delivery` is a durable reservation created by `defineExternalHandler`.
  */
 export type ExternalSideEffectHandler = {
-  readonly name: string;
+  readonly handler: EventHandler;
+  readonly retryClassification: RetryClassification;
   readonly hasExternalSideEffect: true;
-  wasAlreadyApplied(eventId: string): Promise<boolean>;
-  handle(event: unknown): Promise<void>;
+  readonly delivery: DurableDelivery;
 };
 
 export type RegisteredHandler = SideEffectFreeHandler | ExternalSideEffectHandler;
@@ -37,7 +45,6 @@ export type EventRegistryEntry<TVersion extends number = number> = {
   readonly eventVersion: TVersion;
   readonly schema: EventSchema;
   readonly handlers: readonly RegisteredHandler[];
-  readonly retry: RetryClassification;
 };
 
 export type EventRegistry<TEntries extends readonly EventRegistryEntry[] = readonly EventRegistryEntry[]> = {
@@ -46,9 +53,18 @@ export type EventRegistry<TEntries extends readonly EventRegistryEntry[] = reado
 };
 
 export type HandlerIdempotencyShape = {
-  readonly name: string;
+  readonly name?: string;
+  readonly handler?: { readonly name: string };
   readonly hasExternalSideEffect: boolean;
-  readonly wasAlreadyApplied?: unknown;
+  readonly delivery?: unknown;
+};
+
+export type ExternalHandlerInput = {
+  readonly handler: EventHandler;
+  readonly store: ProcessedEventStore;
+  readonly eventType: string;
+  readonly eventVersion: number;
+  readonly retryClassification?: RetryClassification;
 };
 
 type WorkerHandlers = {
@@ -116,9 +132,8 @@ function workerRegistryEntries(handlers: WorkerHandlers): readonly [
       eventType: 'contact.created',
       eventVersion: 1,
       schema: contactSchema,
-      retry: 'transient',
       handlers: [
-        bindSideEffectFree('ContactCreatedHandler', contactSchema, (event) =>
+        bindSideEffectFree('ContactCreatedHandler', contactSchema, 'transient', (event) =>
           handlers.contactCreated.handle(event),
         ),
       ],
@@ -127,9 +142,8 @@ function workerRegistryEntries(handlers: WorkerHandlers): readonly [
       eventType: 'tenant.created',
       eventVersion: 1,
       schema: tenantV1Schema,
-      retry: 'transient',
       handlers: [
-        bindSideEffectFree('TenantCreatedHandler', tenantV1Schema, (event) =>
+        bindSideEffectFree('TenantCreatedHandler', tenantV1Schema, 'transient', (event) =>
           handlers.tenantCreated.handle(event),
         ),
       ],
@@ -138,9 +152,8 @@ function workerRegistryEntries(handlers: WorkerHandlers): readonly [
       eventType: 'tenant.created',
       eventVersion: 2,
       schema: tenantSchema,
-      retry: 'transient',
       handlers: [
-        bindSideEffectFree('TenantCreatedHandler', tenantSchema, (event) =>
+        bindSideEffectFree('TenantCreatedHandler', tenantSchema, 'transient', (event) =>
           handlers.tenantCreated.handle(event),
         ),
       ],
@@ -148,23 +161,42 @@ function workerRegistryEntries(handlers: WorkerHandlers): readonly [
   ];
 }
 
-/** Rejects an external side effect that can run twice without a dedupe check. */
+/** Binds an external handler to the shared durable reservation. There is no production caller yet. */
+export function defineExternalHandler(input: ExternalHandlerInput): ExternalSideEffectHandler {
+  return {
+    handler: input.handler,
+    retryClassification: input.retryClassification ?? 'idempotent-side-effect',
+    hasExternalSideEffect: true,
+    delivery: bindIdempotentDelivery(input.handler, input.store, {
+      eventType: input.eventType,
+      eventVersion: input.eventVersion,
+    }),
+  };
+}
+
+/** Rejects an external side effect that is not bound to the durable reservation store. */
 export function assertHandlerIdempotency(handler: HandlerIdempotencyShape): void {
-  if (handler.hasExternalSideEffect && typeof handler.wasAlreadyApplied !== 'function') {
-    throw new Error(`Handler ${handler.name} has an external side effect without idempotency`);
+  if (!handler.hasExternalSideEffect || isDurableDelivery(handler.delivery)) {
+    return;
   }
+  const name = handler.handler?.name ?? handler.name ?? 'unknown';
+  throw new Error(`Handler ${name} has an external side effect without durable idempotency`);
 }
 
 function bindSideEffectFree<T>(
   name: string,
   schema: EventSchema<T>,
+  retryClassification: RetryClassification,
   handle: (event: T) => Promise<void>,
 ): SideEffectFreeHandler {
   return {
-    name,
+    retryClassification,
     hasExternalSideEffect: false,
-    async handle(event: unknown): Promise<void> {
-      await handle(parseRegisteredEvent(schema, event, name));
+    handler: {
+      name,
+      async handle(event: unknown): Promise<void> {
+        await handle(parseRegisteredEvent(schema, event, name));
+      },
     },
   };
 }

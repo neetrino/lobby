@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ExternalSideEffectHandler, SideEffectFreeHandler } from './event-registry.js';
+import { defineExternalHandler, type SideEffectFreeHandler } from './event-registry.js';
+import { MemoryProcessedEventStore } from './processed-event-store.js';
+import { ClassifiedHandlerError, outboxFailureAction } from './retry-classification.js';
 import { runRegisteredHandlers } from './run-handlers.js';
 
 const event = {
@@ -11,41 +13,38 @@ const event = {
 };
 
 describe('handler idempotency', () => {
-  it('sends an external side effect once when the same event is dispatched twice', async () => {
-    const applied = new Set<string>();
-    const calls: string[] = [];
-    const mailer: ExternalSideEffectHandler = {
-      name: 'Mailer',
-      hasExternalSideEffect: true,
-      async wasAlreadyApplied(eventId: string): Promise<boolean> {
-        calls.push(`check:${eventId}`);
-        return applied.has(eventId);
+  it('runs an external handler through the durable reservation', async () => {
+    const store = new MemoryProcessedEventStore();
+    let sends = 0;
+    const mailer = defineExternalHandler({
+      handler: {
+        name: 'Mailer',
+        async handle(): Promise<void> {
+          sends += 1;
+        },
       },
-      async handle(value: unknown): Promise<void> {
-        const eventId = readEventId(value);
-        calls.push(`send:${eventId}`);
-        applied.add(eventId);
-      },
-    };
+      store,
+      eventType: event.eventType,
+      eventVersion: event.eventVersion,
+    });
 
     await runRegisteredHandlers([mailer], event);
     await runRegisteredHandlers([mailer], event);
 
-    expect(calls).toEqual([
-      `check:${event.eventId}`,
-      `send:${event.eventId}`,
-      `check:${event.eventId}`,
-    ]);
+    expect(sends).toBe(1);
   });
 
   it('does not attach an idempotency key to a handler without an external side effect', async () => {
     let runs = 0;
     const projector: SideEffectFreeHandler = {
-      name: 'Projector',
-      hasExternalSideEffect: false,
-      async handle(): Promise<void> {
-        runs += 1;
+      handler: {
+        name: 'Projector',
+        async handle(): Promise<void> {
+          runs += 1;
+        },
       },
+      retryClassification: 'transient',
+      hasExternalSideEffect: false,
     };
 
     await runRegisteredHandlers([projector], event);
@@ -53,11 +52,63 @@ describe('handler idempotency', () => {
 
     expect(runs).toBe(2);
   });
+
+  it('fails the outbox row when a permanent handler throws beside a transient one', async () => {
+    const calls: string[] = [];
+
+    const error = await rejectHandlers([
+      recordingHandler('Projector', 'transient', async () => {
+        calls.push('projector');
+      }),
+      recordingHandler('Rules', 'permanent', async () => {
+        throw new Error('business rule');
+      }),
+    ]);
+
+    expect(error).toBeInstanceOf(ClassifiedHandlerError);
+    expect(error.classification).toBe('permanent');
+    expect(outboxFailureAction(error)).toBe('fail');
+    expect(calls).toEqual(['projector']);
+  });
+
+  it('retries when a transient handler throws before a later permanent handler', async () => {
+    let laterRuns = 0;
+
+    const error = await rejectHandlers([
+      recordingHandler('Projector', 'transient', async () => {
+        throw new Error('timeout');
+      }),
+      recordingHandler('Rules', 'permanent', async () => {
+        laterRuns += 1;
+      }),
+    ]);
+
+    expect(error.classification).toBe('transient');
+    expect(outboxFailureAction(error)).toBe('retry');
+    expect(laterRuns).toBe(0);
+  });
 });
 
-function readEventId(value: unknown): string {
-  if (typeof value !== 'object' || value === null || !('eventId' in value) || typeof value.eventId !== 'string') {
-    throw new Error('expected eventId');
+function recordingHandler(
+  name: string,
+  retryClassification: 'transient' | 'permanent',
+  handle: () => Promise<void>,
+): SideEffectFreeHandler {
+  return {
+    handler: { name, handle },
+    retryClassification,
+    hasExternalSideEffect: false,
+  };
+}
+
+async function rejectHandlers(handlers: readonly SideEffectFreeHandler[]): Promise<ClassifiedHandlerError> {
+  try {
+    await runRegisteredHandlers(handlers, event);
+  } catch (error) {
+    if (error instanceof ClassifiedHandlerError) {
+      return error;
+    }
+    throw error;
   }
-  return value.eventId;
+  throw new Error('expected a handler failure');
 }

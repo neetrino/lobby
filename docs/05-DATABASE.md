@@ -125,7 +125,7 @@ An approved physical ERD will replace or extend this view when models are design
 - Inventory, state transitions, uniqueness-sensitive writes, and outbox claiming require an explicit locking, optimistic-concurrency, or idempotency strategy.
 - Business data and its critical outbox event are committed in the same transaction.
 - Consumers tolerate at-least-once delivery and record idempotent processing where needed.
-- `ContactCreatedHandler` and `TenantCreatedHandler` have no external side effect. Their in-memory event sets are process-local. Durable idempotency is required only for a handler that sends email, SMS, a webhook, a push, or another third-party call, and that handler must set `hasExternalSideEffect` in the worker registry.
+- `ContactCreatedHandler` and `TenantCreatedHandler` have no external side effect. Their in-memory event sets are process-local. A handler that sends email, SMS, a webhook, a push, or another third-party call must register with `defineExternalHandler`, which reserves a `processed_events` row before the call.
 - Active table assignments use a PostgreSQL exclusion constraint over tenant, table, and half-open UTC time range (`[start, end)`) so concurrent requests cannot double-book a table.
 - Reservation status and each assignment's `blocks_availability` flag change in one transaction; terminal outcomes release availability according to module policy.
 
@@ -135,15 +135,25 @@ An approved physical ERD will replace or extend this view when models are design
 
 The worker resolves each outbox row by the composite key `eventType@eventVersion` in `apps/worker/src/dispatch/event-registry.ts`. One key has one entry. A duplicate key fails process startup. An unknown key does not fall back to another version or handler: the row becomes `FAILED` immediately, and the log records event type, version, and event id without the payload.
 
-Retry classification is set on the entry:
+Retry classification is set on each handler, not on the entry. One event can register several handlers with different classifications.
 
-| Classification | When the handler throws | Examples |
+Dispatch runs handlers in order and stops at the first throw. That handler's classification decides the single outbox row. A later handler does not run, so its classification is not consulted on that attempt. Put a handler that must reject the event before one whose work should not start after that rejection.
+
+| Classification | When that handler throws | Examples |
 |---|---|---|
 | `transient` | Retry with the existing exponential backoff, then `FAILED` | Temporary downstream outage |
 | `permanent` | `FAILED` on the first failure | Business rule that will not change on retry |
-| `idempotent-side-effect` | Retry, after `wasAlreadyApplied` | Email, SMS, webhook, push, third-party API |
+| `idempotent-side-effect` | The outbox row may retry. The external call itself is at-most-once | Email, SMS, webhook, push, third-party API |
 
-A `PermanentDispatchError` is permanent even when the entry default is retryable. Invalid payloads are permanent. `idempotent-side-effect` is unused until a handler performs a real external call.
+A `PermanentDispatchError` is permanent even when that handler's classification is retryable. Invalid payloads are permanent. `idempotent-side-effect` is unused until a handler performs a real external call. No email, SMS, or webhook provider is wired yet, so none of those providers' idempotency keys are available. The worker therefore reserves first instead of asking a provider to dedupe.
+
+### External side effects
+
+`defineExternalHandler` binds the handler to `processed_events`. Dispatch inserts `(handler_name, event_type, event_version, event_id)` in its own transaction before `handle`. The unique key `processed_events_handler_event_key` makes a second start a no-op.
+
+This is at-most-once. If the process dies after the provider accepted the call, the reservation remains and a retry does not send again. The same is true if `handle` throws after the reservation and the provider never accepted the call: the worker cannot tell those two cases apart, so it does not retry the call. A later poll can still mark the outbox row `PUBLISHED`, because the effect will not be started again. Deleting the `processed_events` row is a separate manual step and is required before a forced resend. Requeue does not delete it.
+
+A failed insert does not call `handle`. There is no production handler of this kind yet. The mechanism is covered by tests that use a mock handler. The first real handler must be registered with `defineExternalHandler` and a `PrismaProcessedEventStore`. Do not implement `wasAlreadyApplied` on the handler.
 
 Current entries:
 
@@ -155,13 +165,38 @@ Current entries:
 
 ### Adding a handler
 
-1. Add a versioned contract in `@lobby/contracts` with a literal `eventType` and `eventVersion`. Do not reuse an existing literal for a new payload.
-2. Register one entry in `createWorkerEventRegistry` only after the API enqueues that event. The key is `eventType@eventVersion`.
-3. Set `retry` to `transient`, `permanent`, or `idempotent-side-effect`. Do not infer it from whichever error the handler happens to throw.
-4. Set `hasExternalSideEffect: true` only for email, SMS, webhook, push, or another third-party call. Implement `wasAlreadyApplied`, which dispatch calls before `handle`.
-5. Leave database-only and pure handlers at `hasExternalSideEffect: false`. Do not add an idempotency key for them.
-6. Add a delivery test for the new key. When the handler has an external side effect, dispatch the same event twice and assert the effect runs once.
-7. Do not add a `processed_events` table until a real external side effect needs durable dedupe. Confirm that schema change before writing it.
+Deploy the worker that understands the new key before the API starts writing it. An old worker marks an unknown `eventType@eventVersion` as `FAILED` immediately, with no automatic retry. There is no automatic replay of those rows.
+
+1. Add a versioned contract in `@lobby/contracts` and register `eventType@eventVersion` in `createWorkerEventRegistry`. Do not reuse an existing literal for a new payload.
+2. Deploy that contract and the worker. Confirm the worker is up (health check or logs) before the next step.
+3. Only then deploy the API that enqueues the new event.
+4. Set each handler's `retryClassification` to `transient`, `permanent`, or `idempotent-side-effect`. Do not infer it from whichever error the handler happens to throw. Do not put one classification on the whole entry.
+5. Register email, SMS, webhook, push, or another third-party call with `defineExternalHandler` and a `PrismaProcessedEventStore`. Do not set `hasExternalSideEffect` by hand and do not add a handler-local dedupe check.
+6. Leave database-only and pure handlers on `bindSideEffectFree` (`hasExternalSideEffect: false`).
+7. Add a delivery test for the new key. When the handler has an external side effect, dispatch the same event twice, including a retry after a simulated crash, and assert the effect runs once.
+
+### Requeue a FAILED outbox row
+
+Requeue is a manual operator command. The worker poll loop never calls it, so a bad deploy cannot replay every `FAILED` row by itself.
+
+`attempts` is reset to 0. A deployment mismatch fails the row on the first claim, and an exhausted retry already sits at the attempt budget. Leaving that counter in place makes the next claim fail again before the handler runs. The operator has decided this row deserves a full budget. `lastError` and the claim lock are cleared, and `availableAt` is set so the next poll can claim the row. Payload and identity stay as they were. Only `FAILED` rows change; `PUBLISHED`, `PENDING`, and `PROCESSING` rows are left alone.
+
+Build the worker, then from `apps/worker` with `DATABASE_URL` pointing at the target database:
+
+```text
+pnpm requeue -- --id <outbox-event-uuid>
+pnpm requeue -- --event contact.created@1
+```
+
+`--id` returns one row to `PENDING`. `--event` returns every `FAILED` row for that `eventType@eventVersion`. The command prints how many rows changed and exits 1 when none matched.
+
+After a rolling deploy that enqueued events before the worker knew the key:
+
+1. Deploy the worker that registers the key, and confirm it is healthy.
+2. Run `pnpm requeue -- --event <eventType>@<eventVersion>` once.
+3. Watch the next poll publish those rows, or fail them again for a real handler error. Do not run the command on a loop.
+
+Rows that failed as unknown events have no `processed_events` reservation, so this requeue still delivers them. Requeue does not delete a reservation. It will not force a second send of an effect that already started.
 
 ---
 
@@ -188,7 +223,7 @@ The runtime uses least-privilege `DATABASE_URL`; privileged migration access suc
 | Deals and pipelines | TBD | Planned | MVP high priority. |
 | Restaurant reservations | `venues`, `dining_areas`, `restaurant_tables`, `service_periods`, `reservations`, `reservation_tables`, `reservation_status_history` | Foundation implemented | Tenant-safe relations and database-enforced overlap prevention; API operations are not implemented. |
 | Orders and delivery | TBD | Conditional | Add only if promoted into MVP. |
-| Audit and outbox | `outbox_events` | Implemented | Pending rows are claimed with `FOR UPDATE SKIP LOCKED`. Retry, batch size, poll interval, and lock timeout are worker configuration. |
+| Audit and outbox | `outbox_events`, `processed_events` | Implemented | Pending rows are claimed with `FOR UPDATE SKIP LOCKED`. `processed_events` reserves an external side effect before it starts. Unique key: `(handler_name, event_type, event_version, event_id)`. |
 
 ### Reservation data rules
 

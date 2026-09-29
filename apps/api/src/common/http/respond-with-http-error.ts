@@ -58,7 +58,11 @@ function logUnexpectedException(exception: unknown, requestId: string, host: Arg
 }
 
 function readRequestRoute(host: ArgumentsHost): { method: string; route: string } {
-  const request = host.switchToHttp().getRequest<HttpRequestSnapshot>();
+  const http = host.switchToHttp();
+  if (typeof http.getRequest !== 'function') {
+    return { method: 'unknown', route: 'unknown' };
+  }
+  const request = http.getRequest<HttpRequestSnapshot>();
   const path = request?.path ?? request?.originalUrl ?? request?.url;
   return {
     method: textOrUnknown(request?.method),

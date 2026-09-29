@@ -1,33 +1,31 @@
 import type { RegisteredHandler } from './event-registry.js';
-import { PermanentDispatchError } from './retry-classification.js';
+import { classifyHandlerFailure } from './retry-classification.js';
 
-/** Runs every handler for one registry entry. Side effects are deduped before `handle`. */
+/**
+ * Runs every handler for one registry entry.
+ * Stops at the first throw. That handler's classification decides the outbox row.
+ */
 export async function runRegisteredHandlers(
   handlers: readonly RegisteredHandler[],
   event: unknown,
 ): Promise<void> {
-  for (const handler of handlers) {
-    if (await skipCompletedSideEffect(handler, event)) {
-      continue;
-    }
-    await handler.handle(event);
+  for (const registration of handlers) {
+    await runOneHandler(registration, event);
   }
 }
 
-async function skipCompletedSideEffect(handler: RegisteredHandler, event: unknown): Promise<boolean> {
-  if (!handler.hasExternalSideEffect) {
-    return false;
+async function runOneHandler(registration: RegisteredHandler, event: unknown): Promise<void> {
+  try {
+    await invokeHandler(registration, event);
+  } catch (error) {
+    throw classifyHandlerFailure(registration.retryClassification, error);
   }
-  return handler.wasAlreadyApplied(readEventId(event));
 }
 
-function readEventId(event: unknown): string {
-  if (!isRecord(event) || typeof event.eventId !== 'string' || event.eventId.length === 0) {
-    throw new PermanentDispatchError('Dispatched event is missing eventId');
+async function invokeHandler(registration: RegisteredHandler, event: unknown): Promise<void> {
+  if (registration.hasExternalSideEffect) {
+    await registration.delivery.run(event);
+    return;
   }
-  return event.eventId;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  await registration.handler.handle(event);
 }

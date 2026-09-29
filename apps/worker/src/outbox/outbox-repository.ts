@@ -82,6 +82,42 @@ export class OutboxRepository {
     });
   }
 
+  /**
+   * Manual recovery for one FAILED row. Not used by the poll loop.
+   * Attempts reset to 0 so a row already at the attempt budget can run again.
+   */
+  requeueFailedById(id: string): Promise<number> {
+    return this.requeueFailed({ id, status: 'FAILED' });
+  }
+
+  /**
+   * Manual recovery for every FAILED row of one eventType@eventVersion.
+   * Attempts reset to 0 for the same reason as `requeueFailedById`.
+   */
+  requeueFailedByEvent(eventType: string, eventVersion: number): Promise<number> {
+    return this.requeueFailed({ eventType, eventVersion, status: 'FAILED' });
+  }
+
+  private async requeueFailed(where: {
+    id?: string;
+    eventType?: string;
+    eventVersion?: number;
+    status: 'FAILED';
+  }): Promise<number> {
+    const result = await this.prisma.outboxEvent.updateMany({
+      where,
+      data: {
+        status: 'PENDING',
+        attempts: 0,
+        availableAt: new Date(0),
+        lastError: null,
+        lockedAt: null,
+        lockedBy: null,
+      },
+    });
+    return result.count;
+  }
+
   private async recoverStaleLocks(tx: Prisma.TransactionClient): Promise<void> {
     const staleBefore = new Date(this.clock.now().getTime() - this.config.lockTimeoutMs);
     await tx.$executeRaw`
