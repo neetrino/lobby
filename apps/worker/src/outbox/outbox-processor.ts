@@ -1,51 +1,85 @@
-import {
-  contactCreatedEventSchema,
-  tenantCreatedEventSchema,
-  tenantCreatedEventV1Schema,
-  type ContactCreatedEvent,
-  type TenantCreatedEvent,
-  type TenantCreatedEventV1,
-} from '@lobby/contracts';
 import type { OutboxEventRecord, OutboxWorkerConfig } from '@lobby/database';
 
+import {
+  createDispatchLog,
+  createDispatchLogger,
+  permanentFailureMessage,
+  type DispatchLogger,
+  type PermanentFailureCode,
+} from '../dispatch/dispatch-logger.js';
+import { createWorkerEventRegistry, type EventRegistryEntry } from '../dispatch/event-registry.js';
+import { runRegisteredHandlers } from '../dispatch/run-handlers.js';
+import { handlerFailureIsPermanent } from '../dispatch/retry-classification.js';
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import type { OutboxRepository } from './outbox-repository.js';
 import { sanitizeOutboxError } from './sanitize-outbox-error.js';
 
-type DeliveredEvent = ContactCreatedEvent | TenantCreatedEvent | TenantCreatedEventV1;
+type ReadEventResult = { ok: true; event: unknown } | { ok: false };
 
 export class OutboxProcessor {
+  private readonly registry: ReturnType<typeof createWorkerEventRegistry>;
+
   constructor(
     private readonly repository: OutboxRepository,
-    private readonly contactCreated: ContactCreatedHandler,
-    private readonly tenantCreated: TenantCreatedHandler,
+    contactCreated: ContactCreatedHandler,
+    tenantCreated: TenantCreatedHandler,
     private readonly config: OutboxWorkerConfig,
     private readonly now: () => Date = () => new Date(),
-  ) {}
+    private readonly logger: DispatchLogger = createDispatchLogger(),
+  ) {
+    this.registry = createWorkerEventRegistry({ contactCreated, tenantCreated });
+  }
 
   async process(record: OutboxEventRecord): Promise<void> {
-    let event: DeliveredEvent;
-    try {
-      event = parseStoredEvent(record);
-    } catch (error) {
-      await this.recordFailure(record, error);
+    const entry = this.registry.get(record.eventType, record.eventVersion);
+    if (!entry) {
+      await this.failPermanently(record, 'unknown_event');
       return;
     }
-
+    const parsed = await this.readEvent(record, entry);
+    if (!parsed.ok) {
+      return;
+    }
     try {
-      await this.deliver(event);
+      await runRegisteredHandlers(entry.handlers, parsed.event);
       await this.repository.markPublished(record.id, this.now());
     } catch (error) {
-      await this.recordFailure(record, error);
+      await this.recordHandlerFailure(record, entry, error);
     }
   }
 
-  private deliver(event: DeliveredEvent): Promise<void> {
-    if (event.eventType === 'tenant.created') {
-      return this.tenantCreated.handle(event);
+  private async readEvent(
+    record: OutboxEventRecord,
+    entry: EventRegistryEntry,
+  ): Promise<ReadEventResult> {
+    try {
+      return { ok: true, event: entry.schema.parse(toStoredEventEnvelope(record)) };
+    } catch {
+      await this.failPermanently(record, 'invalid_event');
+      return { ok: false };
     }
-    return this.contactCreated.handle(event);
+  }
+
+  private async recordHandlerFailure(
+    record: OutboxEventRecord,
+    entry: EventRegistryEntry,
+    error: unknown,
+  ): Promise<void> {
+    if (!handlerFailureIsPermanent(entry.retry, error)) {
+      await this.recordFailure(record, error);
+      return;
+    }
+    await this.failPermanently(record, 'permanent_handler_failure', sanitizeOutboxError(error));
+  }
+
+  private async failPermanently(
+    record: OutboxEventRecord,
+    code: PermanentFailureCode,
+    storedError = permanentFailureMessage(code, record.eventType, record.eventVersion),
+  ): Promise<void> {
+    this.logger.error(createDispatchLog(record, code));
+    await this.repository.markFailed(record.id, storedError);
   }
 
   private async recordFailure(record: OutboxEventRecord, error: unknown): Promise<void> {
@@ -58,8 +92,8 @@ export class OutboxProcessor {
   }
 }
 
-function parseStoredEvent(record: OutboxEventRecord): DeliveredEvent {
-  const raw = {
+function toStoredEventEnvelope(record: OutboxEventRecord): unknown {
+  return {
     eventId: record.id,
     eventType: record.eventType,
     eventVersion: record.eventVersion,
@@ -69,11 +103,4 @@ function parseStoredEvent(record: OutboxEventRecord): DeliveredEvent {
     occurredAt: record.occurredAt.toISOString(),
     payload: record.payload,
   };
-  if (record.eventType === 'tenant.created' && record.eventVersion === 1) {
-    return tenantCreatedEventV1Schema.parse(raw);
-  }
-  if (record.eventType === 'tenant.created') {
-    return tenantCreatedEventSchema.parse(raw);
-  }
-  return contactCreatedEventSchema.parse(raw);
 }

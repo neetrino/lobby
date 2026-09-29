@@ -95,7 +95,7 @@ An approved physical ERD will replace or extend this view when models are design
 - Tenant, Owner, and `tenant.created` outbox event are committed atomically.
 - Password hashing belongs to Auth; Organizations receives only an Argon2id `passwordHash`.
 - Login finds the user, rejects a non-ACTIVE status, and only then verifies the hash.
-- `tenant.created` version 1 events stay deliverable. The worker accepts version 1 (`userId`) and version 2 (`ownerUserId`).
+- The worker dispatch registry delivers `tenant.created` version 1 (`userId`) and version 2 (`ownerUserId`). Any other version is a permanent outbox failure.
 - The owner-authentication migration stops before changing data when two subdomains or two emails in one tenant fold to the same lowercase value, a plan is not `starter`, or a tenant already has more than one user. A single pre-existing user becomes a DISABLED owner with a fixed Argon2id hash whose plaintext is unknown.
 - `subdomain` and `email` are stored lowercase, enforced by database check constraints.
 - The only approved tenant plan is `starter`. Additional plans need a product decision.
@@ -125,9 +125,43 @@ An approved physical ERD will replace or extend this view when models are design
 - Inventory, state transitions, uniqueness-sensitive writes, and outbox claiming require an explicit locking, optimistic-concurrency, or idempotency strategy.
 - Business data and its critical outbox event are committed in the same transaction.
 - Consumers tolerate at-least-once delivery and record idempotent processing where needed.
-- `TenantCreatedHandler` is a placeholder with no external side effect. Its in-memory event set is not durable idempotency. A `processed_events` table is required before that consumer performs a real side effect.
+- `ContactCreatedHandler` and `TenantCreatedHandler` have no external side effect. Their in-memory event sets are process-local. Durable idempotency is required only for a handler that sends email, SMS, a webhook, a push, or another third-party call, and that handler must set `hasExternalSideEffect` in the worker registry.
 - Active table assignments use a PostgreSQL exclusion constraint over tenant, table, and half-open UTC time range (`[start, end)`) so concurrent requests cannot double-book a table.
 - Reservation status and each assignment's `blocks_availability` flag change in one transaction; terminal outcomes release availability according to module policy.
+
+---
+
+## Worker dispatch registry
+
+The worker resolves each outbox row by the composite key `eventType@eventVersion` in `apps/worker/src/dispatch/event-registry.ts`. One key has one entry. A duplicate key fails process startup. An unknown key does not fall back to another version or handler: the row becomes `FAILED` immediately, and the log records event type, version, and event id without the payload.
+
+Retry classification is set on the entry:
+
+| Classification | When the handler throws | Examples |
+|---|---|---|
+| `transient` | Retry with the existing exponential backoff, then `FAILED` | Temporary downstream outage |
+| `permanent` | `FAILED` on the first failure | Business rule that will not change on retry |
+| `idempotent-side-effect` | Retry, after `wasAlreadyApplied` | Email, SMS, webhook, push, third-party API |
+
+A `PermanentDispatchError` is permanent even when the entry default is retryable. Invalid payloads are permanent. `idempotent-side-effect` is unused until a handler performs a real external call.
+
+Current entries:
+
+| Key | Handler | Retry | External side effect |
+|---|---|---|---|
+| `contact.created@1` | `ContactCreatedHandler` | `transient` | no |
+| `tenant.created@1` | `TenantCreatedHandler` | `transient` | no |
+| `tenant.created@2` | `TenantCreatedHandler` | `transient` | no |
+
+### Adding a handler
+
+1. Add a versioned contract in `@lobby/contracts` with a literal `eventType` and `eventVersion`. Do not reuse an existing literal for a new payload.
+2. Register one entry in `createWorkerEventRegistry` only after the API enqueues that event. The key is `eventType@eventVersion`.
+3. Set `retry` to `transient`, `permanent`, or `idempotent-side-effect`. Do not infer it from whichever error the handler happens to throw.
+4. Set `hasExternalSideEffect: true` only for email, SMS, webhook, push, or another third-party call. Implement `wasAlreadyApplied`, which dispatch calls before `handle`.
+5. Leave database-only and pure handlers at `hasExternalSideEffect: false`. Do not add an idempotency key for them.
+6. Add a delivery test for the new key. When the handler has an external side effect, dispatch the same event twice and assert the effect runs once.
+7. Do not add a `processed_events` table until a real external side effect needs durable dedupe. Confirm that schema change before writing it.
 
 ---
 

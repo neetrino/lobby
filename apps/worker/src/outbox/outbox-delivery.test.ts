@@ -148,8 +148,8 @@ describe('outbox delivery', () => {
 
     expect(handler.deliveryCount()).toBe(0);
     const stored = await prisma.outboxEvent.findUniqueOrThrow({ where: { id: event.id } });
-    expect(stored.status).toBe('PENDING');
-    expect(stored.lastError).not.toBeNull();
+    expect(stored.status).toBe('FAILED');
+    expect(stored.lastError).toBe('Invalid event payload for contact.created@1');
   });
 
   it('publishes a tenant-created event', async () => {

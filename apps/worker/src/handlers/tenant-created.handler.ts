@@ -1,10 +1,10 @@
 import type { TenantCreatedEvent, TenantCreatedEventV1 } from '@lobby/contracts';
 
 /**
- * Placeholder consumer for `tenant.created`.
- * It performs no external side effect. The in-memory set is not durable idempotency:
- * a restarted worker can observe the same event again. A `processed_events` record
- * is required before this handler sends mail, notifications, or any other effect.
+ * Placeholder consumer for `tenant.created` versions 1 and 2.
+ * No external side effect, so the registry does not attach a durable idempotency key.
+ * The in-memory set only skips duplicate work inside one process.
+ * A durable idempotency record is required before this handler sends mail or calls a third party.
  */
 export class TenantCreatedHandler {
   private readonly deliveredEventIds = new Set<string>();
