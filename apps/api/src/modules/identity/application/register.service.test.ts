@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
-import { type ArgumentsHost } from '@nestjs/common';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { OutboxService } from '../../../common/outbox/outbox.service';
@@ -12,10 +11,15 @@ import { Argon2PasswordHasher } from '../infrastructure/argon2-password-hasher';
 import type { IncidentLogger } from '../infrastructure/incident-logger';
 import { PrismaLoginAccountStore } from '../infrastructure/prisma-login-account';
 import { RedisSessionStore } from '../infrastructure/redis-session.store';
-import { SessionCookie, type SessionCookieOptions, type SessionCookieWriter } from '../infrastructure/session-cookie';
+import {
+  SessionCookie,
+  type SessionCookieOptions,
+  type SessionCookieWriter,
+} from '../infrastructure/session-cookie';
 import type { SessionRedisClient } from '../infrastructure/session-redis';
 import { AuthController } from '../presentation/auth.controller';
 import { IdentityExceptionFilter } from '../presentation/identity-exception.filter';
+import { TEST_REQUEST_ID, captureException } from '../../../../test/exception-host';
 import { registerSchema } from '../presentation/dto/register.schema';
 import { AuthRateLimitService } from './auth-rate-limit.service';
 import { LoginService } from './login.service';
@@ -51,7 +55,9 @@ describe('registration', () => {
     const cookie = response.setCall?.value ?? '';
     const sessionHash = createHash('sha256').update(cookie, 'utf8').digest('hex');
     const storedUser = await prisma.user.findUniqueOrThrow({ where: { id: body.data.user.id } });
-    const storedEvent = await prisma.outboxEvent.findFirst({ where: { tenantId: body.data.tenant.id } });
+    const storedEvent = await prisma.outboxEvent.findFirst({
+      where: { tenantId: body.data.tenant.id },
+    });
     const serialized = JSON.stringify(body);
 
     expect(body.data.tenant.subdomain).toBe('acme');
@@ -78,10 +84,15 @@ describe('registration', () => {
 
   it('returns 409 TENANT_SUBDOMAIN_TAKEN for a duplicate subdomain', async () => {
     const { controller } = build(new MemorySessionRedis(), true, { error() {} });
-    await controller.register(registration('taken-shop', 'ada@example.com'), new RecordingCookieWriter());
+    await controller.register(
+      registration('taken-shop', 'ada@example.com'),
+      new RecordingCookieWriter(),
+    );
     const response = new RecordingCookieWriter();
 
-    const error = await rejected(controller.register(registration('Taken-Shop', 'other@example.com'), response));
+    const error = await rejected(
+      controller.register(registration('Taken-Shop', 'other@example.com'), response),
+    );
 
     expect(error).toBeInstanceOf(IdentityError);
     expect(invoke(error)).toEqual({
@@ -90,6 +101,7 @@ describe('registration', () => {
         error: {
           code: identityErrorCodes.TENANT_SUBDOMAIN_TAKEN,
           message: 'This subdomain is already taken.',
+          requestId: TEST_REQUEST_ID,
         },
       },
     });
@@ -102,7 +114,9 @@ describe('registration', () => {
     const { controller } = build(new FailingSessionRedis(), true, incidents);
     const response = new RecordingCookieWriter();
 
-    const error = await rejected(controller.register(registration('session-fail', 'ada@example.com'), response));
+    const error = await rejected(
+      controller.register(registration('session-fail', 'ada@example.com'), response),
+    );
     const storedUser = await prisma.user.findFirstOrThrow({ where: { email: 'ada@example.com' } });
     const logged = incidents.messages.join(' ');
 
@@ -131,7 +145,9 @@ describe('registration', () => {
       { error() {} },
     );
 
-    await expect(service.register(registration('disabled-shop', 'ada@example.com'))).rejects.toMatchObject({
+    await expect(
+      service.register(registration('disabled-shop', 'ada@example.com')),
+    ).rejects.toMatchObject({
       code: identityErrorCodes.REGISTRATION_DISABLED,
     });
     expect(await prisma.tenant.count()).toBe(0);
@@ -156,7 +172,12 @@ function build(redis: SessionRedisClient, enabled: boolean, incidents: IncidentL
   );
   const controller = new AuthController(
     service,
-    new LoginService(new PrismaLoginAccountStore(prisma), new Argon2PasswordHasher(), sessions, incidents),
+    new LoginService(
+      new PrismaLoginAccountStore(prisma),
+      new Argon2PasswordHasher(),
+      sessions,
+      incidents,
+    ),
     new LogoutService(sessions),
     new SessionCookie(true),
     new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
@@ -180,20 +201,7 @@ async function rejected(result: Promise<unknown>): Promise<unknown> {
 }
 
 function invoke(exception: unknown): { statusCode: number; body: unknown } {
-  const state: { statusCode: number; body: unknown } = { statusCode: 0, body: undefined };
-  const response = {
-    status(statusCode: number) {
-      state.statusCode = statusCode;
-      return {
-        json(body: unknown) {
-          state.body = body;
-        },
-      };
-    },
-  };
-  const host = { switchToHttp: () => ({ getResponse: () => response }) } as ArgumentsHost;
-  new IdentityExceptionFilter().catch(exception, host);
-  return state;
+  return captureException(new IdentityExceptionFilter(), exception);
 }
 
 async function clearTenants(): Promise<void> {

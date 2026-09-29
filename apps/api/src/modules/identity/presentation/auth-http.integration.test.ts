@@ -1,12 +1,13 @@
 import 'reflect-metadata';
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
-import { type INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 
 import { AppModule } from '../../../app.module';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
+import { configureHttpApp } from '../../../common/http/configure-http-app';
 import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
 import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../infrastructure/rate-limit-config';
 import { RATE_LIMIT_REDIS } from '../infrastructure/rate-limit-redis';
@@ -20,7 +21,7 @@ const password = 'correct-horse-battery';
 const sessions = new IndexedSessionRedis();
 const rateLimit = new MemoryRateLimitRedis();
 
-let app: INestApplication;
+let app: NestExpressApplication;
 let prisma: PrismaClient;
 
 beforeAll(async () => {
@@ -39,8 +40,8 @@ beforeAll(async () => {
     .overrideProvider(AUTH_RATE_LIMITS)
     .useValue(permissiveAuthRateLimits())
     .compile();
-  app = moduleRef.createNestApplication({ logger: false });
-  app.setGlobalPrefix('api');
+  app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });
+  configureHttpApp(app, { allowedOrigins: [origin], trustProxy: false }, { logger: false });
   await app.init();
 }, 60_000);
 
@@ -60,15 +61,25 @@ beforeEach(async () => {
 describe('Nest auth HTTP', () => {
   it('registers, reads the session, then rejects the same cookie after logout', async () => {
     const http = app.getHttpServer();
-    const registered = await request(http).post('/api/v1/auth/register').set('Origin', origin).send(registration('nest-shop'));
+    const registered = await request(http)
+      .post('/api/v1/auth/register')
+      .set('Origin', origin)
+      .send(registration('nest-shop'));
     const cookie = sessionCookie(registered.headers['set-cookie']);
     const current = await request(http).get('/api/v1/auth/session').set('Cookie', cookie);
-    const loggedOut = await request(http).post('/api/v1/auth/logout').set('Origin', origin).set('Cookie', cookie);
+    const loggedOut = await request(http)
+      .post('/api/v1/auth/logout')
+      .set('Origin', origin)
+      .set('Cookie', cookie);
     const rejected = await request(http).get('/api/v1/auth/session').set('Cookie', cookie);
 
     expect(registered.status).toBe(201);
+    expect(registered.headers['x-request-id']).toEqual(expect.any(String));
+    expect(registered.body.requestId).toBeUndefined();
     expect(current.status).toBe(200);
-    expect(current.body).toMatchObject({ data: { user: { role: 'OWNER' }, tenant: { id: registered.body.data.tenant.id } } });
+    expect(current.body).toMatchObject({
+      data: { user: { role: 'OWNER' }, tenant: { id: registered.body.data.tenant.id } },
+    });
     expect(loggedOut.status).toBe(204);
     expect(rejected.status).toBe(401);
   }, 30_000);
@@ -79,7 +90,10 @@ describe('Nest auth HTTP', () => {
       .post('/api/v1/auth/login')
       .set('Origin', 'https://evil.example')
       .send({ subdomain: 'nest-shop', email: 'ada@example.com', password });
-    const registered = await request(http).post('/api/v1/auth/register').set('Origin', origin).send(registration('nest-all'));
+    const registered = await request(http)
+      .post('/api/v1/auth/register')
+      .set('Origin', origin)
+      .send(registration('nest-all'));
     const cookie = sessionCookie(registered.headers['set-cookie']);
     const terminated = await request(http)
       .post('/api/v1/auth/sessions/terminate-all')
@@ -88,7 +102,9 @@ describe('Nest auth HTTP', () => {
     const rejected = await request(http).get('/api/v1/auth/session').set('Cookie', cookie);
 
     expect(foreign.status).toBe(403);
-    expect(foreign.body).toMatchObject({ error: { code: 'ORIGIN_REJECTED' } });
+    expect(foreign.body).toMatchObject({
+      error: { code: 'ORIGIN_REJECTED', requestId: foreign.headers['x-request-id'] },
+    });
     expect(terminated.status).toBe(204);
     expect(rejected.status).toBe(401);
   }, 30_000);

@@ -1,7 +1,14 @@
-import { BadRequestException, InternalServerErrorException, type ArgumentsHost } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConsoleLogger,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
 
 import { ApiError, apiErrorCodes } from '../../../common/http/api-error';
+import { ValidationError } from '../../../common/http/validation-error';
+import { TEST_REQUEST_ID, captureException } from '../../../../test/exception-host';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
 import { IdentityExceptionFilter } from './identity-exception.filter';
 
@@ -26,7 +33,7 @@ describe('IdentityExceptionFilter', () => {
     for (const [code, statusCode, message] of cases) {
       expect(invoke(new IdentityError(code))).toEqual({
         statusCode,
-        body: { error: { code, message } },
+        body: { error: { code, message, requestId: TEST_REQUEST_ID } },
       });
     }
   });
@@ -34,50 +41,88 @@ describe('IdentityExceptionFilter', () => {
   it('maps origin and rate-limit failures to stable codes', () => {
     expect(invoke(new ApiError(apiErrorCodes.ORIGIN_REJECTED))).toEqual({
       statusCode: 403,
-      body: { error: { code: apiErrorCodes.ORIGIN_REJECTED, message: 'The request origin is not allowed.' } },
+      body: {
+        error: {
+          code: apiErrorCodes.ORIGIN_REJECTED,
+          message: 'The request origin is not allowed.',
+          requestId: TEST_REQUEST_ID,
+        },
+      },
     });
     expect(invoke(new ApiError(apiErrorCodes.RATE_LIMITED))).toEqual({
       statusCode: 429,
-      body: { error: { code: apiErrorCodes.RATE_LIMITED, message: 'Too many requests.' } },
+      body: {
+        error: {
+          code: apiErrorCodes.RATE_LIMITED,
+          message: 'Too many requests.',
+          requestId: TEST_REQUEST_ID,
+        },
+      },
     });
   });
 
   it('hides internal and validation details', () => {
     const secret = 'plain-text-password';
-    const internal = invoke(new Error(`PrismaClientKnownRequestError password=${secret}`));
-    const rejected = invoke(new BadRequestException({ issues: [{ message: secret }] }));
-    const server = invoke(new InternalServerErrorException(`Redis ${secret}`));
+    const logged: string[] = [];
+    Logger.overrideLogger({
+      log() {},
+      error(message: unknown) {
+        logged.push(String(message));
+      },
+      warn() {},
+      debug() {},
+      verbose() {},
+      fatal() {},
+    });
+    let internal: { statusCode: number; body: unknown };
+    let rejected: { statusCode: number; body: unknown };
+    let server: { statusCode: number; body: unknown };
+    try {
+      internal = invoke(new Error(`PrismaClientKnownRequestError password=${secret}`));
+      rejected = invoke(new BadRequestException({ issues: [{ message: secret }] }));
+      server = invoke(new InternalServerErrorException(`Redis ${secret}`));
+    } finally {
+      Logger.overrideLogger(new ConsoleLogger());
+    }
 
     expect(internal).toEqual({
       statusCode: 500,
-      body: { error: { code: 'INTERNAL_ERROR', message: 'Something went wrong.' } },
+      body: {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Something went wrong.',
+          requestId: TEST_REQUEST_ID,
+        },
+      },
     });
     expect(JSON.stringify(internal)).not.toContain(secret);
     expect(JSON.stringify(internal)).not.toContain('Prisma');
-    expect(rejected.statusCode).toBe(400);
+    expect(rejected).toMatchObject({
+      statusCode: 400,
+      body: { error: { code: 'REQUEST_REJECTED', requestId: TEST_REQUEST_ID } },
+    });
     expect(JSON.stringify(rejected.body)).not.toContain(secret);
+    const validation = invoke(new ValidationError([{ path: 'owner.password' }]));
+    expect(validation).toEqual({
+      statusCode: 400,
+      body: {
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed.',
+          requestId: TEST_REQUEST_ID,
+          fields: [{ path: 'owner.password' }],
+        },
+      },
+    });
+    expect(JSON.stringify(validation.body)).not.toContain(secret);
     expect(server.statusCode).toBe(500);
     expect(JSON.stringify(server.body)).not.toContain(secret);
     expect(JSON.stringify(server.body)).not.toContain('Redis');
+    expect(logged.join('\n')).toContain(secret);
+    expect(logged.join('\n')).toContain(TEST_REQUEST_ID);
   });
 });
 
 function invoke(exception: unknown): { statusCode: number; body: unknown } {
-  const state: { statusCode: number; body: unknown } = { statusCode: 0, body: undefined };
-  const response = {
-    status(statusCode: number) {
-      state.statusCode = statusCode;
-      return {
-        json(body: unknown) {
-          state.body = body;
-        },
-      };
-    },
-  };
-  const host = {
-    switchToHttp: () => ({ getResponse: () => response }),
-  } as ArgumentsHost;
-
-  new IdentityExceptionFilter().catch(exception, host);
-  return state;
+  return captureException(new IdentityExceptionFilter(), exception);
 }

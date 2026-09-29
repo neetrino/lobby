@@ -5,6 +5,8 @@ info:
   description: >
     Cookie session authentication. Mutating requests require an allowed Origin.
     CORS is not CSRF protection. A cross-site frontend needs a CSRF token.
+    Every response sets X-Request-Id. The server ignores a client-supplied value.
+    Error JSON includes that same requestId. Successful data JSON does not.
 servers:
   - url: http://localhost:3001
 tags:
@@ -59,6 +61,7 @@ paths:
                 error:
                   code: TENANT_SUBDOMAIN_TAKEN
                   message: This subdomain is already taken.
+                  requestId: request-id
         '429':
           $ref: '#/components/responses/RateLimited'
         '503':
@@ -71,6 +74,7 @@ paths:
                 error:
                   code: ACCOUNT_CREATED_SIGN_IN_REQUIRED
                   message: The account was created. Sign in to continue.
+                  requestId: request-id
   /api/v1/auth/login:
     post:
       tags: [Auth]
@@ -113,6 +117,7 @@ paths:
                 error:
                   code: INVALID_CREDENTIALS
                   message: Invalid credentials.
+                  requestId: request-id
         '403':
           $ref: '#/components/responses/OriginRejected'
         '429':
@@ -127,6 +132,7 @@ paths:
                 error:
                   code: SERVICE_UNAVAILABLE
                   message: The session store is unavailable.
+                  requestId: request-id
   /api/v1/auth/session:
     get:
       tags: [Auth]
@@ -354,12 +360,23 @@ components:
       properties:
         error:
           type: object
-          required: [code, message]
+          required: [code, message, requestId]
           properties:
             code:
               type: string
             message:
               type: string
+            requestId:
+              type: string
+            fields:
+              type: array
+              description: Present on VALIDATION_ERROR. Paths only, never submitted values.
+              items:
+                type: object
+                required: [path]
+                properties:
+                  path:
+                    type: string
   responses:
     Unauthenticated:
       description: The session cookie is missing, expired, or revoked
@@ -371,16 +388,20 @@ components:
             error:
               code: UNAUTHENTICATED
               message: Authentication is required.
+              requestId: request-id
     RequestRejected:
-      description: Validation failed. The body does not echo the input.
+      description: Validation failed. The body lists field paths and does not echo the input.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             error:
-              code: REQUEST_REJECTED
-              message: The request could not be processed.
+              code: VALIDATION_ERROR
+              message: Validation failed.
+              requestId: request-id
+              fields:
+                - path: owner.password
     OriginRejected:
       description: Origin was missing or not allowed
       content:
@@ -391,6 +412,7 @@ components:
             error:
               code: ORIGIN_REJECTED
               message: The request origin is not allowed.
+              requestId: request-id
     ForbiddenAuth:
       description: Registration is disabled, or the origin was rejected
       content:
@@ -407,6 +429,7 @@ components:
             error:
               code: SERVICE_UNAVAILABLE
               message: The session store is unavailable.
+              requestId: request-id
     RateLimited:
       description: Auth rate limit exceeded
       content:
@@ -417,3 +440,4 @@ components:
             error:
               code: RATE_LIMITED
               message: Too many requests.
+              requestId: request-id

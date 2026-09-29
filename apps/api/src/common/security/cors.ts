@@ -3,6 +3,7 @@ export type CredentialedCorsOptions = {
   credentials: true;
   methods: readonly string[];
   allowedHeaders: readonly string[];
+  exposedHeaders: readonly string[];
 };
 
 type CorsApp = {
@@ -20,7 +21,8 @@ export function credentialedCorsOptions(origins: readonly string[]): Credentiale
     origin: origins.length === 0 ? false : origins,
     credentials: true,
     methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Accept', 'X-Request-Id'],
+    exposedHeaders: ['X-Request-Id'],
   };
 }
 

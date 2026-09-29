@@ -23,7 +23,10 @@ describe('TRUST_PROXY', () => {
 
   it('applies the parsed setting on the HTTP app', () => {
     const settings = new Map<string, unknown>();
-    applyTrustProxy({ set: (setting, value) => settings.set(setting, value) }, { TRUST_PROXY: '2' });
+    applyTrustProxy(
+      { set: (setting, value) => settings.set(setting, value) },
+      readTrustProxy({ TRUST_PROXY: '2' }),
+    );
 
     expect(settings.get('trust proxy')).toBe(2);
   });

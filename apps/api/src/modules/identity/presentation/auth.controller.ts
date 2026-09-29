@@ -1,6 +1,6 @@
-import { Body, Controller, HttpCode, Post, Req, Res, UseFilters } from '@nestjs/common';
+import { Controller, HttpCode, Post, Req, Res, UseFilters } from '@nestjs/common';
 
-import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
+import { ZodBody } from '../../../common/pipes/zod-input';
 import { readClientAddress } from '../../../common/security/client-address';
 import { AuthRateLimitService } from '../application/auth-rate-limit.service';
 import { LoginService, type SignedInAccount } from '../application/login.service';
@@ -16,7 +16,7 @@ type ClientRequest = {
   socket?: { remoteAddress?: string };
 };
 
-@Controller('v1/auth')
+@Controller('auth')
 @UseFilters(IdentityExceptionFilter)
 export class AuthController {
   constructor(
@@ -30,7 +30,7 @@ export class AuthController {
   @Post('register')
   @HttpCode(201)
   async register(
-    @Body(new ZodValidationPipe(registerSchema)) body: RegisterInput,
+    @ZodBody(registerSchema) body: RegisterInput,
     @Res({ passthrough: true }) response: SessionCookieWriter,
     @Req() request: ClientRequest,
   ): Promise<{ data: RegisteredAccount }> {
@@ -44,7 +44,7 @@ export class AuthController {
   @Post('login')
   @HttpCode(200)
   async login(
-    @Body(new ZodValidationPipe(loginSchema)) body: LoginInput,
+    @ZodBody(loginSchema) body: LoginInput,
     @Res({ passthrough: true }) response: SessionCookieWriter,
     @Req() request: ClientRequest,
   ): Promise<{ data: SignedInAccount }> {

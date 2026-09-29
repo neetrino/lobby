@@ -20,16 +20,16 @@
 
 ## Base contract
 
-| Concern        | Proposed rule                                                                                                |
-| -------------- | ------------------------------------------------------------------------------------------------------------ |
-| Base path      | `/api/v1`                                                                                                    |
-| Format         | JSON over HTTPS                                                                                              |
+| Concern        | Proposed rule                                                                                                        |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Base path      | `/api/v1`, set once in HTTP bootstrap. Controllers do not repeat `v1`. `GET /health` has no version prefix.          |
+| Format         | JSON over HTTPS                                                                                                      |
 | Authentication | Opaque server-side session. `POST /api/v1/auth/login` sets the session cookie. `POST /api/v1/auth/logout` clears it. |
-| Tenant context | Every tenant-scoped request identifies an authorized organization using the approved routing/header strategy |
-| Validation     | Validate path, query, headers, and body at runtime                                                           |
-| Dates          | ISO 8601 UTC in API payloads unless a contract explicitly states otherwise                                   |
-| Identifiers    | Opaque stable IDs; exact format TBD                                                                          |
-| Localization   | API returns stable codes; clients translate user-facing messages where practical                             |
+| Tenant context | Every tenant-scoped request identifies an authorized organization using the approved routing/header strategy         |
+| Validation     | Validate path, query, headers, and body at runtime                                                                   |
+| Dates          | ISO 8601 UTC in API payloads unless a contract explicitly states otherwise                                           |
+| Identifiers    | Opaque stable IDs; exact format TBD                                                                                  |
+| Localization   | API returns stable codes; clients translate user-facing messages where practical                                     |
 
 ---
 
@@ -67,14 +67,27 @@ Errors use a stable machine-readable code and do not expose stack traces or inte
 ```json
 {
   "error": {
-    "code": "RESOURCE_NOT_FOUND",
-    "message": "The requested resource was not found",
+    "code": "NOT_FOUND",
+    "message": "The requested resource was not found.",
     "requestId": "request-id"
   }
 }
 ```
 
-Auth responses use this envelope. `requestId` is not attached yet.
+Validation failures add `fields`. Each entry is a schema path. Submitted values are not copied into the body.
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed.",
+    "requestId": "request-id",
+    "fields": [{ "path": "owner.password" }]
+  }
+}
+```
+
+Successful auth responses stay `{ "data": ... }` and do not add `requestId` to the JSON. Logout stays `204` with no body. Every response, including errors and `204`, sets `X-Request-Id`. The API generates that id and ignores a client-supplied `X-Request-Id`, so callers cannot forge log correlation.
 
 ---
 
@@ -92,16 +105,16 @@ Auth responses use this envelope. `requestId` is not attached yet.
 
 ## Endpoint index
 
-| Module                        | Base resource                                           | Status          | Contract location                                                             |
-| ----------------------------- | ------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------- |
-| Authentication and sessions   | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/session`, `POST /api/v1/auth/sessions/terminate-all`, `POST /api/v1/auth/users/{userId}/sessions/terminate` | Implemented | [`api/auth.openapi.yaml`](./api/auth.openapi.yaml). |
-| Tenant organization and users | none                                                    | Foundation only | `Organizations.createWithOwner`. No `POST /organizations` or `POST /tenants`. |
-| Contacts                      | TBD                                                     | Planned         | OpenAPI + module documentation                                                |
-| Tasks                         | TBD                                                     | Planned         | OpenAPI + module documentation                                                |
-| Deals and pipelines           | TBD                                                     | Planned         | OpenAPI + module documentation                                                |
-| Restaurant reservations       | `/reservations`                                         | Foundation only | Runtime schemas in `@lobby/contracts`; endpoints not implemented              |
-| Orders and delivery           | TBD                                                     | Conditional     | OpenAPI + module documentation                                                |
-| Notifications                 | TBD                                                     | Conditional     | OpenAPI + module documentation                                                |
+| Module                        | Base resource                                                                                                                                                                                                      | Status          | Contract location                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- | ----------------------------------------------------------------------------- |
+| Authentication and sessions   | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/session`, `POST /api/v1/auth/sessions/terminate-all`, `POST /api/v1/auth/users/{userId}/sessions/terminate` | Implemented     | [`api/auth.openapi.yaml`](./api/auth.openapi.yaml).                           |
+| Tenant organization and users | none                                                                                                                                                                                                               | Foundation only | `Organizations.createWithOwner`. No `POST /organizations` or `POST /tenants`. |
+| Contacts                      | TBD                                                                                                                                                                                                                | Planned         | OpenAPI + module documentation                                                |
+| Tasks                         | TBD                                                                                                                                                                                                                | Planned         | OpenAPI + module documentation                                                |
+| Deals and pipelines           | TBD                                                                                                                                                                                                                | Planned         | OpenAPI + module documentation                                                |
+| Restaurant reservations       | `/reservations`                                                                                                                                                                                                    | Foundation only | Runtime schemas in `@lobby/contracts`; endpoints not implemented              |
+| Orders and delivery           | TBD                                                                                                                                                                                                                | Conditional     | OpenAPI + module documentation                                                |
+| Notifications                 | TBD                                                                                                                                                                                                                | Conditional     | OpenAPI + module documentation                                                |
 
 Add exact methods, paths, permissions, request schemas, response schemas, and error codes only when the corresponding module contract is designed.
 
@@ -159,56 +172,78 @@ Content-Type: application/json
 
 `POST /api/v1/auth/logout` with the session cookie returns `204` and clears it. Repeating logout is still `204`. The same cookie on the next protected request is `401`.
 
-| Code | Status | When |
-| --- | --- | --- |
-| `INVALID_CREDENTIALS` | 401 | Login could not authenticate the account |
-| `UNAUTHENTICATED` | 401 | No usable session cookie, or the session store timed out while checking it |
-| `SESSION_EXPIRED` | 401 | Idle or absolute expiry |
-| `SESSION_REVOKED` | 401 | Session deleted, version changed, or user disabled |
-| `ORIGIN_REJECTED` | 403 | Mutating request without an allowed Origin or Referer |
-| `FORBIDDEN` | 403 | Caller may not revoke that user's sessions |
-| `REGISTRATION_DISABLED` | 403 | `REGISTRATION_ENABLED` is not `true` |
-| `REQUEST_REJECTED` | 4xx | Input failed validation, or another non-auth client error |
-| `TENANT_SUBDOMAIN_TAKEN` | 409 | Subdomain already exists |
-| `RATE_LIMITED` | 429 | Login, register, or invalid-session limit exceeded |
-| `ACCOUNT_CREATED_SIGN_IN_REQUIRED` | 503 | Tenant committed, but the session was not stored |
-| `SERVICE_UNAVAILABLE` | 503 | Session store timed out or could not be reached. Login, logout, and registration before the tenant is saved use this code |
-| `INTERNAL_ERROR` | 500 | Unexpected failure. The body has no internal text |
+| Code                               | Status | When                                                                                                                      |
+| ---------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `INVALID_CREDENTIALS`              | 401    | Login could not authenticate the account                                                                                  |
+| `UNAUTHENTICATED`                  | 401    | No usable session cookie, or the session store timed out while checking it                                                |
+| `SESSION_EXPIRED`                  | 401    | Idle or absolute expiry                                                                                                   |
+| `SESSION_REVOKED`                  | 401    | Session deleted, version changed, or user disabled                                                                        |
+| `ORIGIN_REJECTED`                  | 403    | Mutating request without an allowed Origin or Referer                                                                     |
+| `FORBIDDEN`                        | 403    | Caller may not revoke that user's sessions                                                                                |
+| `REGISTRATION_DISABLED`            | 403    | `REGISTRATION_ENABLED` is not `true`                                                                                      |
+| `VALIDATION_ERROR`                 | 400    | Schema validation failed. `fields` lists paths only                                                                       |
+| `REQUEST_REJECTED`                 | 4xx    | Another client error, such as malformed JSON. The body does not echo input                                                |
+| `NOT_FOUND`                        | 404    | The resource is missing from the caller's scope                                                                           |
+| `TENANT_SUBDOMAIN_TAKEN`           | 409    | Subdomain already exists                                                                                                  |
+| `RATE_LIMITED`                     | 429    | Login, register, or invalid-session limit exceeded                                                                        |
+| `ACCOUNT_CREATED_SIGN_IN_REQUIRED` | 503    | Tenant committed, but the session was not stored                                                                          |
+| `SERVICE_UNAVAILABLE`              | 503    | Session store timed out or could not be reached. Login, logout, and registration before the tenant is saved use this code |
+| `INTERNAL_ERROR`                   | 500    | Unexpected failure. The body has no internal text                                                                         |
 
 ### Session cookie
 
-| Attribute | Value |
-| --- | --- |
-| Name | `session` |
-| Value | Opaque random id. Redis stores only `session:<sha256>` |
-| `HttpOnly` | always |
-| `SameSite` | `Lax`. This does not replace the Origin check |
-| `Secure` | set when `NODE_ENV=production` |
-| `Path` | `/` |
-| `Max-Age` | idle lifetime, 7 days |
+| Attribute  | Value                                                  |
+| ---------- | ------------------------------------------------------ |
+| Name       | `session`                                              |
+| Value      | Opaque random id. Redis stores only `session:<sha256>` |
+| `HttpOnly` | always                                                 |
+| `SameSite` | `Lax`. This does not replace the Origin check          |
+| `Secure`   | set when `NODE_ENV=production`                         |
+| `Path`     | `/`                                                    |
+| `Max-Age`  | idle lifetime, 7 days                                  |
 
 Logout sends a clearing `Set-Cookie` (`Expires` at the epoch, no `Max-Age`).
 
 ### Auth environment
 
-| Variable | Role |
-| --- | --- |
-| `REGISTRATION_ENABLED` | Public registration runs only when the value is `true` |
-| `ALLOWED_ORIGINS` | Comma-separated browser origins. No `*` |
-| `APP_URL` | Origin used when `ALLOWED_ORIGINS` is unset |
-| `NODE_ENV` | `production` marks the session cookie `Secure` |
-| `RATE_LIMIT_LOGIN_IP_LIMIT` / `RATE_LIMIT_LOGIN_IP_WINDOW_MS` | Default 20 attempts / 15 minutes |
-| `RATE_LIMIT_LOGIN_ACCOUNT_LIMIT` / `RATE_LIMIT_LOGIN_ACCOUNT_WINDOW_MS` | Default 10 attempts / 15 minutes |
-| `RATE_LIMIT_REGISTER_IP_LIMIT` / `RATE_LIMIT_REGISTER_IP_WINDOW_MS` | Default 5 attempts / 1 hour |
-| `RATE_LIMIT_INVALID_SESSION_IP_LIMIT` / `RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS` | Default 30 attempts / 5 minutes |
-| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | Session and rate-limit store |
-| `SESSION_REDIS_TIMEOUT_MS` | Upstash session and rate-limit command timeout. Default 3000, maximum 30000 |
-| `DATABASE_URL` | Tenant and user rows |
-| `TRUST_PROXY` | Off by default. Production should list proxy IPs or CIDRs. A hop count is only for a topology where every request crosses the same number of proxies. `true` is rejected |
+| Variable                                                                          | Role                                                                                                                                                                     |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `REGISTRATION_ENABLED`                                                            | Public registration runs only when the value is `true`                                                                                                                   |
+| `ALLOWED_ORIGINS`                                                                 | Comma-separated browser origins. No `*`                                                                                                                                  |
+| `APP_URL`                                                                         | Origin used when `ALLOWED_ORIGINS` is unset                                                                                                                              |
+| `NODE_ENV`                                                                        | `production` marks the session cookie `Secure`                                                                                                                           |
+| `RATE_LIMIT_LOGIN_IP_LIMIT` / `RATE_LIMIT_LOGIN_IP_WINDOW_MS`                     | Default 20 attempts / 15 minutes                                                                                                                                         |
+| `RATE_LIMIT_LOGIN_ACCOUNT_LIMIT` / `RATE_LIMIT_LOGIN_ACCOUNT_WINDOW_MS`           | Default 10 attempts / 15 minutes                                                                                                                                         |
+| `RATE_LIMIT_REGISTER_IP_LIMIT` / `RATE_LIMIT_REGISTER_IP_WINDOW_MS`               | Default 5 attempts / 1 hour                                                                                                                                              |
+| `RATE_LIMIT_INVALID_SESSION_IP_LIMIT` / `RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS` | Default 30 attempts / 5 minutes                                                                                                                                          |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`                             | Session and rate-limit store                                                                                                                                             |
+| `SESSION_REDIS_TIMEOUT_MS`                                                        | Upstash session and rate-limit command timeout. Default 3000, maximum 30000                                                                                              |
+| `DATABASE_URL`                                                                    | Tenant and user rows. Required at startup                                                                                                                                |
+| `PORT`                                                                            | API listen port. Default `3001`. An invalid value fails startup                                                                                                          |
+| `TRUST_PROXY`                                                                     | Off by default. Production should list proxy IPs or CIDRs. A hop count is only for a topology where every request crosses the same number of proxies. `true` is rejected |
 
 Reservation endpoints must derive the tenant from the authenticated session, accept UTC timestamps, and never trust a client-provided tenant identifier. The venue timezone controls staff-facing calendar interpretation. Conflict responses must use a stable error code; the exact HTTP contract is deferred until the application service is implemented.
 
 ---
+
+## Bootstrap conventions
+
+HTTP bootstrap lives in `configureHttpApp`. New controllers inherit it.
+
+- Mount the controller at the resource name, for example `@Controller('contacts')`. The public path is `/api/v1/contacts`. Do not write `v1` in the controller.
+- Bind input with `ZodBody`, `ZodQuery`, or `ZodParam`. Those decorators use one Zod pipe. A failure is `VALIDATION_ERROR`.
+- Return `{ data }` for a successful JSON body. Do not add `requestId` to that JSON.
+- Throw a module error with a stable `UPPER_SNAKE_CASE` code, or `NotFoundException` for a missing resource. The global filter writes `{ error: { code, message, requestId } }`.
+- Global codes live in `apps/api/src/common/http/http-error-codes.ts` (`VALIDATION_ERROR`, `INTERNAL_ERROR`, `NOT_FOUND`, `REQUEST_REJECTED`). Thrown platform codes live in `api-error.ts` (`ORIGIN_REJECTED`, `RATE_LIMITED`). Module codes stay in that module, as Identity does in `identity.errors.ts`.
+- Unexpected failures become `INTERNAL_ERROR`. The server log includes the request id and the original error. The client does not receive the driver message or stack.
+- `GET /health` stays outside `/api/v1` for process probes.
+- CORS uses the explicit `ALLOWED_ORIGINS` list with credentials. `OriginGuard` is global for mutating methods.
+- `helmet` sets the baseline security headers. `Cross-Origin-Resource-Policy` is `cross-origin` because the browser app and the API are different origins. The allowlist still decides who may read the response.
+- Startup calls `loadApiConfig()` before creating the Nest app. Invalid or missing required variables stop the process with a name list. Bootstrap then reads the returned config. Feature modules keep their existing readers for the same variables.
+
+### Shutdown
+
+`enableShutdownHooks()` is on. `DatabaseModule.onModuleDestroy` calls Prisma `$disconnect()`. The session and rate-limit store is Upstash over HTTP, so there is no socket to close. A future TCP Redis client or queue worker must close itself from `onModuleDestroy`. The signal handler is not fired inside tests: after destroy, Nest re-sends the signal to the process.
 
 ## Endpoint documentation template
 

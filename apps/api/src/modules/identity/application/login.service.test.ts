@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
-import { type ArgumentsHost } from '@nestjs/common';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { OutboxService } from '../../../common/outbox/outbox.service';
@@ -11,11 +10,16 @@ import { Argon2PasswordHasher } from '../infrastructure/argon2-password-hasher';
 import type { IncidentLogger } from '../infrastructure/incident-logger';
 import { PrismaLoginAccountStore } from '../infrastructure/prisma-login-account';
 import { RedisSessionStore } from '../infrastructure/redis-session.store';
-import { SessionCookie, type SessionCookieOptions, type SessionCookieWriter } from '../infrastructure/session-cookie';
+import {
+  SessionCookie,
+  type SessionCookieOptions,
+  type SessionCookieWriter,
+} from '../infrastructure/session-cookie';
 import type { SessionRedisClient } from '../infrastructure/session-redis';
 import { AuthController } from '../presentation/auth.controller';
 import { loginSchema } from '../presentation/dto/login.schema';
 import { IdentityExceptionFilter } from '../presentation/identity-exception.filter';
+import { TEST_REQUEST_ID, captureException } from '../../../../test/exception-host';
 import { registerSchema } from '../presentation/dto/register.schema';
 import { AuthRateLimitService } from './auth-rate-limit.service';
 import { LoginService } from './login.service';
@@ -27,7 +31,13 @@ import { permissiveAuthRateLimits } from '../infrastructure/rate-limit-config';
 const password = 'correct-horse-battery';
 const invalidCredentials = {
   statusCode: 401,
-  body: { error: { code: identityErrorCodes.INVALID_CREDENTIALS, message: 'Invalid credentials.' } },
+  body: {
+    error: {
+      code: identityErrorCodes.INVALID_CREDENTIALS,
+      message: 'Invalid credentials.',
+      requestId: TEST_REQUEST_ID,
+    },
+  },
 };
 
 let prisma: PrismaClient;
@@ -49,7 +59,10 @@ describe('login', () => {
   it('sets a new opaque cookie and stores the current authentication version', async () => {
     const redis = new MemorySessionRedis();
     const { controller } = build(redis, { error() {} });
-    const registered = await controller.register(registration('AcMe', 'Ada@Example.com'), new RecordingCookieWriter());
+    const registered = await controller.register(
+      registration('AcMe', 'Ada@Example.com'),
+      new RecordingCookieWriter(),
+    );
     await prisma.user.update({
       where: { id: registered.data.user.id },
       data: { authenticationVersion: 4 },
@@ -87,10 +100,19 @@ describe('login', () => {
     const wrongEmail = new RecordingCookieWriter();
     const wrongPassword = new RecordingCookieWriter();
 
-    const tenantError = invoke(await rejected(controller.login(credentials('other-shop', 'ada@example.com'), wrongTenant)));
-    const emailError = invoke(await rejected(controller.login(credentials('acme', 'other@example.com'), wrongEmail)));
+    const tenantError = invoke(
+      await rejected(controller.login(credentials('other-shop', 'ada@example.com'), wrongTenant)),
+    );
+    const emailError = invoke(
+      await rejected(controller.login(credentials('acme', 'other@example.com'), wrongEmail)),
+    );
     const passwordError = invoke(
-      await rejected(controller.login(credentials('acme', 'ada@example.com', 'wrong-password-value'), wrongPassword)),
+      await rejected(
+        controller.login(
+          credentials('acme', 'ada@example.com', 'wrong-password-value'),
+          wrongPassword,
+        ),
+      ),
     );
 
     expect(tenantError).toEqual(invalidCredentials);
@@ -103,11 +125,19 @@ describe('login', () => {
 
   it('returns the same error for a disabled user', async () => {
     const { controller } = build(new MemorySessionRedis(), { error() {} });
-    const registered = await controller.register(registration('acme', 'ada@example.com'), new RecordingCookieWriter());
-    await prisma.user.update({ where: { id: registered.data.user.id }, data: { status: 'DISABLED' } });
+    const registered = await controller.register(
+      registration('acme', 'ada@example.com'),
+      new RecordingCookieWriter(),
+    );
+    await prisma.user.update({
+      where: { id: registered.data.user.id },
+      data: { status: 'DISABLED' },
+    });
     const response = new RecordingCookieWriter();
 
-    const error = invoke(await rejected(controller.login(credentials('acme', 'ada@example.com'), response)));
+    const error = invoke(
+      await rejected(controller.login(credentials('acme', 'ada@example.com'), response)),
+    );
 
     expect(error).toEqual(invalidCredentials);
     expect(response.setCall).toBeUndefined();
@@ -115,11 +145,23 @@ describe('login', () => {
 
   it('resolves the user inside the requested tenant when the email is shared', async () => {
     const { controller } = build(new MemorySessionRedis(), { error() {} });
-    const acme = await controller.register(registration('acme', 'ada@example.com'), new RecordingCookieWriter());
-    const beta = await controller.register(registration('beta', 'ada@example.com'), new RecordingCookieWriter());
+    const acme = await controller.register(
+      registration('acme', 'ada@example.com'),
+      new RecordingCookieWriter(),
+    );
+    const beta = await controller.register(
+      registration('beta', 'ada@example.com'),
+      new RecordingCookieWriter(),
+    );
 
-    const acmeLogin = await controller.login(credentials('acme', 'ada@example.com'), new RecordingCookieWriter());
-    const betaLogin = await controller.login(credentials('beta', 'ada@example.com'), new RecordingCookieWriter());
+    const acmeLogin = await controller.login(
+      credentials('acme', 'ada@example.com'),
+      new RecordingCookieWriter(),
+    );
+    const betaLogin = await controller.login(
+      credentials('beta', 'ada@example.com'),
+      new RecordingCookieWriter(),
+    );
 
     expect(acmeLogin.data.user.id).toBe(acme.data.user.id);
     expect(betaLogin.data.user.id).toBe(beta.data.user.id);
@@ -145,7 +187,12 @@ describe('login', () => {
 
   it('lets an owner sign in after registration could not store a session', async () => {
     const failed = build(new FailingSessionRedis(), { error() {} });
-    await rejected(failed.controller.register(registration('session-fail', 'ada@example.com'), new RecordingCookieWriter()));
+    await rejected(
+      failed.controller.register(
+        registration('session-fail', 'ada@example.com'),
+        new RecordingCookieWriter(),
+      ),
+    );
     const redis = new MemorySessionRedis();
     const { controller } = build(redis, { error() {} });
     const response = new RecordingCookieWriter();
@@ -160,15 +207,25 @@ describe('login', () => {
 
   it('returns 503 when the session store fails during login', async () => {
     const ready = build(new MemorySessionRedis(), { error() {} });
-    await ready.controller.register(registration('timeout-shop', 'ada@example.com'), new RecordingCookieWriter());
+    await ready.controller.register(
+      registration('timeout-shop', 'ada@example.com'),
+      new RecordingCookieWriter(),
+    );
     const failed = build(new FailingSessionRedis(), { error() {} });
     const response = new RecordingCookieWriter();
 
-    const error = await rejected(failed.controller.login(credentials('timeout-shop', 'ada@example.com'), response));
+    const error = await rejected(
+      failed.controller.login(credentials('timeout-shop', 'ada@example.com'), response),
+    );
 
     expect(invoke(error)).toMatchObject({
       statusCode: 503,
-      body: { error: { code: identityErrorCodes.SERVICE_UNAVAILABLE, message: 'The session store is unavailable.' } },
+      body: {
+        error: {
+          code: identityErrorCodes.SERVICE_UNAVAILABLE,
+          message: 'The session store is unavailable.',
+        },
+      },
     });
     expect(JSON.stringify(invoke(error).body)).not.toContain('super-secret-redis');
     expect(response.setCall).toBeUndefined();
@@ -209,7 +266,12 @@ function build(redis: SessionRedisClient, incidents: IncidentLogger) {
   );
   const controller = new AuthController(
     registerUser,
-    new LoginService(new PrismaLoginAccountStore(prisma), new Argon2PasswordHasher(), sessions, incidents),
+    new LoginService(
+      new PrismaLoginAccountStore(prisma),
+      new Argon2PasswordHasher(),
+      sessions,
+      incidents,
+    ),
     new LogoutService(sessions),
     new SessionCookie(true),
     new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
@@ -235,20 +297,7 @@ async function rejected(result: Promise<unknown>): Promise<unknown> {
 }
 
 function invoke(exception: unknown): { statusCode: number; body: unknown } {
-  const state: { statusCode: number; body: unknown } = { statusCode: 0, body: undefined };
-  const response = {
-    status(statusCode: number) {
-      state.statusCode = statusCode;
-      return {
-        json(body: unknown) {
-          state.body = body;
-        },
-      };
-    },
-  };
-  const host = { switchToHttp: () => ({ getResponse: () => response }) } as ArgumentsHost;
-  new IdentityExceptionFilter().catch(exception, host);
-  return state;
+  return captureException(new IdentityExceptionFilter(), exception);
 }
 
 async function clearTenants(): Promise<void> {

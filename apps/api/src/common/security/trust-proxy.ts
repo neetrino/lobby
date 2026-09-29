@@ -35,12 +35,12 @@ export function readTrustProxy(env: NodeJS.ProcessEnv = process.env): TrustProxy
   return parsed.data;
 }
 
-/** Applies the validated setting. The default leaves forwarding headers untrusted. */
+/** Applies a setting that has already been validated. The default leaves forwarding headers untrusted. */
 export function applyTrustProxy(
   app: { set(setting: 'trust proxy', value: TrustProxySetting): void },
-  env: NodeJS.ProcessEnv = process.env,
+  setting: TrustProxySetting,
 ): void {
-  app.set('trust proxy', readTrustProxy(env));
+  app.set('trust proxy', setting);
 }
 
 function isDisabled(value: string): boolean {
@@ -66,5 +66,7 @@ function isProxyAddress(value: string): boolean {
   }
 
   const octets = address.split('.');
-  return octets.length === 4 && octets.every((octet) => /^\d{1,3}$/.test(octet) && Number(octet) <= 255);
+  return (
+    octets.length === 4 && octets.every((octet) => /^\d{1,3}$/.test(octet) && Number(octet) <= 255)
+  );
 }

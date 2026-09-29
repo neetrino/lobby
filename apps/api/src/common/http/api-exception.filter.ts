@@ -1,24 +1,12 @@
 import { Catch, type ArgumentsHost, type ExceptionFilter } from '@nestjs/common';
 
-import { ApiError } from './api-error';
+import { mapHttpException } from './map-http-exception';
+import { respondWithMappedException } from './respond-with-http-error';
 
-type ErrorBody = {
-  error: {
-    code: string;
-    message: string;
-  };
-};
-
-type ErrorResponse = {
-  status(statusCode: number): { json(body: ErrorBody): void };
-};
-
-@Catch(ApiError)
+/** Catch-all for routes that do not install a module filter. */
+@Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
-  catch(exception: ApiError, host: ArgumentsHost): void {
-    const response = host.switchToHttp().getResponse<ErrorResponse>();
-    response.status(exception.statusCode).json({
-      error: { code: exception.code, message: exception.message },
-    });
+  catch(exception: unknown, host: ArgumentsHost): void {
+    respondWithMappedException(exception, host, mapHttpException);
   }
 }

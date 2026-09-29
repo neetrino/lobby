@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import { Inject, Injectable, Logger, Module, type Type } from '@nestjs/common';
+import { Inject, Injectable, Logger, Module, ShutdownSignal, type Type } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,7 +52,9 @@ class OutboxConsumerModule {}
 })
 class OutboxWithoutDatabaseExportModule {}
 
-function disconnectableClient(disconnect: () => Promise<void> = () => Promise.resolve()): DisconnectableClient {
+function disconnectableClient(
+  disconnect: () => Promise<void> = () => Promise.resolve(),
+): DisconnectableClient {
   return { $disconnect: vi.fn(disconnect) };
 }
 
@@ -113,11 +115,33 @@ describe('DatabaseModule', () => {
     expect(client.$disconnect).toHaveBeenCalledTimes(1);
   });
 
+  // Nest re-sends SIGTERM after destroy, so this test registers the listener and closes directly.
+  it('disconnects Prisma when the application shutdown hook closes the process listener', async () => {
+    const client = disconnectableClient();
+    const moduleRef = await compileWithClient(client, [DatabaseModule]);
+    const app = moduleRef.createNestApplication();
+    const before = process.listenerCount('SIGTERM');
+    app.enableShutdownHooks([ShutdownSignal.SIGTERM]);
+    try {
+      expect(process.listenerCount('SIGTERM')).toBe(before + 1);
+      await app.init();
+      await app.close();
+    } finally {
+      if (process.listenerCount('SIGTERM') > before) {
+        await app.close();
+      }
+    }
+    expect(client.$disconnect).toHaveBeenCalledTimes(1);
+    expect(process.listenerCount('SIGTERM')).toBe(before);
+  });
+
   it('logs a fixed disconnect failure and leaves the driver message out of the log', async () => {
     const secret = 'postgresql://lobby:s3cret-password@db.internal:5432/lobby';
     const errorSpy = vi.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
     try {
-      const client = disconnectableClient(() => Promise.reject(new Error(`connect failed ${secret}`)));
+      const client = disconnectableClient(() =>
+        Promise.reject(new Error(`connect failed ${secret}`)),
+      );
       const moduleRef = await compileWithClient(client, [DatabaseModule]);
       modules.push(moduleRef);
       const database = moduleRef.get(DatabaseModule);
@@ -141,6 +165,8 @@ describe('DatabaseModule', () => {
     expect(moduleRef.select(OutboxConsumerModule).get(OutboxService)).toBeInstanceOf(OutboxService);
     expect(moduleRef.select(OutboxConsumerModule).get(ReaderA).prisma).toBe(client);
 
-    await expect(compileWithClient(client, [OutboxWithoutDatabaseExportModule])).rejects.toThrow(/PRISMA_CLIENT/);
+    await expect(compileWithClient(client, [OutboxWithoutDatabaseExportModule])).rejects.toThrow(
+      /PRISMA_CLIENT/,
+    );
   });
 });

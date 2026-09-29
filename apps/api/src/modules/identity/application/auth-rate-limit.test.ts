@@ -1,5 +1,4 @@
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
-import { type ArgumentsHost } from '@nestjs/common';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { OutboxService } from '../../../common/outbox/outbox.service';
@@ -18,6 +17,7 @@ import { AuthController } from '../presentation/auth.controller';
 import { loginSchema } from '../presentation/dto/login.schema';
 import { registerSchema } from '../presentation/dto/register.schema';
 import { IdentityExceptionFilter } from '../presentation/identity-exception.filter';
+import { TEST_REQUEST_ID, captureException } from '../../../../test/exception-host';
 import {
   clearTenantRows,
   createOwner,
@@ -66,9 +66,15 @@ describe('auth rate limits', () => {
     await limits.consumeRegister('198.51.100.10');
     await limits.consumeRegister('198.51.100.10');
 
-    await expect(limits.consumeLogin(ip, 'acme', email)).rejects.toMatchObject({ code: apiErrorCodes.RATE_LIMITED });
-    await expect(limits.consumeRegister('198.51.100.10')).rejects.toMatchObject({ code: apiErrorCodes.RATE_LIMITED });
-    expect([...redis.counters.keys()].filter((key) => key.startsWith('rate_limit:login:account:'))).toHaveLength(1);
+    await expect(limits.consumeLogin(ip, 'acme', email)).rejects.toMatchObject({
+      code: apiErrorCodes.RATE_LIMITED,
+    });
+    await expect(limits.consumeRegister('198.51.100.10')).rejects.toMatchObject({
+      code: apiErrorCodes.RATE_LIMITED,
+    });
+    expect(
+      [...redis.counters.keys()].filter((key) => key.startsWith('rate_limit:login:account:')),
+    ).toHaveLength(1);
   });
 
   it('returns the same result for an existing account and a missing account', async () => {
@@ -94,12 +100,28 @@ describe('auth rate limits', () => {
   it('resets the account counter after a successful login', async () => {
     const redis = new MemoryRateLimitRedis();
     const auth = controllerFor(redis);
-    await auth.register(registration('acme', email), new RecordingCookieWriter(), { ip: '203.0.113.78' });
+    await auth.register(registration('acme', email), new RecordingCookieWriter(), {
+      ip: '203.0.113.78',
+    });
     const caller = { ip: '203.0.113.79' };
-    await rejected(auth.login(credentials('acme', email, 'wrong-password-value'), new RecordingCookieWriter(), caller));
+    await rejected(
+      auth.login(
+        credentials('acme', email, 'wrong-password-value'),
+        new RecordingCookieWriter(),
+        caller,
+      ),
+    );
 
     await auth.login(credentials('acme', email), new RecordingCookieWriter(), caller);
-    const again = invoke(await rejected(auth.login(credentials('acme', email, 'wrong-password-value'), new RecordingCookieWriter(), caller)));
+    const again = invoke(
+      await rejected(
+        auth.login(
+          credentials('acme', email, 'wrong-password-value'),
+          new RecordingCookieWriter(),
+          caller,
+        ),
+      ),
+    );
 
     expect(again).toEqual(invalidCredentials);
   });
@@ -116,19 +138,36 @@ describe('auth rate limits', () => {
 
     expect((await activate(guard, missing)).statusCode).toBe(401);
     expect((await activate(guard, missing)).statusCode).toBe(401);
-    expect(await activate(guard, missing)).toMatchObject({ statusCode: 429, body: rateLimited.body });
-    await expect(guard.canActivate(httpContext(request(owner.rawSessionId), new RecordingCookieWriter()))).resolves.toBe(true);
+    expect(await activate(guard, missing)).toMatchObject({
+      statusCode: 429,
+      body: rateLimited.body,
+    });
+    await expect(
+      guard.canActivate(httpContext(request(owner.rawSessionId), new RecordingCookieWriter())),
+    ).resolves.toBe(true);
     expect((await activate(guard, '', { headers: {} })).statusCode).toBe(401);
   });
 });
 
 const invalidCredentials = {
   statusCode: 401,
-  body: { error: { code: identityErrorCodes.INVALID_CREDENTIALS, message: 'Invalid credentials.' } },
+  body: {
+    error: {
+      code: identityErrorCodes.INVALID_CREDENTIALS,
+      message: 'Invalid credentials.',
+      requestId: TEST_REQUEST_ID,
+    },
+  },
 };
 const rateLimited = {
   statusCode: 429,
-  body: { error: { code: apiErrorCodes.RATE_LIMITED, message: 'Too many requests.' } },
+  body: {
+    error: {
+      code: apiErrorCodes.RATE_LIMITED,
+      message: 'Too many requests.',
+      requestId: TEST_REQUEST_ID,
+    },
+  },
 };
 
 function limiter(config: AuthRateLimitConfig): AuthRateLimitService {
@@ -139,8 +178,19 @@ function controllerFor(redis: MemoryRateLimitRedis): AuthController {
   const sessions = new RedisSessionStore(new MemorySessionRedis());
   const incidents = { error() {} };
   return new AuthController(
-    new RegisterService(new CreateTenantService(prisma, new OutboxService()), new Argon2PasswordHasher(), sessions, true, incidents),
-    new LoginService(new PrismaLoginAccountStore(prisma), new Argon2PasswordHasher(), sessions, incidents),
+    new RegisterService(
+      new CreateTenantService(prisma, new OutboxService()),
+      new Argon2PasswordHasher(),
+      sessions,
+      true,
+      incidents,
+    ),
+    new LoginService(
+      new PrismaLoginAccountStore(prisma),
+      new Argon2PasswordHasher(),
+      sessions,
+      incidents,
+    ),
     new LogoutService(sessions),
     new SessionCookie(true),
     new AuthRateLimitService(redis, tight),
@@ -150,11 +200,33 @@ function controllerFor(redis: MemoryRateLimitRedis): AuthController {
 async function outcomes(auth: AuthController, subdomain: string, accountEmail: string) {
   const caller = { ip };
   const failures = [
-    invoke(await rejected(auth.login(credentials(subdomain, accountEmail, 'wrong-password-value'), new RecordingCookieWriter(), caller))),
-    invoke(await rejected(auth.login(credentials(subdomain, accountEmail, 'wrong-password-value'), new RecordingCookieWriter(), caller))),
+    invoke(
+      await rejected(
+        auth.login(
+          credentials(subdomain, accountEmail, 'wrong-password-value'),
+          new RecordingCookieWriter(),
+          caller,
+        ),
+      ),
+    ),
+    invoke(
+      await rejected(
+        auth.login(
+          credentials(subdomain, accountEmail, 'wrong-password-value'),
+          new RecordingCookieWriter(),
+          caller,
+        ),
+      ),
+    ),
   ];
   const limited = invoke(
-    await rejected(auth.login(credentials(subdomain, accountEmail, 'wrong-password-value'), new RecordingCookieWriter(), caller)),
+    await rejected(
+      auth.login(
+        credentials(subdomain, accountEmail, 'wrong-password-value'),
+        new RecordingCookieWriter(),
+        caller,
+      ),
+    ),
   );
   return { failures, limited };
 }
@@ -177,9 +249,15 @@ function request(rawSessionId: string, override?: { headers: { cookie?: string }
   };
 }
 
-async function activate(guard: SessionGuard, rawSessionId: string, override?: { headers: { cookie?: string } }) {
+async function activate(
+  guard: SessionGuard,
+  rawSessionId: string,
+  override?: { headers: { cookie?: string } },
+) {
   try {
-    await guard.canActivate(httpContext(request(rawSessionId, override), new RecordingCookieWriter()));
+    await guard.canActivate(
+      httpContext(request(rawSessionId, override), new RecordingCookieWriter()),
+    );
   } catch (error) {
     return invoke(error);
   }
@@ -196,13 +274,5 @@ async function rejected(result: Promise<unknown>): Promise<unknown> {
 }
 
 function invoke(exception: unknown): { statusCode: number; body: unknown } {
-  const state: { statusCode: number; body: unknown } = { statusCode: 0, body: undefined };
-  const response = {
-    status(statusCode: number) {
-      state.statusCode = statusCode;
-      return { json(body: unknown) { state.body = body; } };
-    },
-  };
-  new IdentityExceptionFilter().catch(exception, { switchToHttp: () => ({ getResponse: () => response }) } as ArgumentsHost);
-  return state;
+  return captureException(new IdentityExceptionFilter(), exception);
 }

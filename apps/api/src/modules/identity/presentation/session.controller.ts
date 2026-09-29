@@ -1,8 +1,8 @@
-import { Controller, Get, HttpCode, Param, Post, Res, UseFilters, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Res, UseFilters, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 
 import type { AuthenticatedSession } from '../../../common/auth/authenticated-session';
-import { ZodValidationPipe } from '../../../common/pipes/zod-validation.pipe';
+import { ZodParam } from '../../../common/pipes/zod-input';
 import type { SessionRevocationActor } from '../domain/session-revocation';
 import { TerminateUserSessionsService } from '../application/terminate-user-sessions.service';
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
@@ -17,7 +17,7 @@ export type SessionView = {
   tenant: { id: string };
 };
 
-@Controller('v1/auth')
+@Controller('auth')
 @UseGuards(SessionGuard)
 @UseFilters(IdentityExceptionFilter)
 export class SessionController {
@@ -56,7 +56,7 @@ export class SessionController {
   @HttpCode(204)
   async terminateUser(
     @CurrentSession() current: AuthenticatedSession,
-    @Param('userId', new ZodValidationPipe(userIdSchema)) userId: string,
+    @ZodParam('userId', userIdSchema) userId: string,
   ): Promise<void> {
     await this.terminateSessions.terminateAllSessions(actorFrom(current), userId);
   }

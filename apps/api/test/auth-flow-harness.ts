@@ -1,4 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { createRequestId, runWithRequestId } from '../src/common/http/request-context';
 import { NotFoundException, type ExecutionContext } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database/testing';
 import type { ZodType } from 'zod';
@@ -27,9 +28,15 @@ import { SessionCookie } from '../src/modules/identity/infrastructure/session-co
 import { AuthController } from '../src/modules/identity/presentation/auth.controller';
 import { loginSchema } from '../src/modules/identity/presentation/dto/login.schema';
 import { registerSchema } from '../src/modules/identity/presentation/dto/register.schema';
-import { readAuthenticatedSession, tenantContextFromSession } from '../src/modules/identity/presentation/current-session';
+import {
+  readAuthenticatedSession,
+  tenantContextFromSession,
+} from '../src/modules/identity/presentation/current-session';
 import { IndexedSessionRedis } from '../src/modules/identity/presentation/session-guard.fixtures';
-import { SessionGuard, type SessionRequest } from '../src/modules/identity/presentation/session.guard';
+import {
+  SessionGuard,
+  type SessionRequest,
+} from '../src/modules/identity/presentation/session.guard';
 import { AUTH_FLOW_ORIGIN, cookieWriter, readJson, sendError, writeJson } from './auth-flow-http';
 
 type AuthServices = {
@@ -57,7 +64,11 @@ export async function startAuthFlow(
   const rateLimit = new MemoryRateLimitRedis();
   const services = wire(database, sessions, rateLimit, options?.secure ?? false, options?.limits);
   const server = createServer((request, response) => {
-    void route(services, request, response);
+    const requestId = createRequestId();
+    response.setHeader('X-Request-Id', requestId);
+    runWithRequestId(requestId, () => {
+      void route(services, request, response);
+    });
   });
   await new Promise<void>((resolve) => {
     server.listen(0, '127.0.0.1', () => resolve());
@@ -94,7 +105,13 @@ function wire(
   const rates = new AuthRateLimitService(rateLimit, limits ?? permissiveAuthRateLimits());
   return {
     auth: new AuthController(
-      new RegisterService(new CreateTenantService(database, new OutboxService()), passwords, store, true, incidents),
+      new RegisterService(
+        new CreateTenantService(database, new OutboxService()),
+        passwords,
+        store,
+        true,
+        incidents,
+      ),
       new LoginService(new PrismaLoginAccountStore(database), passwords, store, incidents),
       new LogoutService(store),
       cookies,
@@ -107,7 +124,11 @@ function wire(
   };
 }
 
-async function route(services: AuthServices, request: IncomingMessage, response: ServerResponse): Promise<void> {
+async function route(
+  services: AuthServices,
+  request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> {
   const url = new URL(request.url ?? '/', 'http://127.0.0.1');
   try {
     services.origin.canActivate(httpContext({ method: request.method, headers: request.headers }));
@@ -139,22 +160,34 @@ async function dispatch(
     await readContact(services, request, response, url);
     return;
   }
-  writeJson(response, 404, { error: { code: 'REQUEST_REJECTED', message: 'The request could not be processed.' } });
+  throw new NotFoundException();
 }
 
-async function register(services: AuthServices, request: IncomingMessage, response: ServerResponse): Promise<void> {
+async function register(
+  services: AuthServices,
+  request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> {
   const input = parse(registerSchema, await readJson(request));
   const body = await services.auth.register(input, cookieWriter(response), request);
   writeJson(response, 201, body);
 }
 
-async function login(services: AuthServices, request: IncomingMessage, response: ServerResponse): Promise<void> {
+async function login(
+  services: AuthServices,
+  request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> {
   const input = parse(loginSchema, await readJson(request));
   const body = await services.auth.login(input, cookieWriter(response), request);
   writeJson(response, 200, body);
 }
 
-async function logout(services: AuthServices, request: IncomingMessage, response: ServerResponse): Promise<void> {
+async function logout(
+  services: AuthServices,
+  request: IncomingMessage,
+  response: ServerResponse,
+): Promise<void> {
   await services.auth.logout(request, cookieWriter(response));
   response.statusCode = 204;
   response.end();

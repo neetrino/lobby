@@ -1,4 +1,10 @@
-import { BadRequestException, ConsoleLogger, Logger, type ArgumentsHost, type LoggerService } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConsoleLogger,
+  Logger,
+  type ArgumentsHost,
+  type LoggerService,
+} from '@nestjs/common';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
 import { ApiError } from '../src/common/http/api-error';
@@ -23,6 +29,7 @@ export type HttpResult = {
   status: number;
   body: unknown;
   setCookie: string | undefined;
+  requestId: string | null;
 };
 
 /**
@@ -87,7 +94,12 @@ export async function send(
     headers,
     body: init.body === undefined ? undefined : JSON.stringify(init.body),
   });
-  return { status: response.status, body: await readResponse(response), setCookie: readSetCookie(response) };
+  return {
+    status: response.status,
+    body: await readResponse(response),
+    setCookie: readSetCookie(response),
+    requestId: response.headers.get('x-request-id'),
+  };
 }
 
 export function cookieWriter(response: ServerResponse): SessionCookieWriter {
@@ -157,7 +169,12 @@ export function idleCookieMaxAge(): number {
  * Express 5 `res.cookie` emits `Max-Age` in seconds.
  * `res.clearCookie` drops `maxAge` and sets `Expires` to the epoch.
  */
-function serializeCookie(name: string, value: string, options: SessionCookieOptions, clear: boolean): string {
+function serializeCookie(
+  name: string,
+  value: string,
+  options: SessionCookieOptions,
+  clear: boolean,
+): string {
   const parts = [`${name}=${encodeURIComponent(value)}`];
   if (clear) {
     parts.push(`Expires=${CLEARED_COOKIE_EXPIRES}`);

@@ -4,7 +4,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { readSessionCookieSecure } from '../infrastructure/session-cookie';
 import { clearTenantRows } from './session-guard.fixtures';
 import { startAuthFlow, type AuthFlowApp } from '../../../../test/auth-flow-harness';
-import { capturedLogs, idleCookieMaxAge, installLogCapture, send } from '../../../../test/auth-flow-http';
+import {
+  capturedLogs,
+  idleCookieMaxAge,
+  installLogCapture,
+  send,
+} from '../../../../test/auth-flow-http';
 
 const password = 'correct-horse-battery';
 const email = 'ada@example.com';
@@ -36,16 +41,25 @@ beforeEach(async () => {
 
 describe('auth http flow', () => {
   it('registers, reads a tenant contact, then rejects the same cookie after logout', async () => {
-    const registered = await send(app.baseUrl, '/api/v1/auth/register', { method: 'POST', body: registration('acme') });
+    const registered = await send(app.baseUrl, '/api/v1/auth/register', {
+      method: 'POST',
+      body: registration('acme'),
+    });
     const rawSessionId = sessionId(registered.setCookie);
     const account = accountOf(registered.body);
-    const contact = await prisma.contact.create({ data: { tenantId: account.tenant.id, name: 'Ada ledger' } });
-
-    const allowed = await send(app.baseUrl, `/api/v1/contacts/${contact.id}?tenantId=other-tenant`, {
-      method: 'GET',
-      cookie: rawSessionId,
-      headers: { 'x-tenant-id': 'other-tenant' },
+    const contact = await prisma.contact.create({
+      data: { tenantId: account.tenant.id, name: 'Ada ledger' },
     });
+
+    const allowed = await send(
+      app.baseUrl,
+      `/api/v1/contacts/${contact.id}?tenantId=other-tenant`,
+      {
+        method: 'GET',
+        cookie: rawSessionId,
+        headers: { 'x-tenant-id': 'other-tenant' },
+      },
+    );
     const loggedOut = await send(app.baseUrl, '/api/v1/auth/logout', {
       method: 'POST',
       cookie: rawSessionId,
@@ -57,7 +71,9 @@ describe('auth http flow', () => {
 
     expect(registered.status).toBe(201);
     expect(allowed.status).toBe(200);
-    expect(allowed.body).toEqual({ data: { id: contact.id, tenantId: account.tenant.id, name: 'Ada ledger' } });
+    expect(allowed.body).toEqual({
+      data: { id: contact.id, tenantId: account.tenant.id, name: 'Ada ledger' },
+    });
     expect(loggedOut.status).toBe(204);
     expect(loggedOut.setCookie).toContain('Expires=Thu, 01 Jan 1970 00:00:00 GMT');
     expect(rejected.status).toBe(401);
@@ -68,11 +84,19 @@ describe('auth http flow', () => {
   }, 30_000);
 
   it('rejects the old cookie after every session is terminated', async () => {
-    await send(app.baseUrl, '/api/v1/auth/register', { method: 'POST', body: registration('acme') });
-    const signedIn = await send(app.baseUrl, '/api/v1/auth/login', { method: 'POST', body: credentials('acme') });
+    await send(app.baseUrl, '/api/v1/auth/register', {
+      method: 'POST',
+      body: registration('acme'),
+    });
+    const signedIn = await send(app.baseUrl, '/api/v1/auth/login', {
+      method: 'POST',
+      body: credentials('acme'),
+    });
     const rawSessionId = sessionId(signedIn.setCookie);
     const account = accountOf(signedIn.body);
-    const contact = await prisma.contact.create({ data: { tenantId: account.tenant.id, name: 'Ada ledger' } });
+    const contact = await prisma.contact.create({
+      data: { tenantId: account.tenant.id, name: 'Ada ledger' },
+    });
 
     await app.terminate.terminateAllSessions(
       { userId: account.user.id, tenantId: account.tenant.id, role: 'OWNER' },
@@ -89,22 +113,40 @@ describe('auth http flow', () => {
   }, 30_000);
 
   it('resolves the same email inside the requested tenant and hides the other tenant contact', async () => {
-    await send(app.baseUrl, '/api/v1/auth/register', { method: 'POST', body: registration('acme') });
-    await send(app.baseUrl, '/api/v1/auth/register', { method: 'POST', body: registration('beta') });
-    const acme = await send(app.baseUrl, '/api/v1/auth/login', { method: 'POST', body: credentials('acme') });
-    const beta = await send(app.baseUrl, '/api/v1/auth/login', { method: 'POST', body: credentials('beta') });
+    await send(app.baseUrl, '/api/v1/auth/register', {
+      method: 'POST',
+      body: registration('acme'),
+    });
+    await send(app.baseUrl, '/api/v1/auth/register', {
+      method: 'POST',
+      body: registration('beta'),
+    });
+    const acme = await send(app.baseUrl, '/api/v1/auth/login', {
+      method: 'POST',
+      body: credentials('acme'),
+    });
+    const beta = await send(app.baseUrl, '/api/v1/auth/login', {
+      method: 'POST',
+      body: credentials('beta'),
+    });
     const acmeAccount = accountOf(acme.body);
     const betaAccount = accountOf(beta.body);
-    const foreign = await prisma.contact.create({ data: { tenantId: betaAccount.tenant.id, name: 'Beta ledger' } });
+    const foreign = await prisma.contact.create({
+      data: { tenantId: betaAccount.tenant.id, name: 'Beta ledger' },
+    });
     const wrongTenant = await send(app.baseUrl, '/api/v1/auth/login', {
       method: 'POST',
       body: credentials('missing'),
     });
-    const hidden = await send(app.baseUrl, `/api/v1/contacts/${foreign.id}?tenantId=${betaAccount.tenant.id}`, {
-      method: 'GET',
-      cookie: sessionId(acme.setCookie),
-      headers: { 'x-tenant-id': betaAccount.tenant.id },
-    });
+    const hidden = await send(
+      app.baseUrl,
+      `/api/v1/contacts/${foreign.id}?tenantId=${betaAccount.tenant.id}`,
+      {
+        method: 'GET',
+        cookie: sessionId(acme.setCookie),
+        headers: { 'x-tenant-id': betaAccount.tenant.id },
+      },
+    );
 
     expect(acmeAccount.user.email).toBe(email);
     expect(betaAccount.user.email).toBe(email);
@@ -120,7 +162,9 @@ describe('auth http flow', () => {
 
 describe('auth http security', () => {
   it('sets Secure only when the session cookie config asks for it', async () => {
-    const secure = await startAuthFlow(prisma, { secure: readSessionCookieSecure({ NODE_ENV: 'production' }) });
+    const secure = await startAuthFlow(prisma, {
+      secure: readSessionCookieSecure({ NODE_ENV: 'production' }),
+    });
     try {
       const registered = await send(secure.baseUrl, '/api/v1/auth/register', {
         method: 'POST',
@@ -156,7 +200,12 @@ describe('auth http security', () => {
     expect(foreign.setCookie).toBeUndefined();
     expect(invalid.status).toBe(400);
     expect(invalid.body).toEqual({
-      error: { code: 'REQUEST_REJECTED', message: 'The request could not be processed.' },
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed.',
+        requestId: invalid.requestId,
+        fields: [{ path: 'owner.password' }],
+      },
     });
     expect(JSON.stringify(invalid.body)).not.toContain('short');
   });
@@ -171,9 +220,18 @@ describe('auth http security', () => {
       },
     });
     try {
-      await send(limited.baseUrl, '/api/v1/auth/register', { method: 'POST', body: registration('acme') });
-      await send(limited.baseUrl, '/api/v1/auth/login', { method: 'POST', body: credentials('acme', 'wrong-password-1') });
-      await send(limited.baseUrl, '/api/v1/auth/login', { method: 'POST', body: credentials('acme', 'wrong-password-1') });
+      await send(limited.baseUrl, '/api/v1/auth/register', {
+        method: 'POST',
+        body: registration('acme'),
+      });
+      await send(limited.baseUrl, '/api/v1/auth/login', {
+        method: 'POST',
+        body: credentials('acme', 'wrong-password-1'),
+      });
+      await send(limited.baseUrl, '/api/v1/auth/login', {
+        method: 'POST',
+        body: credentials('acme', 'wrong-password-1'),
+      });
       const blocked = await send(limited.baseUrl, '/api/v1/auth/login', {
         method: 'POST',
         body: credentials('acme', 'wrong-password-1'),
@@ -194,11 +252,21 @@ describe('auth http security', () => {
   }, 30_000);
 
   it('keeps the password and raw session id out of logs, Redis, and responses', async () => {
-    const registered = await send(app.baseUrl, '/api/v1/auth/register', { method: 'POST', body: registration('acme') });
+    const registered = await send(app.baseUrl, '/api/v1/auth/register', {
+      method: 'POST',
+      body: registration('acme'),
+    });
     const rawSessionId = sessionId(registered.setCookie);
     const stored = await prisma.user.findFirstOrThrow({ where: { email } });
-    await send(app.baseUrl, '/api/v1/auth/login', { method: 'POST', body: credentials('acme', 'wrong-password-value') });
-    const transcript = [JSON.stringify(registered.body), capturedLogs.join('\n'), redisDump(app)].join('\n');
+    await send(app.baseUrl, '/api/v1/auth/login', {
+      method: 'POST',
+      body: credentials('acme', 'wrong-password-value'),
+    });
+    const transcript = [
+      JSON.stringify(registered.body),
+      capturedLogs.join('\n'),
+      redisDump(app),
+    ].join('\n');
 
     expect(transcript).not.toContain(password);
     expect(transcript).not.toContain(rawSessionId);
@@ -237,7 +305,9 @@ function accountOf(body: unknown): {
   return body.data;
 }
 
-function isAccount(body: unknown): body is { data: { tenant: { id: string }; user: { id: string; email: string } } } {
+function isAccount(
+  body: unknown,
+): body is { data: { tenant: { id: string }; user: { id: string; email: string } } } {
   if (typeof body !== 'object' || body === null || !('data' in body)) {
     return false;
   }

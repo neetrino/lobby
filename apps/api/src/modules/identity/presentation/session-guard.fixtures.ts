@@ -8,7 +8,11 @@ import { MemoryRateLimitRedis } from '../infrastructure/memory-rate-limit-redis'
 import { permissiveAuthRateLimits } from '../infrastructure/rate-limit-config';
 import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
 import { RedisSessionStore } from '../infrastructure/redis-session.store';
-import { SessionCookie, type SessionCookieOptions, type SessionCookieWriter } from '../infrastructure/session-cookie';
+import {
+  SessionCookie,
+  type SessionCookieOptions,
+  type SessionCookieWriter,
+} from '../infrastructure/session-cookie';
 import type { SessionRedisClient } from '../infrastructure/session-redis';
 import { hashSessionId, sessionKey } from '../infrastructure/session-id';
 import { SessionGuard, type SessionRequest } from './session.guard';
@@ -168,7 +172,12 @@ export async function createAdmin(database: PrismaClient, redis: MemorySessionRe
     { userId: user.id, tenantId: tenant.id, role: 'ADMIN', authenticationVersion: 1 },
     new Date(),
   );
-  return { tenantId: tenant.id, userId: user.id, otherUserId: other.id, rawSessionId: opened.rawSessionId };
+  return {
+    tenantId: tenant.id,
+    userId: user.id,
+    otherUserId: other.id,
+    rawSessionId: opened.rawSessionId,
+  };
 }
 
 export function rewrite(
@@ -210,7 +219,10 @@ export function invoke(exception: unknown): { statusCode: number; body: unknown 
     },
   };
   new IdentityExceptionFilter().catch(exception, {
-    switchToHttp: () => ({ getResponse: () => response }),
+    switchToHttp: () => ({
+      getRequest: () => ({ requestId: 'request-id' }),
+      getResponse: () => response,
+    }),
   } as ArgumentsHost);
   return state;
 }

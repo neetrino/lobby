@@ -1,31 +1,27 @@
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 
-import { readAllowedOrigins } from './common/security/allowed-origins';
-import { enableCredentialedCors } from './common/security/cors';
-import { applyTrustProxy } from './common/security/trust-proxy';
+import { configureHttpApp } from './common/http/configure-http-app';
 import { AppModule } from './app.module';
+import { ApiConfigError, loadApiConfig } from './load-api-config';
 
-async function bootstrap() {
+async function bootstrap(): Promise<void> {
+  const config = await readConfig();
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  applyTrustProxy(app);
-  app.setGlobalPrefix('api');
-  // CORS allows credentialed browser reads. It is not the CSRF control; OriginGuard is.
-  enableCredentialedCors(
-    {
-      enableCors(options) {
-        app.enableCors({
-          origin: options.origin === false ? false : [...options.origin],
-          credentials: options.credentials,
-          methods: [...options.methods],
-          allowedHeaders: [...options.allowedHeaders],
-        });
-      },
-    },
-    readAllowedOrigins(),
-  );
-  app.enableShutdownHooks();
-  await app.listen(process.env.PORT ?? 3001);
+  configureHttpApp(app, config);
+  await app.listen(config.port);
+}
+
+async function readConfig() {
+  try {
+    return await loadApiConfig();
+  } catch (error) {
+    if (error instanceof ApiConfigError) {
+      process.stderr.write(`${error.message}\n`);
+      process.exit(1);
+    }
+    throw error;
+  }
 }
 
 void bootstrap();
