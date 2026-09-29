@@ -7,7 +7,11 @@ import {
   type DispatchLogger,
   type PermanentFailureCode,
 } from '../dispatch/dispatch-logger.js';
-import { createWorkerEventRegistry, type EventRegistryEntry } from '../dispatch/event-registry.js';
+import {
+  createWorkerEventRegistry,
+  type EventRegistryEntry,
+  type WorkerEventRegistry,
+} from '../dispatch/event-registry.js';
 import { runRegisteredHandlers } from '../dispatch/run-handlers.js';
 import { handlerFailureIsPermanent } from '../dispatch/retry-classification.js';
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
@@ -18,7 +22,7 @@ import { sanitizeOutboxError } from './sanitize-outbox-error.js';
 type ReadEventResult = { ok: true; event: unknown } | { ok: false };
 
 export class OutboxProcessor {
-  private readonly registry: ReturnType<typeof createWorkerEventRegistry>;
+  private readonly registry: WorkerEventRegistry;
 
   constructor(
     private readonly repository: OutboxRepository,

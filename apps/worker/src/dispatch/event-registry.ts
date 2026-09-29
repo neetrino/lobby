@@ -6,8 +6,7 @@ import {
 
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
-import { PermanentDispatchError } from './retry-classification.js';
-import type { RetryClassification } from './retry-classification.js';
+import { PermanentDispatchError, type RetryClassification } from './retry-classification.js';
 
 type EventSchema<T = unknown> = {
   parse(data: unknown): T;

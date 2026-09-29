@@ -172,16 +172,19 @@ function readLog(line: string): DispatchLog {
 }
 
 function isDispatchLog(value: unknown): value is DispatchLog {
-  if (typeof value !== 'object' || value === null) {
+  if (!isRecord(value)) {
     return false;
   }
-  const record = value as Record<string, unknown>;
   return (
-    record.level === 'error' &&
-    typeof record.message === 'string' &&
-    typeof record.eventType === 'string' &&
-    typeof record.eventVersion === 'number' &&
-    typeof record.eventId === 'string' &&
-    isPermanentFailureCode(record.code)
+    value.level === 'error' &&
+    typeof value.message === 'string' &&
+    typeof value.eventType === 'string' &&
+    typeof value.eventVersion === 'number' &&
+    typeof value.eventId === 'string' &&
+    isPermanentFailureCode(value.code)
   );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
