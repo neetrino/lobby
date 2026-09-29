@@ -7,7 +7,7 @@ import { OutboxService } from '../../../common/outbox/outbox.service';
 import {
   createTenantWithOwnerSchema,
   type CreateTenantWithOwnerInput,
-} from '../dto/create-tenant.schema';
+} from './create-tenant.schema';
 
 @Injectable()
 export class CreateTenantService {
