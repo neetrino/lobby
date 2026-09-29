@@ -33,6 +33,8 @@ export type ApiConfigIssue = {
 /**
  * Snapshot bootstrap is allowed to read.
  * Feature modules keep their own readers and see the same environment after this gate.
+ * TODO(http-foundation-review): those readers still call `process.env` after validation.
+ * A separate task should decide whether every lookup goes through this object.
  */
 export type ApiConfig = {
   port: number;

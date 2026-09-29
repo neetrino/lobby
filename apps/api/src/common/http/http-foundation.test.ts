@@ -28,6 +28,11 @@ class ProbeController {
   boom(): never {
     throw new Error('driver failed secret-token');
   }
+
+  @Get('driver')
+  driver(): never {
+    throw driverConnectionError();
+  }
 }
 
 @Module({
@@ -138,7 +143,83 @@ describe('HTTP foundation', () => {
     });
     expect(JSON.stringify(failed.body)).not.toContain('secret-token');
     expect(JSON.stringify(failed.body)).not.toContain('driver failed');
-    expect(logged.join('\n')).toContain(String(requestId));
-    expect(logged.join('\n')).toContain('secret-token');
+    expectSafeUnexpectedLog(logged, String(requestId), 'Error', '/api/v1/probe/boom');
+    expect(logged.join('\n')).not.toContain('secret-token');
+    expect(logged.join('\n')).not.toContain('driver failed');
+  });
+
+  it('omits driver connection strings from unexpected error logs', async () => {
+    const http = app.getHttpServer();
+    const failed = await request(http).get('/api/v1/probe/driver?token=secret-token');
+    const requestId = failed.headers['x-request-id'];
+
+    expect(failed.status).toBe(500);
+    expect(failed.body).toEqual({
+      error: { code: 'INTERNAL_ERROR', message: 'Something went wrong.', requestId },
+    });
+    expect(JSON.stringify(failed.body)).not.toContain('secret-token');
+    expect(JSON.stringify(failed.body)).not.toContain('postgres://');
+    expectSafeUnexpectedLog(
+      logged,
+      String(requestId),
+      'PrismaClientInitializationError',
+      '/api/v1/probe/driver',
+    );
+    const transcript = logged.join('\n');
+    expect(transcript).not.toContain('secret-token');
+    expect(transcript).not.toContain('postgres://');
+    expect(transcript).not.toContain('redis://');
+    expect(transcript).not.toContain('db.internal');
+    expect(transcript).not.toContain('upstash.io');
   });
 });
+
+class PrismaClientInitializationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'PrismaClientInitializationError';
+  }
+}
+
+function driverConnectionError(): Error {
+  const error = new PrismaClientInitializationError(
+    "Can't reach database server at postgres://lobby:secret-token@db.internal:5432/lobby",
+  );
+  error.stack = [
+    `${error.name}: ${error.message}`,
+    'ReplyError: WRONGPASS redis://default:secret-token@eu1.upstash.io:6379',
+    '    at Socket.connect (node:net:1:1)',
+  ].join('\n');
+  return error;
+}
+
+function expectSafeUnexpectedLog(
+  entries: readonly string[],
+  requestId: string,
+  exception: string,
+  route: string,
+): void {
+  const line = entries.find((entry) => entry.includes(requestId) && entry.includes(route));
+  expect(line).toEqual(expect.any(String));
+  const parsed: unknown = JSON.parse(line ?? '');
+  expect(parsed).toEqual({
+    requestId,
+    exception,
+    description: 'Unhandled exception',
+    timestamp: expect.any(String),
+    method: 'GET',
+    route,
+  });
+  expect(isIsoTimestamp(parsed)).toBe(true);
+}
+
+function isIsoTimestamp(value: unknown): boolean {
+  if (!isRecord(value) || typeof value.timestamp !== 'string') {
+    return false;
+  }
+  return !Number.isNaN(Date.parse(value.timestamp));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}

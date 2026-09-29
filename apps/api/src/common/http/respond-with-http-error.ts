@@ -9,7 +9,15 @@ type HttpReply = {
   setHeader?(name: string, value: string): void;
 };
 
+type HttpRequestSnapshot = {
+  method?: unknown;
+  path?: unknown;
+  originalUrl?: unknown;
+  url?: unknown;
+};
+
 const unexpectedLogger = new Logger('ExceptionFilter');
+const UNHANDLED_DESCRIPTION = 'Unhandled exception';
 
 /**
  * Writes the mapped body and logs unexpected failures with the request id.
@@ -23,16 +31,57 @@ export function respondWithMappedException(
   const requestId = resolveRequestId(host);
   const mapped = map(exception, requestId);
   if (mapped.body.error.code === httpErrorCodes.INTERNAL_ERROR) {
-    unexpectedLogger.error(`${requestId} ${detailOf(exception)}`);
+    logUnexpectedException(exception, requestId, host);
   }
   const response = host.switchToHttp().getResponse<HttpReply>();
   response.setHeader?.('X-Request-Id', requestId);
   response.status(mapped.statusCode).json(mapped.body);
 }
 
-function detailOf(exception: unknown): string {
-  if (exception instanceof Error) {
-    return exception.stack ?? exception.message;
+/**
+ * Unexpected failures are logged without `Error.message` or `Error.stack`.
+ * TODO(http-foundation-review): a later task can add one redaction function
+ * (connection strings, bearer tokens, emails) and only then attach a redacted stack.
+ */
+function logUnexpectedException(exception: unknown, requestId: string, host: ArgumentsHost): void {
+  const { method, route } = readRequestRoute(host);
+  unexpectedLogger.error(
+    JSON.stringify({
+      requestId,
+      exception: exceptionName(exception),
+      description: UNHANDLED_DESCRIPTION,
+      timestamp: new Date().toISOString(),
+      method,
+      route,
+    }),
+  );
+}
+
+function readRequestRoute(host: ArgumentsHost): { method: string; route: string } {
+  const request = host.switchToHttp().getRequest<HttpRequestSnapshot>();
+  const path = request?.path ?? request?.originalUrl ?? request?.url;
+  return {
+    method: textOrUnknown(request?.method),
+    route: stripQuery(textOrUnknown(path)),
+  };
+}
+
+function exceptionName(exception: unknown): string {
+  if (typeof exception !== 'object' || exception === null) {
+    return 'UnknownException';
   }
-  return 'Non-error failure';
+  const name = exception.constructor?.name;
+  if (typeof name === 'string' && name.length > 0) {
+    return name;
+  }
+  return 'UnknownException';
+}
+
+function textOrUnknown(value: unknown): string {
+  return typeof value === 'string' && value.length > 0 ? value : 'unknown';
+}
+
+function stripQuery(route: string): string {
+  const queryIndex = route.indexOf('?');
+  return queryIndex === -1 ? route : route.slice(0, queryIndex);
 }

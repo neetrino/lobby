@@ -118,8 +118,13 @@ describe('IdentityExceptionFilter', () => {
     expect(server.statusCode).toBe(500);
     expect(JSON.stringify(server.body)).not.toContain(secret);
     expect(JSON.stringify(server.body)).not.toContain('Redis');
-    expect(logged.join('\n')).toContain(secret);
-    expect(logged.join('\n')).toContain(TEST_REQUEST_ID);
+    const transcript = logged.join('\n');
+    expect(transcript).not.toContain(secret);
+    expect(transcript).not.toContain('PrismaClientKnownRequestError password=');
+    expect(transcript).not.toContain('Redis');
+    expect(transcript).toContain(TEST_REQUEST_ID);
+    expect(transcript).toContain('Unhandled exception');
+    expect(transcript).toContain('InternalServerErrorException');
   });
 });
 

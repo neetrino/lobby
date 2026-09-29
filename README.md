@@ -17,7 +17,7 @@ Cursor-ում AI-զարգացման կանոններով repo-ի կաղապար�
 
 - **Կոդից առաջ:** BRIEF, TECH_CARD, ճարտարապետություն — AI-ն առաջարկում է, դու հաստատում ես։
 - **Տվյալներ (AI-ն կխնդրի ըստ need-ի):** Neon (DATABASE_URL), R2 (bucket + բանալիներ), Vercel (env), Auth (OAuth), Resend/Stripe/Դոմեն — անհրաժեշտության դեպքում։
-- **Env:** Ստեղծել `.env` + `.env.example` (առանց գաղտնիքների), `.gitignore`-ում — `.env`, `.env.local`. 
+- **Env:** Ստեղծել `.env` + `.env.example` (առանց գաղտնիքների), `.gitignore`-ում — `.env`, `.env.local`. Local API-ի `dev`/`start` script-երը repo root-ի `.env`-ը կարդում են `apps/api`-ից (`../../.env`), և ֆայլի բացակայությունը startup-ը չի կոտրում, որովհետև production-ում env-ը գալիս է platform-ից. 
 Հերթականություն. 
 Neon → `.env`
 R2 →  `.env`
