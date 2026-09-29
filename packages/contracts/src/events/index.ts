@@ -1,4 +1,4 @@
-export { contactCreatedEventSchema } from './contact-created-event.js';
+export { CONTACT_CREATED_EVENT_VERSION, contactCreatedEventSchema } from './contact-created-event.js';
 export type { ContactCreatedEvent } from './contact-created-event.js';
 export {
   TENANT_CREATED_EVENT_VERSION,

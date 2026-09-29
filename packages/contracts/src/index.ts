@@ -1,6 +1,7 @@
 export { moduleKeySchema, moduleKeys } from './enums/index.js';
 export type { ModuleKey } from './enums/index.js';
 export {
+  CONTACT_CREATED_EVENT_VERSION,
   TENANT_CREATED_EVENT_VERSION,
   contactCreatedEventSchema,
   tenantCreatedEventSchema,
@@ -13,6 +14,7 @@ export type { TenantPlan } from './tenants/index.js';
 export { defaultLocale, localeSchema, supportedLocales } from './locales.js';
 export type { Locale } from './locales.js';
 export {
+  RESERVATION_CREATED_EVENT_VERSION,
   createReservationSchema,
   reservationCreatedEventSchema,
   reservationStatusSchema,

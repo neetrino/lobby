@@ -1,13 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { contactCreatedEventSchema } from '@lobby/contracts';
+import { CONTACT_CREATED_EVENT_VERSION, contactCreatedEventSchema } from '@lobby/contracts';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import type { AuthenticatedTenantContext } from '../../../common/tenant/authenticated-tenant-context';
 import { createContactSchema, type CreateContactInput } from './create-contact.schema';
-
-const CONTACT_CREATED_EVENT_VERSION = 1;
 
 @Injectable()
 export class CreateContactService {

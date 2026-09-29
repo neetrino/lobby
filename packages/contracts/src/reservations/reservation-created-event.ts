@@ -2,8 +2,11 @@ import { z } from 'zod';
 
 import { versionedEventSchema } from '../events/versioned-event.js';
 
+export const RESERVATION_CREATED_EVENT_VERSION = 1;
+
 export const reservationCreatedEventSchema = versionedEventSchema.extend({
   eventType: z.literal('reservation.created'),
+  eventVersion: z.literal(RESERVATION_CREATED_EVENT_VERSION),
   aggregateType: z.literal('reservation'),
   payload: z.object({
     venueId: z.uuid(),

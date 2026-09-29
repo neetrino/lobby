@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CONTACT_CREATED_EVENT_VERSION,
   TENANT_CREATED_EVENT_VERSION,
   contactCreatedEventSchema,
   defaultLocale,
@@ -14,7 +15,7 @@ import {
 const validContactCreatedEvent = {
   eventId: '11111111-1111-4111-8111-111111111111',
   eventType: 'contact.created',
-  eventVersion: 1,
+  eventVersion: CONTACT_CREATED_EVENT_VERSION,
   tenantId: '22222222-2222-4222-8222-222222222222',
   aggregateType: 'contact',
   aggregateId: '33333333-3333-4333-8333-333333333333',
@@ -23,8 +24,15 @@ const validContactCreatedEvent = {
 } as const;
 
 describe('contactCreatedEventSchema', () => {
-  it('accepts a valid contact-created event', () => {
-    expect(contactCreatedEventSchema.safeParse(validContactCreatedEvent).success).toBe(true);
+  it('accepts only the canonical contact-created version', () => {
+    const parsed = contactCreatedEventSchema.safeParse(validContactCreatedEvent);
+    expect(parsed.success && parsed.data.eventVersion).toBe(CONTACT_CREATED_EVENT_VERSION);
+    expect(
+      contactCreatedEventSchema.safeParse({
+        ...validContactCreatedEvent,
+        eventVersion: CONTACT_CREATED_EVENT_VERSION + 1,
+      }).success,
+    ).toBe(false);
   });
 
   it('rejects an invalid UUID', () => {
