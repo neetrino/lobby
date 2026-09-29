@@ -1,3 +1,4 @@
+import type { ContactCreatedEvent } from '@lobby/contracts';
 import type { OutboxWorkerConfig, PrismaClient } from '@lobby/database';
 import { createTestPrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -232,7 +233,7 @@ describe('outbox delivery', () => {
       aggregateId: '33333333-3333-4333-8333-333333333333',
       occurredAt: '2026-09-25T09:00:00.000Z',
       payload: { name: 'Ada' },
-    };
+    } satisfies ContactCreatedEvent;
 
     await handler.handle(event);
     await handler.handle(event);

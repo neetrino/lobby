@@ -1,5 +1,5 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { createRequestId, runWithRequestId } from '../src/common/http/request-context';
+import { createRequestId, currentRequestId, runWithRequestId } from '../src/common/http/request-context';
 import { NotFoundException, type ExecutionContext } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database/testing';
 import type { ZodType } from 'zod';
@@ -7,6 +7,9 @@ import type { ZodType } from 'zod';
 import { OutboxService } from '../src/common/outbox/outbox.service';
 import { ZodValidationPipe } from '../src/common/pipes/zod-validation.pipe';
 import { OriginGuard } from '../src/common/security/origin.guard';
+import { requestContextFromSession } from '../src/common/tenant/request-context';
+import { ContactAccessService } from '../src/modules/contacts/application/contact-access.service';
+import { renameContactSchema } from '../src/modules/contacts/application/rename-contact.schema';
 import { CreateTenantService } from '../src/modules/organizations';
 import { AuthRateLimitService } from '../src/modules/identity/application/auth-rate-limit.service';
 import { LoginService } from '../src/modules/identity/application/login.service';
@@ -28,10 +31,7 @@ import { SessionCookie } from '../src/modules/identity/infrastructure/session-co
 import { AuthController } from '../src/modules/identity/presentation/auth.controller';
 import { loginSchema } from '../src/modules/identity/presentation/dto/login.schema';
 import { registerSchema } from '../src/modules/identity/presentation/dto/register.schema';
-import {
-  readAuthenticatedSession,
-  tenantContextFromSession,
-} from '../src/modules/identity/presentation/current-session';
+import { readAuthenticatedSession } from '../src/modules/identity/presentation/current-session';
 import { IndexedSessionRedis } from '../src/modules/identity/presentation/session-guard.fixtures';
 import {
   SessionGuard,
@@ -44,7 +44,7 @@ type AuthServices = {
   origin: OriginGuard;
   sessions: SessionGuard;
   terminate: TerminateUserSessionsService;
-  database: PrismaClient;
+  contacts: ContactAccessService;
 };
 
 export type AuthFlowApp = {
@@ -117,6 +117,7 @@ function wire(
       cookies,
       rates,
     ),
+    contacts: new ContactAccessService(database),
     origin: new OriginGuard([AUTH_FLOW_ORIGIN]),
     sessions: new SessionGuard(new SessionAccessService(store, users), cookies, rates),
     terminate: new TerminateUserSessionsService(users, store),
@@ -160,6 +161,10 @@ async function dispatch(
     await readContact(services, request, response, url);
     return;
   }
+  if (request.method === 'PATCH' && url.pathname.startsWith('/api/v1/contacts/')) {
+    await renameContact(services, request, response, url);
+    return;
+  }
   throw new NotFoundException();
 }
 
@@ -199,17 +204,41 @@ async function readContact(
   response: ServerResponse,
   url: URL,
 ): Promise<void> {
-  const sessionRequest = sessionRequestFrom(request);
-  await services.sessions.canActivate(httpContext(sessionRequest, cookieWriter(response)));
-  const tenant = tenantContextFromSession(readAuthenticatedSession(sessionRequest));
-  const contact = await services.database.contact.findFirst({
-    where: { id: contactId(url), tenantId: tenant.tenantId },
-    select: { id: true, tenantId: true, name: true },
-  });
+  const context = await openRequestContext(services, request, response);
+  const contact = await services.contacts.read(context, contactId(url));
   if (contact === null) {
     throw new NotFoundException();
   }
   writeJson(response, 200, { data: contact });
+}
+
+async function renameContact(
+  services: AuthServices,
+  request: IncomingMessage,
+  response: ServerResponse,
+  url: URL,
+): Promise<void> {
+  const context = await openRequestContext(services, request, response);
+  const input = parse(renameContactSchema, await readJson(request));
+  const contact = await services.contacts.rename(context, contactId(url), input);
+  if (contact === null) {
+    throw new NotFoundException();
+  }
+  writeJson(response, 200, { data: contact });
+}
+
+async function openRequestContext(
+  services: AuthServices,
+  request: IncomingMessage,
+  response: ServerResponse,
+) {
+  const sessionRequest = sessionRequestFrom(request);
+  await services.sessions.canActivate(httpContext(sessionRequest, cookieWriter(response)));
+  const requestId = currentRequestId();
+  if (requestId === undefined) {
+    throw new Error('Request id is missing');
+  }
+  return requestContextFromSession(readAuthenticatedSession(sessionRequest), requestId);
 }
 
 function parse<T>(schema: ZodType<T>, value: unknown): T {

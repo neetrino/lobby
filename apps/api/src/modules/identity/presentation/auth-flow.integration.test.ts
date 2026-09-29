@@ -147,6 +147,17 @@ describe('auth http flow', () => {
         headers: { 'x-tenant-id': betaAccount.tenant.id },
       },
     );
+    const rewritten = await send(
+      app.baseUrl,
+      `/api/v1/contacts/${foreign.id}?tenantId=${betaAccount.tenant.id}`,
+      {
+        method: 'PATCH',
+        cookie: sessionId(acme.setCookie),
+        headers: { 'x-tenant-id': betaAccount.tenant.id },
+        body: { name: 'Stolen', tenantId: betaAccount.tenant.id },
+      },
+    );
+    const stored = await prisma.contact.findUniqueOrThrow({ where: { id: foreign.id } });
 
     expect(acmeAccount.user.email).toBe(email);
     expect(betaAccount.user.email).toBe(email);
@@ -157,6 +168,9 @@ describe('auth http flow', () => {
     expect(hidden.status).toBe(404);
     expect(JSON.stringify(hidden.body)).not.toContain('Beta ledger');
     expect(JSON.stringify(hidden.body)).not.toContain(betaAccount.tenant.id);
+    expect(rewritten.status).toBe(404);
+    expect(JSON.stringify(rewritten.body)).not.toContain('Stolen');
+    expect(stored).toMatchObject({ tenantId: betaAccount.tenant.id, name: 'Beta ledger' });
   }, 30_000);
 });
 

@@ -41,9 +41,9 @@ Request
 → SessionGuard reads the session cookie
 → hash the raw session id and load the Redis record
 → reject a missing, expired, revoked, disabled, or version-mismatched session
-→ copy AuthenticatedTenantContext only from that session
+→ copy RequestContext from that session plus the server-generated request id
 → validate input
-→ execute the owning module operation with { tenantId, userId, role } plus the validated input
+→ execute the owning module operation with { requestId, userId, tenantId, role } plus the validated input
 → return the documented response or error
 ```
 

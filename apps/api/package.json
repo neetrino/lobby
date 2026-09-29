@@ -2,7 +2,7 @@
   "name": "@lobby/api",
   "private": true,
   "scripts": {
-    "dev": "nest start --watch --exec \"node --env-file-if-exists=../../.env\"",
+    "dev": "node --env-file-if-exists=../../.env ./node_modules/@nestjs/cli/bin/nest.js start --watch",
     "build": "nest build",
     "start": "node --env-file-if-exists=../../.env dist/main.js",
     "lint": "eslint src --max-warnings=0",

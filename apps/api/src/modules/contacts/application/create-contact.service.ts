@@ -4,7 +4,7 @@ import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'i
 
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { OutboxService } from '../../../common/outbox/outbox.service';
-import type { AuthenticatedTenantContext } from '../../../common/tenant/authenticated-tenant-context';
+import type { RequestContext } from '../../../common/tenant/request-context';
 import { createContactSchema, type CreateContactInput } from './create-contact.schema';
 
 @Injectable()
@@ -14,7 +14,7 @@ export class CreateContactService {
     private readonly outbox: OutboxService,
   ) {}
 
-  async create(context: AuthenticatedTenantContext, input: CreateContactInput) {
+  async create(context: RequestContext, input: CreateContactInput) {
     const name = createContactSchema.parse(input).name;
 
     return this.prisma.$transaction(async (tx) => {
