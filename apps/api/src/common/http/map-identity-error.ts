@@ -1,4 +1,4 @@
-import { AuthenticationError } from '../auth/authentication.error';
+import { CataloguedClientError } from '../auth/catalogued-client-error';
 import { apiErrorBody, type ApiErrorBody } from './api-error-body';
 
 export type MappedIdentityError = {
@@ -6,16 +6,17 @@ export type MappedIdentityError = {
   body: ApiErrorBody;
 };
 
-/** Maps an authentication failure, including module errors that extend the shared contract. */
+/** Maps a catalogued client error. The body uses the catalog payload, not `Error.message`. */
 export function tryMapIdentityError(
   exception: unknown,
   requestId: string,
 ): MappedIdentityError | undefined {
-  if (!(exception instanceof AuthenticationError)) {
+  if (!(exception instanceof CataloguedClientError)) {
     return undefined;
   }
+  const payload = exception.toClientPayload();
   return {
-    statusCode: exception.statusCode,
-    body: apiErrorBody({ code: exception.code, message: exception.message, requestId }),
+    statusCode: payload.statusCode,
+    body: apiErrorBody({ code: payload.code, message: payload.message, requestId }),
   };
 }

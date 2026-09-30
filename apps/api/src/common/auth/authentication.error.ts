@@ -1,46 +1,38 @@
 import {
   authenticationErrorCodes,
-  isAuthenticationErrorCode,
   type AuthenticationErrorCode,
 } from './authentication-error-codes';
+import { CataloguedClientError, type ClientErrorSpec } from './catalogued-client-error';
 
-const authenticationMessages = {
-  [authenticationErrorCodes.INVALID_CREDENTIALS]: 'Invalid credentials.',
-  [authenticationErrorCodes.UNAUTHENTICATED]: 'Authentication is required.',
-  [authenticationErrorCodes.SESSION_EXPIRED]: 'The session has expired.',
-  [authenticationErrorCodes.SESSION_REVOKED]: 'The session is no longer valid.',
-} as const satisfies Record<AuthenticationErrorCode, string>;
+/** Fixed client copy for every authentication code. There is no caller-supplied message. */
+export const authenticationCatalog = {
+  [authenticationErrorCodes.INVALID_CREDENTIALS]: {
+    message: 'Invalid credentials.',
+    statusCode: 401,
+  },
+  [authenticationErrorCodes.UNAUTHENTICATED]: {
+    message: 'Authentication is required.',
+    statusCode: 401,
+  },
+  [authenticationErrorCodes.SESSION_EXPIRED]: {
+    message: 'The session has expired.',
+    statusCode: 401,
+  },
+  [authenticationErrorCodes.SESSION_REVOKED]: {
+    message: 'The session is no longer valid.',
+    statusCode: 401,
+  },
+} as const satisfies Record<AuthenticationErrorCode, ClientErrorSpec>;
 
 /**
- * Authentication failure with a stable code and HTTP status.
- * Module-specific auth errors extend this class. `common` does not import those modules.
+ * Authentication failure. The only argument is a catalog code.
+ * Message and HTTP status come from `authenticationCatalog`.
  */
-export class AuthenticationError extends Error {
-  readonly statusCode: number;
+export class AuthenticationError extends CataloguedClientError {
+  override readonly code: AuthenticationErrorCode;
 
-  constructor(
-    readonly code: string,
-    message?: string,
-    statusCode?: number,
-  ) {
-    const known = isAuthenticationErrorCode(code) ? code : undefined;
-    const fallback = known !== undefined ? authenticationMessages[known] : 'Authentication failed.';
-    super(message ?? fallback);
-    this.name = 'AuthenticationError';
-    this.statusCode = statusCode ?? (known !== undefined ? authenticationStatus(known) : 401);
+  constructor(code: AuthenticationErrorCode) {
+    super(code, authenticationCatalog[code]);
+    this.code = code;
   }
-}
-
-export function authenticationStatus(code: AuthenticationErrorCode): number {
-  switch (code) {
-    case 'INVALID_CREDENTIALS':
-    case 'UNAUTHENTICATED':
-    case 'SESSION_EXPIRED':
-    case 'SESSION_REVOKED':
-      return 401;
-  }
-}
-
-export function authenticationMessage(code: AuthenticationErrorCode): string {
-  return authenticationMessages[code];
 }

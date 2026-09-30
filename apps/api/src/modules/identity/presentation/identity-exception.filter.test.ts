@@ -72,6 +72,24 @@ describe('IdentityExceptionFilter', () => {
     });
   });
 
+  it('keeps a replaced identity message off the client body', () => {
+    const leaked = new IdentityError(identityErrorCodes.SERVICE_UNAVAILABLE);
+    leaked.message = 'connect ECONNREFUSED redis://secret';
+    const hidden = invoke(leaked);
+
+    expect(hidden).toEqual({
+      statusCode: 503,
+      body: {
+        error: {
+          code: identityErrorCodes.SERVICE_UNAVAILABLE,
+          message: 'The session store is unavailable.',
+          requestId: TEST_REQUEST_ID,
+        },
+      },
+    });
+    expect(JSON.stringify(hidden.body)).not.toContain('redis://');
+  });
+
   it('hides internal and validation details', () => {
     const secret = 'plain-text-password';
     const logged: string[] = [];

@@ -8,9 +8,3 @@ export const authenticationErrorCodes = {
 
 export type AuthenticationErrorCode =
   (typeof authenticationErrorCodes)[keyof typeof authenticationErrorCodes];
-
-const authenticationErrorCodeValues: readonly string[] = Object.values(authenticationErrorCodes);
-
-export function isAuthenticationErrorCode(code: string): code is AuthenticationErrorCode {
-  return authenticationErrorCodeValues.includes(code);
-}

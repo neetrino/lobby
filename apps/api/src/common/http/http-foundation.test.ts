@@ -41,13 +41,9 @@ class ProbeController {
     throw new AuthenticationError(authenticationErrorCodes.UNAUTHENTICATED);
   }
 
-  @Get('forbidden')
-  forbidden(): never {
-    throw new AuthenticationError(
-      'FORBIDDEN',
-      'You do not have permission to perform this action.',
-      403,
-    );
+  @Get('expired')
+  expired(): never {
+    throw new AuthenticationError(authenticationErrorCodes.SESSION_EXPIRED);
   }
 }
 
@@ -164,15 +160,21 @@ describe('HTTP foundation', () => {
     expect(logged.join('\n')).not.toContain('driver failed');
   });
 
-  it('maps identity errors without a controller filter', async () => {
+  it('maps authentication errors without a controller filter', async () => {
     const http = app.getHttpServer();
     const unauthenticated = await request(http).get('/api/v1/probe/unauthenticated');
-    const forbidden = await request(http).get('/api/v1/probe/forbidden');
+    const expired = await request(http).get('/api/v1/probe/expired');
 
     expect(unauthenticated.status).toBe(401);
-    expect(unauthenticated.body.error.code).toBe('UNAUTHENTICATED');
-    expect(forbidden.status).toBe(403);
-    expect(forbidden.body.error.code).toBe('FORBIDDEN');
+    expect(unauthenticated.body.error).toMatchObject({
+      code: 'UNAUTHENTICATED',
+      message: 'Authentication is required.',
+    });
+    expect(expired.status).toBe(401);
+    expect(expired.body.error).toMatchObject({
+      code: 'SESSION_EXPIRED',
+      message: 'The session has expired.',
+    });
   });
 
   it('omits driver connection strings from unexpected error logs', async () => {
