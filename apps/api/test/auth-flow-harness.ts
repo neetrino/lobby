@@ -5,6 +5,7 @@ import { Reflector } from '@nestjs/core';
 import type { PrismaClient } from '@lobby/database/testing';
 import type { ZodType } from 'zod';
 
+import { AuditEventStore } from '../src/common/audit/audit-event.store';
 import { ModuleEntitlementService } from '../src/common/authorization/module-entitlement';
 import { PlanEntitlementGrant } from '../src/common/modules/plan-entitlement-grant';
 import { OutboxService } from '../src/common/outbox/outbox.service';
@@ -127,7 +128,7 @@ function wire(
     ),
     origin: new OriginGuard([AUTH_FLOW_ORIGIN]),
     sessions: new SessionGuard(new SessionAccessService(store, users), cookies, rates, new Reflector()),
-    terminate: new TerminateUserSessionsService(users, store),
+    terminate: new TerminateUserSessionsService(users, store, new AuditEventStore(database)),
     database,
   };
 }

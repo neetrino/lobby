@@ -13,3 +13,7 @@ An ADR should briefly describe:
 - important consequences.
 
 Only approved decisions should be treated as authoritative. Proposed or replaced decisions must be clearly marked with their current status.
+
+| Decision | Status | Record |
+|---|---|---|
+| Append-only tenant audit history | Approved | [ADR 0001](./architecture/ADR-0001-audit-events.md) |

@@ -28,7 +28,7 @@ export async function createTestPrismaClient(): Promise<PrismaClient> {
   await deployMigrations(connectionString);
   const prisma = createPrismaClient(connectionString);
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "processed_events", "outbox_events", "contacts", "tenant_modules", "users", "tenants" CASCADE',
+    'TRUNCATE TABLE "processed_events", "outbox_events", "contacts", "tenant_modules", "audit_events", "users", "tenants" CASCADE',
   );
   return prisma;
 }

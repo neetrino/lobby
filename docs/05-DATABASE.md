@@ -224,7 +224,7 @@ The runtime uses least-privilege `DATABASE_URL`; privileged migration access suc
 | Deals and pipelines | TBD | Planned | Version 1 high priority. |
 | Restaurant reservations | `venues`, `dining_areas`, `restaurant_tables`, `service_periods`, `reservations`, `reservation_tables`, `reservation_status_history` | Foundation implemented | Tenant-safe relations and database-enforced overlap prevention; API operations are not implemented. |
 | Orders and delivery | TBD | Conditional | Add only if included in Version 1. |
-| Audit and outbox | `outbox_events`, `processed_events` | Implemented | Pending rows are claimed with `FOR UPDATE SKIP LOCKED`. `processed_events` reserves an external side effect before it starts. Unique key: `(handler_name, event_type, event_version, event_id)`. |
+| Audit and outbox | `audit_events`, `outbox_events`, `processed_events` | Implemented | `audit_events` is append-only application history, separate from operational logs. No retention job is defined, so rows are not deleted. Pending outbox rows are claimed with `FOR UPDATE SKIP LOCKED`. `processed_events` reserves an external side effect before it starts. Unique key: `(handler_name, event_type, event_version, event_id)`. |
 
 ### Reservation data rules
 

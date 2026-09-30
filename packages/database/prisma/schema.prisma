@@ -43,6 +43,7 @@ model Tenant {
   reservations             Reservation[]
   reservationTables        ReservationTable[]
   reservationStatusHistory ReservationStatusHistory[]
+  auditEvents              AuditEvent[]
 
   @@map("tenants")
 }
@@ -65,6 +66,7 @@ model User {
   tenant                   Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   createdReservations      Reservation[]              @relation("ReservationCreatedBy")
   reservationStatusChanges ReservationStatusHistory[] @relation("ReservationStatusChangedBy")
+  auditEvents              AuditEvent[]
 
   @@unique([tenantId, email])
   @@unique([id, tenantId])
@@ -88,6 +90,44 @@ model TenantModule {
 
   @@id([tenantId, moduleKey])
   @@map("tenant_modules")
+}
+
+enum AuditOutcome {
+  SUCCESS
+  DENIED
+  FAILURE
+}
+
+enum AuditActorType {
+  USER
+}
+
+/// Append-only security and business history. Application code inserts and reads.
+model AuditEvent {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId      String         @map("tenant_id") @db.Uuid
+  occurredAt    DateTime       @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  actorUserId   String         @map("actor_user_id") @db.Uuid
+  actorRole     TenantRole     @map("actor_role")
+  actorType     AuditActorType @map("actor_type")
+  action        String
+  resourceType  String         @map("resource_type")
+  resourceId    String         @map("resource_id") @db.Uuid
+  outcome       AuditOutcome
+  changes       Json?
+  reason        String?
+  requestId     String         @map("request_id") @db.Uuid
+  ipHash        String?        @map("ip_hash")
+  userAgent     String?        @map("user_agent")
+  schemaVersion Int            @default(1) @map("schema_version")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  actor  User   @relation(fields: [actorUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tenantId, occurredAt])
+  @@index([tenantId, resourceType, resourceId])
+  @@index([tenantId, actorUserId])
+  @@map("audit_events")
 }
 
 /// Tenant-owned contact. One user still belongs to exactly one tenant.

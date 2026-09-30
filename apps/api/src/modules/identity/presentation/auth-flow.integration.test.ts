@@ -2,6 +2,7 @@ import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testi
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { readSessionCookieSecure } from '../infrastructure/session-cookie';
+import { requestContextFromSession } from '../../../common/tenant/request-context';
 import { clearTenantRows } from './session-guard.fixtures';
 import { startAuthFlow, type AuthFlowApp } from '../../../../test/auth-flow-harness';
 import {
@@ -99,8 +100,12 @@ describe('auth http flow', () => {
     });
 
     await app.terminate.terminateAllSessions(
-      { userId: account.user.id, tenantId: account.tenant.id, role: 'OWNER' },
+      requestContextFromSession(
+        { userId: account.user.id, tenantId: account.tenant.id, role: 'OWNER' },
+        '44444444-4444-4444-8444-444444444444',
+      ),
       account.user.id,
+      { ipHash: null, userAgent: null },
     );
     const rejected = await send(app.baseUrl, `/api/v1/contacts/${contact.id}`, {
       method: 'GET',

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuditModule } from '../../common/audit/audit.module';
 import { AuthorizationModule } from '../../common/authorization/authorization.module';
 import { DatabaseModule } from '../../common/database/database.module';
 import { OrganizationsModule } from '../organizations';
@@ -30,7 +31,7 @@ import { SessionController } from './presentation/session.controller';
 import { SessionGuard } from './presentation/session.guard';
 
 @Module({
-  imports: [AuthorizationModule, OrganizationsModule, DatabaseModule],
+  imports: [AuditModule, AuthorizationModule, OrganizationsModule, DatabaseModule],
   controllers: [AuthController, SessionController],
   providers: [
     { provide: PASSWORD_HASHER, useClass: Argon2PasswordHasher },

@@ -1,3 +1,25 @@
+export {
+  auditActionSchema,
+  auditActionValues,
+  auditActions,
+  auditActorTypeSchema,
+  auditActorTypes,
+  auditOutcomeSchema,
+  auditOutcomes,
+  auditResourceTypeSchema,
+  auditResourceTypes,
+  auditSchemaVersion,
+  authenticationVersionChangeSchema,
+  userSessionsTerminatedAuditSchema,
+} from './audit/index.js';
+export type {
+  AuditAction,
+  AuditActorType,
+  AuditOutcome,
+  AuditResourceType,
+  AuthenticationVersionChange,
+  UserSessionsTerminatedAudit,
+} from './audit/index.js';
 export { moduleKeySchema, moduleKeys } from './enums/index.js';
 export type { ModuleKey } from './enums/index.js';
 export {

@@ -307,6 +307,7 @@ export async function clearTenantRows(database: PrismaClient | undefined): Promi
   await database.outboxEvent.deleteMany();
   await database.contact.deleteMany();
   await database.tenantModule.deleteMany();
+  await database.auditEvent.deleteMany();
   await database.user.deleteMany();
   await database.tenant.deleteMany();
 }

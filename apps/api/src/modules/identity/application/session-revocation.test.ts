@@ -1,8 +1,10 @@
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
 import { Reflector } from '@nestjs/core';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthorizationError } from '../../../common/auth/authorization';
+import { AuditEventStore } from '../../../common/audit/audit-event.store';
+import { requestContextFromSession, type RequestContext } from '../../../common/tenant/request-context';
 import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { CreateTenantService } from '../../organizations';
@@ -106,13 +108,27 @@ describe('terminateAllSessions', () => {
     const laptop = await openSession(sessions, member);
     const ownerSession = await openSession(sessions, owner);
 
-    await terminator(sessions).terminateAllSessions(actor(owner), member.userId);
+    await terminator(sessions).terminateAllSessions(contextOf(owner), member.userId, quietClient);
 
     expect((await rejection(redis, phone.rawSessionId)).statusCode).toBe(401);
     expect((await rejection(redis, laptop.rawSessionId)).statusCode).toBe(401);
     expect(redis.sets.has(userSessionsKey(member.userId))).toBe(false);
     expect(await versionOf(member.userId)).toBe(2);
     expect(await prisma.outboxEvent.count()).toBe(0);
+    const audit = await prisma.auditEvent.findMany({ where: { tenantId: owner.tenantId } });
+    expect(audit).toEqual([
+      expect.objectContaining({
+        actorUserId: owner.userId,
+        actorRole: 'OWNER',
+        action: 'user.sessions.terminated',
+        resourceType: 'user',
+        resourceId: member.userId,
+        outcome: 'SUCCESS',
+        changes: { authenticationVersion: { from: 1, to: 2 } },
+        schemaVersion: 1,
+      }),
+    ]);
+    expect(JSON.stringify(audit)).not.toContain('password');
     await expect(accept(redis, ownerSession.rawSessionId)).resolves.toBe(true);
     expect(await versionOf(owner.userId)).toBe(1);
   });
@@ -127,12 +143,15 @@ describe('terminateAllSessions', () => {
     const outsiderSession = await openSession(sessions, outsider);
     const service = terminator(sessions);
 
-    await expect(service.terminateAllSessions(actor(member), owner.userId)).rejects.toBeInstanceOf(
+    await expect(service.terminateAllSessions(contextOf(member), owner.userId, quietClient)).rejects.toBeInstanceOf(
       AuthorizationError,
     );
-    await expect(service.terminateAllSessions(actor(owner), outsider.userId)).rejects.toBeInstanceOf(
+    await expect(service.terminateAllSessions(contextOf(owner), outsider.userId, quietClient)).rejects.toBeInstanceOf(
       IdentityError,
     );
+    const denied = await prisma.auditEvent.findMany({ where: { tenantId: owner.tenantId } });
+    expect(denied).toHaveLength(2);
+    expect(denied.every((row) => row.outcome === 'DENIED' && row.changes === null)).toBe(true);
 
     await expect(accept(redis, ownerSession.rawSessionId)).resolves.toBe(true);
     await expect(accept(redis, outsiderSession.rawSessionId)).resolves.toBe(true);
@@ -151,8 +170,8 @@ describe('terminateAllSessions', () => {
     const colleagueSession = await openSession(sessions, colleague);
     const service = terminator(sessions);
 
-    await service.terminateAllSessions(actor(member), member.userId);
-    await service.terminateAllSessions(actor(admin), colleague.userId);
+    await service.terminateAllSessions(contextOf(member), member.userId, quietClient);
+    await service.terminateAllSessions(contextOf(admin), colleague.userId, quietClient);
 
     expect((await rejection(redis, memberSession.rawSessionId)).statusCode).toBe(401);
     expect((await rejection(redis, colleagueSession.rawSessionId)).statusCode).toBe(401);
@@ -171,7 +190,7 @@ describe('terminateAllSessions', () => {
     redis.holdNextSet = true;
     const raced = sessions.create(sessionInput(owner, 1), new Date());
 
-    await terminator(sessions).terminateAllSessions(actor(owner), owner.userId);
+    await terminator(sessions).terminateAllSessions(contextOf(owner), owner.userId, quietClient);
     redis.release();
 
     await expect(raced).rejects.toBeInstanceOf(StaleSessionError);
@@ -184,6 +203,23 @@ describe('terminateAllSessions', () => {
     const fresh = await openSession(sessions, owner, await versionOf(owner.userId));
     await expect(accept(redis, fresh.rawSessionId)).resolves.toBe(true);
   });
+
+  it('rolls back the version when the audit insert fails', async () => {
+    const redis = new IndexedSessionRedis();
+    const sessions = checkedSessions(redis);
+    const owner = await createUser('acme', 'OWNER');
+    const opened = await openSession(sessions, owner);
+    const audit = new AuditEventStore(prisma);
+    vi.spyOn(audit, 'append').mockRejectedValue(new Error('audit unavailable'));
+
+    await expect(
+      terminator(sessions, audit).terminateAllSessions(contextOf(owner), owner.userId, quietClient),
+    ).rejects.toThrow('audit unavailable');
+
+    expect(await versionOf(owner.userId)).toBe(1);
+    expect(await prisma.auditEvent.count()).toBe(0);
+    await expect(accept(redis, opened.rawSessionId)).resolves.toBe(true);
+  });
 });
 
 type TenantUser = { userId: string; tenantId: string; role: SessionRole };
@@ -192,12 +228,17 @@ function checkedSessions(redis: SessionRedisClient): RedisSessionStore {
   return new RedisSessionStore(redis, new PrismaSessionUserStore(prisma));
 }
 
-function terminator(sessions: RedisSessionStore): TerminateUserSessionsService {
-  return new TerminateUserSessionsService(new PrismaSessionUserStore(prisma), sessions);
+function terminator(sessions: RedisSessionStore, audit = new AuditEventStore(prisma)): TerminateUserSessionsService {
+  return new TerminateUserSessionsService(new PrismaSessionUserStore(prisma), sessions, audit);
 }
 
-function actor(user: TenantUser) {
-  return { userId: user.userId, tenantId: user.tenantId, role: user.role };
+const quietClient = { ipHash: null, userAgent: null };
+
+function contextOf(user: TenantUser): RequestContext {
+  return requestContextFromSession(
+    { userId: user.userId, tenantId: user.tenantId, role: user.role },
+    '44444444-4444-4444-8444-444444444444',
+  );
 }
 
 function sessionInput(user: TenantUser, authenticationVersion: number) {

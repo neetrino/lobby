@@ -8,11 +8,15 @@ import { ROLE_PERMISSIONS } from './role-permissions';
 const contactPermissions = ['contacts:create', 'contacts:read', 'contacts:update'] as const;
 
 describe('role permissions', () => {
-  it('grants sessions:revoke to owner and admin and withholds it from member', () => {
+  it('grants sessions:revoke and audit:read to owner and admin and withholds both from member', () => {
     expect(hasPermission('MEMBER', 'sessions:revoke')).toBe(false);
+    expect(hasPermission('MEMBER', 'audit:read')).toBe(false);
     expect(hasPermission('OWNER', 'sessions:revoke')).toBe(true);
+    expect(hasPermission('OWNER', 'audit:read')).toBe(true);
     expect(hasPermission('ADMIN', 'sessions:revoke')).toBe(true);
+    expect(hasPermission('ADMIN', 'audit:read')).toBe(true);
     expect(ROLE_PERMISSIONS.MEMBER).not.toContain('sessions:revoke');
+    expect(ROLE_PERMISSIONS.MEMBER).not.toContain('audit:read');
   });
 
   it('grants contact create, read, and update to owner, admin, and member', () => {
@@ -25,7 +29,7 @@ describe('role permissions', () => {
       expect(() => requirePermission({ role }, 'contacts:update')).not.toThrow();
     }
     expect(ROLE_PERMISSIONS.MEMBER).toEqual([...contactPermissions]);
-    expect(ROLE_PERMISSIONS.ADMIN).toEqual(['sessions:revoke', ...contactPermissions]);
+    expect(ROLE_PERMISSIONS.ADMIN).toEqual(['sessions:revoke', 'audit:read', ...contactPermissions]);
     expect(ROLE_PERMISSIONS.OWNER).toEqual(ROLE_PERMISSIONS.ADMIN);
   });
 

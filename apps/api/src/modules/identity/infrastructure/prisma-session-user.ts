@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
+import type { Prisma, PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { tenantRoles, type TenantRole } from '../../../common/tenant/authenticated-tenant-context';
@@ -81,9 +81,13 @@ export class PrismaSessionUserStore {
    * Bumps the version for one user inside the caller's tenant.
    * Returns null when that tenant has no such user. The update itself is atomic.
    */
-  async incrementAuthenticationVersion(userId: string, tenantId: string): Promise<number | null> {
+  async incrementAuthenticationVersion(
+    userId: string,
+    tenantId: string,
+    db: PrismaClient | Prisma.TransactionClient = this.prisma,
+  ): Promise<number | null> {
     try {
-      const user = await this.prisma.user.update({
+      const user = await db.user.update({
         where: { id_tenantId: { id: userId, tenantId } },
         data: { authenticationVersion: { increment: 1 } },
         select: { authenticationVersion: true },
