@@ -1,8 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { TENANT_CREATED_EVENT_VERSION, tenantCreatedEventSchema } from '@lobby/contracts';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
+import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import {
   createTenantWithOwnerSchema,
@@ -14,10 +15,12 @@ export class CreateTenantService {
   constructor(
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
     private readonly outbox: OutboxService,
+    @Optional()
+    private readonly planEntitlements: PlanEntitlementGrant = new PlanEntitlementGrant(),
   ) {}
 
   /**
-   * Public operation for Auth. Writes the tenant, its owner, and the outbox event together.
+   * Public operation for Auth. Writes the tenant, its owner, default module rows, and the outbox event together.
    * Role and status are assigned here. Callers cannot choose them.
    */
   async createWithOwner(input: CreateTenantWithOwnerInput) {
@@ -42,6 +45,7 @@ export class CreateTenantService {
           authenticationVersion: 1,
         },
       });
+      await this.planEntitlements.grant(tx, tenant.id, data.tenant.plan);
       const event = tenantCreatedEventSchema.parse({
         eventId: crypto.randomUUID(),
         eventType: 'tenant.created',

@@ -20,6 +20,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await prisma.contact.deleteMany();
+  await prisma.tenantModule.deleteMany();
   await prisma.tenant.deleteMany();
 });
 
@@ -122,7 +123,11 @@ function requestContext(
 }
 
 async function createTenant(subdomain: string) {
-  return prisma.tenant.create({
+  const tenant = await prisma.tenant.create({
     data: { name: subdomain, subdomain, plan: 'STARTER' },
   });
+  await prisma.tenantModule.create({
+    data: { tenantId: tenant.id, moduleKey: 'contacts', status: 'ENABLED' },
+  });
+  return tenant;
 }

@@ -1,6 +1,7 @@
 import { HttpException } from '@nestjs/common';
 
 import { AuthorizationError } from '../auth/authorization';
+import { ModuleDisabledError } from '../authorization/module-entitlement';
 import { ApiError } from './api-error';
 import { apiErrorBody, type ApiErrorBody } from './api-error-body';
 import { httpErrorCodes, httpErrorMessages } from './http-error-codes';
@@ -20,6 +21,9 @@ export function mapHttpException(exception: unknown, requestId: string): MappedH
   const identityError = tryMapIdentityError(exception, requestId);
   if (identityError !== undefined) {
     return identityError;
+  }
+  if (exception instanceof ModuleDisabledError) {
+    return mapped(403, exception.code, exception.message, requestId);
   }
   if (exception instanceof AuthorizationError) {
     return mapped(403, exception.code, exception.message, requestId);

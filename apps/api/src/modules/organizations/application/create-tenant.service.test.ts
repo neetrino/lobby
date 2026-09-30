@@ -1,7 +1,8 @@
 import { TENANT_CREATED_EVENT_VERSION, tenantCreatedEventSchema } from '@lobby/contracts';
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { CreateTenantService } from './create-tenant.service';
 
@@ -22,6 +23,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await prisma.outboxEvent.deleteMany();
   await prisma.contact.deleteMany();
+  await prisma.tenantModule.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
 });
@@ -54,6 +56,15 @@ describe('CreateTenantService', () => {
     const parsed = tenantCreatedEventSchema.parse(toEvent(storedEvent, storedTenant, storedUser.id));
     expect(parsed.payload.ownerUserId).toBe(storedUser.id);
     expect(JSON.stringify(storedEvent.payload)).not.toContain('password');
+    const modules = await prisma.tenantModule.findMany({
+      where: { tenantId: created.tenant.id },
+      orderBy: { moduleKey: 'asc' },
+      select: { moduleKey: true, status: true },
+    });
+    expect(modules).toEqual([
+      { moduleKey: 'contacts', status: 'ENABLED' },
+      { moduleKey: 'deals', status: 'ENABLED' },
+    ]);
   });
 
   it('allows the same email in a second tenant', async () => {
@@ -64,6 +75,18 @@ describe('CreateTenantService', () => {
 
     expect(await prisma.user.count()).toBe(2);
     expect(await prisma.tenant.count()).toBe(2);
+  });
+
+  it('rolls back the tenant and owner when entitlement insert fails', async () => {
+    const grants = new PlanEntitlementGrant();
+    vi.spyOn(grants, 'grant').mockRejectedValue(new Error('entitlement unavailable'));
+    const service = new CreateTenantService(prisma, new OutboxService(), grants);
+
+    await expect(service.createWithOwner(command('modules'))).rejects.toThrow('entitlement unavailable');
+    expect(await prisma.tenant.count()).toBe(0);
+    expect(await prisma.user.count()).toBe(0);
+    expect(await prisma.tenantModule.count()).toBe(0);
+    expect(await prisma.outboxEvent.count()).toBe(0);
   });
 
   it('rolls back the tenant and owner when the outbox insert fails', async () => {

@@ -2,6 +2,7 @@ import { contactCreatedEventSchema } from '@lobby/contracts';
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { requirePermission } from '../../../common/authorization/require-permission';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import {
   requestContextFromSession,
@@ -23,6 +24,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await prisma.outboxEvent.deleteMany();
   await prisma.contact.deleteMany();
+  await prisma.tenantModule.deleteMany();
   await prisma.tenant.deleteMany();
 });
 
@@ -78,6 +80,19 @@ describe('CreateContactService', () => {
     expect(await prisma.contact.count()).toBe(0);
   });
 
+  it('does not create a contact when the module is disabled', async () => {
+    const tenant = await createTenant('off', 'DISABLED');
+    const context = tenantContext(tenant.id, 'MEMBER');
+    expect(() => requirePermission(context, 'contacts:create')).not.toThrow();
+    const service = new CreateContactService(prisma, new OutboxService());
+
+    await expect(service.create(context, { name: 'Ada' })).rejects.toMatchObject({
+      code: 'MODULE_DISABLED',
+    });
+    expect(await prisma.contact.count()).toBe(0);
+    expect(await prisma.outboxEvent.count()).toBe(0);
+  });
+
   it('rejects an invalid payload before persistence', async () => {
     const tenant = await createTenant('invalid');
     const service = new CreateContactService(prisma, new OutboxService());
@@ -114,10 +129,14 @@ function tenantContext(tenantId: string, role: UserRole = 'OWNER'): RequestConte
   );
 }
 
-async function createTenant(subdomain: string) {
-  return prisma.tenant.create({
+async function createTenant(subdomain: string, contacts: 'ENABLED' | 'DISABLED' = 'ENABLED') {
+  const tenant = await prisma.tenant.create({
     data: { name: subdomain, subdomain, plan: 'STARTER' },
   });
+  await prisma.tenantModule.create({
+    data: { tenantId: tenant.id, moduleKey: 'contacts', status: contacts },
+  });
+  return tenant;
 }
 
 function toEvent(

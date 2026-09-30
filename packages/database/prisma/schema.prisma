@@ -33,6 +33,7 @@ model Tenant {
   plan                     TenantPlan
   createdAt                DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
   users                    User[]
+  tenantModules            TenantModule[]
   contacts                 Contact[]
   outboxEvents             OutboxEvent[]
   venues                   Venue[]
@@ -68,6 +69,25 @@ model User {
   @@unique([tenantId, email])
   @@unique([id, tenantId])
   @@map("users")
+}
+
+enum TenantModuleStatus {
+  ENABLED
+  DISABLED
+}
+
+/// Tenant opt-in for an optional product module. A missing row is disabled.
+model TenantModule {
+  tenantId  String             @map("tenant_id") @db.Uuid
+  moduleKey String             @map("module_key")
+  status    TenantModuleStatus
+  createdAt DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@id([tenantId, moduleKey])
+  @@map("tenant_modules")
 }
 
 /// Tenant-owned contact. One user still belongs to exactly one tenant.

@@ -1,36 +1,56 @@
-import { AuthorizationError } from '../auth/authorization';
+import { Inject, Injectable } from '@nestjs/common';
+import type { ModuleKey } from '@lobby/contracts';
+import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
+
+import { PRISMA_CLIENT } from '../database/database.tokens';
 import type { TenantId } from '../tenant/tenant-id';
 
-/** Optional product modules. Identity and health are not in this catalog. */
-export const productModules = ['contacts'] as const;
-
-export type ProductModule = (typeof productModules)[number];
-
-export type ModuleState = 'enabled' | 'disabled';
-
 /**
- * Entitlement for every tenant.
- * An owner-level per-tenant toggle is not stored yet. A module set to `disabled` here is off for every tenant.
- * A module absent from this catalog cannot be required.
+ * Module is off for this tenant.
+ * The code is `MODULE_DISABLED`, not `FORBIDDEN`, so a client can tell a disabled
+ * module from a role that lacks the permission. The message names neither.
  */
-export const moduleEntitlements = {
-  contacts: 'enabled',
-} as const satisfies Record<ProductModule, ModuleState>;
+export class ModuleDisabledError extends Error {
+  readonly code = 'MODULE_DISABLED' as const;
 
-/** True only when the policy explicitly enables the module. */
-export function isModuleEnabled(
-  module: ProductModule,
-  policy: Record<ProductModule, ModuleState>,
-): boolean {
-  return policy[module] === 'enabled';
+  constructor() {
+    super('This module is not enabled.');
+    this.name = 'ModuleDisabledError';
+  }
 }
 
 /**
- * Module gate. Call it before the action permission.
- * An empty tenant id fails closed. A disabled module fails closed even when the role has the permission.
+ * Tenant module gate. Call it before `requirePermission`.
+ *
+ * Standard order for a module use case:
+ * `scopedTenantId(context)`, then `requireEnabled`, then `requirePermission`,
+ * then the tenant-scoped write and any resource-scope rule.
+ * User preference never belongs in this decision.
  */
-export function requireModule(actor: { tenantId: TenantId }, module: ProductModule): void {
-  if (actor.tenantId.length === 0 || !isModuleEnabled(module, moduleEntitlements)) {
-    throw new AuthorizationError();
+@Injectable()
+export class ModuleEntitlementService {
+  constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
+
+  async requireEnabled(tenantId: TenantId, module: ModuleKey): Promise<void> {
+    if (!(await this.isEnabled(tenantId, module))) {
+      throw new ModuleDisabledError();
+    }
+  }
+
+  /** True only for an `ENABLED` row at this tenant and module. Missing is disabled. */
+  async isEnabled(tenantId: TenantId, module: ModuleKey): Promise<boolean> {
+    if (tenantId.length === 0) {
+      return false;
+    }
+    const row = await this.prisma.tenantModule.findUnique({
+      where: {
+        tenantId_moduleKey: {
+          tenantId,
+          moduleKey: module,
+        },
+      },
+      select: { status: true },
+    });
+    return row?.status === 'ENABLED';
   }
 }

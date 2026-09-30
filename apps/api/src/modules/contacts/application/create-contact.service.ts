@@ -1,9 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import { CONTACT_CREATED_EVENT_VERSION, contactCreatedEventSchema } from '@lobby/contracts';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { scopedTenantId } from '../../../common/auth/authorization';
-import { requireModule } from '../../../common/authorization/module-entitlement';
+import { ModuleEntitlementService } from '../../../common/authorization/module-entitlement';
 import { requireResourceScope } from '../../../common/authorization/resource-scope';
 import { requirePermission } from '../../../common/authorization/require-permission';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
@@ -13,16 +13,21 @@ import { createContactSchema, type CreateContactInput } from './create-contact.s
 
 @Injectable()
 export class CreateContactService {
+  private readonly entitlements: ModuleEntitlementService;
+
   constructor(
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
     private readonly outbox: OutboxService,
-  ) {}
+    @Optional() entitlements?: ModuleEntitlementService,
+  ) {
+    this.entitlements = entitlements ?? new ModuleEntitlementService(prisma);
+  }
 
   async create(context: RequestContext, input: CreateContactInput) {
-    requireModule(context, 'contacts');
+    const tenantId = scopedTenantId(context);
+    await this.entitlements.requireEnabled(tenantId, 'contacts');
     requirePermission(context, 'contacts:create');
     const name = createContactSchema.parse(input).name;
-    const tenantId = scopedTenantId(context);
     requireResourceScope(context, 'tenant', { tenantId });
 
     return this.prisma.$transaction(async (tx) => {

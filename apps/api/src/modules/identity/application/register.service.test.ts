@@ -217,6 +217,7 @@ async function clearTenants(): Promise<void> {
   await prisma.venue.deleteMany();
   await prisma.outboxEvent.deleteMany();
   await prisma.contact.deleteMany();
+  await prisma.tenantModule.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
 }

@@ -1,8 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Optional } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { scopedTenantId } from '../../../common/auth/authorization';
-import { requireModule } from '../../../common/authorization/module-entitlement';
+import { ModuleEntitlementService } from '../../../common/authorization/module-entitlement';
 import { canAccessResource } from '../../../common/authorization/resource-scope';
 import { requirePermission } from '../../../common/authorization/require-permission';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
@@ -18,10 +18,18 @@ export type ContactRecord = {
 
 @Injectable()
 export class ContactAccessService {
-  constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
+  private readonly entitlements: ModuleEntitlementService;
 
-  read(context: RequestContext, contactId: string): Promise<ContactRecord | null> {
-    requireModule(context, 'contacts');
+  constructor(
+    @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
+    @Optional() entitlements?: ModuleEntitlementService,
+  ) {
+    this.entitlements = entitlements ?? new ModuleEntitlementService(prisma);
+  }
+
+  async read(context: RequestContext, contactId: string): Promise<ContactRecord | null> {
+    const tenantId = scopedTenantId(context);
+    await this.entitlements.requireEnabled(tenantId, 'contacts');
     requirePermission(context, 'contacts:read');
     return this.visibleContact(context, contactId);
   }
@@ -31,10 +39,10 @@ export class ContactAccessService {
     contactId: string,
     input: RenameContactInput,
   ): Promise<ContactRecord | null> {
-    requireModule(context, 'contacts');
+    const tenantId = scopedTenantId(context);
+    await this.entitlements.requireEnabled(tenantId, 'contacts');
     requirePermission(context, 'contacts:update');
     const name = renameContactSchema.parse(input).name;
-    const tenantId = scopedTenantId(context);
     const updated = await this.prisma.contact.updateMany({
       where: { id: contactId, tenantId },
       data: { name },

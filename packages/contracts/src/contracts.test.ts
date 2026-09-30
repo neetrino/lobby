@@ -156,8 +156,13 @@ describe('passwordHashSchema', () => {
 });
 
 describe('moduleKeySchema', () => {
-  it('rejects an unsupported module key', () => {
-    expect(moduleKeySchema.safeParse('messenger').success).toBe(false);
+  it('accepts only modules that already have a directory', () => {
+    expect(moduleKeySchema.safeParse('contacts').success).toBe(true);
+    expect(moduleKeySchema.safeParse('deals').success).toBe(true);
+    expect(moduleKeySchema.safeParse('reservations').success).toBe(true);
+    expect(moduleKeySchema.safeParse('messenger').success).toBe(true);
+    expect(moduleKeySchema.safeParse('tasks').success).toBe(false);
+    expect(moduleKeySchema.safeParse('leads').success).toBe(false);
   });
 });
 

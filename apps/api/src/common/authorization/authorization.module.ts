@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
 
+import { DatabaseModule } from '../database/database.module';
+import { ModuleEntitlementService } from './module-entitlement';
 import { PermissionGuard } from './permission.guard';
 
-/** Shared permission guard. A feature module imports this instead of registering the guard itself. */
+/** Shared permission guard and tenant module gate. */
 @Module({
-  providers: [PermissionGuard],
-  exports: [PermissionGuard],
+  imports: [DatabaseModule],
+  providers: [PermissionGuard, ModuleEntitlementService],
+  exports: [PermissionGuard, ModuleEntitlementService],
 })
 export class AuthorizationModule {}

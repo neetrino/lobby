@@ -1,7 +1,10 @@
 import { z } from 'zod';
 
-/** High-priority Version 1 capabilities from the product brief. */
-export const moduleKeys = ['contacts', 'tasks', 'deals', 'reservations'] as const;
+/**
+ * Optional product modules that already have a module directory.
+ * Identity and health stay available for every tenant and are not listed here.
+ */
+export const moduleKeys = ['contacts', 'deals', 'reservations', 'messenger'] as const;
 
 export const moduleKeySchema = z.enum(moduleKeys);
 

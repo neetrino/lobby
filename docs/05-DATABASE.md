@@ -92,7 +92,8 @@ An approved physical ERD will replace or extend this view when models are design
 - The same normalized email may identify separate User records in different tenants.
 - Authentication therefore requires tenant context plus email.
 - The first user created with a tenant is always its Owner (`users.role = OWNER`, `users.status = ACTIVE`).
-- Tenant, Owner, and `tenant.created` outbox event are committed atomically.
+- Tenant, Owner, the plan's default `tenant_modules` rows, and the `tenant.created` outbox event are committed atomically. A failure in any of those writes rolls the transaction back.
+- `tenant_modules` is keyed by `(tenant_id, module_key)` with status `ENABLED` or `DISABLED`. A missing row is disabled. Identity and health are not rows in this table.
 - Password hashing belongs to Auth; Organizations receives only an Argon2id `passwordHash`.
 - Login finds the user, rejects a non-ACTIVE status, and only then verifies the hash.
 - The worker dispatch registry delivers `tenant.created` version 1 (`userId`) and version 2 (`ownerUserId`). Any other version is a permanent outbox failure.
