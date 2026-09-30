@@ -32,6 +32,6 @@ Phase 9 checks live in `apps/api/src/modules/identity/presentation/auth-flow.int
 
 ### Next
 
-The contacts pilot is on the real Nest chain: the global `SessionGuard`, `@CurrentRequest()`, and the global `ApiExceptionFilter`. A new controller requires a session. Mark only a genuinely public handler with `@Public()`: register, login, logout, and `GET /health`. `@Public()` does not skip `OriginGuard` or CORS. Do not add `@UseGuards(SessionGuard)` or `IdentityExceptionFilter`. Import `@CurrentRequest()` from `common/auth/current-request`. Global guard order is `OriginGuard`, then `SessionGuard`. `RoleGuard` stays on the route. JSON bodies use `z.strictObject`.
+The contacts pilot is on the real Nest chain: the global `SessionGuard`, `@CurrentRequest()`, and the global `ApiExceptionFilter`. A new controller requires a session. Mark only a genuinely public handler with `@Public()`: register, login, logout, and `GET /health`. `@Public()` does not skip `OriginGuard` or CORS. Do not add `@UseGuards(SessionGuard)` or `IdentityExceptionFilter`. Import `@CurrentRequest()` from `common/auth/current-request`. Global guard order is `OriginGuard`, then `SessionGuard`. Declare a route permission with `@Authorize(...)` and import `AuthorizationModule` in that controller's module. JSON bodies use `z.strictObject`.
 
 `POST /api/v1/auth/sessions/terminate-all` revokes the caller. `POST /api/v1/auth/users/{userId}/sessions/terminate` revokes another user in the same tenant.

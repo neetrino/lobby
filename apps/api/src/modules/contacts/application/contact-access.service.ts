@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { scopedTenantId } from '../../../common/auth/authorization';
+import { requirePermission } from '../../../common/authorization/require-permission';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import type { RequestContext } from '../../../common/tenant/request-context';
 import type { TenantId } from '../../../common/tenant/tenant-id';
@@ -18,6 +19,7 @@ export class ContactAccessService {
   constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
 
   read(context: RequestContext, contactId: string): Promise<ContactRecord | null> {
+    requirePermission(context, 'contacts:read');
     return this.findInTenant(scopedTenantId(context), contactId);
   }
 
@@ -26,6 +28,7 @@ export class ContactAccessService {
     contactId: string,
     input: RenameContactInput,
   ): Promise<ContactRecord | null> {
+    requirePermission(context, 'contacts:update');
     const name = renameContactSchema.parse(input).name;
     const tenantId = scopedTenantId(context);
     const updated = await this.prisma.contact.updateMany({

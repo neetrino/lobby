@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { requireRole } from '../../../common/auth/authorization';
-import { tenantManagerRoles } from '../../../common/tenant/authenticated-tenant-context';
+import { AuthorizationError } from '../../../common/auth/authorization';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
-import { type SessionRevocationActor } from '../domain/session-revocation';
+import { canRevokeUserSessions, type SessionRevocationActor } from '../domain/session-revocation';
 import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
 import { RedisSessionStore } from '../infrastructure/redis-session.store';
 import { SessionStoreUnavailableError } from '../infrastructure/session-store-error';
@@ -19,11 +18,11 @@ export class TerminateUserSessionsService {
    * Revokes every session for one user before returning.
    * The version increment is committed first, then Redis session keys and the reverse index are deleted.
    * The outbox is not part of revocation. An audit or notification write may happen only after this method returns.
-   * Targeting another user is allowed only when the actor may revoke that tenant's sessions.
+   * The caller may revoke their own sessions. Another user is allowed only through canRevokeUserSessions.
    */
   async terminateAllSessions(actor: SessionRevocationActor, targetUserId: string): Promise<void> {
-    if (actor.userId !== targetUserId) {
-      requireRole(actor, tenantManagerRoles);
+    if (!canRevokeUserSessions(actor, targetUserId)) {
+      throw new AuthorizationError();
     }
 
     const version = await this.users.incrementAuthenticationVersion(targetUserId, actor.tenantId);

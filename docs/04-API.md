@@ -42,7 +42,7 @@ Request
 → hash the raw session id and load the Redis record
 → reject a missing, expired, revoked, disabled, or version-mismatched session
 → copy RequestContext from that session plus the server-generated request id
-→ RoleGuard, only on a route that declares @Roles(...) and @UseGuards(RoleGuard)
+→ PermissionGuard, on a route marked @Authorize(...). The guard rejects the request when that permission is missing
 → validate input
 → execute the owning module operation with { requestId, userId, tenantId, role } plus the validated input
 → return the documented response or error
@@ -50,12 +50,12 @@ Request
 
 Handlers do not read a tenant id from the body, query, or headers. The client must never rely on hidden UI state as proof of authorization.
 
-Authorization has two layers. Both use the same roles: `OWNER`, `ADMIN`, `MEMBER`.
+Authorization has two layers. The session still carries a role: `OWNER`, `ADMIN`, or `MEMBER`. Allow or deny reads that role from `ROLE_PERMISSIONS` in `common/authorization/role-permissions.ts`. Call sites do not compare role strings.
 
-1. `RoleGuard` on the route rejects a session whose role is outside `@Roles(...)`. It runs only for HTTP, after the global guards. The global order is `OriginGuard`, then `SessionGuard`.
-2. The application service repeats the business rule with `requireRole` and takes the tenant from `scopedTenantId(context)`. That value is a `TenantId`. The only mint is inside `requestContextFromSession`, which `@CurrentRequest()` uses. There is no public factory. A plain string does not typecheck as a tenant scope. A worker or another service calls the service directly, so the route guard is not the security boundary.
+1. `@Authorize(permission)` sets the permission and `PermissionGuard` together. The guard rejects a session whose role lacks that permission, and it rejects the request when it runs without a permission. It runs only for HTTP, after the global guards. The global order is `OriginGuard`, then `SessionGuard`. The controller's module imports `AuthorizationModule`.
+2. The application service repeats the business rule with `requirePermission`, or with a domain helper that calls `hasPermission`. It takes the tenant from `scopedTenantId(context)`. That value is a `TenantId`. The only mint is inside `requestContextFromSession`, which `@CurrentRequest()` uses. There is no public factory. A plain string does not typecheck as a tenant scope. A worker or another service calls the service directly, so the route guard is not the security boundary.
 
-A query or write that omits `scopedTenantId(context)` is not tenant-safe. Resource ownership, such as revoking another user, stays in the service even when the route already lists the allowed roles.
+A query or write that omits `scopedTenantId(context)` is not tenant-safe. Revoking another user stays in the service even when the route already requires `sessions:revoke`. A caller may always revoke their own sessions. That self check is not a permission. Whether a module is enabled for the tenant is a separate check and is not part of this map.
 
 ---
 
@@ -234,7 +234,7 @@ Reservation endpoints must derive the tenant from the authenticated session, acc
 
 ### Contacts
 
-Pilot tenant-scoped resource. `ContactsController` is covered by the global `SessionGuard` and reads `@CurrentRequest()`. It does not install `IdentityExceptionFilter`. A missing contact and a contact owned by another tenant are both `404 NOT_FOUND`.
+Pilot tenant-scoped resource. `ContactsController` is covered by the global `SessionGuard` and reads `@CurrentRequest()`. It does not install `IdentityExceptionFilter`. Every role may create, read, and update contacts in its own tenant through `contacts:create`, `contacts:read`, and `contacts:update`. The route declares that with `@Authorize`, and the service repeats `requirePermission`. A missing contact and a contact owned by another tenant are both `404 NOT_FOUND`.
 
 | Method  | Path                    | Body                 | Success                                      |
 | ------- | ----------------------- | -------------------- | -------------------------------------------- |
@@ -255,7 +255,7 @@ HTTP bootstrap lives in `configureHttpApp`. New controllers inherit it.
 - JSON object schemas use `z.strictObject`. An unknown field is `400 VALIDATION_ERROR`. Auth login/register and the contacts commands follow this rule. The HTTP foundation probe rejects an extra `leak` field the same way.
 - Return `{ data }` for a successful JSON body. Do not add `requestId` to that JSON.
 - Throw a module error with a stable `UPPER_SNAKE_CASE` code, or `NotFoundException` for a missing resource. The global filter writes `{ error: { code, message, requestId } }`. `AuthenticationError` and `IdentityError` accept only a catalog code. The client message and status come from that catalog, not from a caller-supplied message or status.
-- `SessionGuard` is a global `APP_GUARD`. `AppModule` registers `useExisting: SessionGuard`, so the instance and its required constructor dependencies come from `IdentityModule`. A missing dependency fails at startup. A new controller requires a session. Mark a handler with `@Public()` from `common/auth/public` only when it must run without one: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, and `GET /health`. `@Public()` skips authentication. It does not skip `OriginGuard` or CORS. `RoleGuard` stays on the route that declares `@Roles(...)`. Do not add `@UseGuards(SessionGuard)` or `IdentityExceptionFilter`. Read the caller with `@CurrentRequest()` from `common/auth/current-request`. The global filter maps `IdentityError`, including `401 UNAUTHENTICATED` and `403 FORBIDDEN`.
+- `SessionGuard` is a global `APP_GUARD`. `AppModule` registers `useExisting: SessionGuard`, so the instance and its required constructor dependencies come from `IdentityModule`. A missing dependency fails at startup. A new controller requires a session. Mark a handler with `@Public()` from `common/auth/public` only when it must run without one: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, and `GET /health`. `@Public()` skips authentication. It does not skip `OriginGuard` or CORS. Declare a route permission with `@Authorize(...)` from `common/authorization/permission.guard`, and import `AuthorizationModule` in that controller's module. Do not register `PermissionGuard` in the feature module. Do not add `@UseGuards(SessionGuard)` or `IdentityExceptionFilter`. Read the caller with `@CurrentRequest()` from `common/auth/current-request`. The global filter maps `IdentityError`, including `401 UNAUTHENTICATED` and `403 FORBIDDEN`.
 - Global codes live in `apps/api/src/common/http/http-error-codes.ts` (`VALIDATION_ERROR`, `INTERNAL_ERROR`, `NOT_FOUND`, `REQUEST_REJECTED`). Thrown platform codes live in `api-error.ts` (`ORIGIN_REJECTED`, `RATE_LIMITED`). Module codes stay in that module, as Identity does in `identity.errors.ts`.
 - Unexpected failures become `INTERNAL_ERROR`. The server log records the time, request id, method, path, and exception name. It does not record the exception message or stack. The client does not receive the driver message or stack.
 - `GET /health` stays outside `/api/v1` for process probes. It is `@Public()`.

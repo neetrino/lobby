@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { RoleGuard } from '../../common/auth/role.guard';
+import { AuthorizationModule } from '../../common/authorization/authorization.module';
 import { DatabaseModule } from '../../common/database/database.module';
 import { OrganizationsModule } from '../organizations';
 import { AuthRateLimitService } from './application/auth-rate-limit.service';
@@ -30,7 +30,7 @@ import { SessionController } from './presentation/session.controller';
 import { SessionGuard } from './presentation/session.guard';
 
 @Module({
-  imports: [OrganizationsModule, DatabaseModule],
+  imports: [AuthorizationModule, OrganizationsModule, DatabaseModule],
   controllers: [AuthController, SessionController],
   providers: [
     { provide: PASSWORD_HASHER, useClass: Argon2PasswordHasher },
@@ -52,7 +52,6 @@ import { SessionGuard } from './presentation/session.guard';
     LoginService,
     SessionAccessService,
     SessionGuard,
-    RoleGuard,
     LogoutService,
     TerminateUserSessionsService,
     AuthRateLimitService,

@@ -3,7 +3,11 @@ import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testi
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { OutboxService } from '../../../common/outbox/outbox.service';
-import { requestContextFromSession, type RequestContext } from '../../../common/tenant/request-context';
+import {
+  requestContextFromSession,
+  type RequestContext,
+  type UserRole,
+} from '../../../common/tenant/request-context';
 import { CreateContactService } from './create-contact.service';
 
 let prisma: PrismaClient;
@@ -23,6 +27,16 @@ beforeEach(async () => {
 });
 
 describe('CreateContactService', () => {
+  it('lets owner, admin, and member create a contact', async () => {
+    const tenant = await createTenant('roles');
+    const service = new CreateContactService(prisma, new OutboxService());
+
+    for (const role of ['OWNER', 'ADMIN', 'MEMBER'] as const) {
+      const contact = await service.create(tenantContext(tenant.id, role), { name: role });
+      expect(contact.name).toBe(role);
+    }
+  });
+
   it('commits the contact and outbox event together', async () => {
     const tenant = await createTenant('acme');
     const service = new CreateContactService(prisma, new OutboxService());
@@ -89,12 +103,12 @@ describe('CreateContactService', () => {
   });
 });
 
-function tenantContext(tenantId: string): RequestContext {
+function tenantContext(tenantId: string, role: UserRole = 'OWNER'): RequestContext {
   return requestContextFromSession(
     {
       tenantId,
       userId: '11111111-1111-4111-8111-111111111111',
-      role: 'OWNER',
+      role,
     },
     '44444444-4444-4444-8444-444444444444',
   );

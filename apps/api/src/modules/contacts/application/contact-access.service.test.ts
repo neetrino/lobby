@@ -1,7 +1,11 @@
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { requestContextFromSession, type RequestContext } from '../../../common/tenant/request-context';
+import {
+  requestContextFromSession,
+  type RequestContext,
+  type UserRole,
+} from '../../../common/tenant/request-context';
 import { ContactAccessService } from './contact-access.service';
 
 let prisma: PrismaClient;
@@ -20,6 +24,20 @@ beforeEach(async () => {
 });
 
 describe('ContactAccessService', () => {
+  it('lets owner, admin, and member read and rename a contact in their tenant', async () => {
+    const tenant = await createTenant('roles');
+    const contact = await prisma.contact.create({
+      data: { tenantId: tenant.id, name: 'Ada ledger' },
+    });
+    const service = new ContactAccessService(prisma);
+
+    for (const role of ['OWNER', 'ADMIN', 'MEMBER'] as const) {
+      expect((await service.read(requestContext(tenant.id, role), contact.id))?.id).toBe(contact.id);
+      const renamed = await service.rename(requestContext(tenant.id, role), contact.id, { name: role });
+      expect(renamed?.name).toBe(role);
+    }
+  });
+
   it('does not read or rename a contact owned by another tenant', async () => {
     const owner = await createTenant('acme');
     const other = await createTenant('beta');
@@ -73,12 +91,12 @@ describe('ContactAccessService', () => {
   });
 });
 
-function requestContext(tenantId: string): RequestContext {
+function requestContext(tenantId: string, role: UserRole = 'OWNER'): RequestContext {
   return requestContextFromSession(
     {
       tenantId,
       userId: '11111111-1111-4111-8111-111111111111',
-      role: 'OWNER',
+      role,
     },
     '44444444-4444-4444-8444-444444444444',
   );

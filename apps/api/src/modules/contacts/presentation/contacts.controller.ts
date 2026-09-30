@@ -2,6 +2,7 @@ import { Controller, Get, HttpCode, NotFoundException, Patch, Post } from '@nest
 import { z } from 'zod';
 
 import { CurrentRequest } from '../../../common/auth/current-request';
+import { Authorize } from '../../../common/authorization/permission.guard';
 import { ZodBody, ZodParam } from '../../../common/pipes/zod-input';
 import type { RequestContext } from '../../../common/tenant/request-context';
 import { ContactAccessService, type ContactRecord } from '../application/contact-access.service';
@@ -27,6 +28,7 @@ export class ContactsController {
   ) {}
 
   @Post()
+  @Authorize('contacts:create')
   @HttpCode(201)
   async create(
     @CurrentRequest() context: RequestContext,
@@ -37,6 +39,7 @@ export class ContactsController {
   }
 
   @Get(':id')
+  @Authorize('contacts:read')
   async read(
     @CurrentRequest() context: RequestContext,
     @ZodParam('id', contactIdSchema) id: string,
@@ -45,6 +48,7 @@ export class ContactsController {
   }
 
   @Patch(':id')
+  @Authorize('contacts:update')
   async rename(
     @CurrentRequest() context: RequestContext,
     @ZodParam('id', contactIdSchema) id: string,

@@ -2,9 +2,10 @@ import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testi
 import { Reflector } from '@nestjs/core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { AuthorizationError } from '../../../common/auth/authorization';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { CreateTenantService } from '../../organizations';
-import { identityErrorCodes } from '../domain/identity.errors';
+import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
 import type { SessionRole } from '../domain/authenticated-session';
 import { Argon2PasswordHasher } from '../infrastructure/argon2-password-hasher';
 import type { IncidentLogger } from '../infrastructure/incident-logger';
@@ -125,17 +126,39 @@ describe('terminateAllSessions', () => {
     const outsiderSession = await openSession(sessions, outsider);
     const service = terminator(sessions);
 
-    await expect(service.terminateAllSessions(actor(member), owner.userId)).rejects.toMatchObject({
-      code: identityErrorCodes.FORBIDDEN,
-    });
-    await expect(service.terminateAllSessions(actor(owner), outsider.userId)).rejects.toMatchObject({
-      code: identityErrorCodes.FORBIDDEN,
-    });
+    await expect(service.terminateAllSessions(actor(member), owner.userId)).rejects.toBeInstanceOf(
+      AuthorizationError,
+    );
+    await expect(service.terminateAllSessions(actor(owner), outsider.userId)).rejects.toBeInstanceOf(
+      IdentityError,
+    );
 
     await expect(accept(redis, ownerSession.rawSessionId)).resolves.toBe(true);
     await expect(accept(redis, outsiderSession.rawSessionId)).resolves.toBe(true);
     expect(await versionOf(owner.userId)).toBe(1);
     expect(await versionOf(outsider.userId)).toBe(1);
+  });
+
+  it('lets a member revoke their own sessions and an admin revoke another user', async () => {
+    const redis = new IndexedSessionRedis();
+    const sessions = checkedSessions(redis);
+    const owner = await createUser('acme', 'OWNER');
+    const admin = await addUser(owner.tenantId, 'ADMIN', 'admin@acme.test');
+    const member = await addUser(owner.tenantId, 'MEMBER', 'member@acme.test');
+    const colleague = await addUser(owner.tenantId, 'MEMBER', 'colleague@acme.test');
+    const memberSession = await openSession(sessions, member);
+    const colleagueSession = await openSession(sessions, colleague);
+    const service = terminator(sessions);
+
+    await service.terminateAllSessions(actor(member), member.userId);
+    await service.terminateAllSessions(actor(admin), colleague.userId);
+
+    expect((await rejection(redis, memberSession.rawSessionId)).statusCode).toBe(401);
+    expect((await rejection(redis, colleagueSession.rawSessionId)).statusCode).toBe(401);
+    expect(await versionOf(member.userId)).toBe(2);
+    expect(await versionOf(colleague.userId)).toBe(2);
+    expect(await versionOf(admin.userId)).toBe(1);
+    expect(await versionOf(owner.userId)).toBe(1);
   });
 
   it('drops an old session created while termination is in progress', async () => {

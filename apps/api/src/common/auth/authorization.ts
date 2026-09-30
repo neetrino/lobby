@@ -1,4 +1,3 @@
-import type { UserRole } from '../tenant/request-context';
 import type { TenantId } from '../tenant/tenant-id';
 
 /**
@@ -11,17 +10,6 @@ export class AuthorizationError extends Error {
   constructor() {
     super('You do not have permission to perform this action.');
     this.name = 'AuthorizationError';
-  }
-}
-
-export function roleIsAllowed(role: UserRole, allowed: readonly UserRole[]): boolean {
-  return allowed.includes(role);
-}
-
-/** Service-level role check. A route guard does not replace this. */
-export function requireRole(actor: { role: UserRole }, allowed: readonly UserRole[]): void {
-  if (!roleIsAllowed(actor.role, allowed)) {
-    throw new AuthorizationError();
   }
 }
 

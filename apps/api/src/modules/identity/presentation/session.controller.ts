@@ -1,11 +1,10 @@
-import { Controller, Get, HttpCode, Post, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Res } from '@nestjs/common';
 import { z } from 'zod';
 
 import type { AuthenticatedSession } from '../../../common/auth/authenticated-session';
 import { CurrentSession } from '../../../common/auth/current-request';
-import { RoleGuard, Roles } from '../../../common/auth/role.guard';
+import { Authorize } from '../../../common/authorization/permission.guard';
 import { ZodParam } from '../../../common/pipes/zod-input';
-import { tenantManagerRoles } from '../../../common/tenant/authenticated-tenant-context';
 import type { SessionRevocationActor } from '../domain/session-revocation';
 import { TerminateUserSessionsService } from '../application/terminate-user-sessions.service';
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
@@ -48,12 +47,11 @@ export class SessionController {
 
   /**
    * Revokes one user's sessions inside the caller's tenant.
-   * The route allow-list is repeated inside TerminateUserSessionsService.
+   * The route requires sessions:revoke. The service repeats that rule through canRevokeUserSessions.
    * A user in another tenant is rejected there, including calls that skip this guard.
    */
   @Post('users/:userId/sessions/terminate')
-  @Roles(...tenantManagerRoles)
-  @UseGuards(RoleGuard)
+  @Authorize('sessions:revoke')
   @HttpCode(204)
   async terminateUser(
     @CurrentSession() current: AuthenticatedSession,

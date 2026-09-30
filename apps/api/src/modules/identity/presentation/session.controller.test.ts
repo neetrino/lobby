@@ -5,7 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import type { AuthenticatedSession } from '../../../common/auth/authenticated-session';
 import { AuthorizationError } from '../../../common/auth/authorization';
-import { RoleGuard } from '../../../common/auth/role.guard';
+import { PermissionGuard } from '../../../common/authorization/permission.guard';
 import { identityErrorCodes } from '../domain/identity.errors';
 import type { SessionRole } from '../domain/authenticated-session';
 import { MemoryRateLimitRedis } from '../infrastructure/memory-rate-limit-redis';
@@ -44,8 +44,8 @@ beforeEach(async () => {
 });
 
 describe('session endpoints', () => {
-  it('keeps terminate-user on the manager role list', () => {
-    const guard = new RoleGuard(new Reflector());
+  it('keeps terminate-user on sessions:revoke', () => {
+    const guard = new PermissionGuard(new Reflector());
     expect(() => guard.canActivate(roleContext('MEMBER'))).toThrow(AuthorizationError);
     expect(guard.canActivate(roleContext('OWNER'))).toBe(true);
     expect(guard.canActivate(roleContext('ADMIN'))).toBe(true);
