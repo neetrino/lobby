@@ -2,6 +2,7 @@ import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testi
 import { Reflector } from '@nestjs/core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { ApiError, apiErrorCodes } from '../../../common/http/api-error';
 import { CreateTenantService } from '../../organizations';
@@ -181,7 +182,7 @@ function controllerFor(redis: MemoryRateLimitRedis): AuthController {
   const incidents = { error() {} };
   return new AuthController(
     new RegisterService(
-      new CreateTenantService(prisma, new OutboxService()),
+      new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant()),
       new Argon2PasswordHasher(),
       sessions,
       true,

@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { CreateTenantService } from '../../organizations';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
@@ -138,7 +139,7 @@ describe('registration', () => {
       verify: () => Promise.resolve(false),
     };
     const service = new RegisterService(
-      new CreateTenantService(prisma, new OutboxService()),
+      new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant()),
       passwords,
       new RedisSessionStore(new MemorySessionRedis()),
       false,
@@ -164,7 +165,7 @@ function registration(subdomain: string, email: string) {
 function build(redis: SessionRedisClient, enabled: boolean, incidents: IncidentLogger) {
   const sessions = new RedisSessionStore(redis);
   const service = new RegisterService(
-    new CreateTenantService(prisma, new OutboxService()),
+    new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant()),
     new Argon2PasswordHasher(),
     sessions,
     enabled,

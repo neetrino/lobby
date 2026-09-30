@@ -5,6 +5,8 @@ import { Reflector } from '@nestjs/core';
 import type { PrismaClient } from '@lobby/database/testing';
 import type { ZodType } from 'zod';
 
+import { ModuleEntitlementService } from '../src/common/authorization/module-entitlement';
+import { PlanEntitlementGrant } from '../src/common/modules/plan-entitlement-grant';
 import { OutboxService } from '../src/common/outbox/outbox.service';
 import { ZodValidationPipe } from '../src/common/pipes/zod-validation.pipe';
 import { OriginGuard } from '../src/common/security/origin.guard';
@@ -107,7 +109,7 @@ function wire(
   return {
     auth: new AuthController(
       new RegisterService(
-        new CreateTenantService(database, new OutboxService()),
+        new CreateTenantService(database, new OutboxService(), new PlanEntitlementGrant()),
         passwords,
         store,
         true,
@@ -118,7 +120,7 @@ function wire(
       cookies,
       rates,
     ),
-    contacts: new ContactAccessService(database),
+    contacts: new ContactAccessService(database, new ModuleEntitlementService(database)),
     origin: new OriginGuard([AUTH_FLOW_ORIGIN]),
     sessions: new SessionGuard(new SessionAccessService(store, users), cookies, rates, new Reflector()),
     terminate: new TerminateUserSessionsService(users, store),

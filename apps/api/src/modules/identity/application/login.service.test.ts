@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { CreateTenantService } from '../../organizations';
 import { identityErrorCodes } from '../domain/identity.errors';
@@ -258,7 +259,7 @@ function readField(payload: string, field: string): unknown {
 function build(redis: SessionRedisClient, incidents: IncidentLogger) {
   const sessions = new RedisSessionStore(redis);
   const registerUser = new RegisterService(
-    new CreateTenantService(prisma, new OutboxService()),
+    new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant()),
     new Argon2PasswordHasher(),
     sessions,
     true,

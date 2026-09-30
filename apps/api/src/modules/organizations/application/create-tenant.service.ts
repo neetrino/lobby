@@ -1,4 +1,4 @@
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { TENANT_CREATED_EVENT_VERSION, tenantCreatedEventSchema } from '@lobby/contracts';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
@@ -15,8 +15,7 @@ export class CreateTenantService {
   constructor(
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
     private readonly outbox: OutboxService,
-    @Optional()
-    private readonly planEntitlements: PlanEntitlementGrant = new PlanEntitlementGrant(),
+    private readonly planEntitlements: PlanEntitlementGrant,
   ) {}
 
   /**

@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthorizationError } from '../../../common/auth/authorization';
+import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { CreateTenantService } from '../../organizations';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
@@ -215,7 +216,7 @@ function openSession(sessions: RedisSessionStore, user: TenantUser, authenticati
 function controllerFor(sessions: RedisSessionStore): AuthController {
   return new AuthController(
     new RegisterService(
-      new CreateTenantService(prisma, new OutboxService()),
+      new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant()),
       new Argon2PasswordHasher(),
       sessions,
       true,

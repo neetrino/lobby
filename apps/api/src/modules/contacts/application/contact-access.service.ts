@@ -1,4 +1,4 @@
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { scopedTenantId } from '../../../common/auth/authorization';
@@ -18,14 +18,10 @@ export type ContactRecord = {
 
 @Injectable()
 export class ContactAccessService {
-  private readonly entitlements: ModuleEntitlementService;
-
   constructor(
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
-    @Optional() entitlements?: ModuleEntitlementService,
-  ) {
-    this.entitlements = entitlements ?? new ModuleEntitlementService(prisma);
-  }
+    private readonly entitlements: ModuleEntitlementService,
+  ) {}
 
   async read(context: RequestContext, contactId: string): Promise<ContactRecord | null> {
     const tenantId = scopedTenantId(context);

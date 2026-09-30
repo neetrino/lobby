@@ -1,4 +1,4 @@
-import { Inject, Injectable, Optional } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { CONTACT_CREATED_EVENT_VERSION, contactCreatedEventSchema } from '@lobby/contracts';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
@@ -13,15 +13,11 @@ import { createContactSchema, type CreateContactInput } from './create-contact.s
 
 @Injectable()
 export class CreateContactService {
-  private readonly entitlements: ModuleEntitlementService;
-
   constructor(
     @Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient,
     private readonly outbox: OutboxService,
-    @Optional() entitlements?: ModuleEntitlementService,
-  ) {
-    this.entitlements = entitlements ?? new ModuleEntitlementService(prisma);
-  }
+    private readonly entitlements: ModuleEntitlementService,
+  ) {}
 
   async create(context: RequestContext, input: CreateContactInput) {
     const tenantId = scopedTenantId(context);

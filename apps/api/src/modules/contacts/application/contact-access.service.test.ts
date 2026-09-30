@@ -1,6 +1,7 @@
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { ModuleEntitlementService } from '../../../common/authorization/module-entitlement';
 import {
   requestContextFromSession,
   type RequestContext,
@@ -30,7 +31,7 @@ describe('ContactAccessService', () => {
     const contact = await prisma.contact.create({
       data: { tenantId: tenant.id, name: 'Ada ledger' },
     });
-    const service = new ContactAccessService(prisma);
+    const service = new ContactAccessService(prisma, new ModuleEntitlementService(prisma));
 
     for (const role of ['OWNER', 'ADMIN', 'MEMBER'] as const) {
       expect((await service.read(requestContext(tenant.id, role), contact.id))?.id).toBe(contact.id);
@@ -44,7 +45,7 @@ describe('ContactAccessService', () => {
     const contact = await prisma.contact.create({
       data: { tenantId: tenant.id, name: 'Ada ledger' },
     });
-    const service = new ContactAccessService(prisma);
+    const service = new ContactAccessService(prisma, new ModuleEntitlementService(prisma));
     const colleague = requestContext(tenant.id, 'MEMBER', '22222222-2222-4222-8222-222222222222');
 
     const read = await service.read(colleague, contact.id);
@@ -60,7 +61,7 @@ describe('ContactAccessService', () => {
     const foreign = await prisma.contact.create({
       data: { tenantId: other.id, name: 'Beta ledger' },
     });
-    const service = new ContactAccessService(prisma);
+    const service = new ContactAccessService(prisma, new ModuleEntitlementService(prisma));
     const caller = requestContext(owner.id);
 
     const read = await service.read(caller, foreign.id);
@@ -78,7 +79,7 @@ describe('ContactAccessService', () => {
     const contact = await prisma.contact.create({
       data: { tenantId: owner.id, name: 'Ada ledger' },
     });
-    const service = new ContactAccessService(prisma);
+    const service = new ContactAccessService(prisma, new ModuleEntitlementService(prisma));
 
     const renamed = await service.rename(requestContext(owner.id), contact.id, {
       name: 'Ada updated',
@@ -93,7 +94,7 @@ describe('ContactAccessService', () => {
     const contact = await prisma.contact.create({
       data: { tenantId: owner.id, name: 'Ada ledger' },
     });
-    const service = new ContactAccessService(prisma);
+    const service = new ContactAccessService(prisma, new ModuleEntitlementService(prisma));
 
     await expect(
       service.rename(requestContext(owner.id), contact.id, {

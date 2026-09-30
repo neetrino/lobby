@@ -30,7 +30,7 @@ beforeEach(async () => {
 
 describe('CreateTenantService', () => {
   it('commits the tenant, the owner, and the outbox event together', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService());
+    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
 
     const created = await service.createWithOwner({
       tenant: { name: 'Acme', subdomain: 'Acme', plan: 'starter' },
@@ -68,7 +68,7 @@ describe('CreateTenantService', () => {
   });
 
   it('allows the same email in a second tenant', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService());
+    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
 
     await service.createWithOwner({ tenant: { name: 'One', subdomain: 'one', plan: 'starter' }, owner });
     await service.createWithOwner({ tenant: { name: 'Two', subdomain: 'two', plan: 'starter' }, owner });
@@ -92,7 +92,7 @@ describe('CreateTenantService', () => {
   it('rolls back the tenant and owner when the outbox insert fails', async () => {
     const outbox = new OutboxService();
     outbox.enqueue = () => Promise.reject(new Error('outbox unavailable'));
-    const service = new CreateTenantService(prisma, outbox);
+    const service = new CreateTenantService(prisma, outbox, new PlanEntitlementGrant());
 
     await expect(service.createWithOwner(command('acme'))).rejects.toThrow('outbox unavailable');
     expect(await prisma.tenant.count()).toBe(0);
@@ -101,7 +101,7 @@ describe('CreateTenantService', () => {
   });
 
   it('rejects an invalid subdomain before persistence', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService());
+    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
 
     await expect(
       service.createWithOwner({
@@ -114,7 +114,7 @@ describe('CreateTenantService', () => {
   });
 
   it('rejects an unsupported plan before persistence', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService());
+    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
 
     await expect(
       service.createWithOwner({
@@ -126,7 +126,7 @@ describe('CreateTenantService', () => {
   });
 
   it('rejects client-supplied tenant id, role, and status', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService());
+    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
     const suppliedTenantId = '99999999-9999-4999-8999-999999999999';
 
     await expect(
@@ -140,7 +140,7 @@ describe('CreateTenantService', () => {
   });
 
   it('does not keep an owner when the subdomain is already taken', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService());
+    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
     await service.createWithOwner(command('acme'));
 
     await expect(
