@@ -1,30 +1,40 @@
 import 'reflect-metadata';
-import type { ExecutionContext } from '@nestjs/common';
+import { Controller, Get, Post, type ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { describe, expect, it } from 'vitest';
 
-import { SessionController } from '../../modules/identity/presentation/session.controller';
+import { tenantManagerRoles } from '../tenant/authenticated-tenant-context';
 import type { UserRole } from '../tenant/request-context';
 import { AuthorizationError, requireRole, scopedTenantId } from './authorization';
-import { RoleGuard } from './role.guard';
+import { RoleGuard, Roles } from './role.guard';
+
+@Controller('probe')
+class RoleProbeController {
+  @Get('open')
+  open(): void {}
+
+  @Post('manage')
+  @Roles(...tenantManagerRoles)
+  manage(): void {}
+}
 
 describe('role authorization', () => {
   const guard = new RoleGuard(new Reflector());
 
   it('rejects a member on an owner-or-admin route and allows that role through', () => {
-    expect(() => guard.canActivate(context(SessionController.prototype.terminateUser, 'MEMBER'))).toThrow(
+    expect(() => guard.canActivate(context(RoleProbeController.prototype.manage, 'MEMBER'))).toThrow(
       AuthorizationError,
     );
-    expect(guard.canActivate(context(SessionController.prototype.terminateUser, 'OWNER'))).toBe(true);
-    expect(guard.canActivate(context(SessionController.prototype.terminateUser, 'ADMIN'))).toBe(true);
+    expect(guard.canActivate(context(RoleProbeController.prototype.manage, 'OWNER'))).toBe(true);
+    expect(guard.canActivate(context(RoleProbeController.prototype.manage, 'ADMIN'))).toBe(true);
   });
 
   it('does not apply a role list to a route that has none', () => {
-    expect(guard.canActivate(context(SessionController.prototype.session, 'MEMBER'))).toBe(true);
+    expect(guard.canActivate(context(RoleProbeController.prototype.open, 'MEMBER'))).toBe(true);
   });
 
   it('fails closed when the session is missing', () => {
-    expect(() => guard.canActivate(context(SessionController.prototype.terminateUser, undefined))).toThrow(
+    expect(() => guard.canActivate(context(RoleProbeController.prototype.manage, undefined))).toThrow(
       AuthorizationError,
     );
   });
@@ -39,7 +49,7 @@ describe('role authorization', () => {
 function context(handler: (...args: never[]) => unknown, role: UserRole | undefined): ExecutionContext {
   return {
     getHandler: () => handler,
-    getClass: () => SessionController,
+    getClass: () => RoleProbeController,
     switchToHttp: () => ({
       getRequest: () => ({ auth: role === undefined ? undefined : { role } }),
     }),

@@ -1,9 +1,10 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 
-import { IdentityError, identityErrorCodes } from '../../modules/identity/domain/identity.errors';
 import { currentRequestId, type RequestWithId } from '../http/request-context';
 import { type AuthenticatedTenantContext } from '../tenant/authenticated-tenant-context';
 import { requestContextFromSession, type RequestContext } from '../tenant/request-context';
+import { authenticationErrorCodes } from './authentication-error-codes';
+import { AuthenticationError } from './authentication.error';
 import type { AuthenticatedSession } from './authenticated-session';
 
 type RequestWithAuth = {
@@ -36,7 +37,7 @@ export const CurrentRequest = createParamDecorator(
 
 export function readAuthenticatedSession(request: RequestWithAuth): AuthenticatedSession {
   if (request.auth === undefined) {
-    throw new IdentityError(identityErrorCodes.UNAUTHENTICATED);
+    throw new AuthenticationError(authenticationErrorCodes.UNAUTHENTICATED);
   }
 
   return request.auth;

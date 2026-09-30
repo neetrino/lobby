@@ -8,7 +8,8 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { HealthModule } from '../../modules/health/health.module';
-import { IdentityError, identityErrorCodes } from '../../modules/identity/domain/identity.errors';
+import { authenticationErrorCodes } from '../auth/authentication-error-codes';
+import { AuthenticationError } from '../auth/authentication.error';
 import { ZodBody } from '../pipes/zod-input';
 import { ALLOWED_ORIGINS } from '../security/allowed-origins';
 import { OriginGuard } from '../security/origin.guard';
@@ -37,12 +38,16 @@ class ProbeController {
 
   @Get('unauthenticated')
   unauthenticated(): never {
-    throw new IdentityError(identityErrorCodes.UNAUTHENTICATED);
+    throw new AuthenticationError(authenticationErrorCodes.UNAUTHENTICATED);
   }
 
   @Get('forbidden')
   forbidden(): never {
-    throw new IdentityError(identityErrorCodes.FORBIDDEN);
+    throw new AuthenticationError(
+      'FORBIDDEN',
+      'You do not have permission to perform this action.',
+      403,
+    );
   }
 }
 
