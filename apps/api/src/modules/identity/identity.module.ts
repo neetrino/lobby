@@ -57,17 +57,6 @@ import { SessionGuard } from './presentation/session.guard';
     TerminateUserSessionsService,
     AuthRateLimitService,
   ],
-  /**
-   * SessionAccessService, SessionCookie, and AuthRateLimitService are exported so another
-   * module can apply SessionGuard. Nest constructs that guard in the controller's module.
-   */
-  exports: [
-    PASSWORD_HASHER,
-    SessionGuard,
-    SessionAccessService,
-    SessionCookie,
-    AuthRateLimitService,
-    TerminateUserSessionsService,
-  ],
+  exports: [SessionGuard],
 })
 export class IdentityModule {}
