@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { CONTACT_CREATED_EVENT_VERSION, contactCreatedEventSchema } from '@lobby/contracts';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
+import { scopedTenantId } from '../../../common/auth/authorization';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import type { RequestContext } from '../../../common/tenant/request-context';
@@ -16,11 +17,12 @@ export class CreateContactService {
 
   async create(context: RequestContext, input: CreateContactInput) {
     const name = createContactSchema.parse(input).name;
+    const tenantId = scopedTenantId(context);
 
     return this.prisma.$transaction(async (tx) => {
       const contact = await tx.contact.create({
         data: {
-          tenantId: context.tenantId,
+          tenantId,
           name,
         },
       });
@@ -28,7 +30,7 @@ export class CreateContactService {
         eventId: crypto.randomUUID(),
         eventType: 'contact.created',
         eventVersion: CONTACT_CREATED_EVENT_VERSION,
-        tenantId: context.tenantId,
+        tenantId,
         aggregateType: 'contact',
         aggregateId: contact.id,
         occurredAt: new Date().toISOString(),
