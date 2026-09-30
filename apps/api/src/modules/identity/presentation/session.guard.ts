@@ -1,5 +1,6 @@
-import { Inject, Optional, type ExecutionContext, Injectable } from '@nestjs/common';
-import { ModuleRef, Reflector } from '@nestjs/core';
+import type { ExecutionContext } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 
 import { IS_PUBLIC_KEY } from '../../../common/auth/public';
 import {
@@ -16,20 +17,13 @@ import { SessionStoreUnavailableError } from '../infrastructure/session-store-er
 
 export type SessionRequest = AuthenticatedHttpRequest;
 
-type GuardServices = {
-  access: SessionAccessService;
-  cookies: SessionCookie;
-  rates: AuthRateLimitService;
-};
-
 @Injectable()
 export class SessionGuard implements SessionGuardContract {
   constructor(
-    @Optional() @Inject(SessionAccessService) private readonly access?: SessionAccessService,
-    @Optional() @Inject(SessionCookie) private readonly cookies?: SessionCookie,
-    @Optional() @Inject(AuthRateLimitService) private readonly rates?: AuthRateLimitService,
-    @Optional() @Inject(ModuleRef) private readonly modules?: ModuleRef,
-    @Optional() @Inject(Reflector) private readonly reflector?: Reflector,
+    private readonly access: SessionAccessService,
+    private readonly cookies: SessionCookie,
+    private readonly rates: AuthRateLimitService,
+    private readonly reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -38,32 +32,28 @@ export class SessionGuard implements SessionGuardContract {
     }
     const request = context.switchToHttp().getRequest<AuthenticatedHttpRequest>();
     const response = context.switchToHttp().getResponse<SessionCookieWriter>();
-    const guard = this.services();
-    const rawSessionId = guard.cookies.read(request.headers.cookie);
+    const rawSessionId = this.cookies.read(request.headers.cookie);
     const presented = hasSessionCookie(request.headers.cookie);
 
     try {
       if (rawSessionId === null) {
         throw new IdentityError(identityErrorCodes.UNAUTHENTICATED);
       }
-      const established = await guard.access.establish(rawSessionId, new Date());
+      const established = await this.access.establish(rawSessionId, new Date());
       request.auth = established.session;
       if (established.refreshed && established.maxAgeMs > 0) {
-        guard.cookies.set(response, rawSessionId, established.maxAgeMs);
+        this.cookies.set(response, rawSessionId, established.maxAgeMs);
       }
       return true;
     } catch (error) {
       if (error instanceof SessionStoreUnavailableError) {
         throw new IdentityError(identityErrorCodes.UNAUTHENTICATED);
       }
-      return this.reject(guard, response, presented ? readClientAddress(request) : null, error);
+      return this.reject(response, presented ? readClientAddress(request) : null, error);
     }
   }
 
   private isPublic(context: ExecutionContext): boolean {
-    if (this.reflector === undefined) {
-      return false;
-    }
     return (
       this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
         context.getHandler(),
@@ -72,41 +62,22 @@ export class SessionGuard implements SessionGuardContract {
     );
   }
 
-  /**
-   * The global guard is constructed outside IdentityModule.
-   * That instance loads Identity's internal services through ModuleRef.
-   */
-  private services(): GuardServices {
-    if (this.access !== undefined && this.cookies !== undefined && this.rates !== undefined) {
-      return { access: this.access, cookies: this.cookies, rates: this.rates };
-    }
-    if (this.modules === undefined) {
-      throw new Error('Session guard dependencies are missing');
-    }
-    return {
-      access: this.modules.get(SessionAccessService, { strict: false }),
-      cookies: this.modules.get(SessionCookie, { strict: false }),
-      rates: this.modules.get(AuthRateLimitService, { strict: false }),
-    };
-  }
-
   private async reject(
-    guard: GuardServices,
     response: SessionCookieWriter,
     address: string | null,
     error: unknown,
   ): Promise<boolean> {
     if (error instanceof ApiError) {
-      guard.cookies.clear(response);
+      this.cookies.clear(response);
       throw error;
     }
     if (!(error instanceof IdentityError)) {
       throw error;
     }
 
-    guard.cookies.clear(response);
+    this.cookies.clear(response);
     if (address !== null) {
-      await guard.rates.recordInvalidSession(address);
+      await this.rates.recordInvalidSession(address);
     }
     throw error;
   }

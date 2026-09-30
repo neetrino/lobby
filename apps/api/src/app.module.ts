@@ -26,7 +26,7 @@ import { ReservationsModule } from './modules/reservations';
     { provide: ALLOWED_ORIGINS, useFactory: () => readAllowedOrigins() },
     // Registration order is the runtime order: OriginGuard, then SessionGuard.
     { provide: APP_GUARD, useClass: OriginGuard },
-    { provide: APP_GUARD, useClass: SessionGuard },
+    { provide: APP_GUARD, useExisting: SessionGuard },
     { provide: APP_FILTER, useClass: ApiExceptionFilter },
   ],
 })

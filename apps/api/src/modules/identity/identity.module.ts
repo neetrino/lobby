@@ -27,6 +27,7 @@ import { createRateLimitRedisClient } from './infrastructure/upstash-rate-limit-
 import { createSessionRedisClient } from './infrastructure/upstash-session-redis';
 import { AuthController } from './presentation/auth.controller';
 import { SessionController } from './presentation/session.controller';
+import { SessionGuard } from './presentation/session.guard';
 
 @Module({
   imports: [OrganizationsModule, DatabaseModule],
@@ -50,10 +51,12 @@ import { SessionController } from './presentation/session.controller';
     RegisterService,
     LoginService,
     SessionAccessService,
+    SessionGuard,
     RoleGuard,
     LogoutService,
     TerminateUserSessionsService,
     AuthRateLimitService,
   ],
+  exports: [SessionGuard],
 })
 export class IdentityModule {}

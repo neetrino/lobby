@@ -1,5 +1,6 @@
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 import { type ArgumentsHost, type ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 
 import { AuthRateLimitService } from '../application/auth-rate-limit.service';
 import { SessionAccessService } from '../application/session-access.service';
@@ -74,6 +75,7 @@ export function createGuard(database: PrismaClient, redis: MemorySessionRedis): 
     new SessionAccessService(sessions, new PrismaSessionUserStore(database)),
     new SessionCookie(true),
     new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
+    new Reflector(),
   );
 }
 
@@ -99,8 +101,14 @@ export function httpContext(
 ): ExecutionContext {
   return {
     switchToHttp: () => ({ getRequest: () => request, getResponse: () => response }),
-  } as ExecutionContext;
+    getHandler: () => unmarkedHandler,
+    getClass: () => UnmarkedHandler,
+  } as unknown as ExecutionContext;
 }
+
+class UnmarkedHandler {}
+
+function unmarkedHandler(): void {}
 
 export async function activate(
   database: PrismaClient,

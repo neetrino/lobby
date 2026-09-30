@@ -4,6 +4,7 @@ import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'i
 import { scopedTenantId } from '../../../common/auth/authorization';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import type { RequestContext } from '../../../common/tenant/request-context';
+import type { TenantId } from '../../../common/tenant/tenant-id';
 import { renameContactSchema, type RenameContactInput } from './rename-contact.schema';
 
 export type ContactRecord = {
@@ -37,7 +38,7 @@ export class ContactAccessService {
     return this.findInTenant(tenantId, contactId);
   }
 
-  private findInTenant(tenantId: string, contactId: string): Promise<ContactRecord | null> {
+  private findInTenant(tenantId: TenantId, contactId: string): Promise<ContactRecord | null> {
     return this.prisma.contact.findFirst({
       where: { id: contactId, tenantId },
       select: { id: true, tenantId: true, name: true },

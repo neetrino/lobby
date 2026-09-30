@@ -1,4 +1,5 @@
 import type { UserRole } from '../tenant/request-context';
+import type { TenantId } from '../tenant/tenant-id';
 
 /**
  * Permission failure for a service or a route guard.
@@ -26,9 +27,10 @@ export function requireRole(actor: { role: UserRole }, allowed: readonly UserRol
 
 /**
  * Tenant id for a query or write.
- * The only accepted source is the caller context, so a worker or another service cannot pass a different tenant.
+ * The argument must already be a `TenantId` minted from the session.
+ * A plain string does not typecheck. An empty id is still rejected here.
  */
-export function scopedTenantId(context: { tenantId: string }): string {
+export function scopedTenantId(context: { tenantId: TenantId }): TenantId {
   if (context.tenantId.length === 0) {
     throw new AuthorizationError();
   }

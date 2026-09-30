@@ -1,16 +1,18 @@
 import type { AuthenticatedTenantContext, TenantRole } from './authenticated-tenant-context';
+import type { TenantId } from './tenant-id';
 
 /** Session role. Module code uses this name for the authenticated caller. */
 export type UserRole = TenantRole;
 
 /**
  * Standard caller for tenant-scoped module work.
- * `tenantId` is copied from the validated session. Request body, query, and headers are not a source.
+ * `tenantId` is a `TenantId` minted here from the validated session.
+ * Request body, query, and headers are not a source.
  */
 export type RequestContext = {
   requestId: string;
   userId: string;
-  tenantId: string;
+  tenantId: TenantId;
   role: UserRole;
 };
 
@@ -21,7 +23,11 @@ export function requestContextFromSession(
   return {
     requestId,
     userId: session.userId,
-    tenantId: session.tenantId,
+    tenantId: tenantIdFromSession(session.tenantId),
     role: session.role,
   };
+}
+
+function tenantIdFromSession(raw: string): TenantId {
+  return raw as TenantId;
 }

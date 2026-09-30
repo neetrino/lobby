@@ -3,7 +3,7 @@ import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testi
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { OutboxService } from '../../../common/outbox/outbox.service';
-import type { RequestContext } from '../../../common/tenant/request-context';
+import { requestContextFromSession, type RequestContext } from '../../../common/tenant/request-context';
 import { CreateContactService } from './create-contact.service';
 
 let prisma: PrismaClient;
@@ -90,12 +90,14 @@ describe('CreateContactService', () => {
 });
 
 function tenantContext(tenantId: string): RequestContext {
-  return {
-    requestId: '44444444-4444-4444-8444-444444444444',
-    userId: '11111111-1111-4111-8111-111111111111',
-    tenantId,
-    role: 'OWNER',
-  };
+  return requestContextFromSession(
+    {
+      tenantId,
+      userId: '11111111-1111-4111-8111-111111111111',
+      role: 'OWNER',
+    },
+    '44444444-4444-4444-8444-444444444444',
+  );
 }
 
 async function createTenant(subdomain: string) {

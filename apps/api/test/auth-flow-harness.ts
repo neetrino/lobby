@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { createRequestId, currentRequestId, runWithRequestId } from '../src/common/http/request-context';
 import { NotFoundException, type ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import type { PrismaClient } from '@lobby/database/testing';
 import type { ZodType } from 'zod';
 
@@ -119,7 +120,7 @@ function wire(
     ),
     contacts: new ContactAccessService(database),
     origin: new OriginGuard([AUTH_FLOW_ORIGIN]),
-    sessions: new SessionGuard(new SessionAccessService(store, users), cookies, rates),
+    sessions: new SessionGuard(new SessionAccessService(store, users), cookies, rates, new Reflector()),
     terminate: new TerminateUserSessionsService(users, store),
     database,
   };
@@ -261,5 +262,11 @@ function sessionRequestFrom(request: IncomingMessage): SessionRequest {
 function httpContext(request: object, response?: object): ExecutionContext {
   return {
     switchToHttp: () => ({ getRequest: () => request, getResponse: () => response }),
+    getHandler: () => unmarkedHandler,
+    getClass: () => UnmarkedHandler,
   } as ExecutionContext;
 }
+
+class UnmarkedHandler {}
+
+function unmarkedHandler(): void {}

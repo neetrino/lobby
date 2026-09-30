@@ -1,4 +1,5 @@
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import { Reflector } from '@nestjs/core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { OutboxService } from '../../../common/outbox/outbox.service';
@@ -133,6 +134,7 @@ describe('auth rate limits', () => {
       new SessionAccessService(new RedisSessionStore(sessions), new PrismaSessionUserStore(prisma)),
       new SessionCookie(true),
       limiter(tight),
+      new Reflector(),
     );
     const missing = createRawSessionId();
 

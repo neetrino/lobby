@@ -127,6 +127,7 @@ async function principal(redis: IndexedSessionRedis, rawSessionId: string): Prom
     new SessionAccessService(sessions, new PrismaSessionUserStore(prisma)),
     new SessionCookie(true),
     new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
+    new Reflector(),
   ).canActivate(httpContext(request, new RecordingCookieWriter()));
   return readAuthenticatedSession(request);
 }

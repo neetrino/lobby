@@ -1,4 +1,5 @@
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import { Reflector } from '@nestjs/core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { OutboxService } from '../../../common/outbox/outbox.service';
@@ -210,6 +211,7 @@ function guardFor(redis: SessionRedisClient): SessionGuard {
     new SessionAccessService(sessions, new PrismaSessionUserStore(prisma)),
     new SessionCookie(true),
     new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
+    new Reflector(),
   );
 }
 

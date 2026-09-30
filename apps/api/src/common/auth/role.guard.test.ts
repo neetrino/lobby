@@ -4,7 +4,7 @@ import { Reflector } from '@nestjs/core';
 import { describe, expect, it } from 'vitest';
 
 import { tenantManagerRoles } from '../tenant/authenticated-tenant-context';
-import type { UserRole } from '../tenant/request-context';
+import { requestContextFromSession, type UserRole } from '../tenant/request-context';
 import { AuthorizationError, requireRole, scopedTenantId } from './authorization';
 import { RoleGuard, Roles } from './role.guard';
 
@@ -41,8 +41,8 @@ describe('role authorization', () => {
 
   it('keeps the role and tenant checks available without the HTTP guard', () => {
     expect(() => requireRole({ role: 'MEMBER' }, ['OWNER', 'ADMIN'])).toThrow(AuthorizationError);
-    expect(scopedTenantId({ tenantId: 'tenant-a' })).toBe('tenant-a');
-    expect(() => scopedTenantId({ tenantId: '' })).toThrow(AuthorizationError);
+    expect(scopedTenantId(sessionContext('tenant-a'))).toBe('tenant-a');
+    expect(() => scopedTenantId(sessionContext(''))).toThrow(AuthorizationError);
   });
 });
 
@@ -54,4 +54,11 @@ function context(handler: (...args: never[]) => unknown, role: UserRole | undefi
       getRequest: () => ({ auth: role === undefined ? undefined : { role } }),
     }),
   } as ExecutionContext;
+}
+
+function sessionContext(tenantId: string) {
+  return requestContextFromSession(
+    { tenantId, userId: '11111111-1111-4111-8111-111111111111', role: 'OWNER' },
+    '44444444-4444-4444-8444-444444444444',
+  );
 }
