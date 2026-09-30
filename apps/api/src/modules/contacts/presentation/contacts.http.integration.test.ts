@@ -92,7 +92,7 @@ describe('Contacts HTTP', () => {
     expect(stillOwner.body).toEqual({ data: { id: contactId, name: 'Ada ledger' } });
   }, 30_000);
 
-  it('returns 401 from the global filter when the controller has only SessionGuard', async () => {
+  it('returns 401 from the global session guard when the request has no session', async () => {
     const http = app.getHttpServer();
     const missing = await request(http).get(
       '/api/v1/contacts/00000000-0000-4000-8000-000000000001',

@@ -1,18 +1,9 @@
-import {
-  Controller,
-  Get,
-  HttpCode,
-  NotFoundException,
-  Patch,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, HttpCode, NotFoundException, Patch, Post } from '@nestjs/common';
 import { z } from 'zod';
 
 import { CurrentRequest } from '../../../common/auth/current-request';
 import { ZodBody, ZodParam } from '../../../common/pipes/zod-input';
 import type { RequestContext } from '../../../common/tenant/request-context';
-import { SessionGuard } from '../../identity';
 import { ContactAccessService, type ContactRecord } from '../application/contact-access.service';
 import {
   createContactSchema,
@@ -29,7 +20,6 @@ type ContactView = {
 };
 
 @Controller('contacts')
-@UseGuards(SessionGuard)
 export class ContactsController {
   constructor(
     private readonly createContact: CreateContactService,

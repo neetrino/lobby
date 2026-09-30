@@ -9,7 +9,6 @@ import { tenantManagerRoles } from '../../../common/tenant/authenticated-tenant-
 import type { SessionRevocationActor } from '../domain/session-revocation';
 import { TerminateUserSessionsService } from '../application/terminate-user-sessions.service';
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
-import { SessionGuard } from './session.guard';
 
 const userIdSchema = z.uuid();
 
@@ -19,7 +18,6 @@ export type SessionView = {
 };
 
 @Controller('auth')
-@UseGuards(SessionGuard)
 export class SessionController {
   constructor(
     private readonly terminateSessions: TerminateUserSessionsService,

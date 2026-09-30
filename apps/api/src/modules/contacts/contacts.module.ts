@@ -2,13 +2,12 @@ import { Module } from '@nestjs/common';
 
 import { DatabaseModule } from '../../common/database/database.module';
 import { OutboxModule } from '../../common/outbox';
-import { IdentityModule } from '../identity';
 import { ContactAccessService } from './application/contact-access.service';
 import { CreateContactService } from './application/create-contact.service';
 import { ContactsController } from './presentation/contacts.controller';
 
 @Module({
-  imports: [DatabaseModule, OutboxModule, IdentityModule],
+  imports: [DatabaseModule, OutboxModule],
   controllers: [ContactsController],
   providers: [CreateContactService, ContactAccessService],
 })

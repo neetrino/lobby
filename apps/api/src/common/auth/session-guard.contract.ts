@@ -15,7 +15,7 @@ export type AuthenticatedHttpRequest = {
 
 /**
  * Contract for the guard that attaches `request.auth`.
- * The Identity module owns the implementation. Other modules apply that class with `@UseGuards`.
+ * The Identity module owns the implementation. AppModule registers it as a global guard.
  */
 export interface SessionGuardContract extends CanActivate {
   canActivate(context: ExecutionContext): Promise<boolean>;

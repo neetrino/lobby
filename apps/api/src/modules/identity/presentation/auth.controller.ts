@@ -1,5 +1,6 @@
 import { Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
 
+import { Public } from '../../../common/auth/public';
 import { ZodBody } from '../../../common/pipes/zod-input';
 import { readClientAddress } from '../../../common/security/client-address';
 import { AuthRateLimitService } from '../application/auth-rate-limit.service';
@@ -25,6 +26,7 @@ export class AuthController {
     private readonly rates: AuthRateLimitService,
   ) {}
 
+  @Public()
   @Post('register')
   @HttpCode(201)
   async register(
@@ -39,6 +41,7 @@ export class AuthController {
   }
 
   /** Always stores a new session id. An existing session cookie is not read or reused. */
+  @Public()
   @Post('login')
   @HttpCode(200)
   async login(
@@ -54,6 +57,7 @@ export class AuthController {
   }
 
   /** Idempotent. A missing or already revoked session still clears the cookie and returns success. */
+  @Public()
   @Post('logout')
   @HttpCode(204)
   async logout(

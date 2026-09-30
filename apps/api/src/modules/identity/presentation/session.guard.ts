@@ -1,6 +1,7 @@
 import { Inject, Optional, type ExecutionContext, Injectable } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
+import { ModuleRef, Reflector } from '@nestjs/core';
 
+import { IS_PUBLIC_KEY } from '../../../common/auth/public';
 import {
   type AuthenticatedHttpRequest,
   type SessionGuardContract,
@@ -28,9 +29,13 @@ export class SessionGuard implements SessionGuardContract {
     @Optional() @Inject(SessionCookie) private readonly cookies?: SessionCookie,
     @Optional() @Inject(AuthRateLimitService) private readonly rates?: AuthRateLimitService,
     @Optional() @Inject(ModuleRef) private readonly modules?: ModuleRef,
+    @Optional() @Inject(Reflector) private readonly reflector?: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (this.isPublic(context)) {
+      return true;
+    }
     const request = context.switchToHttp().getRequest<AuthenticatedHttpRequest>();
     const response = context.switchToHttp().getResponse<SessionCookieWriter>();
     const guard = this.services();
@@ -55,9 +60,21 @@ export class SessionGuard implements SessionGuardContract {
     }
   }
 
+  private isPublic(context: ExecutionContext): boolean {
+    if (this.reflector === undefined) {
+      return false;
+    }
+    return (
+      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) === true
+    );
+  }
+
   /**
-   * The controller module does not receive Identity's internal providers.
-   * That instance loads the same services through ModuleRef.
+   * The global guard is constructed outside IdentityModule.
+   * That instance loads Identity's internal services through ModuleRef.
    */
   private services(): GuardServices {
     if (this.access !== undefined && this.cookies !== undefined && this.rates !== undefined) {

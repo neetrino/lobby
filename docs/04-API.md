@@ -37,11 +37,12 @@
 
 ```text
 Request
-→ Origin guard rejects a mutating method unless Origin, or a Referer origin when Origin is absent, is in ALLOWED_ORIGINS
-→ SessionGuard reads the session cookie
+→ OriginGuard rejects a mutating method unless Origin, or a Referer origin when Origin is absent, is in ALLOWED_ORIGINS
+→ SessionGuard requires a session cookie, unless the route is marked @Public()
 → hash the raw session id and load the Redis record
 → reject a missing, expired, revoked, disabled, or version-mismatched session
 → copy RequestContext from that session plus the server-generated request id
+→ RoleGuard, only on a route that declares @Roles(...) and @UseGuards(RoleGuard)
 → validate input
 → execute the owning module operation with { requestId, userId, tenantId, role } plus the validated input
 → return the documented response or error
@@ -51,7 +52,7 @@ Handlers do not read a tenant id from the body, query, or headers. The client mu
 
 Authorization has two layers. Both use the same roles: `OWNER`, `ADMIN`, `MEMBER`.
 
-1. `RoleGuard` on the route rejects a session whose role is outside `@Roles(...)`. It runs only for HTTP, after `SessionGuard`.
+1. `RoleGuard` on the route rejects a session whose role is outside `@Roles(...)`. It runs only for HTTP, after the global guards. The global order is `OriginGuard`, then `SessionGuard`.
 2. The application service repeats the business rule with `requireRole` and takes the tenant from `scopedTenantId(context)`. A worker or another service calls the service directly, so the route guard is not the security boundary.
 
 A query or write that omits `scopedTenantId(context)` is not tenant-safe. Resource ownership, such as revoking another user, stays in the service even when the route already lists the allowed roles.
@@ -233,7 +234,7 @@ Reservation endpoints must derive the tenant from the authenticated session, acc
 
 ### Contacts
 
-Pilot tenant-scoped resource. `ContactsController` uses `SessionGuard` and `@CurrentRequest()`. It does not install `IdentityExceptionFilter`. A missing contact and a contact owned by another tenant are both `404 NOT_FOUND`.
+Pilot tenant-scoped resource. `ContactsController` is covered by the global `SessionGuard` and reads `@CurrentRequest()`. It does not install `IdentityExceptionFilter`. A missing contact and a contact owned by another tenant are both `404 NOT_FOUND`.
 
 | Method  | Path                    | Body                 | Success                                      |
 | ------- | ----------------------- | -------------------- | -------------------------------------------- |
@@ -254,10 +255,10 @@ HTTP bootstrap lives in `configureHttpApp`. New controllers inherit it.
 - JSON object schemas use `z.strictObject`. An unknown field is `400 VALIDATION_ERROR`. Auth login/register and the contacts commands follow this rule. The HTTP foundation probe rejects an extra `leak` field the same way.
 - Return `{ data }` for a successful JSON body. Do not add `requestId` to that JSON.
 - Throw a module error with a stable `UPPER_SNAKE_CASE` code, or `NotFoundException` for a missing resource. The global filter writes `{ error: { code, message, requestId } }`. `AuthenticationError` and `IdentityError` accept only a catalog code. The client message and status come from that catalog, not from a caller-supplied message or status.
-- A protected controller adds `@UseGuards(SessionGuard)`. Import that class from the Identity barrel (`modules/identity`). Read the caller with `@CurrentRequest()` from `common/auth/current-request`. Do not add `IdentityExceptionFilter`. The global filter maps `IdentityError`, including `401 UNAUTHENTICATED` and `403 FORBIDDEN`.
+- `SessionGuard` is a global `APP_GUARD`, registered after `OriginGuard`. A new controller requires a session. Mark a handler with `@Public()` from `common/auth/public` only when it must run without one: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, and `GET /health`. `@Public()` skips authentication. It does not skip `OriginGuard` or CORS. `RoleGuard` stays on the route that declares `@Roles(...)`. Do not add `@UseGuards(SessionGuard)` or `IdentityExceptionFilter`. Read the caller with `@CurrentRequest()` from `common/auth/current-request`. The global filter maps `IdentityError`, including `401 UNAUTHENTICATED` and `403 FORBIDDEN`.
 - Global codes live in `apps/api/src/common/http/http-error-codes.ts` (`VALIDATION_ERROR`, `INTERNAL_ERROR`, `NOT_FOUND`, `REQUEST_REJECTED`). Thrown platform codes live in `api-error.ts` (`ORIGIN_REJECTED`, `RATE_LIMITED`). Module codes stay in that module, as Identity does in `identity.errors.ts`.
 - Unexpected failures become `INTERNAL_ERROR`. The server log records the time, request id, method, path, and exception name. It does not record the exception message or stack. The client does not receive the driver message or stack.
-- `GET /health` stays outside `/api/v1` for process probes.
+- `GET /health` stays outside `/api/v1` for process probes. It is `@Public()`.
 - CORS uses the explicit `ALLOWED_ORIGINS` list with credentials. `OriginGuard` is global for mutating methods.
 - `helmet` sets the baseline security headers. `Cross-Origin-Resource-Policy` is `cross-origin` because the browser app and the API are different origins. The allowlist still decides who may read the response.
 - Startup calls `loadApiConfig()` before creating the Nest app. Invalid or missing required variables stop the process with a name list. Bootstrap then reads the returned config. Feature modules keep their existing readers for the same variables.

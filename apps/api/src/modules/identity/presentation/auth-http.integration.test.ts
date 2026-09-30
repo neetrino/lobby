@@ -1,5 +1,6 @@
 import 'reflect-metadata';
 import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import { Controller, Get, Post } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -26,7 +27,10 @@ let prisma: PrismaClient;
 
 beforeAll(async () => {
   prisma = await createTestPrismaClient();
-  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+  const moduleRef = await Test.createTestingModule({
+    imports: [AppModule],
+    controllers: [UnmarkedProbeController],
+  })
     .overrideProvider(PRISMA_CLIENT)
     .useValue(prisma)
     .overrideProvider(SESSION_REDIS)
@@ -108,7 +112,47 @@ describe('Nest auth HTTP', () => {
     expect(terminated.status).toBe(204);
     expect(rejected.status).toBe(401);
   }, 30_000);
+
+  it('requires a session on an unmarked controller and keeps origin checks on public routes', async () => {
+    const http = app.getHttpServer();
+    const unmarked = await request(http).get('/api/v1/guard-probe');
+    const originFirst = await request(http).post('/api/v1/guard-probe').send({});
+    const health = await request(http).get('/health').set('Origin', 'https://evil.example');
+    const login = await request(http)
+      .post('/api/v1/auth/login')
+      .set('Origin', 'https://evil.example')
+      .send({});
+    const loggedOut = await request(http).post('/api/v1/auth/logout').set('Origin', origin);
+
+    expect(unmarked.status).toBe(401);
+    expect(unmarked.body.error).toMatchObject({
+      code: 'UNAUTHENTICATED',
+      message: 'Authentication is required.',
+    });
+    expect(originFirst.status).toBe(403);
+    expect(originFirst.body.error.code).toBe('ORIGIN_REJECTED');
+    expect(health.status).toBe(200);
+    expect(health.body).toEqual({ status: 'ok' });
+    expect(health.headers['access-control-allow-origin']).toBeUndefined();
+    expect(login.status).toBe(403);
+    expect(login.body.error.code).toBe('ORIGIN_REJECTED');
+    expect(login.headers['access-control-allow-origin']).toBeUndefined();
+    expect(loggedOut.status).toBe(204);
+  });
 });
+
+@Controller('guard-probe')
+class UnmarkedProbeController {
+  @Get()
+  read(): { data: { ok: true } } {
+    return { data: { ok: true } };
+  }
+
+  @Post()
+  write(): { data: { ok: true } } {
+    return { data: { ok: true } };
+  }
+}
 
 function registration(subdomain: string) {
   return {

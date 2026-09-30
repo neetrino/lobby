@@ -7,7 +7,7 @@ import { OriginGuard } from './common/security/origin.guard';
 import { ContactsModule } from './modules/contacts';
 import { DealsModule } from './modules/deals';
 import { HealthModule } from './modules/health/health.module';
-import { IdentityModule } from './modules/identity';
+import { IdentityModule, SessionGuard } from './modules/identity';
 import { MessengerModule } from './modules/messenger';
 import { OrganizationsModule } from './modules/organizations';
 import { ReservationsModule } from './modules/reservations';
@@ -24,7 +24,9 @@ import { ReservationsModule } from './modules/reservations';
   ],
   providers: [
     { provide: ALLOWED_ORIGINS, useFactory: () => readAllowedOrigins() },
+    // Registration order is the runtime order: OriginGuard, then SessionGuard.
     { provide: APP_GUARD, useClass: OriginGuard },
+    { provide: APP_GUARD, useClass: SessionGuard },
     { provide: APP_FILTER, useClass: ApiExceptionFilter },
   ],
 })
