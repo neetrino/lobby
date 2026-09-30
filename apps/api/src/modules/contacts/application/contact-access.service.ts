@@ -31,10 +31,6 @@ export class ContactAccessService {
   ): Promise<ContactRecord | null> {
     requirePermission(context, 'contacts:update');
     const name = renameContactSchema.parse(input).name;
-    const existing = await this.visibleContact(context, contactId);
-    if (existing === null) {
-      return null;
-    }
     const tenantId = scopedTenantId(context);
     const updated = await this.prisma.contact.updateMany({
       where: { id: contactId, tenantId },

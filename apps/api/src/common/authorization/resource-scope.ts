@@ -1,14 +1,12 @@
 import { AuthorizationError } from '../auth/authorization';
+import type { RequestContext } from '../tenant/request-context';
 
 /** How a caller is matched to one row. `tenant` matches every row in the caller's tenant. */
 export const resourceScopes = ['tenant'] as const;
 
 export type ResourceScope = (typeof resourceScopes)[number];
 
-type ResourceActor = {
-  userId: string;
-  tenantId: string;
-};
+type ResourceActor = Pick<RequestContext, 'userId' | 'tenantId'>;
 
 type TenantResource = {
   tenantId: string;
@@ -31,7 +29,7 @@ export function canAccessResource(
 }
 
 /**
- * Service-level scope check for a write the caller is about to perform.
+ * Asserts the tenant-scope invariant for a row whose tenant id came from this actor.
  * A hidden read uses `canAccessResource` and returns not-found instead of throwing.
  */
 export function requireResourceScope(
