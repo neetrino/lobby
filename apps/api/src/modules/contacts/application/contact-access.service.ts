@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { scopedTenantId } from '../../../common/auth/authorization';
+import { requireModule } from '../../../common/authorization/module-entitlement';
 import { canAccessResource } from '../../../common/authorization/resource-scope';
 import { requirePermission } from '../../../common/authorization/require-permission';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
@@ -20,6 +21,7 @@ export class ContactAccessService {
   constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
 
   read(context: RequestContext, contactId: string): Promise<ContactRecord | null> {
+    requireModule(context, 'contacts');
     requirePermission(context, 'contacts:read');
     return this.visibleContact(context, contactId);
   }
@@ -29,6 +31,7 @@ export class ContactAccessService {
     contactId: string,
     input: RenameContactInput,
   ): Promise<ContactRecord | null> {
+    requireModule(context, 'contacts');
     requirePermission(context, 'contacts:update');
     const name = renameContactSchema.parse(input).name;
     const tenantId = scopedTenantId(context);

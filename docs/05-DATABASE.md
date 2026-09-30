@@ -246,7 +246,7 @@ Replace `TBD` entries with links to approved model/ERD sections when schema desi
 - Statement, lock, and idle-transaction timeouts.
 - Backup retention, restore testing, RPO, and RTO.
 - Seed/test-data strategy.
-- Whether RLS is justified and how tenant context is safely applied.
+- PostgreSQL RLS is not part of this foundation. Tenant isolation is the application query scope. Revisit RLS only with a reviewed pooling and threat plan.
 
 ---
 

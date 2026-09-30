@@ -3,6 +3,7 @@ import { CONTACT_CREATED_EVENT_VERSION, contactCreatedEventSchema } from '@lobby
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { scopedTenantId } from '../../../common/auth/authorization';
+import { requireModule } from '../../../common/authorization/module-entitlement';
 import { requireResourceScope } from '../../../common/authorization/resource-scope';
 import { requirePermission } from '../../../common/authorization/require-permission';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
@@ -18,6 +19,7 @@ export class CreateContactService {
   ) {}
 
   async create(context: RequestContext, input: CreateContactInput) {
+    requireModule(context, 'contacts');
     requirePermission(context, 'contacts:create');
     const name = createContactSchema.parse(input).name;
     const tenantId = scopedTenantId(context);
