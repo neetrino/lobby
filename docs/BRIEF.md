@@ -1,9 +1,9 @@
 # Product Brief: Lobby
 
-> This brief defines the product purpose, MVP scope, users, and core workflows. Technology approval belongs in `TECH_CARD.md`; system design belongs in `[01-ARCHITECTURE.md](./01-ARCHITECTURE.md)` and `[02-TECH_STACK.md](./02-TECH_STACK.md)`.
+> This brief defines the product purpose, Version 1 scope, users, and core workflows. Technology approval belongs in `TECH_CARD.md`; system design belongs in `[01-ARCHITECTURE.md](./01-ARCHITECTURE.md)` and `[02-TECH_STACK.md](./02-TECH_STACK.md)`.
 
 - **Project:** Lobby
-- **Stage:** MVP definition
+- **Stage:** Version 1 definition
 - **Last updated:** 2026-09-24
 - **Status:** DRAFT — product scope requires owner approval
 
@@ -13,7 +13,7 @@
 
 Lobby is a multi-tenant CRM and work-management SaaS for organizations that need one place to manage customers, sales activity, tasks, and operational work. Each organization has an isolated workspace with its own members, permissions, enabled modules, and data.
 
-The MVP should establish the shared workspace and access model first, then deliver a focused customer-and-work flow without requiring every planned module at launch.
+Version 1 establishes the shared workspace and access model first, then delivers the approved customer-and-work workflows without requiring every planned module in the same release.
 
 ## Target audience
 
@@ -31,14 +31,14 @@ The MVP should establish the shared workspace and access model first, then deliv
 2. Give teams a clear view of customers, active work, ownership, and status.
 3. Support configurable modules without mixing their internal responsibilities.
 4. Make important actions auditable and access revocable.
-5. Provide a foundation that can grow without requiring microservices for the MVP.
+5. Provide a foundation that can grow without requiring microservices for Version 1.
 
 
 
-## MVP scope and priorities
+## Version 1 scope and priorities
 
 
-| Priority    | Capability                                                      | MVP outcome                                                                                                       |
+| Priority    | Capability                                                      | Version 1 outcome                                                                                                 |
 | ----------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | High        | Organization users and access                                   | Each user belongs to exactly one organization tenant; multi-organization membership and switching are unsupported. |
 | High        | Authentication and access control                               | Owners can invite/remove members and assign approved roles or permissions; revoked access stops working promptly. |
@@ -49,7 +49,7 @@ The MVP should establish the shared workspace and access model first, then deliv
 | Medium      | Orders and delivery                                             | Teams can record an order and track its operational status if confirmed for the first release.                    |
 | Medium      | Notifications                                                   | Users receive approved in-app notifications for important assignments and status changes.                         |
 | Medium      | Audit history                                                   | Sensitive user-access, permission, and important business changes are traceable.                                  |
-| Low / later | Messenger, catalog, inventory, transfers, analytics, dashboards | Enable only after their detailed workflows and MVP necessity are approved.                                        |
+| Low / later | Messenger, catalog, inventory, transfers, analytics, dashboards | Enable only after their detailed workflows and Version 1 necessity are approved.                                  |
 
 
 
@@ -111,11 +111,11 @@ The MVP should establish the shared workspace and access model first, then deliv
 
 
 
-## Outside the initial MVP
+## Outside Version 1
 
 - Microservices, multi-region deployment, sharding, or tenant-specific databases.
 - Advanced analytics, forecasting, and custom report builders.
-- Full inventory/serial-number management unless explicitly promoted into MVP scope.
+- Full inventory/serial-number management unless explicitly included in Version 1 scope.
 - Native mobile applications.
 - Marketplace or third-party extension platform.
 - Complex billing, payment processing, or usage-based subscriptions until business rules are approved.
@@ -145,14 +145,14 @@ Exact versions, providers, hosting, authentication implementation, and condition
 ## Integrations
 
 
-| Integration                                       | MVP status                                                              |
+| Integration                                       | Version 1 status                                                        |
 | ------------------------------------------------- | ----------------------------------------------------------------------- |
 | Authentication/session service                    | Required; exact implementation TBD                                      |
-| Email invitations and transactional notifications | Conditional for MVP; provider TBD                                       |
-| Object storage for attachments                    | Conditional; enable only if files enter the approved MVP                |
+| Email invitations and transactional notifications | Conditional for Version 1; provider TBD                                 |
+| Object storage for attachments                    | Conditional; enable only if files enter the approved Version 1 scope    |
 | Realtime updates                                  | Conditional; use only for workflows that benefit from immediate updates |
-| Messaging channels                                | Later unless explicitly approved for MVP                                |
-| Payments/billing                                  | Not approved for MVP                                                    |
+| Messaging channels                                | Later unless explicitly approved for Version 1                          |
+| Payments/billing                                  | Not approved for Version 1                                              |
 | External APIs                                     | None confirmed                                                          |
 
 
@@ -160,7 +160,7 @@ Exact versions, providers, hosting, authentication implementation, and condition
 
 ## Content and localization
 
-- Interface: multilingual with i18n required from the MVP foundation.
+- Interface: multilingual with i18n required from the Version 1 foundation.
 - Launch languages: TBD; they must be confirmed before interface copy and translation work begins.
 - All user-facing text must use translation resources rather than hard-coded strings.
 - Dates, times, numbers, currencies, pluralization, validation messages, and sorting must be locale-aware.
@@ -179,7 +179,7 @@ Exact versions, providers, hosting, authentication implementation, and condition
 
 
 
-## MVP success criteria
+## Version 1 success criteria
 
 - An Owner can create and administer an isolated organization workspace.
 - Invited members can access only authorized organizations and records.

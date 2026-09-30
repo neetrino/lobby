@@ -219,10 +219,10 @@ The runtime uses least-privilege `DATABASE_URL`; privileged migration access suc
 |---|---|---|---|
 | Organizations | `tenants`, `users` | Implemented | `createWithOwner` writes the tenant, the ACTIVE OWNER (`password_hash` only), and `tenant.created` version 2 in one transaction. Sessions and module entitlements are separate. Auth hashes the password and calls this operation. |
 | Contacts | `contacts` | Implemented | Tenant-owned contacts. Written in the same transaction as `contact.created` outbox rows. |
-| Tasks | TBD | Planned | MVP high priority; relationship model requires approval. |
-| Deals and pipelines | TBD | Planned | MVP high priority. |
+| Tasks | TBD | Planned | Version 1 high priority; relationship model requires approval. |
+| Deals and pipelines | TBD | Planned | Version 1 high priority. |
 | Restaurant reservations | `venues`, `dining_areas`, `restaurant_tables`, `service_periods`, `reservations`, `reservation_tables`, `reservation_status_history` | Foundation implemented | Tenant-safe relations and database-enforced overlap prevention; API operations are not implemented. |
-| Orders and delivery | TBD | Conditional | Add only if promoted into MVP. |
+| Orders and delivery | TBD | Conditional | Add only if included in Version 1. |
 | Audit and outbox | `outbox_events`, `processed_events` | Implemented | Pending rows are claimed with `FOR UPDATE SKIP LOCKED`. `processed_events` reserves an external side effect before it starts. Unique key: `(handler_name, event_type, event_version, event_id)`. |
 
 ### Reservation data rules
@@ -252,7 +252,7 @@ Replace `TBD` entries with links to approved model/ERD sections when schema desi
 
 ## Related documents
 
-- [`BRIEF.md`](./BRIEF.md) — product and MVP scope.
+- [`BRIEF.md`](./BRIEF.md) — product and Version 1 scope.
 - [`TECH_CARD.md`](./TECH_CARD.md) — approved database technology and operational decisions.
 - [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) — data ownership and system invariants.
 - [`02-TECH_STACK.md`](./02-TECH_STACK.md) — proposed database and Redis stack.

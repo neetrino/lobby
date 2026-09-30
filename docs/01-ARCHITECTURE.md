@@ -1,9 +1,9 @@
 # Project Architecture: Lobby
 
-> Lobby is a multi-tenant CRM and task-management SaaS with independently bounded functional modules, organization-specific access, and configurable business workflows. **The current architecture is Stage 1 (MVP)**; later scaling options are conditional, not current infrastructure.
+> Lobby is a multi-tenant CRM and task-management SaaS with independently bounded functional modules, organization-specific access, and configurable business workflows. **The current architecture targets Version 1 at Stage 1**; later scaling options are conditional, not current infrastructure.
 
 **Project size:** C  
-**Current target:** Stage 1 / MVP  
+**Current target:** Version 1 / Stage 1
 **Last updated:** 2026-09-24  
 **Version:** 1.1-draft  
 **Status:** DRAFT — reconcile open choices with the approved [`TECH_CARD.md`](./TECH_CARD.md).  
@@ -25,7 +25,7 @@ Give organizations isolated workspaces for customer relationships, deals, tasks,
 - Reliable event processing without delaying routine API requests.
 - **Every functional capability is a module.** There is **no Core-vs-Extension hierarchy**; activation and dependencies are independent concerns.
 
-**Scope control:** Listing a module describes its architectural boundary; only the approved `BRIEF.md` and `PROGRESS.md` establish which features ship in the MVP.
+**Scope control:** Listing a module describes its architectural boundary; only the approved `BRIEF.md` and `PROGRESS.md` establish which features ship in Version 1.
 
 ### Users
 
@@ -70,16 +70,16 @@ Give organizations isolated workspaces for customer relationships, deals, tasks,
         Scheduler ------------------> scheduled jobs
         Realtime gateway <---------- approved live events
         Object storage <----------- authorized direct upload*
-        *Only if files are in the approved MVP.
+        *Only if files are in the approved Version 1 scope.
 ```
 
-This diagram is logical, not a physical deployment inventory. One API service, one primary PostgreSQL database, and one Redis deployment form the initial topology. Worker/scheduler processes run independently **when** approved MVP use cases require them. Detailed versions and selected providers: [`02-TECH_STACK.md`](./02-TECH_STACK.md).
+This diagram is logical, not a physical deployment inventory. One API service, one primary PostgreSQL database, and one Redis deployment form the initial topology. Worker/scheduler processes run independently **when** approved Version 1 use cases require them. Detailed versions and selected providers: [`02-TECH_STACK.md`](./02-TECH_STACK.md).
 
 ### Architectural style
 
 **Modular Monolith with independently runnable background processes.** Functional modules share one initial API deployment but own their business logic, writes, public contracts, and events. Database access, caching, queues, storage, and telemetry are shared technical infrastructure—not a privileged business-module tier.
 
-**Why:** Keep MVP operations manageable while enforcing boundaries that permit selective module extraction later. User-count bands on the roadmap are illustrations, **not guaranteed capacity or automatic migration triggers**.
+**Why:** Keep Version 1 operations manageable while enforcing boundaries that permit selective module extraction later. User-count bands on the roadmap are illustrations, **not guaranteed capacity or automatic migration triggers**.
 
 ### Architectural invariants
 
@@ -99,7 +99,7 @@ This diagram is logical, not a physical deployment inventory. One API service, o
 
 ## 🧩 SYSTEM COMPONENTS
 
-The entries below describe **logical responsibilities and boundaries**, not a final deployment inventory. Locations and technologies marked **Proposed** must be reconciled with the approved `TECH_CARD.md`; optional components are introduced only when an approved MVP use case requires them.
+The entries below describe **logical responsibilities and boundaries**, not a final deployment inventory. Locations and technologies marked **Proposed** must be reconciled with the approved `TECH_CARD.md`; optional components are introduced only when an approved Version 1 use case requires them.
 
 | Component                | Responsibility                                                                                                                             | Proposed location                                                           | Technology / decision state                                                                                                        | Runtime relationship                                                                                                     |
 | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
@@ -108,9 +108,9 @@ The entries below describe **logical responsibilities and boundaries**, not a fi
 | Functional modules       | Own business rules, writes, public contracts, and emitted events for one capability.                                                       | `apps/api/src/modules/<module>/`                                            | Modular-monolith organization is the **proposed Stage 1** design. Exact module scope comes from the approved BRIEF.                | A module may use another module's public interface or versioned event; it must not mutate another module's private data. |
 | Primary database         | Store authoritative tenant, business, audit, and outbox data with transactional consistency.                                               | `packages/database/` for schema/migrations, if approved                     | PostgreSQL is **proposed**; provider, version, ORM, pooling, and RLS policy are pending.                                           | Used by the API and approved background processes through bounded database access.                                       |
 | Redis services           | Hold bounded ephemeral state such as sessions, rate-limit counters, cache entries, and queue state.                                        | Shared infrastructure; client adapters remain near their owning application | Redis is **proposed**. One initial deployment may serve multiple namespaced purposes, subject to security and availability review. | Used by the API, workers, scheduler, and realtime layer as approved; never treated as the business source of truth.      |
-| Outbox relay and workers | Publish committed outbox records and execute retryable, idempotent background effects without delaying API requests.                       | `apps/worker/`                                                              | **Conditional MVP component**; queue library and process topology are pending.                                                     | Reads/claims outbox work, submits consumer-specific jobs, and records processing outcomes.                               |
-| Scheduler                | Register recurring or delayed jobs with explicit ownership and duplicate-execution protection.                                             | `apps/scheduler/` or an approved platform scheduler                         | **Conditional MVP component**; deployment mechanism is pending.                                                                    | Enqueues work for workers rather than duplicating business logic.                                                        |
-| Realtime gateway         | Deliver authorized, non-authoritative UI updates and revalidate access when a tenant-owned user's status changes.                          | API-hosted gateway or separate process, to be decided                       | **Conditional MVP component**; protocol and provider are pending.                                                                  | Receives approved events and pushes hints to connected clients; durable business delivery uses the outbox/queue path.    |
+| Outbox relay and workers | Publish committed outbox records and execute retryable, idempotent background effects without delaying API requests.                       | `apps/worker/`                                                              | **Conditional Version 1 component**; queue library and process topology are pending.                                               | Reads/claims outbox work, submits consumer-specific jobs, and records processing outcomes.                               |
+| Scheduler                | Register recurring or delayed jobs with explicit ownership and duplicate-execution protection.                                             | `apps/scheduler/` or an approved platform scheduler                         | **Conditional Version 1 component**; deployment mechanism is pending.                                                              | Enqueues work for workers rather than duplicating business logic.                                                        |
+| Realtime gateway         | Deliver authorized, non-authoritative UI updates and revalidate access when a tenant-owned user's status changes.                          | API-hosted gateway or separate process, to be decided                       | **Conditional Version 1 component**; protocol and provider are pending.                                                            | Receives approved events and pushes hints to connected clients; durable business delivery uses the outbox/queue path.    |
 | Object storage           | Store approved user files using tenant-scoped object keys and authorized upload/download flows.                                            | Shared storage adapter plus owning-module integration                       | **Optional**; provider and file requirements are pending BRIEF and TECH_CARD approval.                                             | The API authorizes operations; direct uploads use short-lived scoped credentials when supported.                         |
 | Observability            | Collect structured logs, metrics, traces, health signals, and security-relevant audit events without exposing secrets.                     | Shared instrumentation package/configuration, location TBD                  | Required capability; products, retention, and alerting are pending.                                                                | Every runnable component emits correlated telemetry; business audit records remain distinct from operational logs.       |
 
@@ -190,7 +190,7 @@ Lobby/
 
 ### Folder descriptions
 
-The application paths below are part of the **proposed Size C layout**. They describe ownership boundaries, not permission to create every package or process before its MVP need and technology choice are approved.
+The application paths below are part of the **proposed Size C layout**. They describe ownership boundaries, not permission to create every package or process before its Version 1 need and technology choice are approved.
 
 | Folder                           | Purpose                                                                                                                                                                           |
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -367,7 +367,7 @@ No deployed application or production workload exists yet, so there is no measur
 
 | Stage            | Conditional evolution (requires demonstrated need and approval)                                                          |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| 1 — MVP          | Modular monolith, primary PostgreSQL, single Redis, relevant workers, basic monitoring/security.                         |
+| 1 — Version 1    | Modular monolith, primary PostgreSQL, single Redis, relevant workers, basic monitoring/security.                         |
 | 2 — Early growth | Additional stateless API/worker instances, load balancing, stronger Redis availability, DB connection management/tuning. |
 | 3 — Scale        | Selective read replicas, workload-specific Redis split, specialized search or module extraction only if justified.       |
 | 4 — Large scale  | Tenant-specific DB isolation, independently deployed services, advanced events/DR if bottlenecks require them.           |
@@ -384,7 +384,7 @@ The identifiers below reserve traceable decision records; they are not accepted 
 | Decision                         | Architectural position                                    | Rationale                                                                                                                                                                            | Status                                                    | ADR reference                                        |
 | -------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------------------------------------- |
 | Project classification           | Size C                                                    | The proposed domain has multiple bounded capabilities, tenant isolation, background processing, and expected long-term evolution; the completed BRIEF must validate that complexity. | Proposed                                                  | `ADR-001-project-size`, planned                      |
-| Initial backend topology         | Modular monolith                                          | Provides one manageable MVP deployment while enforcing module ownership and leaving evidence-based extraction possible later.                                                        | Proposed                                                  | `ADR-002-modular-monolith`, planned                  |
+| Initial backend topology         | Modular monolith                                          | Provides one manageable Version 1 deployment while enforcing module ownership and leaving evidence-based extraction possible later.                                                  | Proposed                                                  | `ADR-002-modular-monolith`, planned                  |
 | Functional organization          | Every capability is a module                              | Keeps activation, dependency, and ownership concerns explicit without creating an artificial Core/Extension hierarchy.                                                               | Proposed                                                  | `ADR-003-module-model`, planned                      |
 | Multi-tenancy                    | Shared primary database with organization-aware isolation | Minimizes initial operational complexity while composite constraints and authorization checks protect tenant boundaries.                                                             | Proposed; threat/data review required                     | `ADR-004-multi-tenancy`, planned                     |
 | Sessions                         | Revocable server-side credentials                         | Supports immediate tenant-user/session revocation without relying on long-lived self-contained authorization claims.                                                                 | Proposed; security approval required                      | `ADR-005-session-strategy`, planned                  |

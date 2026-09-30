@@ -17,7 +17,7 @@
 - Functional business modules remain owned by the NestJS API and do not access one another's private internals.
 - Applications may depend on packages; packages must not depend on applications.
 - Product documentation stays in `docs/`; agent governance stays in `.agents/`.
-- Conditional workers, schedulers, integrations, and shared packages are not created until their MVP need is approved.
+- Conditional workers, schedulers, integrations, and shared packages are not created until their Version 1 need is approved.
 
 ---
 
@@ -184,7 +184,7 @@ No generic `shared/` package is created as a dumping ground. Code remains with i
 
 ## Related documents
 
-- [`BRIEF.md`](./BRIEF.md) — product requirements and MVP scope.
+- [`BRIEF.md`](./BRIEF.md) — product requirements and Version 1 scope.
 - [`TECH_CARD.md`](./TECH_CARD.md) — approved technical decisions.
 - [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) — system boundaries and runtime topology.
 - [`02-TECH_STACK.md`](./02-TECH_STACK.md) — technology families and provider choices.
@@ -192,4 +192,4 @@ No generic `shared/` package is created as a dumping ground. Code remains with i
 - [`05-DATABASE.md`](./05-DATABASE.md) — data model and migration design (planned).
 - [`DECISIONS.md`](./DECISIONS.md) — ADR index (planned).
 
-**Approval rule:** after TECH_CARD approval, reconcile this proposed layout with the selected tools and create only the folders needed by the approved MVP.
+**Approval rule:** after TECH_CARD approval, reconcile this proposed layout with the selected tools and create only the folders needed by the approved Version 1 scope.

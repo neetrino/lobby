@@ -1,4 +1,4 @@
-# Stage 1 — MVP
+# Stage 1 — Version 1
 
 - **Active users:** 0–1,000
 - **Theme:** Simple. Solid. Validate.

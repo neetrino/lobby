@@ -3,7 +3,7 @@
 > Lobby is planned as a TypeScript monorepo with a Next.js web application and a NestJS modular-monolith API. This document records the proposed technology families and their responsibilities; it does not replace approval in `TECH_CARD.md`.
 
 **Project size:** C (proposed)  
-**Current target:** Stage 1 / MVP  
+**Current target:** Version 1 / Stage 1
 **Last updated:** 2026-09-24  
 **Version:** 0.1-draft  
 **Status:** DRAFT — reconcile with the completed [`BRIEF.md`](./BRIEF.md) and approved [`TECH_CARD.md`](./TECH_CARD.md).  
@@ -16,7 +16,7 @@
 | Status | Meaning |
 |---|---|
 | Proposed | Recommended for the current architecture but not approved until TECH_CARD sign-off. |
-| Conditional | Add only when an approved MVP capability requires it. |
+| Conditional | Add only when an approved Version 1 capability requires it. |
 | TBD | A decision or compatibility check is still required. |
 | Required practice | Technology-independent constraint that applies to any approved implementation. |
 
@@ -33,7 +33,7 @@
 | Database | PostgreSQL | PostgreSQL 17 family | Proposed | Authoritative tenant, business, audit, and transactional-outbox data. |
 | Database toolkit | Prisma ORM and migrations | Prisma 7 family | Proposed; compatibility check required | Typed database access and versioned schema migrations. |
 | Ephemeral state | Redis | Redis 7 or compatible managed service | Proposed | Revocable sessions, bounded caching, rate limits, and queue state. |
-| Background work | BullMQ | Exact compatible version TBD | Conditional | Durable jobs, retries, and idempotent consumers when async MVP use cases are approved. |
+| Background work | BullMQ | Exact compatible version TBD | Conditional | Durable jobs, retries, and idempotent consumers when asynchronous Version 1 use cases are approved. |
 | API contract | OpenAPI via NestJS Swagger tooling | Compatible with selected NestJS version | Proposed | Machine-readable REST contract and generated/reference documentation. |
 | Validation | NestJS DTO validation; shared runtime schemas where contracts cross apps | Library choice/version TBD | Proposed | Validate every external boundary without treating TypeScript types as runtime validation. |
 | Styling | Tailwind CSS | Tailwind CSS 4 family | Proposed | Token-driven application styling. |
@@ -84,7 +84,7 @@ packages/database/   Prisma schema, migrations, and database tooling
 | Local/shared UI state | React state/context first; Zustand only for justified cross-tree client state | Conditional | Avoid duplicating authoritative API state in a global client store. |
 | Forms | React Hook Form plus approved runtime schema library, or Server Actions where architecture permits | TBD | Choose per form complexity and API boundary; the NestJS API remains authoritative for validation. |
 | Images | `next/image` | Proposed | Remote-host allowlists and storage/CDN behavior require provider configuration. |
-| Internationalization | `next-intl` or an approved equivalent | Required capability; library proposed | Multilingual UI is an MVP foundation. Confirm launch locales, fallback behavior, locale routing, formatting, and RTL requirements before implementation. |
+| Internationalization | `next-intl` or an approved equivalent | Required capability; library proposed | Multilingual UI is a Version 1 foundation. Confirm launch locales, fallback behavior, locale routing, formatting, and RTL requirements before implementation. |
 | SEO/metadata | Next.js Metadata API and JSON-LD where public discovery matters | Conditional | Internal authenticated CRM screens do not need public SEO work. |
 | Realtime client | WebSocket/SSE client selected with gateway design | Conditional | Realtime messages are UI hints, not the durable business-event path. |
 
@@ -245,7 +245,7 @@ Each environment has separate credentials and resources. `.env.example` document
 
 ## Related documents
 
-- [`BRIEF.md`](./BRIEF.md) — product requirements and MVP scope.
+- [`BRIEF.md`](./BRIEF.md) — product requirements and Version 1 scope.
 - [`TECH_CARD.md`](./TECH_CARD.md) — approval source for project technology decisions (planned).
 - [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) — system boundaries, invariants, and topology.
 - [`03-STRUCTURE.md`](./03-STRUCTURE.md) — authoritative repository layout (planned).

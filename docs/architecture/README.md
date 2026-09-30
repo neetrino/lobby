@@ -11,7 +11,7 @@ Future content may include:
 
 ## Scaling stages
 
-- [`STAGE-1-MVP.md`](./STAGE-1-MVP.md) — 0–1,000 active users.
+- [`STAGE-1.md`](./STAGE-1.md) — Version 1, 0–1,000 active users.
 - [`STAGE-2-EARLY-GROWTH.md`](./STAGE-2-EARLY-GROWTH.md) — 1,000–10,000 active users.
 - [`STAGE-3-SCALE.md`](./STAGE-3-SCALE.md) — 10,000–50,000 active users.
 - [`STAGE-4-LARGE-SCALE.md`](./STAGE-4-LARGE-SCALE.md) — 50,000–200,000 active users.
