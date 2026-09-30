@@ -38,6 +38,21 @@ describe('ContactAccessService', () => {
     }
   });
 
+  it('lets another user in the same tenant read and rename the contact', async () => {
+    const tenant = await createTenant('shared');
+    const contact = await prisma.contact.create({
+      data: { tenantId: tenant.id, name: 'Ada ledger' },
+    });
+    const service = new ContactAccessService(prisma);
+    const colleague = requestContext(tenant.id, 'MEMBER', '22222222-2222-4222-8222-222222222222');
+
+    const read = await service.read(colleague, contact.id);
+    const renamed = await service.rename(colleague, contact.id, { name: 'Shared' });
+
+    expect(read).toEqual({ id: contact.id, tenantId: tenant.id, name: 'Ada ledger' });
+    expect(renamed).toEqual({ id: contact.id, tenantId: tenant.id, name: 'Shared' });
+  });
+
   it('does not read or rename a contact owned by another tenant', async () => {
     const owner = await createTenant('acme');
     const other = await createTenant('beta');
@@ -91,11 +106,15 @@ describe('ContactAccessService', () => {
   });
 });
 
-function requestContext(tenantId: string, role: UserRole = 'OWNER'): RequestContext {
+function requestContext(
+  tenantId: string,
+  role: UserRole = 'OWNER',
+  userId = '11111111-1111-4111-8111-111111111111',
+): RequestContext {
   return requestContextFromSession(
     {
       tenantId,
-      userId: '11111111-1111-4111-8111-111111111111',
+      userId,
       role,
     },
     '44444444-4444-4444-8444-444444444444',

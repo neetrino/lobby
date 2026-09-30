@@ -3,6 +3,7 @@ import { CONTACT_CREATED_EVENT_VERSION, contactCreatedEventSchema } from '@lobby
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { scopedTenantId } from '../../../common/auth/authorization';
+import { requireResourceScope } from '../../../common/authorization/resource-scope';
 import { requirePermission } from '../../../common/authorization/require-permission';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { OutboxService } from '../../../common/outbox/outbox.service';
@@ -20,6 +21,7 @@ export class CreateContactService {
     requirePermission(context, 'contacts:create');
     const name = createContactSchema.parse(input).name;
     const tenantId = scopedTenantId(context);
+    requireResourceScope(context, 'tenant', { tenantId });
 
     return this.prisma.$transaction(async (tx) => {
       const contact = await tx.contact.create({

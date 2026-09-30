@@ -50,12 +50,13 @@ Request
 
 Handlers do not read a tenant id from the body, query, or headers. The client must never rely on hidden UI state as proof of authorization.
 
-Authorization has two layers. The session still carries a role: `OWNER`, `ADMIN`, or `MEMBER`. Allow or deny reads that role from `ROLE_PERMISSIONS` in `common/authorization/role-permissions.ts`. Call sites do not compare role strings.
+Authorization has three checks. The session still carries a role: `OWNER`, `ADMIN`, or `MEMBER`. Allow or deny for an action type reads that role from `ROLE_PERMISSIONS` in `common/authorization/role-permissions.ts`. Call sites do not compare role strings.
 
 1. `@Authorize(permission)` sets the permission and `PermissionGuard` together. The guard rejects a session whose role lacks that permission, and it rejects the request when it runs without a permission. It runs only for HTTP, after the global guards. The global order is `OriginGuard`, then `SessionGuard`. The controller's module imports `AuthorizationModule`.
-2. The application service repeats the business rule with `requirePermission`, or with a domain helper that calls `hasPermission`. It takes the tenant from `scopedTenantId(context)`. That value is a `TenantId`. The only mint is inside `requestContextFromSession`, which `@CurrentRequest()` uses. There is no public factory. A plain string does not typecheck as a tenant scope. A worker or another service calls the service directly, so the route guard is not the security boundary.
+2. The application service repeats the action check with `requirePermission`, or with a domain helper that calls `hasPermission`. It takes the tenant from `scopedTenantId(context)`. That value is a `TenantId`. The only mint is inside `requestContextFromSession`, which `@CurrentRequest()` uses. There is no public factory. A plain string does not typecheck as a tenant scope. A worker or another service calls the service directly, so the route guard is not the security boundary.
+3. Resource scope answers whether this caller may use this row. `canAccessResource(actor, 'tenant', resource)` allows every caller in the row's tenant. It does not compare the caller with an owner or assignee. A write calls `requireResourceScope` and throws `FORBIDDEN` when the row is outside that tenant. A read that must hide the row returns not-found instead.
 
-A query or write that omits `scopedTenantId(context)` is not tenant-safe. Revoking another user stays in the service even when the route already requires `sessions:revoke`. A caller may always revoke their own sessions. That self check is not a permission. Whether a module is enabled for the tenant is a separate check and is not part of this map.
+A query or write that omits `scopedTenantId(context)` is not tenant-safe. Revoking another user stays in the service even when the route already requires `sessions:revoke`. A caller may always revoke their own sessions. That self check is not a permission and is not the contacts tenant scope. Whether a module is enabled for the tenant is a separate check and is not part of this map.
 
 ---
 
@@ -234,7 +235,7 @@ Reservation endpoints must derive the tenant from the authenticated session, acc
 
 ### Contacts
 
-Pilot tenant-scoped resource. `ContactsController` is covered by the global `SessionGuard` and reads `@CurrentRequest()`. It does not install `IdentityExceptionFilter`. Every role may create, read, and update contacts in its own tenant through `contacts:create`, `contacts:read`, and `contacts:update`. The route declares that with `@Authorize`, and the service repeats `requirePermission`. A missing contact and a contact owned by another tenant are both `404 NOT_FOUND`.
+Pilot tenant-scoped resource. `ContactsController` is covered by the global `SessionGuard` and reads `@CurrentRequest()`. It does not install `IdentityExceptionFilter`. Every role may create, read, and update contacts in its own tenant through `contacts:create`, `contacts:read`, and `contacts:update`. The route declares that with `@Authorize`, and the service repeats `requirePermission`. Resource scope is `tenant`: every caller in the tenant may use every contact in that tenant. A contact has no per-user owner. A missing contact and a contact in another tenant are both `404 NOT_FOUND`.
 
 | Method  | Path                    | Body                 | Success                                      |
 | ------- | ----------------------- | -------------------- | -------------------------------------------- |
