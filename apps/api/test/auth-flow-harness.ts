@@ -12,6 +12,7 @@ import { ZodValidationPipe } from '../src/common/pipes/zod-validation.pipe';
 import { OriginGuard } from '../src/common/security/origin.guard';
 import { requestContextFromSession } from '../src/common/tenant/request-context';
 import { ContactAccessService } from '../src/modules/contacts/application/contact-access.service';
+import { ContactRepository } from '../src/modules/contacts/infrastructure/contact.repository';
 import { renameContactSchema } from '../src/modules/contacts/application/rename-contact.schema';
 import { CreateTenantService } from '../src/modules/organizations';
 import { AuthRateLimitService } from '../src/modules/identity/application/auth-rate-limit.service';
@@ -120,7 +121,10 @@ function wire(
       cookies,
       rates,
     ),
-    contacts: new ContactAccessService(database, new ModuleEntitlementService(database)),
+    contacts: new ContactAccessService(
+      new ContactRepository(database),
+      new ModuleEntitlementService(database),
+    ),
     origin: new OriginGuard([AUTH_FLOW_ORIGIN]),
     sessions: new SessionGuard(new SessionAccessService(store, users), cookies, rates, new Reflector()),
     terminate: new TerminateUserSessionsService(users, store),
