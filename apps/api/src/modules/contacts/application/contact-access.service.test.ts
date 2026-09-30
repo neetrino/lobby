@@ -30,10 +30,7 @@ describe('ContactAccessService', () => {
     const caller = requestContext(owner.id);
 
     const read = await service.read(caller, foreign.id);
-    const renamed = await service.rename(caller, foreign.id, {
-      name: 'Stolen',
-      tenantId: other.id,
-    } as { name: string });
+    const renamed = await service.rename(caller, foreign.id, { name: 'Stolen' });
     const stored = await prisma.contact.findUniqueOrThrow({ where: { id: foreign.id } });
 
     expect(read).toBeNull();
@@ -42,9 +39,8 @@ describe('ContactAccessService', () => {
     expect(stored.tenantId).toBe(other.id);
   });
 
-  it('renames only inside the authenticated tenant when the body names another tenant', async () => {
+  it('renames inside the authenticated tenant', async () => {
     const owner = await createTenant('acme');
-    const other = await createTenant('beta');
     const contact = await prisma.contact.create({
       data: { tenantId: owner.id, name: 'Ada ledger' },
     });
@@ -52,10 +48,28 @@ describe('ContactAccessService', () => {
 
     const renamed = await service.rename(requestContext(owner.id), contact.id, {
       name: 'Ada updated',
-      tenantId: other.id,
-    } as { name: string });
+    });
 
     expect(renamed).toEqual({ id: contact.id, tenantId: owner.id, name: 'Ada updated' });
+  });
+
+  it('rejects a client tenant id and leaves the contact unchanged', async () => {
+    const owner = await createTenant('acme');
+    const other = await createTenant('beta');
+    const contact = await prisma.contact.create({
+      data: { tenantId: owner.id, name: 'Ada ledger' },
+    });
+    const service = new ContactAccessService(prisma);
+
+    await expect(
+      service.rename(requestContext(owner.id), contact.id, {
+        name: 'Ada updated',
+        tenantId: other.id,
+      } as { name: string }),
+    ).rejects.toThrow();
+    const stored = await prisma.contact.findUniqueOrThrow({ where: { id: contact.id } });
+    expect(stored.name).toBe('Ada ledger');
+    expect(stored.tenantId).toBe(owner.id);
   });
 });
 

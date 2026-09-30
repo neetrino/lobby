@@ -1,4 +1,4 @@
-import { Controller, HttpCode, Post, Req, Res, UseFilters } from '@nestjs/common';
+import { Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
 
 import { ZodBody } from '../../../common/pipes/zod-input';
 import { readClientAddress } from '../../../common/security/client-address';
@@ -9,7 +9,6 @@ import { RegisterService, type RegisteredAccount } from '../application/register
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
 import { loginSchema, type LoginInput } from './dto/login.schema';
 import { registerSchema, type RegisterInput } from './dto/register.schema';
-import { IdentityExceptionFilter } from './identity-exception.filter';
 
 type ClientRequest = {
   ip?: string;
@@ -17,7 +16,6 @@ type ClientRequest = {
 };
 
 @Controller('auth')
-@UseFilters(IdentityExceptionFilter)
 export class AuthController {
   constructor(
     private readonly registerUser: RegisterService,

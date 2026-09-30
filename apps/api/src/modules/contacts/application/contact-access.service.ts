@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
+import { scopedTenantId } from '../../../common/auth/authorization';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import type { RequestContext } from '../../../common/tenant/request-context';
 import { renameContactSchema, type RenameContactInput } from './rename-contact.schema';
@@ -16,7 +17,7 @@ export class ContactAccessService {
   constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
 
   read(context: RequestContext, contactId: string): Promise<ContactRecord | null> {
-    return this.findInTenant(context.tenantId, contactId);
+    return this.findInTenant(scopedTenantId(context), contactId);
   }
 
   async rename(
@@ -25,14 +26,15 @@ export class ContactAccessService {
     input: RenameContactInput,
   ): Promise<ContactRecord | null> {
     const name = renameContactSchema.parse(input).name;
+    const tenantId = scopedTenantId(context);
     const updated = await this.prisma.contact.updateMany({
-      where: { id: contactId, tenantId: context.tenantId },
+      where: { id: contactId, tenantId },
       data: { name },
     });
     if (updated.count !== 1) {
       return null;
     }
-    return this.findInTenant(context.tenantId, contactId);
+    return this.findInTenant(tenantId, contactId);
   }
 
   private findInTenant(tenantId: string, contactId: string): Promise<ContactRecord | null> {

@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
+import { requireRole } from '../../../common/auth/authorization';
+import { tenantManagerRoles } from '../../../common/tenant/authenticated-tenant-context';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
-import {
-  canRevokeUserSessions,
-  type SessionRevocationActor,
-} from '../domain/session-revocation';
+import { type SessionRevocationActor } from '../domain/session-revocation';
 import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
 import { RedisSessionStore } from '../infrastructure/redis-session.store';
 import { SessionStoreUnavailableError } from '../infrastructure/session-store-error';
@@ -23,8 +22,8 @@ export class TerminateUserSessionsService {
    * Targeting another user is allowed only when the actor may revoke that tenant's sessions.
    */
   async terminateAllSessions(actor: SessionRevocationActor, targetUserId: string): Promise<void> {
-    if (!canRevokeUserSessions(actor, targetUserId)) {
-      throw new IdentityError(identityErrorCodes.FORBIDDEN);
+    if (actor.userId !== targetUserId) {
+      requireRole(actor, tenantManagerRoles);
     }
 
     const version = await this.users.incrementAuthenticationVersion(targetUserId, actor.tenantId);

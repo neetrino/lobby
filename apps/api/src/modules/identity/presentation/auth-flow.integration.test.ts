@@ -154,7 +154,7 @@ describe('auth http flow', () => {
         method: 'PATCH',
         cookie: sessionId(acme.setCookie),
         headers: { 'x-tenant-id': betaAccount.tenant.id },
-        body: { name: 'Stolen', tenantId: betaAccount.tenant.id },
+        body: { name: 'Stolen' },
       },
     );
     const stored = await prisma.contact.findUniqueOrThrow({ where: { id: foreign.id } });

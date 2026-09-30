@@ -4,8 +4,8 @@
 
 - **Style:** Versioned REST
 - **Owner:** NestJS API
-- **Version:** 0.2
-- **Status:** Auth endpoints are implemented. Other modules remain planned.
+- **Version:** 0.3
+- **Status:** Auth and the contacts pilot are implemented. Other modules remain planned.
 
 ---
 
@@ -25,8 +25,8 @@
 | Base path      | `/api/v1`, set once in HTTP bootstrap. Controllers do not repeat `v1`. `GET /health` has no version prefix.          |
 | Format         | JSON over HTTPS                                                                                                      |
 | Authentication | Opaque server-side session. `POST /api/v1/auth/login` sets the session cookie. `POST /api/v1/auth/logout` clears it. |
-| Tenant context | Every tenant-scoped request identifies an authorized organization using the approved routing/header strategy         |
-| Validation     | Validate path, query, headers, and body at runtime                                                                   |
+| Tenant context | Copied from the validated session. A client tenant id is not a source of scope.                                      |
+| Validation     | `z.strictObject` on JSON bodies. An unknown field, including `tenantId`, is `400 VALIDATION_ERROR`.                  |
 | Dates          | ISO 8601 UTC in API payloads unless a contract explicitly states otherwise                                           |
 | Identifiers    | Opaque stable IDs; exact format TBD                                                                                  |
 | Localization   | API returns stable codes; clients translate user-facing messages where practical                                     |
@@ -48,6 +48,13 @@ Request
 ```
 
 Handlers do not read a tenant id from the body, query, or headers. The client must never rely on hidden UI state as proof of authorization.
+
+Authorization has two layers. Both use the same roles: `OWNER`, `ADMIN`, `MEMBER`.
+
+1. `RoleGuard` on the route rejects a session whose role is outside `@Roles(...)`. It runs only for HTTP, after `SessionGuard`.
+2. The application service repeats the business rule with `requireRole` and takes the tenant from `scopedTenantId(context)`. A worker or another service calls the service directly, so the route guard is not the security boundary.
+
+A query or write that omits `scopedTenantId(context)` is not tenant-safe. Resource ownership, such as revoking another user, stays in the service even when the route already lists the allowed roles.
 
 ---
 
@@ -224,6 +231,18 @@ Logout sends a clearing `Set-Cookie` (`Expires` at the epoch, no `Max-Age`).
 
 Reservation endpoints must derive the tenant from the authenticated session, accept UTC timestamps, and never trust a client-provided tenant identifier. The venue timezone controls staff-facing calendar interpretation. Conflict responses must use a stable error code; the exact HTTP contract is deferred until the application service is implemented.
 
+### Contacts
+
+Pilot tenant-scoped resource. `ContactsController` uses `SessionGuard` and `@CurrentRequest()`. It does not install `IdentityExceptionFilter`. A missing contact and a contact owned by another tenant are both `404 NOT_FOUND`.
+
+| Method  | Path                    | Body                 | Success                                      |
+| ------- | ----------------------- | -------------------- | -------------------------------------------- |
+| `POST`  | `/api/v1/contacts`      | `{ "name": string }` | `201 { "data": { "id", "name" } }`           |
+| `GET`   | `/api/v1/contacts/:id`  |                      | `200 { "data": { "id", "name" } }`           |
+| `PATCH` | `/api/v1/contacts/:id`  | `{ "name": string }` | `200 { "data": { "id", "name" } }`           |
+
+`id` is a UUID. Authentication is the session cookie. Mutations also require an allowed Origin. The response does not include `tenantId`.
+
 ---
 
 ## Bootstrap conventions
@@ -232,8 +251,10 @@ HTTP bootstrap lives in `configureHttpApp`. New controllers inherit it.
 
 - Mount the controller at the resource name, for example `@Controller('contacts')`. The public path is `/api/v1/contacts`. Do not write `v1` in the controller.
 - Bind input with `ZodBody`, `ZodQuery`, or `ZodParam`. Those decorators use one Zod pipe. A failure is `VALIDATION_ERROR`.
+- JSON object schemas use `z.strictObject`. An unknown field is `400 VALIDATION_ERROR`. Auth login/register and the contacts commands follow this rule. The HTTP foundation probe rejects an extra `leak` field the same way.
 - Return `{ data }` for a successful JSON body. Do not add `requestId` to that JSON.
 - Throw a module error with a stable `UPPER_SNAKE_CASE` code, or `NotFoundException` for a missing resource. The global filter writes `{ error: { code, message, requestId } }`.
+- A protected controller adds `@UseGuards(SessionGuard)`. Import that class from the Identity barrel (`modules/identity`). Read the caller with `@CurrentRequest()` from `common/auth/current-request`. Do not add `IdentityExceptionFilter`. The global filter maps `IdentityError`, including `401 UNAUTHENTICATED` and `403 FORBIDDEN`.
 - Global codes live in `apps/api/src/common/http/http-error-codes.ts` (`VALIDATION_ERROR`, `INTERNAL_ERROR`, `NOT_FOUND`, `REQUEST_REJECTED`). Thrown platform codes live in `api-error.ts` (`ORIGIN_REJECTED`, `RATE_LIMITED`). Module codes stay in that module, as Identity does in `identity.errors.ts`.
 - Unexpected failures become `INTERNAL_ERROR`. The server log records the time, request id, method, path, and exception name. It does not record the exception message or stack. The client does not receive the driver message or stack.
 - `GET /health` stays outside `/api/v1` for process probes.

@@ -1,8 +1,10 @@
 import { HttpException } from '@nestjs/common';
 
+import { AuthorizationError } from '../auth/authorization';
 import { ApiError } from './api-error';
 import { apiErrorBody, type ApiErrorBody } from './api-error-body';
 import { httpErrorCodes, httpErrorMessages } from './http-error-codes';
+import { tryMapIdentityError } from './map-identity-error';
 import { ValidationError } from './validation-error';
 
 export type MappedHttpError = {
@@ -11,10 +13,17 @@ export type MappedHttpError = {
 };
 
 /**
- * Maps infrastructure and framework exceptions to the public error body.
- * Identity codes are mapped by IdentityExceptionFilter before this runs.
+ * Maps infrastructure, identity, and framework exceptions to the public error body.
+ * Identity codes are included here so a controller does not need its own auth filter.
  */
 export function mapHttpException(exception: unknown, requestId: string): MappedHttpError {
+  const identityError = tryMapIdentityError(exception, requestId);
+  if (identityError !== undefined) {
+    return identityError;
+  }
+  if (exception instanceof AuthorizationError) {
+    return mapped(403, exception.code, exception.message, requestId);
+  }
   if (exception instanceof ApiError) {
     return mapped(exception.statusCode, exception.code, exception.message, requestId);
   }

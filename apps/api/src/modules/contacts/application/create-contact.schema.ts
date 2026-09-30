@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-export const createContactSchema = z.object({
+/** Contact name. Unknown fields, including a client tenant id, are rejected. */
+export const createContactSchema = z.strictObject({
   name: z.string().trim().min(1),
 });
 

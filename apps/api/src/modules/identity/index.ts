@@ -7,4 +7,5 @@ export {
   type Password,
 } from './domain/password-policy';
 export { IdentityModule } from './identity.module';
+export { SessionGuard } from './presentation/session.guard';
 export { UNKNOWN_USER_PASSWORD_HASH } from './infrastructure/unknown-user-password-hash';

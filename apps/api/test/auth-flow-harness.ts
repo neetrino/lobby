@@ -31,7 +31,7 @@ import { SessionCookie } from '../src/modules/identity/infrastructure/session-co
 import { AuthController } from '../src/modules/identity/presentation/auth.controller';
 import { loginSchema } from '../src/modules/identity/presentation/dto/login.schema';
 import { registerSchema } from '../src/modules/identity/presentation/dto/register.schema';
-import { readAuthenticatedSession } from '../src/modules/identity/presentation/current-session';
+import { readAuthenticatedSession } from '../src/common/auth/current-request';
 import { IndexedSessionRedis } from '../src/modules/identity/presentation/session-guard.fixtures';
 import {
   SessionGuard,

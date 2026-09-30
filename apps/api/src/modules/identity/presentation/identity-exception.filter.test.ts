@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { describe, expect, it } from 'vitest';
 
+import { AuthorizationError } from '../../../common/auth/authorization';
 import { ApiError, apiErrorCodes } from '../../../common/http/api-error';
 import { ValidationError } from '../../../common/http/validation-error';
 import { TEST_REQUEST_ID, captureException } from '../../../../test/exception-host';
@@ -45,6 +46,16 @@ describe('IdentityExceptionFilter', () => {
         error: {
           code: apiErrorCodes.ORIGIN_REJECTED,
           message: 'The request origin is not allowed.',
+          requestId: TEST_REQUEST_ID,
+        },
+      },
+    });
+    expect(invoke(new AuthorizationError())).toEqual({
+      statusCode: 403,
+      body: {
+        error: {
+          code: 'FORBIDDEN',
+          message: 'You do not have permission to perform this action.',
           requestId: TEST_REQUEST_ID,
         },
       },

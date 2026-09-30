@@ -32,6 +32,6 @@ Phase 9 checks live in `apps/api/src/modules/identity/presentation/auth-flow.int
 
 ### Next
 
-Contacts, Deals, Tasks, and Reservations controllers can take tenant scope from `@CurrentTenant()`. Add `@UseGuards(SessionGuard)` and `IdentityExceptionFilter` on those controllers. `SessionGuard` is not global, and the identity error filter is currently only on `AuthController`. `OriginGuard` is already global for mutating methods.
+The contacts pilot is on the real Nest chain: `SessionGuard`, `@CurrentRequest()`, and the global `ApiExceptionFilter`. Import `SessionGuard` from the Identity barrel. Import `@CurrentRequest()` from `common/auth/current-request`. Do not add `IdentityExceptionFilter` on a controller. `SessionGuard` is not global. `OriginGuard` is already global for mutating methods. Deals and Reservations should follow the contacts controller. JSON bodies use `z.strictObject`.
 
 `POST /api/v1/auth/sessions/terminate-all` revokes the caller. `POST /api/v1/auth/users/{userId}/sessions/terminate` revokes another user in the same tenant.

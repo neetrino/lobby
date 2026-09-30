@@ -1,13 +1,14 @@
-import { Controller, Get, HttpCode, Post, Res, UseFilters, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Res, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 
 import type { AuthenticatedSession } from '../../../common/auth/authenticated-session';
+import { CurrentSession } from '../../../common/auth/current-request';
+import { RoleGuard, Roles } from '../../../common/auth/role.guard';
 import { ZodParam } from '../../../common/pipes/zod-input';
+import { tenantManagerRoles } from '../../../common/tenant/authenticated-tenant-context';
 import type { SessionRevocationActor } from '../domain/session-revocation';
 import { TerminateUserSessionsService } from '../application/terminate-user-sessions.service';
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
-import { CurrentSession } from './current-session';
-import { IdentityExceptionFilter } from './identity-exception.filter';
 import { SessionGuard } from './session.guard';
 
 const userIdSchema = z.uuid();
@@ -19,7 +20,6 @@ export type SessionView = {
 
 @Controller('auth')
 @UseGuards(SessionGuard)
-@UseFilters(IdentityExceptionFilter)
 export class SessionController {
   constructor(
     private readonly terminateSessions: TerminateUserSessionsService,
@@ -50,9 +50,12 @@ export class SessionController {
 
   /**
    * Revokes one user's sessions inside the caller's tenant.
-   * Permission is decided by the application service. A user in another tenant is rejected.
+   * The route allow-list is repeated inside TerminateUserSessionsService.
+   * A user in another tenant is rejected there, including calls that skip this guard.
    */
   @Post('users/:userId/sessions/terminate')
+  @Roles(...tenantManagerRoles)
+  @UseGuards(RoleGuard)
   @HttpCode(204)
   async terminateUser(
     @CurrentSession() current: AuthenticatedSession,

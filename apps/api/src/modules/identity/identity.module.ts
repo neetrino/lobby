@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { RoleGuard } from '../../common/auth/role.guard';
 import { DatabaseModule } from '../../common/database/database.module';
 import { OrganizationsModule } from '../organizations';
 import { AuthRateLimitService } from './application/auth-rate-limit.service';
@@ -51,10 +52,22 @@ import { SessionGuard } from './presentation/session.guard';
     LoginService,
     SessionAccessService,
     SessionGuard,
+    RoleGuard,
     LogoutService,
     TerminateUserSessionsService,
     AuthRateLimitService,
   ],
-  exports: [PASSWORD_HASHER, SessionGuard, TerminateUserSessionsService],
+  /**
+   * SessionAccessService, SessionCookie, and AuthRateLimitService are exported so another
+   * module can apply SessionGuard. Nest constructs that guard in the controller's module.
+   */
+  exports: [
+    PASSWORD_HASHER,
+    SessionGuard,
+    SessionAccessService,
+    SessionCookie,
+    AuthRateLimitService,
+    TerminateUserSessionsService,
+  ],
 })
 export class IdentityModule {}

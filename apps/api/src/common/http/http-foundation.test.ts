@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
 import { HealthModule } from '../../modules/health/health.module';
+import { IdentityError, identityErrorCodes } from '../../modules/identity/domain/identity.errors';
 import { ZodBody } from '../pipes/zod-input';
 import { ALLOWED_ORIGINS } from '../security/allowed-origins';
 import { OriginGuard } from '../security/origin.guard';
@@ -32,6 +33,16 @@ class ProbeController {
   @Get('driver')
   driver(): never {
     throw driverConnectionError();
+  }
+
+  @Get('unauthenticated')
+  unauthenticated(): never {
+    throw new IdentityError(identityErrorCodes.UNAUTHENTICATED);
+  }
+
+  @Get('forbidden')
+  forbidden(): never {
+    throw new IdentityError(identityErrorCodes.FORBIDDEN);
   }
 }
 
@@ -146,6 +157,17 @@ describe('HTTP foundation', () => {
     expectSafeUnexpectedLog(logged, String(requestId), 'Error', '/api/v1/probe/boom');
     expect(logged.join('\n')).not.toContain('secret-token');
     expect(logged.join('\n')).not.toContain('driver failed');
+  });
+
+  it('maps identity errors without a controller filter', async () => {
+    const http = app.getHttpServer();
+    const unauthenticated = await request(http).get('/api/v1/probe/unauthenticated');
+    const forbidden = await request(http).get('/api/v1/probe/forbidden');
+
+    expect(unauthenticated.status).toBe(401);
+    expect(unauthenticated.body.error.code).toBe('UNAUTHENTICATED');
+    expect(forbidden.status).toBe(403);
+    expect(forbidden.body.error.code).toBe('FORBIDDEN');
   });
 
   it('omits driver connection strings from unexpected error logs', async () => {

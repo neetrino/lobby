@@ -13,7 +13,7 @@ import { hashSessionId, sessionKey } from '../infrastructure/session-id';
 import { AuthRateLimitService } from '../application/auth-rate-limit.service';
 import { SessionAccessService } from '../application/session-access.service';
 import { TerminateUserSessionsService } from '../application/terminate-user-sessions.service';
-import { readAuthenticatedSession } from './current-session';
+import { readAuthenticatedSession } from '../../../common/auth/current-request';
 import { SessionController } from './session.controller';
 import {
   clearTenantRows,

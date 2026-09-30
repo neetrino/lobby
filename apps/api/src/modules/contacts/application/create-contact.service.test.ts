@@ -73,21 +73,19 @@ describe('CreateContactService', () => {
     expect(await prisma.outboxEvent.count()).toBe(0);
   });
 
-  it('stores the tenant id from the authenticated context', async () => {
+  it('rejects a client tenant id before writing', async () => {
     const tenant = await createTenant('owner');
     const other = await createTenant('other');
     const service = new CreateContactService(prisma, new OutboxService());
 
-    const contact = await service.create(tenantContext(tenant.id), {
-      name: 'Ada',
-      tenantId: other.id,
-    } as { name: string });
-
-    const stored = await prisma.contact.findUniqueOrThrow({ where: { id: contact.id } });
-    const event = await prisma.outboxEvent.findFirstOrThrow({ where: { aggregateId: contact.id } });
-    expect(stored.tenantId).toBe(tenant.id);
-    expect(event.tenantId).toBe(tenant.id);
-    expect(event.tenantId).not.toBe(other.id);
+    await expect(
+      service.create(tenantContext(tenant.id), {
+        name: 'Ada',
+        tenantId: other.id,
+      } as { name: string }),
+    ).rejects.toThrow();
+    expect(await prisma.contact.count()).toBe(0);
+    expect(await prisma.outboxEvent.count()).toBe(0);
   });
 });
 

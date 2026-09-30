@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-/** Name only. A client tenant id is not part of the command. */
-export const renameContactSchema = z.object({
+/** New name only. Unknown fields, including a client tenant id, are rejected. */
+export const renameContactSchema = z.strictObject({
   name: z.string().trim().min(1),
 });
 

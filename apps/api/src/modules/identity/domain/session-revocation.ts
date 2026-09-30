@@ -1,3 +1,5 @@
+import { roleIsAllowed } from '../../../common/auth/authorization';
+import { tenantManagerRoles } from '../../../common/tenant/authenticated-tenant-context';
 import type { SessionRole } from './authenticated-session';
 
 /** Caller of a session-revocation command. Built from the authenticated session, not from client input. */
@@ -16,5 +18,5 @@ export function canRevokeUserSessions(actor: SessionRevocationActor, targetUserI
     return true;
   }
 
-  return actor.role === 'OWNER' || actor.role === 'ADMIN';
+  return roleIsAllowed(actor.role, tenantManagerRoles);
 }

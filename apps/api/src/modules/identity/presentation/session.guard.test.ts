@@ -14,7 +14,7 @@ import {
   CurrentTenant,
   readAuthenticatedSession,
   tenantContextFromSession,
-} from './current-session';
+} from '../../../common/auth/current-request';
 import {
   activate,
   clearTenantRows,

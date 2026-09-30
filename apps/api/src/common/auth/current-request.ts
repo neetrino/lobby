@@ -1,13 +1,10 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
 
-import type { AuthenticatedSession } from '../../../common/auth/authenticated-session';
-import { currentRequestId, type RequestWithId } from '../../../common/http/request-context';
-import { type AuthenticatedTenantContext } from '../../../common/tenant/authenticated-tenant-context';
-import {
-  requestContextFromSession,
-  type RequestContext,
-} from '../../../common/tenant/request-context';
-import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
+import { IdentityError, identityErrorCodes } from '../../modules/identity/domain/identity.errors';
+import { currentRequestId, type RequestWithId } from '../http/request-context';
+import { type AuthenticatedTenantContext } from '../tenant/authenticated-tenant-context';
+import { requestContextFromSession, type RequestContext } from '../tenant/request-context';
+import type { AuthenticatedSession } from './authenticated-session';
 
 type RequestWithAuth = {
   auth?: AuthenticatedSession;
