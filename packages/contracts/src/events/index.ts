@@ -1,8 +1,18 @@
 export {
+  CONTACT_ARCHIVED_EVENT_VERSION,
+  contactArchivedEventSchema,
+} from './contact-archived-event.js';
+export type { ContactArchivedEvent } from './contact-archived-event.js';
+export {
   CONTACT_CREATED_EVENT_VERSION,
   contactCreatedEventSchema,
 } from './contact-created-event.js';
 export type { ContactCreatedEvent } from './contact-created-event.js';
+export {
+  CONTACT_UPDATED_EVENT_VERSION,
+  contactUpdatedEventSchema,
+} from './contact-updated-event.js';
+export type { ContactUpdatedEvent } from './contact-updated-event.js';
 export {
   TENANT_CREATED_EVENT_VERSION,
   tenantCreatedEventSchema,

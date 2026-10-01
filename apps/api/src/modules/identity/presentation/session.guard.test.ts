@@ -253,7 +253,23 @@ describe('SessionGuard', () => {
     const other = await prisma.tenant.create({
       data: { name: 'Beta', subdomain: 'beta', plan: 'STARTER' },
     });
-    const contact = await prisma.contact.create({ data: { tenantId: other.id, name: 'Foreign' } });
+    const otherUser = await prisma.user.create({
+      data: {
+        tenantId: other.id,
+        email: 'beta-owner@example.com',
+        name: 'Beta',
+        passwordHash: 'hash',
+        role: 'OWNER',
+      },
+    });
+    const contact = await prisma.contact.create({
+      data: {
+        tenantId: other.id,
+        name: 'Foreign',
+        createdByUserId: otherUser.id,
+        ownerUserId: otherUser.id,
+      },
+    });
     const request = requestFor(owner.rawSessionId, {
       body: { tenantId: other.id },
       query: { tenantId: other.id },

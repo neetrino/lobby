@@ -98,26 +98,47 @@ describe('module entitlement', () => {
       new URL('../../modules/contacts/application/create-contact.service.ts', import.meta.url),
       'utf8',
     );
-    const createBody = createSource.slice(createSource.indexOf('async create('));
-    const moduleAt = createBody.indexOf('requireEnabled(');
-    const permissionAt = createBody.indexOf("requirePermission(context, 'contacts:create')");
-    expect(moduleAt).toBeGreaterThan(-1);
-    expect(permissionAt).toBeGreaterThan(moduleAt);
+    expect(publicMethodNames(createSource)).toEqual(['create']);
+    expectEnabledBeforePermission(createSource, 'create', 'contacts:create');
 
     const accessSource = readFileSync(
       new URL('../../modules/contacts/application/contact-access.service.ts', import.meta.url),
       'utf8',
     );
-    const accessBody = accessSource.slice(accessSource.indexOf('async read('));
-    const calls = [...accessBody.matchAll(/requireEnabled\(|requirePermission\(/g)].map(
-      (match) => match[0],
+    const accessPermissions: Record<string, string> = {
+      read: 'contacts:read',
+      list: 'contacts:read',
+      update: 'contacts:update',
+    };
+    expect(publicMethodNames(accessSource).sort()).toEqual(Object.keys(accessPermissions).sort());
+    for (const method of publicMethodNames(accessSource)) {
+      expectEnabledBeforePermission(accessSource, method, permissionFor(accessPermissions, method));
+    }
+
+    const lifecycleSource = readFileSync(
+      new URL('../../modules/contacts/application/contact-lifecycle.service.ts', import.meta.url),
+      'utf8',
     );
-    expect(calls).toEqual([
-      'requireEnabled(',
-      'requirePermission(',
-      'requireEnabled(',
-      'requirePermission(',
-    ]);
+    expect(publicMethodNames(lifecycleSource).sort()).toEqual(['archive', 'restore']);
+    for (const method of publicMethodNames(lifecycleSource)) {
+      const body = methodBody(lifecycleSource, method);
+      expect(body).toContain('this.changeArchive(');
+      expect(body).not.toContain('requireEnabled(');
+      expect(body).not.toContain('requirePermission(');
+    }
+    expectEnabledBeforePermission(lifecycleSource, 'changeArchive', 'contacts:update');
+
+    const readSource = readFileSync(
+      new URL('../../modules/contacts/application/contacts-read.service.ts', import.meta.url),
+      'utf8',
+    );
+    expect(methodBody(readSource, 'exists')).toContain('this.getSummary(');
+    for (const method of ['getSummary', 'getSummaries'] as const) {
+      const body = methodBody(readSource, method);
+      expect(body.indexOf('this.authorize('), method).toBeGreaterThan(-1);
+      expect(body.indexOf('.forTenant('), method).toBeGreaterThan(body.indexOf('this.authorize('));
+    }
+    expectEnabledBeforePermission(readSource, 'authorize', 'contacts:read');
 
     const service = new ModuleEntitlementService(prisma);
     await expect(service.requireEnabled(scopedTenantId(context), 'contacts')).rejects.toMatchObject(
@@ -145,6 +166,48 @@ describe('module entitlement', () => {
     expect(disabled.body.error.message).not.toContain('contacts');
   });
 });
+
+/** Class methods that callers can invoke. Nested helpers and private methods stay out. */
+function publicMethodNames(source: string): string[] {
+  return [...source.matchAll(/\n  (?!private |constructor)(?:async )?([A-Za-z0-9_]+)\(/g)].map(
+    (match) => match[1] ?? '',
+  );
+}
+
+/**
+ * One operation checks the module, then the permission.
+ * The pair is read from that method only, so a new operation does not change the others.
+ */
+function expectEnabledBeforePermission(source: string, methodName: string, permission: string): void {
+  const calls = [...methodBody(source, methodName).matchAll(/requireEnabled\(|requirePermission\([^)]*\)/g)].map(
+    (match) => match[0],
+  );
+  expect(calls, methodName).toEqual([
+    'requireEnabled(',
+    `requirePermission(context, '${permission}')`,
+  ]);
+}
+
+function methodBody(source: string, methodName: string): string {
+  const signature = new RegExp(`\\n  (?:private )?async ${methodName}\\(|\\n  ${methodName}\\(`);
+  const start = source.search(signature);
+  expect(start, methodName).toBeGreaterThan(-1);
+  const fromMethod = source.slice(start + 1);
+  const lineBreak = fromMethod.indexOf('\n');
+  const nextBoundary = fromMethod
+    .slice(lineBreak + 1)
+    .search(/\n(?:  (?:async |private |[A-Za-z])|async function)/);
+  const end = nextBoundary === -1 ? source.length : start + 1 + lineBreak + 1 + nextBoundary;
+  return source.slice(start, end);
+}
+
+function permissionFor(permissions: Record<string, string>, method: string): string {
+  const permission = permissions[method];
+  if (permission === undefined) {
+    throw new Error(`Missing permission order for ${method}`);
+  }
+  return permission;
+}
 
 async function seedTenant(
   subdomain: string,

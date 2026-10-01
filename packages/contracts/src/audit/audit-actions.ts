@@ -9,6 +9,8 @@ export const auditActions = {
   USER_ROLE_CHANGED: 'user.role.changed',
   USER_DISABLED: 'user.disabled',
   CONTACT_DELETED: 'contact.deleted',
+  CONTACT_ARCHIVED: 'contact.archived',
+  CONTACT_RESTORED: 'contact.restored',
   DEAL_STAGE_CHANGED: 'deal.stage.changed',
   RESERVATION_STATUS_CHANGED: 'reservation.status.changed',
 } as const;
@@ -18,6 +20,8 @@ export const auditActionValues = [
   auditActions.USER_ROLE_CHANGED,
   auditActions.USER_DISABLED,
   auditActions.CONTACT_DELETED,
+  auditActions.CONTACT_ARCHIVED,
+  auditActions.CONTACT_RESTORED,
   auditActions.DEAL_STAGE_CHANGED,
   auditActions.RESERVATION_STATUS_CHANGED,
 ] as const;

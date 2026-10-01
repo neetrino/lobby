@@ -16,6 +16,8 @@ export type {
   AuditOutcome,
   AuditResourceType,
 } from './audit-actions.js';
+export { contactLifecycleAuditSchema } from './contact-lifecycle-audit.js';
+export type { ContactLifecycleAudit } from './contact-lifecycle-audit.js';
 export {
   authenticationVersionChangeSchema,
   userSessionsTerminatedAuditSchema,

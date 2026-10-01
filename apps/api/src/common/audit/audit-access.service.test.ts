@@ -23,6 +23,7 @@ afterAll(async () => {
 
 beforeEach(async () => {
   await prisma.auditEvent.deleteMany();
+  await prisma.contact.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
 });

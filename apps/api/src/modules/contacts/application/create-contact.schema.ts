@@ -1,8 +1,20 @@
 import { z } from 'zod';
 
-/** Contact name. Unknown fields, including a client tenant id, are rejected. */
+import {
+  contactEmailSchema,
+  contactNameSchema,
+  contactPhoneSchema,
+  contactTypeSchema,
+} from './contact-fields';
+
+/** Create body. The tenant, owner, and creator come from the session, never the client. */
 export const createContactSchema = z.strictObject({
-  name: z.string().trim().min(1),
+  name: contactNameSchema,
+  type: contactTypeSchema.default('person'),
+  email: contactEmailSchema,
+  phone: contactPhoneSchema,
 });
 
-export type CreateContactInput = z.infer<typeof createContactSchema>;
+export type CreateContactInput = z.input<typeof createContactSchema>;
+
+export type CreateContactBody = z.output<typeof createContactSchema>;

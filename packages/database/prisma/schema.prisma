@@ -67,6 +67,8 @@ model User {
   createdReservations      Reservation[]              @relation("ReservationCreatedBy")
   reservationStatusChanges ReservationStatusHistory[] @relation("ReservationStatusChangedBy")
   auditEvents              AuditEvent[]
+  createdContacts          Contact[]                  @relation("ContactCreatedBy")
+  ownedContacts            Contact[]                  @relation("ContactOwner")
 
   @@unique([tenantId, email])
   @@unique([id, tenantId])
@@ -130,17 +132,34 @@ model AuditEvent {
   @@map("audit_events")
 }
 
-/// Tenant-owned contact. One user still belongs to exactly one tenant.
+enum ContactType {
+  PERSON
+  ORGANIZATION
+}
+
+/// Tenant-owned contact. Only the Contacts module writes this table.
+/// `email` is unique inside the tenant, including archived rows. Null emails may repeat.
 model Contact {
-  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId     String        @map("tenant_id") @db.Uuid
-  name         String
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  id              String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String      @map("tenant_id") @db.Uuid
+  name            String
+  type            ContactType @default(PERSON)
+  email           String?
+  phone           String?
+  archivedAt      DateTime?   @map("archived_at") @db.Timestamptz(3)
+  createdAt       DateTime    @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime    @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdByUserId String      @map("created_by_user_id") @db.Uuid
+  ownerUserId     String      @map("owner_user_id") @db.Uuid
+
   tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  createdBy    User          @relation("ContactCreatedBy", fields: [createdByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  owner        User          @relation("ContactOwner", fields: [ownerUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
   reservations Reservation[]
 
   @@unique([id, tenantId])
-  @@index([tenantId])
+  @@unique([tenantId, email])
+  @@index([tenantId, name, id])
   @@map("contacts")
 }
 

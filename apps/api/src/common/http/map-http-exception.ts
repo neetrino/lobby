@@ -25,6 +25,9 @@ export function mapHttpException(exception: unknown, requestId: string): MappedH
   if (exception instanceof ModuleDisabledError) {
     return mapped(403, exception.code, exception.message, requestId);
   }
+  if (isContactEmailTaken(exception)) {
+    return mapped(409, exception.code, exception.message, requestId);
+  }
   if (exception instanceof AuthorizationError) {
     return mapped(403, exception.code, exception.message, requestId);
   }
@@ -61,6 +64,17 @@ function mapNestException(exception: HttpException, requestId: string): MappedHt
     httpErrorCodes.REQUEST_REJECTED,
     httpErrorMessages.REQUEST_REJECTED,
     requestId,
+  );
+}
+
+function isContactEmailTaken(
+  exception: unknown,
+): exception is { code: 'CONTACT_EMAIL_TAKEN'; message: string } {
+  return (
+    exception instanceof Error &&
+    exception.name === 'ContactEmailConflictError' &&
+    'code' in exception &&
+    exception.code === 'CONTACT_EMAIL_TAKEN'
   );
 }
 

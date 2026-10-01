@@ -30,6 +30,7 @@ afterAll(async () => {
 beforeEach(async () => {
   await prisma.outboxEvent.deleteMany();
   await prisma.contact.deleteMany();
+  await prisma.user.deleteMany();
   await prisma.tenantModule.deleteMany();
   await prisma.tenant.deleteMany();
 });
@@ -44,8 +45,10 @@ describe('CreateContactService', () => {
     );
 
     for (const role of ['OWNER', 'ADMIN', 'MEMBER'] as const) {
-      const contact = await service.create(tenantContext(tenant.id, role), { name: role });
-      expect(contact.name).toBe(role);
+      const created = await service.create(tenantContext(tenant.id, role, tenant.userId), {
+        name: role,
+      });
+      expect(created.contact.name).toBe(role);
     }
   });
 
@@ -57,11 +60,15 @@ describe('CreateContactService', () => {
       new ModuleEntitlementService(prisma),
     );
 
-    const contact = await service.create(tenantContext(tenant.id), { name: 'Ada' });
+    const created = await service.create(tenantContext(tenant.id, 'OWNER', tenant.userId), {
+      name: 'Ada',
+    });
 
-    const storedContact = await prisma.contact.findUniqueOrThrow({ where: { id: contact.id } });
+    const storedContact = await prisma.contact.findUniqueOrThrow({
+      where: { id: created.contact.id },
+    });
     const storedEvent = await prisma.outboxEvent.findFirstOrThrow({
-      where: { aggregateId: contact.id },
+      where: { aggregateId: created.contact.id },
     });
     expect(storedContact.tenantId).toBe(tenant.id);
     expect(storedEvent.tenantId).toBe(tenant.id);
@@ -81,7 +88,9 @@ describe('CreateContactService', () => {
       new ModuleEntitlementService(prisma),
     );
 
-    await expect(service.create(tenantContext(tenant.id), { name: 'Ada' })).rejects.toThrow(
+    await expect(
+      service.create(tenantContext(tenant.id, 'OWNER', tenant.userId), { name: 'Ada' }),
+    ).rejects.toThrow(
       'outbox unavailable',
     );
     expect(await prisma.contact.count()).toBe(0);
@@ -152,11 +161,15 @@ describe('CreateContactService', () => {
   });
 });
 
-function tenantContext(tenantId: string, role: UserRole = 'OWNER'): RequestContext {
+function tenantContext(
+  tenantId: string,
+  role: UserRole = 'OWNER',
+  userId = '11111111-1111-4111-8111-111111111111',
+): RequestContext {
   return requestContextFromSession(
     {
       tenantId,
-      userId: '11111111-1111-4111-8111-111111111111',
+      userId,
       role,
     },
     '44444444-4444-4444-8444-444444444444',
@@ -167,10 +180,19 @@ async function createTenant(subdomain: string, contacts: 'ENABLED' | 'DISABLED' 
   const tenant = await prisma.tenant.create({
     data: { name: subdomain, subdomain, plan: 'STARTER' },
   });
+  const user = await prisma.user.create({
+    data: {
+      tenantId: tenant.id,
+      email: `${subdomain}@example.com`,
+      name: subdomain,
+      passwordHash: 'hash',
+      role: 'OWNER',
+    },
+  });
   await prisma.tenantModule.create({
     data: { tenantId: tenant.id, moduleKey: 'contacts', status: contacts },
   });
-  return tenant;
+  return { id: tenant.id, userId: user.id };
 }
 
 function toEvent(

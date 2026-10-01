@@ -92,16 +92,23 @@ describe('Contacts HTTP', () => {
       .set('Cookie', owner);
 
     expect(created.status).toBe(201);
-    expect(created.body).toEqual({ data: { id: contactId, name: 'Ada ledger' } });
+    expect(created.body.data).toMatchObject({
+      id: contactId,
+      name: 'Ada ledger',
+      type: 'person',
+      email: null,
+      phone: null,
+      archivedAt: null,
+    });
     expect(read.status).toBe(200);
-    expect(read.body).toEqual({ data: { id: contactId, name: 'Ada ledger' } });
+    expect(read.body.data).toMatchObject({ id: contactId, name: 'Ada ledger', type: 'person' });
     expect(hidden.status).toBe(404);
     expect(hidden.body.error.code).toBe('NOT_FOUND');
     expect(JSON.stringify(hidden.body)).not.toContain('Ada ledger');
     expect(renamed.status).toBe(404);
     expect(renamed.body.error.code).toBe('NOT_FOUND');
     expect(stillOwner.status).toBe(200);
-    expect(stillOwner.body).toEqual({ data: { id: contactId, name: 'Ada ledger' } });
+    expect(stillOwner.body.data).toMatchObject({ id: contactId, name: 'Ada ledger' });
   }, 30_000);
 
   it('returns 401 from the global session guard when the request has no session', async () => {
@@ -146,6 +153,37 @@ describe('Contacts HTTP', () => {
     expect(renamed.body.error.fields).toEqual([{ path: 'tenantId' }]);
     expect(await prisma.contact.count()).toBe(1);
   }, 30_000);
+
+  it('rejects a duplicate email and hides an archived contact from the list', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'contact-life', 'ada@example.com');
+    const created = await request(http)
+      .post('/api/v1/contacts')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ name: 'Ada', email: 'ada@example.com', phone: '+374-000' });
+    const contactId = created.body.data.id as string;
+    const duplicate = await request(http)
+      .post('/api/v1/contacts')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ name: 'Other', email: 'ADA@example.com' });
+    const archived = await request(http)
+      .post(`/api/v1/contacts/${contactId}/archive`)
+      .set('Origin', origin)
+      .set('Cookie', owner);
+    const listed = await request(http).get('/api/v1/contacts').set('Cookie', owner);
+
+    expect(created.status).toBe(201);
+    expect(duplicate.status).toBe(409);
+    expect(duplicate.body.error.code).toBe('CONTACT_EMAIL_TAKEN');
+    expect(JSON.stringify(duplicate.body)).not.toContain('ada@example.com');
+    expect(JSON.stringify(duplicate.body)).not.toContain('+374-000');
+    expect(archived.status).toBe(200);
+    expect(archived.body.data.archivedAt).toEqual(expect.any(String));
+    expect(listed.status).toBe(200);
+    expect(listed.body.data).toEqual([]);
+  }, 30_000);
 });
 
 async function login(
@@ -189,6 +227,7 @@ async function clearRows(database: PrismaClient | undefined): Promise<void> {
   await database.restaurantTable.deleteMany();
   await database.diningArea.deleteMany();
   await database.venue.deleteMany();
+  await database.auditEvent.deleteMany();
   await database.outboxEvent.deleteMany();
   await database.contact.deleteMany();
   await database.tenantModule.deleteMany();

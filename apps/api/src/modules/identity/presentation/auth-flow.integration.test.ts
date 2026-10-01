@@ -53,7 +53,12 @@ describe('auth http flow', () => {
     const rawSessionId = sessionId(registered.setCookie);
     const account = accountOf(registered.body);
     const contact = await prisma.contact.create({
-      data: { tenantId: account.tenant.id, name: 'Ada ledger' },
+      data: {
+        tenantId: account.tenant.id,
+        name: 'Ada ledger',
+        createdByUserId: account.user.id,
+        ownerUserId: account.user.id,
+      },
     });
 
     const allowed = await send(
@@ -76,7 +81,7 @@ describe('auth http flow', () => {
 
     expect(registered.status).toBe(201);
     expect(allowed.status).toBe(200);
-    expect(allowed.body).toEqual({
+    expect(allowed.body).toMatchObject({
       data: { id: contact.id, tenantId: account.tenant.id, name: 'Ada ledger' },
     });
     expect(loggedOut.status).toBe(204);
@@ -100,7 +105,12 @@ describe('auth http flow', () => {
     const rawSessionId = sessionId(signedIn.setCookie);
     const account = accountOf(signedIn.body);
     const contact = await prisma.contact.create({
-      data: { tenantId: account.tenant.id, name: 'Ada ledger' },
+      data: {
+        tenantId: account.tenant.id,
+        name: 'Ada ledger',
+        createdByUserId: account.user.id,
+        ownerUserId: account.user.id,
+      },
     });
 
     await app.terminate.terminateAllSessions(
@@ -141,7 +151,12 @@ describe('auth http flow', () => {
     const acmeAccount = accountOf(acme.body);
     const betaAccount = accountOf(beta.body);
     const foreign = await prisma.contact.create({
-      data: { tenantId: betaAccount.tenant.id, name: 'Beta ledger' },
+      data: {
+        tenantId: betaAccount.tenant.id,
+        name: 'Beta ledger',
+        createdByUserId: betaAccount.user.id,
+        ownerUserId: betaAccount.user.id,
+      },
     });
     const wrongTenant = await send(app.baseUrl, '/api/v1/auth/login', {
       method: 'POST',

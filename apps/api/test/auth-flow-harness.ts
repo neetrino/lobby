@@ -18,7 +18,7 @@ import { OriginGuard } from '../src/common/security/origin.guard';
 import { requestContextFromSession } from '../src/common/tenant/request-context';
 import { ContactAccessService } from '../src/modules/contacts/application/contact-access.service';
 import { ContactRepository } from '../src/modules/contacts/infrastructure/contact.repository';
-import { renameContactSchema } from '../src/modules/contacts/application/rename-contact.schema';
+import { renameContactSchema } from '../src/modules/contacts/application/update-contact.schema';
 import { CreateTenantService } from '../src/modules/organizations';
 import { AuthRateLimitService } from '../src/modules/identity/application/auth-rate-limit.service';
 import { LoginService } from '../src/modules/identity/application/login.service';
@@ -237,11 +237,11 @@ async function renameContact(
 ): Promise<void> {
   const context = await openRequestContext(services, request, response);
   const input = parse(renameContactSchema, await readJson(request));
-  const contact = await services.contacts.rename(context, contactId(url), input);
-  if (contact === null) {
+  const updated = await services.contacts.update(context, contactId(url), input);
+  if (updated === null) {
     throw new NotFoundException();
   }
-  writeJson(response, 200, { data: contact });
+  writeJson(response, 200, { data: updated.contact });
 }
 
 async function openRequestContext(
