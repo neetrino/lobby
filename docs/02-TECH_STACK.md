@@ -105,8 +105,8 @@ The CI PostgreSQL service runs PostgreSQL 17. Turbo builds dependency packages b
 
 Known gaps:
 
-- API DB test files share one database and can interfere through cleanup; isolation must be fixed.
-- `format:check` exists but is not currently a passing CI gate.
+- Database integration tests use isolated schemas, but still require the local/CI PostgreSQL service to be available.
+- The CI formatting gate intentionally excludes generated output, migrations, archived/reference docs, and local agent/tool folders.
 - The web and database packages currently use `--passWithNoTests` and contain no direct test files.
 - No Playwright flow or generated OpenAPI compatibility check is configured.
 - Dependabot updates GitHub Actions only; npm/pnpm dependency updates are not enabled.

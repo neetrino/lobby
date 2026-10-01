@@ -18,16 +18,15 @@ This is the living procedural backlog. Product scope belongs in `BRIEF.md`, curr
 | Reservation schema/constraints/contracts/status-policy foundation                                      | Done   |
 | Append-only audit foundation, HMAC IP metadata, and cursor-paginated tenant read endpoint              | Done   |
 | Shared cursor-page, page-limit, and sort-direction contracts                                           | Done   |
+| Parallel-safe DB integration tests with a disposable PostgreSQL schema per client                      | Done   |
+| CI-enforced production module boundaries and repository formatting                                     | Done   |
 
 ## Immediate foundation work
 
-| Priority | Work                                                                                               | Reason                                                                           |
-| -------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Blocker  | Isolate API database integration tests per suite/schema or provide one controlled global lifecycle | The full suite can fail when one file cleans the shared DB while another uses it |
-| High     | Keep `TECH_CARD`, architecture, API, database, and structure docs synchronized with implementation | Agents and reviewers use them as decision sources                                |
-| High     | Enforce module-boundary imports automatically and remove production deep imports                   | Prevent module coupling as the codebase grows                                    |
-| High     | Replace repeated feature `process.env` reads with one validated immutable config provider          | Prevent validation/runtime configuration drift                                   |
-| Medium   | Define and enforce the repository formatting scope, then add `format:check` to CI                  | The current formatting script is not a passing gate                              |
+| Priority | Work                                                                                               | Reason                                            |
+| -------- | -------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| High     | Keep `TECH_CARD`, architecture, API, database, and structure docs synchronized with implementation | Agents and reviewers use them as decision sources |
+| High     | Replace repeated feature `process.env` reads with one validated immutable config provider          | Prevent validation/runtime configuration drift    |
 
 ## Module development baseline
 

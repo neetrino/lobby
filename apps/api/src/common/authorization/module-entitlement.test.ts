@@ -1,5 +1,9 @@
 import { readFileSync } from 'node:fs';
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthorizationError, scopedTenantId } from '../auth/authorization';
@@ -16,7 +20,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -38,7 +42,9 @@ describe('module entitlement', () => {
     const service = new ModuleEntitlementService(prisma);
 
     expect(await service.isEnabled(tenantId, 'contacts')).toBe(false);
-    await expect(service.requireEnabled(tenantId, 'contacts')).rejects.toBeInstanceOf(ModuleDisabledError);
+    await expect(service.requireEnabled(tenantId, 'contacts')).rejects.toBeInstanceOf(
+      ModuleDisabledError,
+    );
     await expect(service.requireEnabled(tenantId, 'contacts')).rejects.toMatchObject({
       code: 'MODULE_DISABLED',
     });
@@ -103,7 +109,9 @@ describe('module entitlement', () => {
       'utf8',
     );
     const accessBody = accessSource.slice(accessSource.indexOf('async read('));
-    const calls = [...accessBody.matchAll(/requireEnabled\(|requirePermission\(/g)].map((match) => match[0]);
+    const calls = [...accessBody.matchAll(/requireEnabled\(|requirePermission\(/g)].map(
+      (match) => match[0],
+    );
     expect(calls).toEqual([
       'requireEnabled(',
       'requirePermission(',
@@ -112,9 +120,11 @@ describe('module entitlement', () => {
     ]);
 
     const service = new ModuleEntitlementService(prisma);
-    await expect(service.requireEnabled(scopedTenantId(context), 'contacts')).rejects.toMatchObject({
-      code: 'MODULE_DISABLED',
-    });
+    await expect(service.requireEnabled(scopedTenantId(context), 'contacts')).rejects.toMatchObject(
+      {
+        code: 'MODULE_DISABLED',
+      },
+    );
   });
 
   it('maps MODULE_DISABLED separately from FORBIDDEN', () => {

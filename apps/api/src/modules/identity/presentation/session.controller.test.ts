@@ -1,4 +1,8 @@
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import type { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -38,7 +42,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await clearTenantRows(prisma);
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -74,10 +78,16 @@ describe('session endpoints', () => {
     const opened = await openSession(redis, owner);
     const response = new RecordingCookieWriter();
 
-    await controller(redis).terminateAll(await principal(redis, opened.rawSessionId), response, auditRequest());
+    await controller(redis).terminateAll(
+      await principal(redis, opened.rawSessionId),
+      response,
+      auditRequest(),
+    );
 
     expect(response.cleared).toBe(true);
-    const audit = await prisma.auditEvent.findFirstOrThrow({ where: { actorUserId: owner.userId } });
+    const audit = await prisma.auditEvent.findFirstOrThrow({
+      where: { actorUserId: owner.userId },
+    });
     expect(audit.ipHash).toBe(hashAuditIp('127.0.0.1', auditIpHashKey));
     expect(redis.strings.has(sessionKey(hashSessionId(opened.rawSessionId)))).toBe(false);
     await expect(principal(redis, opened.rawSessionId)).rejects.toMatchObject({
@@ -96,13 +106,17 @@ describe('session endpoints', () => {
     const ownerPrincipal = await principal(redis, (await openSession(redis, owner)).rawSessionId);
 
     await sessions.terminateUser(ownerPrincipal, member.userId, auditRequest());
-    await expect(sessions.terminateUser(ownerPrincipal, outsider.userId, auditRequest())).rejects.toMatchObject({
+    await expect(
+      sessions.terminateUser(ownerPrincipal, outsider.userId, auditRequest()),
+    ).rejects.toMatchObject({
       code: identityErrorCodes.FORBIDDEN,
     });
     await expect(principal(redis, memberSession.rawSessionId)).rejects.toMatchObject({
       code: identityErrorCodes.SESSION_REVOKED,
     });
-    expect(await principal(redis, outsiderSession.rawSessionId)).toMatchObject({ userId: outsider.userId });
+    expect(await principal(redis, outsiderSession.rawSessionId)).toMatchObject({
+      userId: outsider.userId,
+    });
   });
 });
 
@@ -119,13 +133,20 @@ function roleContext(role: 'OWNER' | 'ADMIN' | 'MEMBER'): ExecutionContext {
 function controller(redis: IndexedSessionRedis): SessionController {
   const sessions = new RedisSessionStore(redis, new PrismaSessionUserStore(prisma));
   return new SessionController(
-    new TerminateUserSessionsService(new PrismaSessionUserStore(prisma), sessions, new AuditEventStore(prisma)),
+    new TerminateUserSessionsService(
+      new PrismaSessionUserStore(prisma),
+      sessions,
+      new AuditEventStore(prisma),
+    ),
     new SessionCookie(true),
     auditIpHashKey,
   );
 }
 
-async function principal(redis: IndexedSessionRedis, rawSessionId: string): Promise<AuthenticatedSession> {
+async function principal(
+  redis: IndexedSessionRedis,
+  rawSessionId: string,
+): Promise<AuthenticatedSession> {
   const sessions = new RedisSessionStore(redis, new PrismaSessionUserStore(prisma));
   const request = requestFor(rawSessionId);
   await new SessionGuard(
@@ -155,7 +176,9 @@ function openSession(redis: IndexedSessionRedis, user: TenantUser) {
 }
 
 async function createUser(subdomain: string, role: SessionRole): Promise<TenantUser> {
-  const tenant = await prisma.tenant.create({ data: { name: subdomain, subdomain, plan: 'STARTER' } });
+  const tenant = await prisma.tenant.create({
+    data: { name: subdomain, subdomain, plan: 'STARTER' },
+  });
   return addUser(tenant.id, role, `${role.toLowerCase()}@${subdomain}.test`);
 }
 

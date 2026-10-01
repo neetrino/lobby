@@ -172,7 +172,7 @@ API-wide technical capabilities live under `apps/api/src/common`: audit, authent
 - Tests stay close to the code they verify unless a dedicated integration or E2E project owns them.
 - Public module/package APIs use explicit exports; consumers must not rely on deep internal imports.
 
-The boundary rule is currently documented but not fully lint-enforced. Production code should not add new cross-module deep imports; add an automated restricted-import rule before module dependencies become numerous.
+The boundary rule is enforced by `scripts/validate-module-boundaries.mjs` as part of `pnpm lint`. Production files may import another module only through that module's root `index.ts`; deep imports into another module fail CI. Test files are excluded so focused integration fixtures may inspect internals without expanding the production API.
 
 ---
 

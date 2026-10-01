@@ -1,4 +1,8 @@
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { Reflector } from '@nestjs/core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -52,7 +56,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await clearTenantRows(prisma);
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {

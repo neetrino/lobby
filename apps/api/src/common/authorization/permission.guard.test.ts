@@ -27,11 +27,15 @@ describe('permission guard', () => {
   const guard = new PermissionGuard(new Reflector());
 
   it('rejects a member and allows owner and admin', () => {
-    expect(() => guard.canActivate(context(PermissionProbeController.prototype.revoke, 'MEMBER'))).toThrow(
-      AuthorizationError,
+    expect(() =>
+      guard.canActivate(context(PermissionProbeController.prototype.revoke, 'MEMBER')),
+    ).toThrow(AuthorizationError);
+    expect(guard.canActivate(context(PermissionProbeController.prototype.revoke, 'OWNER'))).toBe(
+      true,
     );
-    expect(guard.canActivate(context(PermissionProbeController.prototype.revoke, 'OWNER'))).toBe(true);
-    expect(guard.canActivate(context(PermissionProbeController.prototype.revoke, 'ADMIN'))).toBe(true);
+    expect(guard.canActivate(context(PermissionProbeController.prototype.revoke, 'ADMIN'))).toBe(
+      true,
+    );
   });
 
   it('binds the permission and the guard from one decorator', () => {
@@ -41,22 +45,25 @@ describe('permission guard', () => {
   });
 
   it('fails closed when the guard is applied without a permission', () => {
-    expect(() => guard.canActivate(context(PermissionProbeController.prototype.bare, 'OWNER'))).toThrow(
-      AuthorizationError,
-    );
-    expect(() => guard.canActivate(context(PermissionProbeController.prototype.open, 'MEMBER'))).toThrow(
-      AuthorizationError,
-    );
+    expect(() =>
+      guard.canActivate(context(PermissionProbeController.prototype.bare, 'OWNER')),
+    ).toThrow(AuthorizationError);
+    expect(() =>
+      guard.canActivate(context(PermissionProbeController.prototype.open, 'MEMBER')),
+    ).toThrow(AuthorizationError);
   });
 
   it('fails closed when the session is missing', () => {
-    expect(() => guard.canActivate(context(PermissionProbeController.prototype.revoke, undefined))).toThrow(
-      AuthorizationError,
-    );
+    expect(() =>
+      guard.canActivate(context(PermissionProbeController.prototype.revoke, undefined)),
+    ).toThrow(AuthorizationError);
   });
 });
 
-function context(handler: (...args: never[]) => unknown, role: UserRole | undefined): ExecutionContext {
+function context(
+  handler: (...args: never[]) => unknown,
+  role: UserRole | undefined,
+): ExecutionContext {
   return {
     getHandler: () => handler,
     getClass: () => PermissionProbeController,

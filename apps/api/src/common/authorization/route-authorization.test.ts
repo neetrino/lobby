@@ -15,7 +15,10 @@ const GUARDS_METADATA = '__guards__';
  * The caller's own session. These routes stay authenticated and do not declare a module permission.
  * Any other non-public handler must use @Authorize.
  */
-const callerSessionRoutes = new Set(['SessionController.session', 'SessionController.terminateAll']);
+const callerSessionRoutes = new Set([
+  'SessionController.session',
+  'SessionController.terminateAll',
+]);
 
 describe('route authorization', () => {
   it('requires @Authorize on every protected business route', async () => {
@@ -64,21 +67,33 @@ function authorizationGaps(controller: new (...args: never[]) => object): string
 function hasAuthorize(handler: object): boolean {
   const permission = Reflect.getMetadata(PERMISSIONS_KEY, handler) as unknown;
   const guards = Reflect.getMetadata(GUARDS_METADATA, handler) as unknown[] | undefined;
-  return typeof permission === 'string' && permission.length > 0 && guards?.includes(PermissionGuard) === true;
+  return (
+    typeof permission === 'string' &&
+    permission.length > 0 &&
+    guards?.includes(PermissionGuard) === true
+  );
 }
 
 function isPublic(handler: object, controller: new (...args: never[]) => object): boolean {
-  return Reflect.getMetadata(IS_PUBLIC_KEY, handler) === true || Reflect.getMetadata(IS_PUBLIC_KEY, controller) === true;
+  return (
+    Reflect.getMetadata(IS_PUBLIC_KEY, handler) === true ||
+    Reflect.getMetadata(IS_PUBLIC_KEY, controller) === true
+  );
 }
 
-function routeHandlers(controller: new (...args: never[]) => object): Array<{ name: string; handler: object }> {
+function routeHandlers(
+  controller: new (...args: never[]) => object,
+): Array<{ name: string; handler: object }> {
   const prototype: object = controller.prototype;
   return Object.getOwnPropertyNames(prototype).flatMap((name) => {
     if (name === 'constructor') {
       return [];
     }
     const handler: unknown = prototype[name as keyof typeof prototype];
-    if (typeof handler !== 'function' || Reflect.getMetadata(METHOD_METADATA, handler) === undefined) {
+    if (
+      typeof handler !== 'function' ||
+      Reflect.getMetadata(METHOD_METADATA, handler) === undefined
+    ) {
       return [];
     }
     return [{ name, handler }];

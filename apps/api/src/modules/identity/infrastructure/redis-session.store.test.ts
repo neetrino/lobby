@@ -25,9 +25,13 @@ describe('RedisSessionStore', () => {
     expect(loaded).toEqual(created.session);
     expect(created.session.sessionIdHash).toBe(expectedHash);
     expect(stored?.expiresAtMs).toBe(created.session.idleExpiresAt.getTime());
-    expect(redis.sets.get(userSessionsKey(userId))?.expiresAtMs).toBe(created.session.absoluteExpiresAt.getTime());
+    expect(redis.sets.get(userSessionsKey(userId))?.expiresAtMs).toBe(
+      created.session.absoluteExpiresAt.getTime(),
+    );
     expect(redis.sets.get(userSessionsKey(userId))?.members.has(expectedHash)).toBe(true);
-    expect([...redis.strings.keys()].some((redisKey) => redisKey.includes(created.rawSessionId))).toBe(false);
+    expect(
+      [...redis.strings.keys()].some((redisKey) => redisKey.includes(created.rawSessionId)),
+    ).toBe(false);
     expect(stored?.value.includes(created.rawSessionId)).toBe(false);
   });
 
@@ -38,7 +42,11 @@ describe('RedisSessionStore', () => {
     const sessionIdHash = hashSessionId(rawSessionId);
     const key = sessionKey(sessionIdHash);
 
-    await redis.set(key, JSON.stringify({ userId, role: 'SUPERUSER' }), now.getTime() + SESSION_IDLE_TTL_MS);
+    await redis.set(
+      key,
+      JSON.stringify({ userId, role: 'SUPERUSER' }),
+      now.getTime() + SESSION_IDLE_TTL_MS,
+    );
     await redis.sadd(userSessionsKey(userId), sessionIdHash, now.getTime() + SESSION_IDLE_TTL_MS);
 
     await expect(store.get(rawSessionId, now)).resolves.toBeNull();
@@ -121,7 +129,9 @@ describe('RedisSessionStore', () => {
     await expect(redis.smembers(userSessionsKey(userId))).resolves.toEqual([]);
     expect(redis.sets.has(userSessionsKey(userId))).toBe(false);
     await expect(redis.get(sessionKey(other.session.sessionIdHash))).resolves.not.toBeNull();
-    expect(redis.sets.get(userSessionsKey(otherUserId))?.members.has(other.session.sessionIdHash)).toBe(true);
+    expect(
+      redis.sets.get(userSessionsKey(otherUserId))?.members.has(other.session.sessionIdHash),
+    ).toBe(true);
   });
 
   it('drops a session when the user version changed before the write was confirmed', async () => {
@@ -198,7 +208,8 @@ class MemorySessionRedis implements SessionRedisClient {
     const current = this.sets.get(key);
     const members = current?.members ?? new Set<string>();
     members.add(member);
-    const nextExpiry = current === undefined ? expiresAtMs : Math.max(current.expiresAtMs, expiresAtMs);
+    const nextExpiry =
+      current === undefined ? expiresAtMs : Math.max(current.expiresAtMs, expiresAtMs);
     this.sets.set(key, { members, expiresAtMs: nextExpiry });
   }
 

@@ -17,7 +17,17 @@ const errors = [];
 const warnings = [];
 
 const kebabCase = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-const categories = new Set(['onboarding', 'quality', 'frontend', 'backend', 'database', 'security', 'operations', 'architecture', 'documentation']);
+const categories = new Set([
+  'onboarding',
+  'quality',
+  'frontend',
+  'backend',
+  'database',
+  'security',
+  'operations',
+  'architecture',
+  'documentation',
+]);
 const states = new Set(['active', 'library', 'deprecated']);
 const origins = new Set(['internal', 'external-vendored', 'external-adapted']);
 const platforms = new Set(['cursor', 'codex']);
@@ -51,7 +61,15 @@ function hasDuplicates(values) {
 }
 
 function isSafeRepoPath(value) {
-  return typeof value === 'string' && value.length > 0 && !isAbsolute(value) && !/^[A-Za-z]:\//.test(value) && !value.startsWith('./') && !value.includes('\\') && !value.split('/').includes('..');
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    !isAbsolute(value) &&
+    !/^[A-Za-z]:\//.test(value) &&
+    !value.startsWith('./') &&
+    !value.includes('\\') &&
+    !value.split('/').includes('..')
+  );
 }
 
 function readFrontmatter(file, source) {
@@ -84,7 +102,8 @@ function validateLocalLinks(file, source) {
       report(errors, file, `Markdown link has invalid encoding: ${rawTarget}`);
       continue;
     }
-    if (!existsSync(resolve(dirname(file), target))) report(errors, file, `Local Markdown link does not resolve: ${rawTarget}`);
+    if (!existsSync(resolve(dirname(file), target)))
+      report(errors, file, `Local Markdown link does not resolve: ${rawTarget}`);
   }
 }
 
@@ -104,7 +123,8 @@ function parseJsonFile(file) {
     report(errors, file, 'JSON root must be an object.');
     return null;
   }
-  if (!Number.isInteger(data.version) || data.version <= 0) report(errors, file, 'version must be a positive integer.');
+  if (!Number.isInteger(data.version) || data.version <= 0)
+    report(errors, file, 'version must be a positive integer.');
   return data;
 }
 
@@ -122,23 +142,42 @@ function validateSkillPackages(root, expectedState, allPackages) {
     const description = fields.get('description') ?? '';
     if (!name) report(errors, file, 'Frontmatter field "name" is required.');
     if (!description) report(errors, file, 'Frontmatter field "description" is required.');
-    if (name && !kebabCase.test(name)) report(errors, file, 'Skill name must be lowercase kebab-case.');
-    if (name && basename(dirname(file)) !== name) report(errors, file, 'Skill name must match its direct parent directory.');
-    if (name && allPackages.has(name)) report(errors, file, `Duplicate Skill name also used by ${relative(repoRoot, allPackages.get(name).file)}.`);
+    if (name && !kebabCase.test(name))
+      report(errors, file, 'Skill name must be lowercase kebab-case.');
+    if (name && basename(dirname(file)) !== name)
+      report(errors, file, 'Skill name must match its direct parent directory.');
+    if (name && allPackages.has(name))
+      report(
+        errors,
+        file,
+        `Duplicate Skill name also used by ${relative(repoRoot, allPackages.get(name).file)}.`,
+      );
     else if (name) {
       const record = { file, directory: dirname(file), fields, expectedState };
       packages.set(name, record);
       allPackages.set(name, record);
     }
-    if (description && (description.length < 40 || /^(?:helps? with development|useful skill|development skill|does things)\.?$/i.test(description))) {
+    if (
+      description &&
+      (description.length < 40 ||
+        /^(?:helps? with development|useful skill|development skill|does things)\.?$/i.test(
+          description,
+        ))
+    ) {
       report(errors, file, 'Description is too generic; include action, trigger, and boundary.');
     } else if (description && !/\buse (?:when|for)\b/i.test(description)) {
       report(warnings, file, 'Description may be vague; state when the Skill should trigger.');
     }
-    if (source.split('\n').length > 300) report(warnings, file, 'SKILL.md is excessively long; consider references.');
-    if (!/^## Verification\b/m.test(source)) report(warnings, file, 'Skill lacks explicit verification guidance.');
-    if (!/^## Output\b/m.test(source)) report(warnings, file, 'Skill lacks explicit output guidance.');
-    for (const markdown of filesUnder(dirname(file), (path) => path.endsWith('.md') && basename(path) !== 'LICENSE.source.txt')) {
+    if (source.split('\n').length > 300)
+      report(warnings, file, 'SKILL.md is excessively long; consider references.');
+    if (!/^## Verification\b/m.test(source))
+      report(warnings, file, 'Skill lacks explicit verification guidance.');
+    if (!/^## Output\b/m.test(source))
+      report(warnings, file, 'Skill lacks explicit output guidance.');
+    for (const markdown of filesUnder(
+      dirname(file),
+      (path) => path.endsWith('.md') && basename(path) !== 'LICENSE.source.txt',
+    )) {
       validateLocalLinks(markdown, readSource(markdown));
     }
   }
@@ -160,12 +199,24 @@ function validateRules() {
     const fields = readFrontmatter(file, source);
     if (fields) {
       const alwaysApply = fields.get('alwaysApply');
-      if (alwaysApply !== undefined && !['true', 'false'].includes(alwaysApply)) report(errors, file, 'alwaysApply must be true or false when present.');
-      if (!fields.has('globs')) report(warnings, file, 'Rule has no globs field; verify task-only activation is intentional.');
-      else if (!/^\[.*\]$/.test(fields.get('globs'))) report(errors, file, 'globs must use the repository array form, including [] for task-relevant Rules.');
+      if (alwaysApply !== undefined && !['true', 'false'].includes(alwaysApply))
+        report(errors, file, 'alwaysApply must be true or false when present.');
+      if (!fields.has('globs'))
+        report(
+          warnings,
+          file,
+          'Rule has no globs field; verify task-only activation is intentional.',
+        );
+      else if (!/^\[.*\]$/.test(fields.get('globs')))
+        report(
+          errors,
+          file,
+          'globs must use the repository array form, including [] for task-relevant Rules.',
+        );
     }
     validateLocalLinks(file, source);
-    if (/\.cursor\/skills|21-project-onboarding|99-project-size/.test(source)) report(errors, file, 'Rule references a removed or migrated Skill path.');
+    if (/\.cursor\/skills|21-project-onboarding|99-project-size/.test(source))
+      report(errors, file, 'Rule references a removed or migrated Skill path.');
   }
   return files.length;
 }
@@ -177,33 +228,100 @@ function validateSources(data) {
     report(errors, sourcesFile, 'sources must be an array.');
     return sourcesById;
   }
-  const required = ['id', 'repository', 'commit', 'sourcePath', 'license', 'licenseReviewed', 'reviewedAt', 'importedAs', 'adaptation'];
+  const required = [
+    'id',
+    'repository',
+    'commit',
+    'sourcePath',
+    'license',
+    'licenseReviewed',
+    'reviewedAt',
+    'importedAs',
+    'adaptation',
+  ];
   for (const source of data.sources) {
     if (!isObject(source)) {
       report(errors, sourcesFile, 'Each source entry must be an object.');
       continue;
     }
-    for (const field of required) if (!(field in source)) report(errors, sourcesFile, `Source entry is missing required field: ${field}.`);
-    if (!kebabCase.test(source.id ?? '')) report(errors, sourcesFile, 'Source id must be lowercase kebab-case.');
-    else if (sourcesById.has(source.id)) report(errors, sourcesFile, `Duplicate source id: ${source.id}.`);
+    for (const field of required)
+      if (!(field in source))
+        report(errors, sourcesFile, `Source entry is missing required field: ${field}.`);
+    if (!kebabCase.test(source.id ?? ''))
+      report(errors, sourcesFile, 'Source id must be lowercase kebab-case.');
+    else if (sourcesById.has(source.id))
+      report(errors, sourcesFile, `Duplicate source id: ${source.id}.`);
     else sourcesById.set(source.id, source);
-    if (!/^https:\/\/github\.com\/[^/]+\/[^/]+(?:\.git)?$/.test(source.repository ?? '')) report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} repository must be an HTTPS GitHub URL.`);
-    if (!/^[0-9a-f]{40}$/i.test(source.commit ?? '')) report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} commit must be a full 40-character hexadecimal SHA.`);
-    if (!isSafeRepoPath(source.sourcePath)) report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} sourcePath must be relative and safe.`);
-    if (typeof source.license !== 'string' || !source.license.trim()) report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} license must be non-empty.`);
-    if (source.licenseReviewed !== true) report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} licenseReviewed must be true for curated sources.`);
+    if (!/^https:\/\/github\.com\/[^/]+\/[^/]+(?:\.git)?$/.test(source.repository ?? ''))
+      report(
+        errors,
+        sourcesFile,
+        `Source ${source.id ?? '<unknown>'} repository must be an HTTPS GitHub URL.`,
+      );
+    if (!/^[0-9a-f]{40}$/i.test(source.commit ?? ''))
+      report(
+        errors,
+        sourcesFile,
+        `Source ${source.id ?? '<unknown>'} commit must be a full 40-character hexadecimal SHA.`,
+      );
+    if (!isSafeRepoPath(source.sourcePath))
+      report(
+        errors,
+        sourcesFile,
+        `Source ${source.id ?? '<unknown>'} sourcePath must be relative and safe.`,
+      );
+    if (typeof source.license !== 'string' || !source.license.trim())
+      report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} license must be non-empty.`);
+    if (source.licenseReviewed !== true)
+      report(
+        errors,
+        sourcesFile,
+        `Source ${source.id ?? '<unknown>'} licenseReviewed must be true for curated sources.`,
+      );
     if (!/^\d{4}-\d{2}-\d{2}$/.test(source.reviewedAt ?? '')) {
-      report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} reviewedAt must use YYYY-MM-DD.`);
+      report(
+        errors,
+        sourcesFile,
+        `Source ${source.id ?? '<unknown>'} reviewedAt must use YYYY-MM-DD.`,
+      );
     } else {
       const parsed = new Date(`${source.reviewedAt}T00:00:00Z`);
-      if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== source.reviewedAt) report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} reviewedAt must be a real calendar date.`);
+      if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== source.reviewedAt)
+        report(
+          errors,
+          sourcesFile,
+          `Source ${source.id ?? '<unknown>'} reviewedAt must be a real calendar date.`,
+        );
       const today = new Date();
       const todayUtc = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-      if (!Number.isNaN(parsed.getTime()) && parsed.getTime() > todayUtc) report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} reviewedAt must not be in the future.`);
+      if (!Number.isNaN(parsed.getTime()) && parsed.getTime() > todayUtc)
+        report(
+          errors,
+          sourcesFile,
+          `Source ${source.id ?? '<unknown>'} reviewedAt must not be in the future.`,
+        );
     }
-    if (!kebabCase.test(source.importedAs ?? '')) report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} importedAs must be lowercase kebab-case.`);
-    if (!['vendored', 'adapted'].includes(source.adaptation)) report(errors, sourcesFile, `Source ${source.id ?? '<unknown>'} adaptation must be vendored or adapted.`);
-    if (source.adaptation === 'adapted' && (typeof source.adaptationNotes !== 'string' || source.adaptationNotes.trim().length < 20)) report(errors, sourcesFile, `Adapted source ${source.id ?? '<unknown>'} requires meaningful adaptationNotes.`);
+    if (!kebabCase.test(source.importedAs ?? ''))
+      report(
+        errors,
+        sourcesFile,
+        `Source ${source.id ?? '<unknown>'} importedAs must be lowercase kebab-case.`,
+      );
+    if (!['vendored', 'adapted'].includes(source.adaptation))
+      report(
+        errors,
+        sourcesFile,
+        `Source ${source.id ?? '<unknown>'} adaptation must be vendored or adapted.`,
+      );
+    if (
+      source.adaptation === 'adapted' &&
+      (typeof source.adaptationNotes !== 'string' || source.adaptationNotes.trim().length < 20)
+    )
+      report(
+        errors,
+        sourcesFile,
+        `Adapted source ${source.id ?? '<unknown>'} requires meaningful adaptationNotes.`,
+      );
   }
   return sourcesById;
 }
@@ -222,13 +340,24 @@ function validateExternalProvenance(entry, source) {
   const directory = resolve(repoRoot, entry.path);
   const sourceFile = join(directory, 'SOURCE.md');
   const licenseFile = join(directory, 'LICENSE.source.txt');
-  if (!existsSync(sourceFile)) report(errors, sourceFile, `External Skill ${entry.name} requires SOURCE.md.`);
-  if (!existsSync(licenseFile)) report(errors, licenseFile, `External Skill ${entry.name} requires LICENSE.source.txt.`);
+  if (!existsSync(sourceFile))
+    report(errors, sourceFile, `External Skill ${entry.name} requires SOURCE.md.`);
+  if (!existsSync(licenseFile))
+    report(errors, licenseFile, `External Skill ${entry.name} requires LICENSE.source.txt.`);
   else {
     try {
-      if (!readSource(licenseFile).trim()) report(errors, licenseFile, `External Skill ${entry.name} LICENSE.source.txt must not be empty.`);
+      if (!readSource(licenseFile).trim())
+        report(
+          errors,
+          licenseFile,
+          `External Skill ${entry.name} LICENSE.source.txt must not be empty.`,
+        );
     } catch (error) {
-      report(errors, licenseFile, `External Skill ${entry.name} LICENSE.source.txt is not readable: ${error.message}`);
+      report(
+        errors,
+        licenseFile,
+        `External Skill ${entry.name} LICENSE.source.txt is not readable: ${error.message}`,
+      );
     }
   }
   if (!existsSync(sourceFile)) return;
@@ -247,7 +376,8 @@ function validateExternalProvenance(entry, source) {
   if (source.adaptation === 'adapted') expected.set('Adaptation summary', source.adaptationNotes);
   for (const [label, value] of expected) {
     if (!fields.has(label)) report(errors, sourceFile, `Missing provenance field: ${label}.`);
-    else if (fields.get(label) !== value) report(errors, sourceFile, `${label} does not match sources.lock.json.`);
+    else if (fields.get(label) !== value)
+      report(errors, sourceFile, `${label} does not match sources.lock.json.`);
   }
 }
 
@@ -267,57 +397,146 @@ function validateCatalog(data, sourcesById, activeSkills, librarySkills, allPack
       report(errors, catalogFile, 'Each catalog Skill entry must be an object.');
       continue;
     }
-    for (const field of required) if (!(field in entry)) report(errors, catalogFile, `Catalog entry is missing required field: ${field}.`);
-    for (const field of Object.keys(entry)) if (!allowed.has(field)) report(errors, catalogFile, `Catalog entry ${entry.name ?? '<unknown>'} has unsupported field: ${field}.`);
+    for (const field of required)
+      if (!(field in entry))
+        report(errors, catalogFile, `Catalog entry is missing required field: ${field}.`);
+    for (const field of Object.keys(entry))
+      if (!allowed.has(field))
+        report(
+          errors,
+          catalogFile,
+          `Catalog entry ${entry.name ?? '<unknown>'} has unsupported field: ${field}.`,
+        );
     const name = entry.name ?? '';
-    if (!kebabCase.test(name)) report(errors, catalogFile, `Catalog Skill name must be lowercase kebab-case: ${name || '<empty>'}.`);
-    else if (entriesByName.has(name)) report(errors, catalogFile, `Duplicate catalog Skill name: ${name}.`);
+    if (!kebabCase.test(name))
+      report(
+        errors,
+        catalogFile,
+        `Catalog Skill name must be lowercase kebab-case: ${name || '<empty>'}.`,
+      );
+    else if (entriesByName.has(name))
+      report(errors, catalogFile, `Duplicate catalog Skill name: ${name}.`);
     else entriesByName.set(name, entry);
-    if (!categories.has(entry.category)) report(errors, catalogFile, `Catalog Skill ${name} has invalid category: ${entry.category}.`);
-    if (!states.has(entry.state)) report(errors, catalogFile, `Catalog Skill ${name} has invalid state: ${entry.state}.`);
-    if (!origins.has(entry.origin)) report(errors, catalogFile, `Catalog Skill ${name} has invalid origin: ${entry.origin}.`);
-    if (!isSafeRepoPath(entry.path)) report(errors, catalogFile, `Catalog Skill ${name} path must be repository-relative, safe, and use forward slashes.`);
-    if (entry.state === 'active' && !entry.path?.startsWith('.agents/skills/')) report(errors, catalogFile, `Active Skill ${name} path must start with .agents/skills/.`);
-    if (entry.state === 'library' && !entry.path?.startsWith('.agents/library/')) report(errors, catalogFile, `Library Skill ${name} path must start with .agents/library/.`);
-    if (entry.state !== 'deprecated' && isSafeRepoPath(entry.path) && !existsSync(resolve(repoRoot, entry.path))) report(errors, catalogFile, `Catalog Skill ${name} path does not exist: ${entry.path}.`);
-    if (paths.has(entry.path)) report(errors, catalogFile, `Duplicate catalog Skill path: ${entry.path}.`);
+    if (!categories.has(entry.category))
+      report(errors, catalogFile, `Catalog Skill ${name} has invalid category: ${entry.category}.`);
+    if (!states.has(entry.state))
+      report(errors, catalogFile, `Catalog Skill ${name} has invalid state: ${entry.state}.`);
+    if (!origins.has(entry.origin))
+      report(errors, catalogFile, `Catalog Skill ${name} has invalid origin: ${entry.origin}.`);
+    if (!isSafeRepoPath(entry.path))
+      report(
+        errors,
+        catalogFile,
+        `Catalog Skill ${name} path must be repository-relative, safe, and use forward slashes.`,
+      );
+    if (entry.state === 'active' && !entry.path?.startsWith('.agents/skills/'))
+      report(errors, catalogFile, `Active Skill ${name} path must start with .agents/skills/.`);
+    if (entry.state === 'library' && !entry.path?.startsWith('.agents/library/'))
+      report(errors, catalogFile, `Library Skill ${name} path must start with .agents/library/.`);
+    if (
+      entry.state !== 'deprecated' &&
+      isSafeRepoPath(entry.path) &&
+      !existsSync(resolve(repoRoot, entry.path))
+    )
+      report(errors, catalogFile, `Catalog Skill ${name} path does not exist: ${entry.path}.`);
+    if (paths.has(entry.path))
+      report(errors, catalogFile, `Duplicate catalog Skill path: ${entry.path}.`);
     else paths.add(entry.path);
-    if (!Array.isArray(entry.compatibility) || entry.compatibility.length === 0) report(errors, catalogFile, `Catalog Skill ${name} compatibility must be a non-empty array.`);
+    if (!Array.isArray(entry.compatibility) || entry.compatibility.length === 0)
+      report(errors, catalogFile, `Catalog Skill ${name} compatibility must be a non-empty array.`);
     else {
-      if (hasDuplicates(entry.compatibility)) report(errors, catalogFile, `Catalog Skill ${name} compatibility contains duplicates.`);
-      for (const platform of entry.compatibility) if (!platforms.has(platform)) report(errors, catalogFile, `Catalog Skill ${name} has unsupported compatibility: ${platform}.`);
+      if (hasDuplicates(entry.compatibility))
+        report(errors, catalogFile, `Catalog Skill ${name} compatibility contains duplicates.`);
+      for (const platform of entry.compatibility)
+        if (!platforms.has(platform))
+          report(
+            errors,
+            catalogFile,
+            `Catalog Skill ${name} has unsupported compatibility: ${platform}.`,
+          );
     }
-    if (!risks.has(entry.risk)) report(errors, catalogFile, `Catalog Skill ${name} has invalid risk: ${entry.risk}.`);
-    if (entry.origin === 'internal' && 'sourceId' in entry) report(errors, catalogFile, `Internal Skill ${name} must not define sourceId.`);
+    if (!risks.has(entry.risk))
+      report(errors, catalogFile, `Catalog Skill ${name} has invalid risk: ${entry.risk}.`);
+    if (entry.origin === 'internal' && 'sourceId' in entry)
+      report(errors, catalogFile, `Internal Skill ${name} must not define sourceId.`);
     if (entry.origin !== 'internal') {
       if (!entry.sourceId) report(errors, catalogFile, `External Skill ${name} requires sourceId.`);
-      else if (!sourcesById.has(entry.sourceId)) report(errors, catalogFile, `External Skill ${name} references unknown sourceId: ${entry.sourceId}.`);
+      else if (!sourcesById.has(entry.sourceId))
+        report(
+          errors,
+          catalogFile,
+          `External Skill ${name} references unknown sourceId: ${entry.sourceId}.`,
+        );
       else {
         usedSourceIds.add(entry.sourceId);
         const source = sourcesById.get(entry.sourceId);
-        if (source.importedAs !== name) report(errors, catalogFile, `External Skill ${name} does not match source importedAs: ${source.importedAs}.`);
-        if (entry.origin === 'external-vendored' && source.adaptation !== 'vendored') report(errors, catalogFile, `External-vendored Skill ${name} requires source adaptation vendored.`);
-        if (entry.origin === 'external-adapted' && source.adaptation !== 'adapted') report(errors, catalogFile, `External-adapted Skill ${name} requires source adaptation adapted.`);
-        if (isSafeRepoPath(entry.path) && existsSync(resolve(repoRoot, entry.path))) validateExternalProvenance(entry, source);
+        if (source.importedAs !== name)
+          report(
+            errors,
+            catalogFile,
+            `External Skill ${name} does not match source importedAs: ${source.importedAs}.`,
+          );
+        if (entry.origin === 'external-vendored' && source.adaptation !== 'vendored')
+          report(
+            errors,
+            catalogFile,
+            `External-vendored Skill ${name} requires source adaptation vendored.`,
+          );
+        if (entry.origin === 'external-adapted' && source.adaptation !== 'adapted')
+          report(
+            errors,
+            catalogFile,
+            `External-adapted Skill ${name} requires source adaptation adapted.`,
+          );
+        if (isSafeRepoPath(entry.path) && existsSync(resolve(repoRoot, entry.path)))
+          validateExternalProvenance(entry, source);
       }
     }
     if (['active', 'library'].includes(entry.state) && isSafeRepoPath(entry.path)) {
       const directory = resolve(repoRoot, entry.path);
       const skillFile = join(directory, 'SKILL.md');
-      if (!existsSync(skillFile)) report(errors, catalogFile, `${entry.state} Skill ${name} has no SKILL.md at ${entry.path}.`);
-      if (basename(directory) !== name) report(errors, catalogFile, `Catalog Skill ${name} must match its path directory name.`);
+      if (!existsSync(skillFile))
+        report(
+          errors,
+          catalogFile,
+          `${entry.state} Skill ${name} has no SKILL.md at ${entry.path}.`,
+        );
+      if (basename(directory) !== name)
+        report(errors, catalogFile, `Catalog Skill ${name} must match its path directory name.`);
       const expectedPackages = entry.state === 'active' ? activeSkills : librarySkills;
       const discovered = expectedPackages.get(name);
-      if (!discovered) report(errors, catalogFile, `Catalog marks ${name} ${entry.state}, but it was not discovered in the matching package tree.`);
-      else if (resolve(discovered.directory) !== directory) report(errors, catalogFile, `Catalog path for ${entry.state} Skill ${name} does not match its discovered directory.`);
+      if (!discovered)
+        report(
+          errors,
+          catalogFile,
+          `Catalog marks ${name} ${entry.state}, but it was not discovered in the matching package tree.`,
+        );
+      else if (resolve(discovered.directory) !== directory)
+        report(
+          errors,
+          catalogFile,
+          `Catalog path for ${entry.state} Skill ${name} does not match its discovered directory.`,
+        );
     }
   }
   for (const [name, pkg] of allPackages) {
     const entry = entriesByName.get(name);
-    if (!entry) report(errors, catalogFile, `${pkg.expectedState} Skill ${name} is not registered in catalog.json.`);
-    else if (entry.state !== pkg.expectedState) report(errors, catalogFile, `Skill ${name} exists in the ${pkg.expectedState} tree but catalog state is ${entry.state}.`);
+    if (!entry)
+      report(
+        errors,
+        catalogFile,
+        `${pkg.expectedState} Skill ${name} is not registered in catalog.json.`,
+      );
+    else if (entry.state !== pkg.expectedState)
+      report(
+        errors,
+        catalogFile,
+        `Skill ${name} exists in the ${pkg.expectedState} tree but catalog state is ${entry.state}.`,
+      );
   }
-  for (const sourceId of sourcesById.keys()) if (!usedSourceIds.has(sourceId)) report(warnings, sourcesFile, `Source ${sourceId} is not referenced by any catalog entry.`);
+  for (const sourceId of sourcesById.keys())
+    if (!usedSourceIds.has(sourceId))
+      report(warnings, sourcesFile, `Source ${sourceId} is not referenced by any catalog entry.`);
   return { entriesByName, usedSourceIds };
 }
 
@@ -329,24 +548,33 @@ function validateProfiles(data, catalogEntries) {
   }
   const profiles = new Map(Object.entries(data.profiles));
   for (const [name, profile] of profiles) {
-    if (!kebabCase.test(name)) report(errors, profilesFile, `Profile name must be lowercase kebab-case: ${name}.`);
+    if (!kebabCase.test(name))
+      report(errors, profilesFile, `Profile name must be lowercase kebab-case: ${name}.`);
     if (!isObject(profile)) {
       report(errors, profilesFile, `Profile ${name} must be an object.`);
       continue;
     }
-    if (typeof profile.description !== 'string' || !profile.description.trim()) report(errors, profilesFile, `Profile ${name} requires a non-empty description.`);
-    if (!Array.isArray(profile.extends)) report(errors, profilesFile, `Profile ${name} extends must be an array.`);
-    if (!Array.isArray(profile.skills)) report(errors, profilesFile, `Profile ${name} skills must be an array.`);
+    if (typeof profile.description !== 'string' || !profile.description.trim())
+      report(errors, profilesFile, `Profile ${name} requires a non-empty description.`);
+    if (!Array.isArray(profile.extends))
+      report(errors, profilesFile, `Profile ${name} extends must be an array.`);
+    if (!Array.isArray(profile.skills))
+      report(errors, profilesFile, `Profile ${name} skills must be an array.`);
     if (!Array.isArray(profile.extends) || !Array.isArray(profile.skills)) continue;
-    if (hasDuplicates(profile.extends)) report(errors, profilesFile, `Profile ${name} extends contains duplicates.`);
-    if (hasDuplicates(profile.skills)) report(errors, profilesFile, `Profile ${name} skills contains duplicates.`);
+    if (hasDuplicates(profile.extends))
+      report(errors, profilesFile, `Profile ${name} extends contains duplicates.`);
+    if (hasDuplicates(profile.skills))
+      report(errors, profilesFile, `Profile ${name} skills contains duplicates.`);
     for (const parent of profile.extends) {
-      if (!profiles.has(parent)) report(errors, profilesFile, `Profile ${name} extends unknown profile: ${parent}.`);
+      if (!profiles.has(parent))
+        report(errors, profilesFile, `Profile ${name} extends unknown profile: ${parent}.`);
       if (parent === name) report(errors, profilesFile, `Profile ${name} must not extend itself.`);
     }
     for (const skill of profile.skills) {
-      if (!catalogEntries.has(skill)) report(errors, profilesFile, `Profile ${name} references unknown catalog Skill: ${skill}.`);
-      else if (catalogEntries.get(skill).state === 'deprecated') report(errors, profilesFile, `Profile ${name} references deprecated Skill: ${skill}.`);
+      if (!catalogEntries.has(skill))
+        report(errors, profilesFile, `Profile ${name} references unknown catalog Skill: ${skill}.`);
+      else if (catalogEntries.get(skill).state === 'deprecated')
+        report(errors, profilesFile, `Profile ${name} references deprecated Skill: ${skill}.`);
     }
   }
 
@@ -354,14 +582,19 @@ function validateProfiles(data, catalogEntries) {
   const visited = new Set();
   function detectCycle(name, trail) {
     if (visiting.has(name)) {
-      report(errors, profilesFile, `Profile inheritance cycle detected: ${[...trail, name].join(' -> ')}.`);
+      report(
+        errors,
+        profilesFile,
+        `Profile inheritance cycle detected: ${[...trail, name].join(' -> ')}.`,
+      );
       return;
     }
     if (visited.has(name)) return;
     visiting.add(name);
     const profile = profiles.get(name);
     if (isObject(profile) && Array.isArray(profile.extends)) {
-      for (const parent of profile.extends) if (profiles.has(parent)) detectCycle(parent, [...trail, name]);
+      for (const parent of profile.extends)
+        if (profiles.has(parent)) detectCycle(parent, [...trail, name]);
     }
     visiting.delete(name);
     visited.add(name);
@@ -383,7 +616,8 @@ function validateProfiles(data, catalogEntries) {
     }
     if (isObject(profile) && Array.isArray(profile.skills)) {
       for (const skill of profile.skills) {
-        if (inherited.has(skill)) report(errors, profilesFile, `Profile ${name} directly lists inherited Skill: ${skill}.`);
+        if (inherited.has(skill))
+          report(errors, profilesFile, `Profile ${name} directly lists inherited Skill: ${skill}.`);
         inherited.add(skill);
       }
     }
@@ -398,7 +632,8 @@ function validateDocumentationAndGovernance() {
   const governance = ['ROADMAP.md', 'DECISIONS.md', 'PHASE_STATUS.md', 'EXTERNAL_SKILL_POLICY.md'];
   for (const name of governance) {
     const file = join(agentSystemRoot, name);
-    if (!existsSync(file)) report(errors, file, 'Required Agent-system governance file is missing.');
+    if (!existsSync(file))
+      report(errors, file, 'Required Agent-system governance file is missing.');
   }
   const files = [
     join(repoRoot, 'AGENTS.md'),
@@ -408,15 +643,25 @@ function validateDocumentationAndGovernance() {
     ...filesUnder(agentSystemRoot, (file) => file.endsWith('.md')),
   ];
   for (const file of new Set(files)) {
-    if (!existsSync(file)) report(errors, file, 'Required Agent-system entry point or documentation file is missing.');
+    if (!existsSync(file))
+      report(errors, file, 'Required Agent-system entry point or documentation file is missing.');
     else validateLocalLinks(file, readSource(file));
   }
 }
 
 function validateArchitecturalIsolation() {
-  for (const name of ['RULES_SKILLS_ARCHITECTURE.md', 'SKILL_AUTHORING_GUIDE.md', 'SKILL_TRIGGER_TESTS.md']) {
+  for (const name of [
+    'RULES_SKILLS_ARCHITECTURE.md',
+    'SKILL_AUTHORING_GUIDE.md',
+    'SKILL_TRIGGER_TESTS.md',
+  ]) {
     const file = join(repoRoot, 'docs', name);
-    if (existsSync(file)) report(errors, file, 'Agent-system governance belongs under .agents/system/, not product docs/.');
+    if (existsSync(file))
+      report(
+        errors,
+        file,
+        'Agent-system governance belongs under .agents/system/, not product docs/.',
+      );
   }
 }
 
@@ -427,7 +672,13 @@ const ruleCount = validateRules();
 const sourcesData = parseJsonFile(sourcesFile);
 const sourcesById = validateSources(sourcesData);
 const catalogData = parseJsonFile(catalogFile);
-const { entriesByName: catalogEntries } = validateCatalog(catalogData, sourcesById, activeSkills, librarySkills, allPackages);
+const { entriesByName: catalogEntries } = validateCatalog(
+  catalogData,
+  sourcesById,
+  activeSkills,
+  librarySkills,
+  allPackages,
+);
 const profilesData = parseJsonFile(profilesFile);
 const resolvedProfiles = validateProfiles(profilesData, catalogEntries);
 validateDocumentationAndGovernance();

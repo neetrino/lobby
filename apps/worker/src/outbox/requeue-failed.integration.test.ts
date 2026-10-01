@@ -1,5 +1,5 @@
 import type { OutboxWorkerConfig, PrismaClient } from '@lobby/database';
-import { createTestPrismaClient } from '@lobby/database/testing';
+import { createTestPrismaClient, disposeTestPrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
@@ -25,7 +25,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -38,7 +38,10 @@ describe('manual failed-event requeue', () => {
   it('processes a requeued event on the next poll and resets attempts', async () => {
     const tenant = await createTenant();
     const event = await seedEvent(tenant.id, 'contact.created', 1);
-    await prisma.outboxEvent.update({ where: { id: event.id }, data: { attempts: config.maxAttempts } });
+    await prisma.outboxEvent.update({
+      where: { id: event.id },
+      data: { attempts: config.maxAttempts },
+    });
     const contactHandler = new ContactCreatedHandler();
     let fail = true;
     contactHandler.handle = () => {
@@ -103,7 +106,10 @@ describe('manual failed-event requeue', () => {
   });
 });
 
-function createProcessor(repository: OutboxRepository, contactHandler: ContactCreatedHandler): OutboxProcessor {
+function createProcessor(
+  repository: OutboxRepository,
+  contactHandler: ContactCreatedHandler,
+): OutboxProcessor {
   return new OutboxProcessor(repository, contactHandler, new TenantCreatedHandler(), config);
 }
 
@@ -122,14 +128,15 @@ async function seedEvent(tenantId: string, eventType: string, eventVersion: numb
       eventVersion,
       aggregateType: eventType.split('.')[0] ?? 'contact',
       aggregateId: crypto.randomUUID(),
-      payload: eventVersion === 2
-        ? {
-            name: 'Ada',
-            subdomain: 'ada',
-            plan: 'starter',
-            ownerUserId: crypto.randomUUID(),
-          }
-        : { name: 'Ada' },
+      payload:
+        eventVersion === 2
+          ? {
+              name: 'Ada',
+              subdomain: 'ada',
+              plan: 'starter',
+              ownerUserId: crypto.randomUUID(),
+            }
+          : { name: 'Ada' },
       occurredAt: new Date('2026-09-25T09:00:00.000Z'),
       availableAt: new Date(0),
     },
@@ -139,6 +146,12 @@ async function seedEvent(tenantId: string, eventType: string, eventVersion: numb
 async function markFailed(...ids: string[]): Promise<void> {
   await prisma.outboxEvent.updateMany({
     where: { id: { in: ids } },
-    data: { status: 'FAILED', attempts: 4, lastError: 'Unknown event', lockedAt: null, lockedBy: null },
+    data: {
+      status: 'FAILED',
+      attempts: 4,
+      lastError: 'Unknown event',
+      lockedAt: null,
+      lockedBy: null,
+    },
   });
 }

@@ -1,12 +1,16 @@
 import type { OutboxWorkerConfig, PrismaClient } from '@lobby/database';
-import { createTestPrismaClient } from '@lobby/database/testing';
+import { createTestPrismaClient, disposeTestPrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
 import { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import { OutboxProcessor } from '../outbox/outbox-processor.js';
 import { OutboxRepository } from '../outbox/outbox-repository.js';
-import { createDispatchLogger, isPermanentFailureCode, type DispatchLog } from './dispatch-logger.js';
+import {
+  createDispatchLogger,
+  isPermanentFailureCode,
+  type DispatchLog,
+} from './dispatch-logger.js';
 import { PermanentDispatchError } from './retry-classification.js';
 
 const config: OutboxWorkerConfig = {
@@ -27,7 +31,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -98,7 +102,8 @@ describe('dispatch registry failures', () => {
       aggregateType: 'contact',
     });
     const contactHandler = new ContactCreatedHandler();
-    contactHandler.handle = () => Promise.reject(new PermanentDispatchError('Business rule rejected the event'));
+    contactHandler.handle = () =>
+      Promise.reject(new PermanentDispatchError('Business rule rejected the event'));
     const { processor, logs } = createProcessor(contactHandler, new TenantCreatedHandler());
     const claimed = await claimOne();
 
@@ -113,7 +118,10 @@ describe('dispatch registry failures', () => {
   });
 });
 
-function createProcessor(contactHandler: ContactCreatedHandler, tenantHandler: TenantCreatedHandler) {
+function createProcessor(
+  contactHandler: ContactCreatedHandler,
+  tenantHandler: TenantCreatedHandler,
+) {
   const logs: string[] = [];
   const repository = new OutboxRepository(prisma, config);
   const processor = new OutboxProcessor(

@@ -1,5 +1,9 @@
 import 'reflect-metadata';
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -9,11 +13,17 @@ import { AppModule } from '../../../app.module';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { configureHttpApp } from '../../../common/http/configure-http-app';
 import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
-import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../../identity/infrastructure/rate-limit-config';
+import {
+  AUTH_RATE_LIMITS,
+  permissiveAuthRateLimits,
+} from '../../identity/infrastructure/rate-limit-config';
 import { RATE_LIMIT_REDIS } from '../../identity/infrastructure/rate-limit-redis';
 import { MemoryRateLimitRedis } from '../../identity/infrastructure/memory-rate-limit-redis';
 import { REGISTRATION_ENABLED } from '../../identity/infrastructure/registration-config';
-import { SESSION_REDIS, type SessionRedisClient } from '../../identity/infrastructure/session-redis';
+import {
+  SESSION_REDIS,
+  type SessionRedisClient,
+} from '../../identity/infrastructure/session-redis';
 
 const origin = 'http://localhost:3000';
 const password = 'correct-horse-battery';
@@ -49,7 +59,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await app?.close();
   await clearRows(prisma);
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -77,7 +87,9 @@ describe('Contacts HTTP', () => {
       .set('Origin', origin)
       .set('Cookie', other)
       .send({ name: 'Stolen' });
-    const stillOwner = await request(http).get(`/api/v1/contacts/${contactId}`).set('Cookie', owner);
+    const stillOwner = await request(http)
+      .get(`/api/v1/contacts/${contactId}`)
+      .set('Cookie', owner);
 
     expect(created.status).toBe(201);
     expect(created.body).toEqual({ data: { id: contactId, name: 'Ada ledger' } });

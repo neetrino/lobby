@@ -16,7 +16,10 @@ export async function runRequeueCli(
   const command = parseRequeueArgs(argv);
   const prisma = createPrismaClient(readDatabaseUrl(env));
   try {
-    const matched = await requeueCommand(new OutboxRepository(prisma, readOutboxWorkerConfig(env)), command);
+    const matched = await requeueCommand(
+      new OutboxRepository(prisma, readOutboxWorkerConfig(env)),
+      command,
+    );
     process.stdout.write(`Requeued ${matched} failed outbox event(s).\n`);
     return matched === 0 ? 1 : 0;
   } finally {
@@ -24,7 +27,10 @@ export async function runRequeueCli(
   }
 }
 
-async function requeueCommand(repository: OutboxRepository, command: RequeueCommand): Promise<number> {
+async function requeueCommand(
+  repository: OutboxRepository,
+  command: RequeueCommand,
+): Promise<number> {
   if (command.kind === 'id') {
     return repository.requeueFailedById(command.id);
   }

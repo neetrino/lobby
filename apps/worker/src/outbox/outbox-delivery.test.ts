@@ -1,6 +1,6 @@
 import type { ContactCreatedEvent } from '@lobby/contracts';
 import type { OutboxWorkerConfig, PrismaClient } from '@lobby/database';
-import { createTestPrismaClient } from '@lobby/database/testing';
+import { createTestPrismaClient, disposeTestPrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
@@ -24,7 +24,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -175,7 +175,12 @@ describe('outbox delivery', () => {
     });
     const repository = new OutboxRepository(prisma, config);
     const tenantHandler = new TenantCreatedHandler();
-    const processor = new OutboxProcessor(repository, new ContactCreatedHandler(), tenantHandler, config);
+    const processor = new OutboxProcessor(
+      repository,
+      new ContactCreatedHandler(),
+      tenantHandler,
+      config,
+    );
     const [claimed] = await repository.claimBatch();
     if (!claimed) {
       throw new Error('expected a claimed event');
@@ -209,7 +214,12 @@ describe('outbox delivery', () => {
     });
     const repository = new OutboxRepository(prisma, config);
     const tenantHandler = new TenantCreatedHandler();
-    const processor = new OutboxProcessor(repository, new ContactCreatedHandler(), tenantHandler, config);
+    const processor = new OutboxProcessor(
+      repository,
+      new ContactCreatedHandler(),
+      tenantHandler,
+      config,
+    );
     const [claimed] = await repository.claimBatch();
     if (!claimed) {
       throw new Error('expected a claimed event');

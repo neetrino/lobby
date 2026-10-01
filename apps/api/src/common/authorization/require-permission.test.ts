@@ -29,12 +29,18 @@ describe('role permissions', () => {
       expect(() => requirePermission({ role }, 'contacts:update')).not.toThrow();
     }
     expect(ROLE_PERMISSIONS.MEMBER).toEqual([...contactPermissions]);
-    expect(ROLE_PERMISSIONS.ADMIN).toEqual(['sessions:revoke', 'audit:read', ...contactPermissions]);
+    expect(ROLE_PERMISSIONS.ADMIN).toEqual([
+      'sessions:revoke',
+      'audit:read',
+      ...contactPermissions,
+    ]);
     expect(ROLE_PERMISSIONS.OWNER).toEqual(ROLE_PERMISSIONS.ADMIN);
   });
 
   it('rejects a missing permission without HTTP and allows a role that has it', () => {
-    expect(() => requirePermission({ role: 'MEMBER' }, 'sessions:revoke')).toThrow(AuthorizationError);
+    expect(() => requirePermission({ role: 'MEMBER' }, 'sessions:revoke')).toThrow(
+      AuthorizationError,
+    );
     expect(() => requirePermission({ role: 'ADMIN' }, 'sessions:revoke')).not.toThrow();
     expect(() => requirePermission({ role: 'OWNER' }, 'sessions:revoke')).not.toThrow();
   });

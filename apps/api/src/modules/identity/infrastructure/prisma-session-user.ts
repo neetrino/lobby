@@ -103,7 +103,9 @@ export class PrismaSessionUserStore {
 }
 
 function hasSecurityChange(change: UserSecurityChange): boolean {
-  return change.role !== undefined || change.status !== undefined || change.passwordHash !== undefined;
+  return (
+    change.role !== undefined || change.status !== undefined || change.passwordHash !== undefined
+  );
 }
 
 function isMissingRecord(error: unknown): boolean {

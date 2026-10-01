@@ -23,7 +23,8 @@ describe('userSessionsTerminatedAuditSchema', () => {
   it('accepts a successful version change and a denial without changes', () => {
     expect(userSessionsTerminatedAuditSchema.safeParse(success).success).toBe(true);
     expect(
-      userSessionsTerminatedAuditSchema.safeParse({ ...success, outcome: 'DENIED', changes: null }).success,
+      userSessionsTerminatedAuditSchema.safeParse({ ...success, outcome: 'DENIED', changes: null })
+        .success,
     ).toBe(true);
   });
 
@@ -34,8 +35,14 @@ describe('userSessionsTerminatedAuditSchema', () => {
         changes: { passwordHash: { from: 'old', to: 'new' } },
       }).success,
     ).toBe(false);
-    expect(userSessionsTerminatedAuditSchema.safeParse({ ...success, ipHash: '203.0.113.5' }).success).toBe(false);
-    expect(userSessionsTerminatedAuditSchema.safeParse({ ...success, changes: null }).success).toBe(false);
-    expect(userSessionsTerminatedAuditSchema.safeParse({ ...success, action: 'user.deleted' }).success).toBe(false);
+    expect(
+      userSessionsTerminatedAuditSchema.safeParse({ ...success, ipHash: '203.0.113.5' }).success,
+    ).toBe(false);
+    expect(userSessionsTerminatedAuditSchema.safeParse({ ...success, changes: null }).success).toBe(
+      false,
+    );
+    expect(
+      userSessionsTerminatedAuditSchema.safeParse({ ...success, action: 'user.deleted' }).success,
+    ).toBe(false);
   });
 });

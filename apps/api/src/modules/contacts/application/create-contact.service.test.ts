@@ -1,5 +1,9 @@
 import { contactCreatedEventSchema } from '@lobby/contracts';
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ModuleEntitlementService } from '../../../common/authorization/module-entitlement';
@@ -20,7 +24,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -33,7 +37,11 @@ beforeEach(async () => {
 describe('CreateContactService', () => {
   it('lets owner, admin, and member create a contact', async () => {
     const tenant = await createTenant('roles');
-    const service = new CreateContactService(new ContactRepository(prisma), new OutboxService(), new ModuleEntitlementService(prisma));
+    const service = new CreateContactService(
+      new ContactRepository(prisma),
+      new OutboxService(),
+      new ModuleEntitlementService(prisma),
+    );
 
     for (const role of ['OWNER', 'ADMIN', 'MEMBER'] as const) {
       const contact = await service.create(tenantContext(tenant.id, role), { name: role });
@@ -43,7 +51,11 @@ describe('CreateContactService', () => {
 
   it('commits the contact and outbox event together', async () => {
     const tenant = await createTenant('acme');
-    const service = new CreateContactService(new ContactRepository(prisma), new OutboxService(), new ModuleEntitlementService(prisma));
+    const service = new CreateContactService(
+      new ContactRepository(prisma),
+      new OutboxService(),
+      new ModuleEntitlementService(prisma),
+    );
 
     const contact = await service.create(tenantContext(tenant.id), { name: 'Ada' });
 
@@ -63,7 +75,11 @@ describe('CreateContactService', () => {
     const tenant = await createTenant('rollback');
     const outbox = new OutboxService();
     outbox.enqueue = () => Promise.reject(new Error('outbox unavailable'));
-    const service = new CreateContactService(new ContactRepository(prisma), outbox, new ModuleEntitlementService(prisma));
+    const service = new CreateContactService(
+      new ContactRepository(prisma),
+      outbox,
+      new ModuleEntitlementService(prisma),
+    );
 
     await expect(service.create(tenantContext(tenant.id), { name: 'Ada' })).rejects.toThrow(
       'outbox unavailable',
@@ -73,7 +89,11 @@ describe('CreateContactService', () => {
   });
 
   it('rolls back when the contact write fails', async () => {
-    const service = new CreateContactService(new ContactRepository(prisma), new OutboxService(), new ModuleEntitlementService(prisma));
+    const service = new CreateContactService(
+      new ContactRepository(prisma),
+      new OutboxService(),
+      new ModuleEntitlementService(prisma),
+    );
 
     await expect(
       service.create(tenantContext('99999999-9999-4999-8999-999999999999'), { name: 'Ada' }),
@@ -86,7 +106,11 @@ describe('CreateContactService', () => {
     const tenant = await createTenant('off', 'DISABLED');
     const context = tenantContext(tenant.id, 'MEMBER');
     expect(() => requirePermission(context, 'contacts:create')).not.toThrow();
-    const service = new CreateContactService(new ContactRepository(prisma), new OutboxService(), new ModuleEntitlementService(prisma));
+    const service = new CreateContactService(
+      new ContactRepository(prisma),
+      new OutboxService(),
+      new ModuleEntitlementService(prisma),
+    );
 
     await expect(service.create(context, { name: 'Ada' })).rejects.toMatchObject({
       code: 'MODULE_DISABLED',
@@ -97,7 +121,11 @@ describe('CreateContactService', () => {
 
   it('rejects an invalid payload before persistence', async () => {
     const tenant = await createTenant('invalid');
-    const service = new CreateContactService(new ContactRepository(prisma), new OutboxService(), new ModuleEntitlementService(prisma));
+    const service = new CreateContactService(
+      new ContactRepository(prisma),
+      new OutboxService(),
+      new ModuleEntitlementService(prisma),
+    );
 
     await expect(service.create(tenantContext(tenant.id), { name: '   ' })).rejects.toThrow();
     expect(await prisma.contact.count()).toBe(0);
@@ -107,7 +135,11 @@ describe('CreateContactService', () => {
   it('rejects a client tenant id before writing', async () => {
     const tenant = await createTenant('owner');
     const other = await createTenant('other');
-    const service = new CreateContactService(new ContactRepository(prisma), new OutboxService(), new ModuleEntitlementService(prisma));
+    const service = new CreateContactService(
+      new ContactRepository(prisma),
+      new OutboxService(),
+      new ModuleEntitlementService(prisma),
+    );
 
     await expect(
       service.create(tenantContext(tenant.id), {

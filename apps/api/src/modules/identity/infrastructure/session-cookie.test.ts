@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest';
 
 import { SESSION_IDLE_TTL_MS } from '../domain/session-policy';
 import { createRawSessionId } from './session-id';
-import { readSessionCookieSecure, SESSION_COOKIE_NAME, SessionCookie, type SessionCookieOptions, type SessionCookieWriter } from './session-cookie';
+import {
+  readSessionCookieSecure,
+  SESSION_COOKIE_NAME,
+  SessionCookie,
+  type SessionCookieOptions,
+  type SessionCookieWriter,
+} from './session-cookie';
 
 describe('SessionCookie', () => {
   it('sets and clears an opaque id with flags from config', () => {
@@ -20,7 +26,10 @@ describe('SessionCookie', () => {
       options: cookieOptions(true),
     });
     expect(localWriter.setCall?.options.secure).toBe(false);
-    expect(secureWriter.clearCall).toEqual({ name: SESSION_COOKIE_NAME, options: cookieOptions(true) });
+    expect(secureWriter.clearCall).toEqual({
+      name: SESSION_COOKIE_NAME,
+      options: cookieOptions(true),
+    });
     expect(readSessionCookieSecure({ NODE_ENV: 'production' })).toBe(true);
     expect(readSessionCookieSecure({ NODE_ENV: 'development' })).toBe(false);
     expect(readSessionCookieSecure({})).toBe(false);

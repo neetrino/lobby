@@ -57,7 +57,11 @@ async function deliverOnce(
   await handler.handle(event);
 }
 
-function reservationKey(handlerName: string, identity: DeliveryIdentity, event: unknown): ProcessedEventKey {
+function reservationKey(
+  handlerName: string,
+  identity: DeliveryIdentity,
+  event: unknown,
+): ProcessedEventKey {
   return {
     handlerName,
     eventType: identity.eventType,
@@ -76,4 +80,3 @@ function readEventId(event: unknown): string {
 function isRecord(value: unknown): value is Record<string, unknown> & object {
   return typeof value === 'object' && value !== null;
 }
-

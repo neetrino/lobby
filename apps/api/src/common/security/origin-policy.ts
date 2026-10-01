@@ -12,7 +12,11 @@ export type OriginHeaders = {
  * A missing Origin may fall back to the Referer origin. A present Origin never falls through.
  * Missing both is rejected. SameSite and CORS do not satisfy this check.
  */
-export function isOriginAllowed(method: string, headers: OriginHeaders, allowed: ReadonlySet<string>): boolean {
+export function isOriginAllowed(
+  method: string,
+  headers: OriginHeaders,
+  allowed: ReadonlySet<string>,
+): boolean {
   if (SAFE_METHODS.has(method.toUpperCase())) {
     return true;
   }
@@ -29,7 +33,9 @@ export function isOriginAllowed(method: string, headers: OriginHeaders, allowed:
   return referer !== null && allowed.has(referer);
 }
 
-function readOrigin(value: HeaderValue): { status: 'absent' } | { status: 'invalid' } | { status: 'present'; value: string } {
+function readOrigin(
+  value: HeaderValue,
+): { status: 'absent' } | { status: 'invalid' } | { status: 'present'; value: string } {
   if (value === undefined) {
     return { status: 'absent' };
   }

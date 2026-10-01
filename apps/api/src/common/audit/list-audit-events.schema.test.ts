@@ -43,28 +43,43 @@ describe('auditEventListQuerySchema', () => {
     expect(parsed.cursor).toMatchObject({ ...position, sort: 'asc' });
     expect(parsed.cursor?.filterFingerprint).toMatch(/^[0-9a-f]{64}$/);
     expect(parsed.cursor).not.toHaveProperty('action');
-    expect(auditEventListQuerySchema.safeParse({ orderBy: { occurredAt: 'desc' } }).success).toBe(false);
+    expect(auditEventListQuerySchema.safeParse({ orderBy: { occurredAt: 'desc' } }).success).toBe(
+      false,
+    );
     expect(auditEventListQuerySchema.safeParse({ sort: 'occurredAt' }).success).toBe(false);
     expect(auditEventListQuerySchema.safeParse({ page: '10' }).success).toBe(false);
     expect(auditEventListQuerySchema.safeParse({ tenantId: position.id }).success).toBe(false);
     expect(auditEventListQuerySchema.safeParse({ limit: '101' }).success).toBe(false);
-    expect(auditEventListQuerySchema.safeParse({ from: position.occurredAt, to: '2026-01-01T00:00:00.000Z' }).success).toBe(
-      false,
-    );
+    expect(
+      auditEventListQuerySchema.safeParse({
+        from: position.occurredAt,
+        to: '2026-01-01T00:00:00.000Z',
+      }).success,
+    ).toBe(false);
   });
 
   it('rejects a cursor whose filters or sort differ and allows a new limit', () => {
     const disabled = auditEventListQuerySchema.parse({ action: 'user.disabled', limit: '20' });
     const encoded = encodeAuditEventCursor(position, disabled);
     const decoded = decodeCursor(encoded);
-    const extra = Buffer.from(JSON.stringify({ ...(decoded as Record<string, unknown>), tenantId: position.id }), 'utf8').toString(
+    const extra = Buffer.from(
+      JSON.stringify({ ...(decoded as Record<string, unknown>), tenantId: position.id }),
+      'utf8',
+    ).toString('base64url');
+    const legacy = Buffer.from(JSON.stringify({ ...position, sort: 'desc' }), 'utf8').toString(
       'base64url',
     );
-    const legacy = Buffer.from(JSON.stringify({ ...position, sort: 'desc' }), 'utf8').toString('base64url');
 
-    expect(auditEventListQuerySchema.parse({ action: 'user.disabled', limit: '50', cursor: encoded }).limit).toBe(50);
-    expect(auditEventListQuerySchema.safeParse({ action: 'contact.deleted', cursor: encoded }).success).toBe(false);
-    expect(auditEventListQuerySchema.safeParse({ cursor: encoded, sort: 'asc' }).success).toBe(false);
+    expect(
+      auditEventListQuerySchema.parse({ action: 'user.disabled', limit: '50', cursor: encoded })
+        .limit,
+    ).toBe(50);
+    expect(
+      auditEventListQuerySchema.safeParse({ action: 'contact.deleted', cursor: encoded }).success,
+    ).toBe(false);
+    expect(auditEventListQuerySchema.safeParse({ cursor: encoded, sort: 'asc' }).success).toBe(
+      false,
+    );
     expect(auditEventListQuerySchema.safeParse({ cursor: legacy }).success).toBe(false);
     expect(auditEventListQuerySchema.safeParse({ cursor: extra }).success).toBe(false);
     expect(auditEventListQuerySchema.safeParse({ cursor: 'not-a-cursor' }).success).toBe(false);

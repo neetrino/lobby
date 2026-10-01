@@ -9,7 +9,10 @@ import { ZodParam } from '../../../common/pipes/zod-input';
 import { AUDIT_IP_HASH_KEY, hashAuditIp } from '../../../common/audit/audit-ip-hash';
 import { readClientAddress } from '../../../common/security/client-address';
 import { requestContextFromSession } from '../../../common/tenant/request-context';
-import { TerminateUserSessionsService, type AuditClient } from '../application/terminate-user-sessions.service';
+import {
+  TerminateUserSessionsService,
+  type AuditClient,
+} from '../application/terminate-user-sessions.service';
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
 
 const userIdSchema = z.uuid();

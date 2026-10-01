@@ -248,7 +248,7 @@ Replace `TBD` entries with links to approved model/ERD sections when schema desi
 - Statement, lock, and idle-transaction timeouts.
 - Backup retention, restore testing, RPO, and RTO.
 - Production runtime and migration database roles/grants.
-- Stable test-database isolation. API integration test files currently share one database and cleanup can race; use per-suite schema/database isolation or one controlled global lifecycle.
+- Integration-test clients deploy migrations into unique PostgreSQL schemas and explicitly drop only their own schema during teardown. Keep using `createTestPrismaClient()` and `disposeTestPrismaClient()` so parallel suites remain isolated.
 - PostgreSQL RLS is not part of this foundation. Tenant isolation is the application query scope. Revisit RLS only with a reviewed pooling and threat plan.
 
 ---

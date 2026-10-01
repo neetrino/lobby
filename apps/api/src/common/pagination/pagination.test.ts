@@ -22,6 +22,8 @@ describe('filterFingerprint', () => {
 
   it('rejects a nested value', () => {
     const filters = { action: { equals: 'user.disabled' } } as unknown as Record<string, string>;
-    expect(() => filterFingerprint(filters)).toThrow('Filter fingerprint values must be string, finite number, boolean, or null.');
+    expect(() => filterFingerprint(filters)).toThrow(
+      'Filter fingerprint values must be string, finite number, boolean, or null.',
+    );
   });
 });

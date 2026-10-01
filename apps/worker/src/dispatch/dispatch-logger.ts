@@ -1,6 +1,10 @@
 import { eventRegistryKey } from './event-registry.js';
 
-export const permanentFailureCodes = ['unknown_event', 'invalid_event', 'permanent_handler_failure'] as const;
+export const permanentFailureCodes = [
+  'unknown_event',
+  'invalid_event',
+  'permanent_handler_failure',
+] as const;
 
 export type PermanentFailureCode = (typeof permanentFailureCodes)[number];
 

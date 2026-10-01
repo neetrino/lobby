@@ -6,10 +6,7 @@ import { Authorize } from '../../../common/authorization/permission.guard';
 import { ZodBody, ZodParam } from '../../../common/pipes/zod-input';
 import type { RequestContext } from '../../../common/tenant/request-context';
 import { ContactAccessService, type ContactRecord } from '../application/contact-access.service';
-import {
-  createContactSchema,
-  type CreateContactInput,
-} from '../application/create-contact.schema';
+import { createContactSchema, type CreateContactInput } from '../application/create-contact.schema';
 import { CreateContactService } from '../application/create-contact.service';
 import { renameContactSchema, type RenameContactInput } from '../application/rename-contact.schema';
 

@@ -1,5 +1,9 @@
 import 'reflect-metadata';
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
@@ -9,11 +13,17 @@ import { AppModule } from '../../app.module';
 import { PRISMA_CLIENT } from '../database/database.tokens';
 import { configureHttpApp } from '../http/configure-http-app';
 import { ALLOWED_ORIGINS } from '../security/allowed-origins';
-import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../../modules/identity/infrastructure/rate-limit-config';
+import {
+  AUTH_RATE_LIMITS,
+  permissiveAuthRateLimits,
+} from '../../modules/identity/infrastructure/rate-limit-config';
 import { RATE_LIMIT_REDIS } from '../../modules/identity/infrastructure/rate-limit-redis';
 import { MemoryRateLimitRedis } from '../../modules/identity/infrastructure/memory-rate-limit-redis';
 import { REGISTRATION_ENABLED } from '../../modules/identity/infrastructure/registration-config';
-import { SESSION_REDIS, type SessionRedisClient } from '../../modules/identity/infrastructure/session-redis';
+import {
+  SESSION_REDIS,
+  type SessionRedisClient,
+} from '../../modules/identity/infrastructure/session-redis';
 import { MemorySessionRedis } from '../../modules/identity/presentation/session-guard.fixtures';
 
 const origin = 'http://localhost:3000';
@@ -50,7 +60,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await app?.close();
   await clearRows(prisma);
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -64,20 +74,45 @@ describe('GET /api/v1/audit-events', () => {
     const http = app.getHttpServer();
     const owner = await login(http, 'audit-a', 'ada@example.com');
     const other = await login(http, 'audit-b', 'bea@example.com');
-    await insertEvent(owner.userId, owner.tenantId, '10000000-0000-4000-8000-000000000021', '2026-01-01T00:00:00.000Z');
-    await insertEvent(owner.userId, owner.tenantId, '20000000-0000-4000-8000-000000000022', '2026-01-02T00:00:00.000Z');
-    await insertEvent(other.userId, other.tenantId, '30000000-0000-4000-8000-000000000023', '2026-01-03T00:00:00.000Z');
+    await insertEvent(
+      owner.userId,
+      owner.tenantId,
+      '10000000-0000-4000-8000-000000000021',
+      '2026-01-01T00:00:00.000Z',
+    );
+    await insertEvent(
+      owner.userId,
+      owner.tenantId,
+      '20000000-0000-4000-8000-000000000022',
+      '2026-01-02T00:00:00.000Z',
+    );
+    await insertEvent(
+      other.userId,
+      other.tenantId,
+      '30000000-0000-4000-8000-000000000023',
+      '2026-01-03T00:00:00.000Z',
+    );
 
-    const first = await request(http).get('/api/v1/audit-events?limit=1').set('Cookie', owner.cookie);
+    const first = await request(http)
+      .get('/api/v1/audit-events?limit=1')
+      .set('Cookie', owner.cookie);
     const cursor = first.body.page.nextCursor as string;
-    const second = await request(http).get(`/api/v1/audit-events?limit=1&cursor=${encodeURIComponent(cursor)}`).set('Cookie', owner.cookie);
-    const rejected = await request(http).get('/api/v1/audit-events?orderBy=id').set('Cookie', owner.cookie);
+    const second = await request(http)
+      .get(`/api/v1/audit-events?limit=1&cursor=${encodeURIComponent(cursor)}`)
+      .set('Cookie', owner.cookie);
+    const rejected = await request(http)
+      .get('/api/v1/audit-events?orderBy=id')
+      .set('Cookie', owner.cookie);
     const anonymous = await request(http).get('/api/v1/audit-events');
 
     expect(first.status).toBe(200);
-    expect(first.body.data.map((row: { id: string }) => row.id)).toEqual(['20000000-0000-4000-8000-000000000022']);
+    expect(first.body.data.map((row: { id: string }) => row.id)).toEqual([
+      '20000000-0000-4000-8000-000000000022',
+    ]);
     expect(second.status).toBe(200);
-    expect(second.body.data.map((row: { id: string }) => row.id)).toEqual(['10000000-0000-4000-8000-000000000021']);
+    expect(second.body.data.map((row: { id: string }) => row.id)).toEqual([
+      '10000000-0000-4000-8000-000000000021',
+    ]);
     expect(second.body.page.nextCursor).toBeNull();
     expect(rejected.status).toBe(400);
     expect(rejected.body.error.code).toBe('VALIDATION_ERROR');
@@ -120,7 +155,12 @@ function sessionCookie(header: string | string[] | undefined): string {
   return pair;
 }
 
-async function insertEvent(userId: string, tenantId: string, id: string, occurredAt: string): Promise<void> {
+async function insertEvent(
+  userId: string,
+  tenantId: string,
+  id: string,
+  occurredAt: string,
+): Promise<void> {
   await prisma.auditEvent.create({
     data: {
       id,

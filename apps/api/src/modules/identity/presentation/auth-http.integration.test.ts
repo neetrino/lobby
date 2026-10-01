@@ -1,5 +1,9 @@
 import 'reflect-metadata';
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { Controller, Get, Post } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { NestExpressApplication } from '@nestjs/platform-express';
@@ -55,7 +59,7 @@ beforeAll(async () => {
 afterAll(async () => {
   await app?.close();
   await clearTenantRows(prisma);
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {

@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@lobby/database';
-import { createTestPrismaClient } from '@lobby/database/testing';
+import { createTestPrismaClient, disposeTestPrismaClient } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { bindIdempotentDelivery } from './idempotent-delivery.js';
@@ -15,7 +15,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -33,8 +33,12 @@ describe('durable idempotent delivery', () => {
       },
     };
 
-    await bindIdempotentDelivery(handler, new PrismaProcessedEventStore(prisma), identity).run(event);
-    await bindIdempotentDelivery(handler, new PrismaProcessedEventStore(prisma), identity).run(event);
+    await bindIdempotentDelivery(handler, new PrismaProcessedEventStore(prisma), identity).run(
+      event,
+    );
+    await bindIdempotentDelivery(handler, new PrismaProcessedEventStore(prisma), identity).run(
+      event,
+    );
 
     expect(sends).toBe(1);
     const rows = await prisma.$queryRaw<Array<{ event_id: string }>>`

@@ -18,7 +18,9 @@ describe('session policy', () => {
 
     expect(isExpired(lifetime, new Date(lifetime.idleExpiresAt.getTime() - 1))).toBe(false);
     expect(isExpired(lifetime, lifetime.idleExpiresAt)).toBe(true);
-    expect(lifetime.absoluteExpiresAt.getTime() - lifetime.createdAt.getTime()).toBe(SESSION_ABSOLUTE_TTL_MS);
+    expect(lifetime.absoluteExpiresAt.getTime() - lifetime.createdAt.getTime()).toBe(
+      SESSION_ABSOLUTE_TTL_MS,
+    );
     expect(lifetime.idleExpiresAt.getTime() - now.getTime()).toBe(SESSION_IDLE_TTL_MS);
   });
 
@@ -36,8 +38,8 @@ describe('session policy', () => {
     const absoluteExpiresAt = new Date(now.getTime() + SESSION_REFRESH_INTERVAL_MS);
 
     expect(nextIdleExpiresAt(now, absoluteExpiresAt)).toEqual(absoluteExpiresAt);
-    expect(nextIdleExpiresAt(now, new Date(now.getTime() + SESSION_IDLE_TTL_MS + 1)).getTime()).toBe(
-      now.getTime() + SESSION_IDLE_TTL_MS,
-    );
+    expect(
+      nextIdleExpiresAt(now, new Date(now.getTime() + SESSION_IDLE_TTL_MS + 1)).getTime(),
+    ).toBe(now.getTime() + SESSION_IDLE_TTL_MS);
   });
 });

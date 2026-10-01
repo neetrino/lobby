@@ -51,7 +51,9 @@ describe('Argon2PasswordHasher', () => {
     const oversized = 'p'.repeat(PASSWORD_MAX_LENGTH + 1);
 
     await expect(hasher.hash(oversized)).rejects.toThrow(Error);
-    await expect(hasher.hash(oversized)).rejects.toThrow(/^Password exceeds the maximum allowed length\.$/);
+    await expect(hasher.hash(oversized)).rejects.toThrow(
+      /^Password exceeds the maximum allowed length\.$/,
+    );
     await expect(hasher.verify(firstHash, oversized)).resolves.toBe(false);
   });
 });

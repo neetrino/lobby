@@ -14,7 +14,10 @@ export class PrismaProcessedEventStore implements ProcessedEventStore {
   }
 }
 
-async function insertReservation(tx: Prisma.TransactionClient, key: ProcessedEventKey): Promise<boolean> {
+async function insertReservation(
+  tx: Prisma.TransactionClient,
+  key: ProcessedEventKey,
+): Promise<boolean> {
   const rows = await tx.$queryRaw<Array<{ event_id: string }>>`
     INSERT INTO processed_events (handler_name, event_type, event_version, event_id)
     VALUES (${key.handlerName}, ${key.eventType}, ${key.eventVersion}, CAST(${key.eventId} AS uuid))

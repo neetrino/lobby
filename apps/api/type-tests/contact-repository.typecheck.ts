@@ -1,4 +1,8 @@
-import type { ContactOperations, ContactRecord, TenantContacts } from '../src/modules/contacts/infrastructure/contact.repository';
+import type {
+  ContactOperations,
+  ContactRecord,
+  TenantContacts,
+} from '../src/modules/contacts/infrastructure/contact.repository';
 
 type HasTransaction = 'transaction' extends keyof ContactOperations ? true : false;
 
@@ -6,7 +10,9 @@ type HasTransaction = 'transaction' extends keyof ContactOperations ? true : fal
 export const contactOperationsOmitTransaction: HasTransaction = false;
 
 /** Typecheck rejects a nested contact transaction. */
-export function callbackCannotOpenAnotherTransaction(scope: TenantContacts): Promise<ContactRecord> {
+export function callbackCannotOpenAnotherTransaction(
+  scope: TenantContacts,
+): Promise<ContactRecord> {
   return scope.transaction((contacts) => {
     // @ts-expect-error A contact transaction cannot open another contact transaction.
     return contacts.transaction(() => contacts.create('Ada'));

@@ -3,7 +3,10 @@ import { Injectable } from '@nestjs/common';
 import type { AuthenticatedSession } from '../../../common/auth/authenticated-session';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
 import { sessionRoles, type StoredSession } from '../domain/authenticated-session';
-import { PrismaSessionUserStore, type SessionUserSecurity } from '../infrastructure/prisma-session-user';
+import {
+  PrismaSessionUserStore,
+  type SessionUserSecurity,
+} from '../infrastructure/prisma-session-user';
 import { RedisSessionStore, type SessionInspection } from '../infrastructure/redis-session.store';
 
 export type EstablishedSession = {
@@ -68,7 +71,10 @@ function requireStoredSession(inspected: SessionInspection): StoredSession {
   return inspected.session;
 }
 
-function toAuthenticatedSession(stored: StoredSession, role: SessionUserSecurity['role']): AuthenticatedSession {
+function toAuthenticatedSession(
+  stored: StoredSession,
+  role: SessionUserSecurity['role'],
+): AuthenticatedSession {
   const liveRole = sessionRoles.find((value) => value === role);
   if (liveRole === undefined) {
     throw new IdentityError(identityErrorCodes.SESSION_REVOKED);

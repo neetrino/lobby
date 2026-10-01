@@ -1,4 +1,8 @@
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { readSessionCookieSecure } from '../infrastructure/session-cookie';
@@ -29,7 +33,7 @@ afterAll(async () => {
   await app?.close();
   restoreLogs?.();
   await clearTenantRows(prisma);
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {

@@ -1,4 +1,8 @@
-import { contactCreatedEventSchema, tenantCreatedEventSchema, tenantCreatedEventV1Schema } from '@lobby/contracts';
+import {
+  contactCreatedEventSchema,
+  tenantCreatedEventSchema,
+  tenantCreatedEventV1Schema,
+} from '@lobby/contracts';
 import { describe, expect, it } from 'vitest';
 
 import { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
@@ -19,28 +23,24 @@ import {
 } from './retry-classification.js';
 
 type AssertTrue<T extends true> = T;
-type ListedVersion = ReturnType<ReturnType<typeof createWorkerEventRegistry>['list']>[number]['eventVersion'];
+type ListedVersion = ReturnType<
+  ReturnType<typeof createWorkerEventRegistry>['list']
+>[number]['eventVersion'];
 type _versionIsLiteral = AssertTrue<number extends ListedVersion ? false : true>;
 
 describe('event registry', () => {
   it('registers one entry per current eventType@eventVersion', () => {
     const registry = createRegistry();
 
-    expect(registry.list().map((entry) => eventRegistryKey(entry.eventType, entry.eventVersion))).toEqual([
-      'contact.created@1',
-      'tenant.created@1',
-      'tenant.created@2',
-    ]);
-    expect(registry.list().map((entry) => entry.handlers.map((handler) => handler.retryClassification))).toEqual([
-      ['transient'],
-      ['transient'],
-      ['transient'],
-    ]);
-    expect(registry.list().map((entry) => entry.handlers.map((handler) => handler.handler.name))).toEqual([
-      ['ContactCreatedHandler'],
-      ['TenantCreatedHandler'],
-      ['TenantCreatedHandler'],
-    ]);
+    expect(
+      registry.list().map((entry) => eventRegistryKey(entry.eventType, entry.eventVersion)),
+    ).toEqual(['contact.created@1', 'tenant.created@1', 'tenant.created@2']);
+    expect(
+      registry.list().map((entry) => entry.handlers.map((handler) => handler.retryClassification)),
+    ).toEqual([['transient'], ['transient'], ['transient']]);
+    expect(
+      registry.list().map((entry) => entry.handlers.map((handler) => handler.handler.name)),
+    ).toEqual([['ContactCreatedHandler'], ['TenantCreatedHandler'], ['TenantCreatedHandler']]);
     for (const entry of registry.list()) {
       for (const handler of entry.handlers) {
         expect(handler.hasExternalSideEffect).toBe(false);
@@ -114,7 +114,9 @@ describe('event registry', () => {
     expect(handlerFailureIsPermanent('transient', transient)).toBe(false);
     expect(handlerFailureIsPermanent('idempotent-side-effect', transient)).toBe(false);
     expect(handlerFailureIsPermanent('permanent', transient)).toBe(true);
-    expect(handlerFailureIsPermanent('transient', new PermanentDispatchError('invalid'))).toBe(true);
+    expect(handlerFailureIsPermanent('transient', new PermanentDispatchError('invalid'))).toBe(
+      true,
+    );
     expect(outboxFailureAction(new PermanentDispatchError('invalid'))).toBe('fail');
   });
 });

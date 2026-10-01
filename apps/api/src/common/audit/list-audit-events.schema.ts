@@ -7,7 +7,12 @@ import {
 } from '@lobby/contracts';
 import { z } from 'zod';
 
-import { decodeCursor, encodeCursor, filterFingerprint, filterFingerprintSchema } from '../pagination';
+import {
+  decodeCursor,
+  encodeCursor,
+  filterFingerprint,
+  filterFingerprintSchema,
+} from '../pagination';
 
 /** Bound for one audit cursor. It is not a query language. */
 const AUDIT_EVENT_CURSOR_MAX_LENGTH = 1024;
@@ -51,7 +56,11 @@ const auditEventListQueryFields = z.strictObject({
  * Unknown keys are rejected. `sort` is only the `occurredAt` direction.
  */
 export const auditEventListQuerySchema = auditEventListQueryFields.superRefine((query, context) => {
-  if (query.from !== undefined && query.to !== undefined && Date.parse(query.from) > Date.parse(query.to)) {
+  if (
+    query.from !== undefined &&
+    query.to !== undefined &&
+    Date.parse(query.from) > Date.parse(query.to)
+  ) {
     context.addIssue({ code: 'custom', path: ['from'], message: 'from is after to' });
   }
   if (query.cursor !== undefined && !auditCursorMatches(query.cursor, query)) {

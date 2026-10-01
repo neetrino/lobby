@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
 import { readAuditIpHashKey } from './common/audit/audit-ip-hash';
-import { readAuthRateLimitConfig } from './modules/identity/infrastructure/rate-limit-config';
-import { readSessionRedisTimeoutMs } from './modules/identity/infrastructure/upstash-session-redis';
+import { readAuthRateLimitConfig, readSessionRedisTimeoutMs } from './modules/identity';
 import { readAllowedOrigins } from './common/security/allowed-origins';
 import { readTrustProxy, type TrustProxySetting } from './common/security/trust-proxy';
 
@@ -85,7 +84,9 @@ export async function loadApiConfig(env: NodeJS.ProcessEnv = process.env): Promi
   capture(issues, 'SESSION_REDIS_TIMEOUT_MS', 'SESSION_REDIS_TIMEOUT_MS is invalid.', () =>
     readSessionRedisTimeoutMs(env),
   );
-  capture(issues, 'AUDIT_IP_HASH_KEY', 'AUDIT_IP_HASH_KEY is invalid.', () => readAuditIpHashKey(env));
+  capture(issues, 'AUDIT_IP_HASH_KEY', 'AUDIT_IP_HASH_KEY is invalid.', () =>
+    readAuditIpHashKey(env),
+  );
   collectRateLimits(env, issues);
   return completeConfig(port, databaseUrl, allowedOrigins, trustProxy, issues);
 }

@@ -22,7 +22,9 @@ describe('requeue command', () => {
     expect(() => parseRequeueArgs([])).toThrow(
       'Usage: requeue --id <eventId> | requeue --event <eventType@eventVersion>',
     );
-    expect(() => parseRequeueArgs(['--id', 'not-a-uuid'])).toThrow('Requeue --id expects an outbox event UUID');
+    expect(() => parseRequeueArgs(['--id', 'not-a-uuid'])).toThrow(
+      'Requeue --id expects an outbox event UUID',
+    );
     expect(() => parseRequeueArgs(['--event', 'contact.created'])).toThrow(
       'Requeue --event expects eventType@eventVersion',
     );

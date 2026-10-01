@@ -1,5 +1,9 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
-import { createRequestId, currentRequestId, runWithRequestId } from '../src/common/http/request-context';
+import {
+  createRequestId,
+  currentRequestId,
+  runWithRequestId,
+} from '../src/common/http/request-context';
 import { NotFoundException, type ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import type { PrismaClient } from '@lobby/database/testing';
@@ -127,7 +131,12 @@ function wire(
       new ModuleEntitlementService(database),
     ),
     origin: new OriginGuard([AUTH_FLOW_ORIGIN]),
-    sessions: new SessionGuard(new SessionAccessService(store, users), cookies, rates, new Reflector()),
+    sessions: new SessionGuard(
+      new SessionAccessService(store, users),
+      cookies,
+      rates,
+      new Reflector(),
+    ),
     terminate: new TerminateUserSessionsService(users, store, new AuditEventStore(database)),
     database,
   };

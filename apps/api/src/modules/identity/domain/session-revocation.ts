@@ -12,7 +12,10 @@ export type SessionRevocationActor = {
  * A user may revoke their own sessions.
  * Revoking a different user requires `sessions:revoke`. The service still limits the target to the actor's tenant.
  */
-export function canRevokeUserSessions(actor: SessionRevocationActor, targetUserId: string): boolean {
+export function canRevokeUserSessions(
+  actor: SessionRevocationActor,
+  targetUserId: string,
+): boolean {
   if (actor.userId === targetUserId) {
     return true;
   }

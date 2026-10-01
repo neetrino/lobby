@@ -13,7 +13,9 @@ export const filterFingerprintSchema = z.string().regex(/^[0-9a-f]{64}$/);
  * Key order does not matter. The caller must pass the same keys on every page, using null for an absent filter.
  * `limit` stays out of this digest so the client can change page size.
  */
-export function filterFingerprint(filters: Readonly<Record<string, FilterFingerprintValue>>): string {
+export function filterFingerprint(
+  filters: Readonly<Record<string, FilterFingerprintValue>>,
+): string {
   const entries = Object.keys(filters)
     .sort()
     .map((key) => [key, readFingerprintValue(filters[key])]);

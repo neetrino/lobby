@@ -101,7 +101,9 @@ function recordingHandler(
   };
 }
 
-async function rejectHandlers(handlers: readonly SideEffectFreeHandler[]): Promise<ClassifiedHandlerError> {
+async function rejectHandlers(
+  handlers: readonly SideEffectFreeHandler[],
+): Promise<ClassifiedHandlerError> {
   try {
     await runRegisteredHandlers(handlers, event);
   } catch (error) {

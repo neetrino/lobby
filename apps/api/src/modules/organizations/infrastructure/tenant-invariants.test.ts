@@ -1,4 +1,8 @@
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 const passwordHash =
@@ -11,7 +15,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -34,12 +38,16 @@ describe('tenant database invariants', () => {
   });
 
   it('rejects a user without a tenant', async () => {
-    await expect(createOwner('99999999-9999-4999-8999-999999999999', 'ada@example.com')).rejects.toThrow();
+    await expect(
+      createOwner('99999999-9999-4999-8999-999999999999', 'ada@example.com'),
+    ).rejects.toThrow();
     expect(await prisma.user.count()).toBe(0);
   });
 
   it('has no membership join table', async () => {
-    const rows = await prisma.$queryRaw<Array<{ memberships: string | null; userTenants: string | null }>>`
+    const rows = await prisma.$queryRaw<
+      Array<{ memberships: string | null; userTenants: string | null }>
+    >`
       SELECT to_regclass('public.memberships')::text AS memberships,
              to_regclass('public.user_tenants')::text AS "userTenants"
     `;

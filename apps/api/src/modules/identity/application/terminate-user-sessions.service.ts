@@ -53,7 +53,11 @@ export class TerminateUserSessionsService {
     client: AuditClient,
   ): Promise<boolean> {
     return this.audit.transaction(async (tx) => {
-      const next = await this.users.incrementAuthenticationVersion(targetUserId, context.tenantId, tx);
+      const next = await this.users.incrementAuthenticationVersion(
+        targetUserId,
+        context.tenantId,
+        tx,
+      );
       if (next === null) {
         return false;
       }
@@ -62,7 +66,11 @@ export class TerminateUserSessionsService {
     });
   }
 
-  private recordDenial(context: RequestContext, targetUserId: string, client: AuditClient): Promise<void> {
+  private recordDenial(
+    context: RequestContext,
+    targetUserId: string,
+    client: AuditClient,
+  ): Promise<void> {
     return this.audit.appendNow(baseRecord(context, targetUserId, client, 'DENIED', null));
   }
 

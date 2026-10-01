@@ -2,10 +2,7 @@ import type { CursorPage } from '@lobby/contracts';
 import type { Prisma } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import type { TenantId } from '../tenant/tenant-id';
-import {
-  encodeAuditEventCursor,
-  type AuditEventListQuery,
-} from './list-audit-events.schema';
+import { encodeAuditEventCursor, type AuditEventListQuery } from './list-audit-events.schema';
 
 export const auditEventListSelect = {
   id: true,
@@ -35,7 +32,9 @@ export type AuditEventView = Omit<AuditEventRow, 'occurredAt'> & {
 export type AuditEventPage = CursorPage<AuditEventView>;
 
 /** `occurredAt` direction only. `id` is the stable tie-breaker, not a client column. */
-export function auditEventOrderBy(sort: AuditEventListQuery['sort']): Prisma.AuditEventOrderByWithRelationInput[] {
+export function auditEventOrderBy(
+  sort: AuditEventListQuery['sort'],
+): Prisma.AuditEventOrderByWithRelationInput[] {
   if (sort === 'asc') {
     return [{ occurredAt: 'asc' }, { id: 'asc' }];
   }
@@ -43,7 +42,10 @@ export function auditEventOrderBy(sort: AuditEventListQuery['sort']): Prisma.Aud
 }
 
 /** Tenant predicate is applied here. Filters are the allowlisted query fields. */
-export function auditEventListWhere(tenantId: TenantId, query: AuditEventListQuery): Prisma.AuditEventWhereInput {
+export function auditEventListWhere(
+  tenantId: TenantId,
+  query: AuditEventListQuery,
+): Prisma.AuditEventWhereInput {
   const where: Prisma.AuditEventWhereInput = {
     tenantId,
     action: query.action,
@@ -60,7 +62,10 @@ export function auditEventListWhere(tenantId: TenantId, query: AuditEventListQue
   return where;
 }
 
-export function toAuditEventPage(rows: readonly AuditEventRow[], query: AuditEventListQuery): AuditEventPage {
+export function toAuditEventPage(
+  rows: readonly AuditEventRow[],
+  query: AuditEventListQuery,
+): AuditEventPage {
   const visible = rows.slice(0, query.limit);
   const last = visible.at(-1);
   return {
@@ -94,7 +99,11 @@ function cursorPosition(query: AuditEventListQuery): Prisma.AuditEventWhereInput
   };
 }
 
-function nextCursor(hasMore: boolean, last: AuditEventRow | undefined, query: AuditEventListQuery): string | null {
+function nextCursor(
+  hasMore: boolean,
+  last: AuditEventRow | undefined,
+  query: AuditEventListQuery,
+): string | null {
   if (!hasMore || last === undefined) {
     return null;
   }

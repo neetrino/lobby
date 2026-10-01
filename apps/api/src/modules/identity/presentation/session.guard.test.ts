@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { Controller, Get, NotFoundException, Param } from '@nestjs/common';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -39,7 +43,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await clearTenantRows(prisma);
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -189,9 +193,13 @@ describe('SessionGuard', () => {
     rewrite(redis, owner.rawSessionId, { lastSeenAt: seenAt });
     const response = new RecordingCookieWriter();
 
-    await createGuard(prisma, redis).canActivate(httpContext(requestFor(owner.rawSessionId), response));
+    await createGuard(prisma, redis).canActivate(
+      httpContext(requestFor(owner.rawSessionId), response),
+    );
     const quiet = new RecordingCookieWriter();
-    await createGuard(prisma, redis).canActivate(httpContext(requestFor(owner.rawSessionId), quiet));
+    await createGuard(prisma, redis).canActivate(
+      httpContext(requestFor(owner.rawSessionId), quiet),
+    );
 
     expect(response.setCall?.value).toBe(owner.rawSessionId);
     expect(response.setCall?.options.maxAge).toBeGreaterThan(SESSION_IDLE_TTL_MS - 60_000);
@@ -202,9 +210,13 @@ describe('SessionGuard', () => {
   it('stops a demoted admin from revoking another user with the old session', async () => {
     const redis = new MemorySessionRedis();
     const admin = await createAdmin(prisma, redis);
-    const version = await new PrismaSessionUserStore(prisma).applySecurityChange(admin.userId, admin.tenantId, {
-      role: 'MEMBER',
-    });
+    const version = await new PrismaSessionUserStore(prisma).applySecurityChange(
+      admin.userId,
+      admin.tenantId,
+      {
+        role: 'MEMBER',
+      },
+    );
     const row = await prisma.user.findUniqueOrThrow({ where: { id: admin.userId } });
     const error = await activate(prisma, redis, admin.rawSessionId, new RecordingCookieWriter());
 
@@ -214,10 +226,12 @@ describe('SessionGuard', () => {
       statusCode: 401,
       body: { error: { code: identityErrorCodes.SESSION_REVOKED } },
     });
-    expect(canRevokeUserSessions(
-      { userId: admin.userId, tenantId: admin.tenantId, role: row.role },
-      admin.otherUserId,
-    )).toBe(false);
+    expect(
+      canRevokeUserSessions(
+        { userId: admin.userId, tenantId: admin.tenantId, role: row.role },
+        admin.otherUserId,
+      ),
+    ).toBe(false);
   });
 
   it('uses the live database role when Redis still says ADMIN', async () => {
@@ -259,12 +273,19 @@ describe('SessionGuard', () => {
 
   it('returns 401 when the session store times out and keeps the cookie', async () => {
     const response = new RecordingCookieWriter();
-    const error = await activate(prisma, new TimingOutSessionRedis(), createRawSessionId(), response);
+    const error = await activate(
+      prisma,
+      new TimingOutSessionRedis(),
+      createRawSessionId(),
+      response,
+    );
     const body = JSON.stringify(invoke(error).body);
 
     expect(invoke(error)).toMatchObject({
       statusCode: 401,
-      body: { error: { code: identityErrorCodes.UNAUTHENTICATED, message: 'Authentication is required.' } },
+      body: {
+        error: { code: identityErrorCodes.UNAUTHENTICATED, message: 'Authentication is required.' },
+      },
     });
     expect(body).not.toContain('TimeoutError');
     expect(response.cleared).toBe(false);

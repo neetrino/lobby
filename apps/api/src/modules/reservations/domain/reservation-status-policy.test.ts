@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  assertReservationTransition,
-  canTransitionReservation,
-} from './reservation-status-policy';
+import { assertReservationTransition, canTransitionReservation } from './reservation-status-policy';
 
 describe('reservation status policy', () => {
   it('allows the normal restaurant service lifecycle', () => {

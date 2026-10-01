@@ -106,7 +106,9 @@ export class UpstashSessionRedis implements SessionRedisClient {
 }
 
 /** Reads the Upstash REST credentials already named in the environment template. */
-export function readUpstashSessionConfig(env: NodeJS.ProcessEnv = process.env): UpstashSessionConfig | null {
+export function readUpstashSessionConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): UpstashSessionConfig | null {
   const url = env.UPSTASH_REDIS_REST_URL?.trim() ?? '';
   const token = env.UPSTASH_REDIS_REST_TOKEN?.trim() ?? '';
   if (url.length === 0 || token.length === 0 || url === PLACEHOLDER_URL) {

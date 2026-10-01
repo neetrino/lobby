@@ -68,7 +68,9 @@ export function readSessionCookieSecure(env: NodeJS.ProcessEnv = process.env): b
   return env.NODE_ENV === 'production';
 }
 
-function joinCookieHeader(cookieHeader: string | readonly string[] | undefined): string | undefined {
+function joinCookieHeader(
+  cookieHeader: string | readonly string[] | undefined,
+): string | undefined {
   if (cookieHeader === undefined) {
     return undefined;
   }

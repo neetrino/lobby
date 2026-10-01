@@ -34,8 +34,7 @@ export class StaleSessionError extends Error {
 }
 
 export type SessionTouch =
-  | { status: 'absent' }
-  | { status: 'present'; session: StoredSession; refreshed: boolean };
+  { status: 'absent' } | { status: 'present'; session: StoredSession; refreshed: boolean };
 
 export type SessionInspection =
   | { status: 'invalid' }

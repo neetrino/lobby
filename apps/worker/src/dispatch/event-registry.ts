@@ -6,7 +6,11 @@ import {
 
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
-import { bindIdempotentDelivery, isDurableDelivery, type DurableDelivery } from './idempotent-delivery.js';
+import {
+  bindIdempotentDelivery,
+  isDurableDelivery,
+  type DurableDelivery,
+} from './idempotent-delivery.js';
 import type { ProcessedEventStore } from './processed-event-store.js';
 import { PermanentDispatchError, type RetryClassification } from './retry-classification.js';
 
@@ -47,7 +51,9 @@ export type EventRegistryEntry<TVersion extends number = number> = {
   readonly handlers: readonly RegisteredHandler[];
 };
 
-export type EventRegistry<TEntries extends readonly EventRegistryEntry[] = readonly EventRegistryEntry[]> = {
+export type EventRegistry<
+  TEntries extends readonly EventRegistryEntry[] = readonly EventRegistryEntry[],
+> = {
   get(eventType: string, eventVersion: number): TEntries[number] | undefined;
   list(): TEntries;
 };
@@ -119,11 +125,9 @@ export function createWorkerEventRegistry(handlers: WorkerHandlers) {
 
 export type WorkerEventRegistry = ReturnType<typeof createWorkerEventRegistry>;
 
-function workerRegistryEntries(handlers: WorkerHandlers): readonly [
-  EventRegistryEntry<1>,
-  EventRegistryEntry<1>,
-  EventRegistryEntry<2>,
-] {
+function workerRegistryEntries(
+  handlers: WorkerHandlers,
+): readonly [EventRegistryEntry<1>, EventRegistryEntry<1>, EventRegistryEntry<2>] {
   const contactSchema = asEventSchema(contactCreatedEventSchema);
   const tenantV1Schema = asEventSchema(tenantCreatedEventV1Schema);
   const tenantSchema = asEventSchema(tenantCreatedEventSchema);

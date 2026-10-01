@@ -1,5 +1,9 @@
 import { createHash } from 'node:crypto';
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
@@ -39,7 +43,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await clearTenants();
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {

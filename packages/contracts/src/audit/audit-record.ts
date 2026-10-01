@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
-import { auditActions, auditActorTypeSchema, auditOutcomeSchema, auditSchemaVersion } from './audit-actions.js';
+import {
+  auditActions,
+  auditActorTypeSchema,
+  auditOutcomeSchema,
+  auditSchemaVersion,
+} from './audit-actions.js';
 
 const tenantRoleSchema = z.enum(['OWNER', 'ADMIN', 'MEMBER']);
 
@@ -41,7 +46,11 @@ export const userSessionsTerminatedAuditSchema = z
       context.addIssue({ code: 'custom', path: ['changes'], message: 'SUCCESS requires changes' });
     }
     if (record.outcome !== 'SUCCESS' && record.changes !== null) {
-      context.addIssue({ code: 'custom', path: ['changes'], message: 'Only SUCCESS records changes' });
+      context.addIssue({
+        code: 'custom',
+        path: ['changes'],
+        message: 'Only SUCCESS records changes',
+      });
     }
   });
 

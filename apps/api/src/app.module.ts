@@ -6,7 +6,7 @@ import { ALLOWED_ORIGINS, readAllowedOrigins } from './common/security/allowed-o
 import { OriginGuard } from './common/security/origin.guard';
 import { ContactsModule } from './modules/contacts';
 import { DealsModule } from './modules/deals';
-import { HealthModule } from './modules/health/health.module';
+import { HealthModule } from './modules/health';
 import { IdentityModule, SessionGuard } from './modules/identity';
 import { MessengerModule } from './modules/messenger';
 import { OrganizationsModule } from './modules/organizations';

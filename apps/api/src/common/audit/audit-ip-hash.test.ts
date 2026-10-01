@@ -33,7 +33,9 @@ describe('readAuditIpHashKey', () => {
     expect(() => readAuditIpHashKey({ NODE_ENV: 'production' })).toThrow(
       'AUDIT_IP_HASH_KEY is required in production.',
     );
-    expect(() => readAuditIpHashKey({ NODE_ENV: 'production', AUDIT_IP_HASH_KEY: 'a'.repeat(64) })).toThrow(
+    expect(() =>
+      readAuditIpHashKey({ NODE_ENV: 'production', AUDIT_IP_HASH_KEY: 'a'.repeat(64) }),
+    ).toThrow(
       'AUDIT_IP_HASH_KEY must be 64 lowercase hex characters and must not be one repeated character.',
     );
   });

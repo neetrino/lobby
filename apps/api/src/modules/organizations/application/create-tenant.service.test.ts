@@ -1,5 +1,9 @@
 import { TENANT_CREATED_EVENT_VERSION, tenantCreatedEventSchema } from '@lobby/contracts';
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
@@ -17,7 +21,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -30,14 +34,20 @@ beforeEach(async () => {
 
 describe('CreateTenantService', () => {
   it('commits the tenant, the owner, and the outbox event together', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
+    const service = new CreateTenantService(
+      prisma,
+      new OutboxService(),
+      new PlanEntitlementGrant(),
+    );
 
     const created = await service.createWithOwner({
       tenant: { name: 'Acme', subdomain: 'Acme', plan: 'starter' },
       owner,
     });
 
-    const storedTenant = await prisma.tenant.findUniqueOrThrow({ where: { id: created.tenant.id } });
+    const storedTenant = await prisma.tenant.findUniqueOrThrow({
+      where: { id: created.tenant.id },
+    });
     const storedUser = await prisma.user.findUniqueOrThrow({ where: { id: created.user.id } });
     const storedEvent = await prisma.outboxEvent.findFirstOrThrow({
       where: { aggregateId: created.tenant.id },
@@ -53,7 +63,9 @@ describe('CreateTenantService', () => {
     expect(storedEvent.eventType).toBe('tenant.created');
     expect(storedEvent.eventVersion).toBe(TENANT_CREATED_EVENT_VERSION);
     expect(storedEvent.tenantId).toBe(storedTenant.id);
-    const parsed = tenantCreatedEventSchema.parse(toEvent(storedEvent, storedTenant, storedUser.id));
+    const parsed = tenantCreatedEventSchema.parse(
+      toEvent(storedEvent, storedTenant, storedUser.id),
+    );
     expect(parsed.payload.ownerUserId).toBe(storedUser.id);
     expect(JSON.stringify(storedEvent.payload)).not.toContain('password');
     const modules = await prisma.tenantModule.findMany({
@@ -68,10 +80,20 @@ describe('CreateTenantService', () => {
   });
 
   it('allows the same email in a second tenant', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
+    const service = new CreateTenantService(
+      prisma,
+      new OutboxService(),
+      new PlanEntitlementGrant(),
+    );
 
-    await service.createWithOwner({ tenant: { name: 'One', subdomain: 'one', plan: 'starter' }, owner });
-    await service.createWithOwner({ tenant: { name: 'Two', subdomain: 'two', plan: 'starter' }, owner });
+    await service.createWithOwner({
+      tenant: { name: 'One', subdomain: 'one', plan: 'starter' },
+      owner,
+    });
+    await service.createWithOwner({
+      tenant: { name: 'Two', subdomain: 'two', plan: 'starter' },
+      owner,
+    });
 
     expect(await prisma.user.count()).toBe(2);
     expect(await prisma.tenant.count()).toBe(2);
@@ -82,7 +104,9 @@ describe('CreateTenantService', () => {
     vi.spyOn(grants, 'grant').mockRejectedValue(new Error('entitlement unavailable'));
     const service = new CreateTenantService(prisma, new OutboxService(), grants);
 
-    await expect(service.createWithOwner(command('modules'))).rejects.toThrow('entitlement unavailable');
+    await expect(service.createWithOwner(command('modules'))).rejects.toThrow(
+      'entitlement unavailable',
+    );
     expect(await prisma.tenant.count()).toBe(0);
     expect(await prisma.user.count()).toBe(0);
     expect(await prisma.tenantModule.count()).toBe(0);
@@ -101,7 +125,11 @@ describe('CreateTenantService', () => {
   });
 
   it('rejects an invalid subdomain before persistence', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
+    const service = new CreateTenantService(
+      prisma,
+      new OutboxService(),
+      new PlanEntitlementGrant(),
+    );
 
     await expect(
       service.createWithOwner({
@@ -114,7 +142,11 @@ describe('CreateTenantService', () => {
   });
 
   it('rejects an unsupported plan before persistence', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
+    const service = new CreateTenantService(
+      prisma,
+      new OutboxService(),
+      new PlanEntitlementGrant(),
+    );
 
     await expect(
       service.createWithOwner({
@@ -126,7 +158,11 @@ describe('CreateTenantService', () => {
   });
 
   it('rejects client-supplied tenant id, role, and status', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
+    const service = new CreateTenantService(
+      prisma,
+      new OutboxService(),
+      new PlanEntitlementGrant(),
+    );
     const suppliedTenantId = '99999999-9999-4999-8999-999999999999';
 
     await expect(
@@ -140,7 +176,11 @@ describe('CreateTenantService', () => {
   });
 
   it('does not keep an owner when the subdomain is already taken', async () => {
-    const service = new CreateTenantService(prisma, new OutboxService(), new PlanEntitlementGrant());
+    const service = new CreateTenantService(
+      prisma,
+      new OutboxService(),
+      new PlanEntitlementGrant(),
+    );
     await service.createWithOwner(command('acme'));
 
     await expect(

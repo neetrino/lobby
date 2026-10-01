@@ -1,8 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { ApiError, apiErrorCodes } from '../../../common/http/api-error';
-import { AUTH_RATE_LIMITS, type AuthRateLimitConfig, type RateLimitPolicy } from '../infrastructure/rate-limit-config';
-import { invalidSessionIpKey, loginAccountKey, loginIpKey, registerIpKey } from '../infrastructure/rate-limit-keys';
+import {
+  AUTH_RATE_LIMITS,
+  type AuthRateLimitConfig,
+  type RateLimitPolicy,
+} from '../infrastructure/rate-limit-config';
+import {
+  invalidSessionIpKey,
+  loginAccountKey,
+  loginIpKey,
+  registerIpKey,
+} from '../infrastructure/rate-limit-keys';
 import { RATE_LIMIT_REDIS, type RateLimitRedis } from '../infrastructure/rate-limit-redis';
 
 @Injectable()

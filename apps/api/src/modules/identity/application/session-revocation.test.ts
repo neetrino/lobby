@@ -1,10 +1,17 @@
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { Reflector } from '@nestjs/core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AuthorizationError } from '../../../common/auth/authorization';
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
-import { requestContextFromSession, type RequestContext } from '../../../common/tenant/request-context';
+import {
+  requestContextFromSession,
+  type RequestContext,
+} from '../../../common/tenant/request-context';
 import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { CreateTenantService } from '../../organizations';
@@ -47,7 +54,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await clearTenantRows(prisma);
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -143,12 +150,12 @@ describe('terminateAllSessions', () => {
     const outsiderSession = await openSession(sessions, outsider);
     const service = terminator(sessions);
 
-    await expect(service.terminateAllSessions(contextOf(member), owner.userId, quietClient)).rejects.toBeInstanceOf(
-      AuthorizationError,
-    );
-    await expect(service.terminateAllSessions(contextOf(owner), outsider.userId, quietClient)).rejects.toBeInstanceOf(
-      IdentityError,
-    );
+    await expect(
+      service.terminateAllSessions(contextOf(member), owner.userId, quietClient),
+    ).rejects.toBeInstanceOf(AuthorizationError);
+    await expect(
+      service.terminateAllSessions(contextOf(owner), outsider.userId, quietClient),
+    ).rejects.toBeInstanceOf(IdentityError);
     const denied = await prisma.auditEvent.findMany({ where: { tenantId: owner.tenantId } });
     expect(denied).toHaveLength(2);
     expect(denied.every((row) => row.outcome === 'DENIED' && row.changes === null)).toBe(true);
@@ -228,7 +235,10 @@ function checkedSessions(redis: SessionRedisClient): RedisSessionStore {
   return new RedisSessionStore(redis, new PrismaSessionUserStore(prisma));
 }
 
-function terminator(sessions: RedisSessionStore, audit = new AuditEventStore(prisma)): TerminateUserSessionsService {
+function terminator(
+  sessions: RedisSessionStore,
+  audit = new AuditEventStore(prisma),
+): TerminateUserSessionsService {
   return new TerminateUserSessionsService(new PrismaSessionUserStore(prisma), sessions, audit);
 }
 
@@ -263,7 +273,12 @@ function controllerFor(sessions: RedisSessionStore): AuthController {
       true,
       incidents,
     ),
-    new LoginService(new PrismaLoginAccountStore(prisma), new Argon2PasswordHasher(), sessions, incidents),
+    new LoginService(
+      new PrismaLoginAccountStore(prisma),
+      new Argon2PasswordHasher(),
+      sessions,
+      incidents,
+    ),
     new LogoutService(sessions),
     new SessionCookie(true),
     new AuthRateLimitService(new MemoryRateLimitRedis(), permissiveAuthRateLimits()),
@@ -281,7 +296,9 @@ function guardFor(redis: SessionRedisClient): SessionGuard {
 }
 
 function accept(redis: SessionRedisClient, rawSessionId: string): Promise<boolean> {
-  return guardFor(redis).canActivate(httpContext(requestFor(rawSessionId), new RecordingCookieWriter()));
+  return guardFor(redis).canActivate(
+    httpContext(requestFor(rawSessionId), new RecordingCookieWriter()),
+  );
 }
 
 async function rejection(redis: SessionRedisClient, rawSessionId: string) {
@@ -293,7 +310,11 @@ async function rejection(redis: SessionRedisClient, rawSessionId: string) {
   throw new Error('Expected the session to be rejected.');
 }
 
-async function restoreAndReject(redis: IndexedSessionRedis, rawSessionId: string, payload: string | undefined) {
+async function restoreAndReject(
+  redis: IndexedSessionRedis,
+  rawSessionId: string,
+  payload: string | undefined,
+) {
   if (payload === undefined) {
     throw new Error('Expected the original session payload.');
   }
@@ -304,7 +325,10 @@ async function restoreAndReject(redis: IndexedSessionRedis, rawSessionId: string
 }
 
 async function versionOf(userId: string): Promise<number> {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { authenticationVersion: true } });
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { authenticationVersion: true },
+  });
   if (user === null) {
     throw new Error('Expected the user to exist.');
   }
@@ -312,7 +336,9 @@ async function versionOf(userId: string): Promise<number> {
 }
 
 async function createUser(subdomain: string, role: SessionRole): Promise<TenantUser> {
-  const tenant = await prisma.tenant.create({ data: { name: subdomain, subdomain, plan: 'STARTER' } });
+  const tenant = await prisma.tenant.create({
+    data: { name: subdomain, subdomain, plan: 'STARTER' },
+  });
   return addUser(tenant.id, role, `${role.toLowerCase()}@${subdomain}.test`);
 }
 

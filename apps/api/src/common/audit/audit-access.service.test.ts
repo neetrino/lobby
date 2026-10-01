@@ -1,4 +1,8 @@
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthorizationError } from '../auth/authorization';
@@ -14,7 +18,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -23,18 +27,21 @@ beforeEach(async () => {
   await prisma.tenant.deleteMany();
 });
 
-describe('AuditAccessService', () => {
+describe.sequential('AuditAccessService', () => {
   it('pages audit rows with an index that includes the id tie-breaker', async () => {
     const indexes = await prisma.$queryRaw<Array<{ indexname: string }>>`
       SELECT indexname FROM pg_indexes
-      WHERE tablename = 'audit_events'
+      WHERE schemaname = 'public'
+        AND tablename = 'audit_events'
         AND indexname IN (
           'audit_events_tenant_id_occurred_at_id_idx',
           'audit_events_tenant_id_occurred_at_idx'
         )
     `;
 
-    expect(indexes.map((row) => row.indexname)).toEqual(['audit_events_tenant_id_occurred_at_id_idx']);
+    expect(indexes.map((row) => row.indexname).sort()).toEqual([
+      'audit_events_tenant_id_occurred_at_id_idx',
+    ]);
   });
 
   it('shows a tenant its own audit rows and hides the other tenant', async () => {
@@ -55,7 +62,12 @@ describe('AuditAccessService', () => {
     const access = new AuditAccessService(new AuditEventStore(prisma));
     await insertEvent(owner, '10000000-0000-4000-8000-000000000001', '2026-01-01T00:00:00.000Z');
     await insertEvent(owner, '20000000-0000-4000-8000-000000000002', '2026-01-02T00:00:00.000Z');
-    await insertEvent(owner, '30000000-0000-4000-8000-000000000002', '2026-01-02T00:00:00.000Z', 'SUCCESS');
+    await insertEvent(
+      owner,
+      '30000000-0000-4000-8000-000000000002',
+      '2026-01-02T00:00:00.000Z',
+      'SUCCESS',
+    );
     await insertEvent(outsider, '40000000-0000-4000-8000-000000000004', '2026-01-04T00:00:00.000Z');
     const first = await access.list(contextFor(owner), pageQuery({ limit: '2' }));
     const second = await access.list(
@@ -76,9 +88,25 @@ describe('AuditAccessService', () => {
     const owner = await createUser('acme', 'OWNER');
     const other = await createUser('beta', 'OWNER');
     const access = new AuditAccessService(new AuditEventStore(prisma));
-    await insertEvent(owner, '10000000-0000-4000-8000-000000000011', '2026-01-01T00:00:00.000Z', 'DENIED', 'user.disabled');
-    await insertEvent(owner, '20000000-0000-4000-8000-000000000012', '2026-01-02T00:00:00.000Z', 'SUCCESS');
-    await insertEvent(other, '30000000-0000-4000-8000-000000000013', '2026-01-02T00:00:00.000Z', 'SUCCESS');
+    await insertEvent(
+      owner,
+      '10000000-0000-4000-8000-000000000011',
+      '2026-01-01T00:00:00.000Z',
+      'DENIED',
+      'user.disabled',
+    );
+    await insertEvent(
+      owner,
+      '20000000-0000-4000-8000-000000000012',
+      '2026-01-02T00:00:00.000Z',
+      'SUCCESS',
+    );
+    await insertEvent(
+      other,
+      '30000000-0000-4000-8000-000000000013',
+      '2026-01-02T00:00:00.000Z',
+      'SUCCESS',
+    );
     const filtered = await access.list(
       contextFor(owner),
       pageQuery({
@@ -144,7 +172,10 @@ function denied(user: { userId: string; tenantId: string }) {
   };
 }
 
-function contextFor(user: { userId: string; tenantId: string }, role: 'OWNER' | 'ADMIN' | 'MEMBER' = 'OWNER'): RequestContext {
+function contextFor(
+  user: { userId: string; tenantId: string },
+  role: 'OWNER' | 'ADMIN' | 'MEMBER' = 'OWNER',
+): RequestContext {
   return requestContextFromSession(
     { userId: user.userId, tenantId: user.tenantId, role },
     '44444444-4444-4444-8444-444444444444',

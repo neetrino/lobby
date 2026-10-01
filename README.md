@@ -58,9 +58,9 @@ pnpm test
 pnpm build
 ```
 
-Database integration tests require the local PostgreSQL service. A current known issue is that API DB test files share one test database and can interfere through cleanup; the isolation fix is tracked in [`docs/PROGRESS.md`](docs/PROGRESS.md).
+Database integration tests require the local PostgreSQL service. Every test client receives a unique PostgreSQL schema, and explicit disposal drops only that schema, so parallel suites cannot erase each other's rows.
 
-`pnpm format:check` exists, but the repository formatting scope still needs cleanup before it becomes a required CI gate.
+CI runs `pnpm format:check` before lint, typecheck, tests, and build. Generated output, migrations, archived/reference documentation, and local agent/tool folders are excluded by `.prettierignore`.
 
 ## Current implementation
 

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 
-import { DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT, pageLimitSchema, sortDirectionSchema } from './index.js';
+import {
+  DEFAULT_PAGE_LIMIT,
+  MAX_PAGE_LIMIT,
+  pageLimitSchema,
+  sortDirectionSchema,
+} from './index.js';
 
 const page = z.strictObject({ limit: pageLimitSchema });
 

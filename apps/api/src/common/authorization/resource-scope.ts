@@ -25,7 +25,9 @@ export function canAccessResource(
   if (scope !== 'tenant') {
     return false;
   }
-  return actor.userId.length > 0 && actor.tenantId.length > 0 && resource.tenantId === actor.tenantId;
+  return (
+    actor.userId.length > 0 && actor.tenantId.length > 0 && resource.tenantId === actor.tenantId
+  );
 }
 
 /**

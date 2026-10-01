@@ -117,16 +117,16 @@
 
 ## 8. Testing and CI
 
-| Area                       | Current state                                                                            | Status                                                   |
-| -------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------- |
-| CI                         | GitHub Actions runs frozen install, lint, typecheck, tests, and build with PostgreSQL 17 | Implemented                                              |
-| Clean task graph           | Lint/typecheck/test build dependency packages before resolving their declarations        | Implemented                                              |
-| Unit/contract tests        | Vitest                                                                                   | Implemented                                              |
-| API integration tests      | Nest testing utilities + Supertest                                                       | Implemented                                              |
-| Database integration tests | Real local/CI PostgreSQL with deployed migrations                                        | Implemented but test-database isolation needs correction |
-| Web tests                  | No test files                                                                            | Open                                                     |
-| Formatting                 | Script exists but is not a passing CI gate                                               | Open                                                     |
-| Production build           | API, web, worker, contracts, and database build successfully                             | Implemented                                              |
+| Area                       | Current state                                                                            | Status                        |
+| -------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------- |
+| CI                         | GitHub Actions runs frozen install, lint, typecheck, tests, and build with PostgreSQL 17 | Implemented                   |
+| Clean task graph           | Lint/typecheck/test build dependency packages before resolving their declarations        | Implemented                   |
+| Unit/contract tests        | Vitest                                                                                   | Implemented                   |
+| API integration tests      | Nest testing utilities + Supertest                                                       | Implemented                   |
+| Database integration tests | Real local/CI PostgreSQL, deployed migrations, and a unique disposable schema per client | Implemented and parallel-safe |
+| Web tests                  | No test files                                                                            | Open                          |
+| Formatting                 | Script exists but is not a passing CI gate                                               | Open                          |
+| Production build           | API, web, worker, contracts, and database build successfully                             | Implemented                   |
 
 ## 9. Current quality warning
 

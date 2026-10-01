@@ -28,7 +28,13 @@ const DEFAULT_INVALID_SESSION_IP_WINDOW_MS = 5 * 60 * 1000;
 
 export function readAuthRateLimitConfig(env: NodeJS.ProcessEnv = process.env): AuthRateLimitConfig {
   return {
-    loginIp: policy(env, 'RATE_LIMIT_LOGIN_IP_LIMIT', 'RATE_LIMIT_LOGIN_IP_WINDOW_MS', DEFAULT_LOGIN_IP_LIMIT, DEFAULT_LOGIN_IP_WINDOW_MS),
+    loginIp: policy(
+      env,
+      'RATE_LIMIT_LOGIN_IP_LIMIT',
+      'RATE_LIMIT_LOGIN_IP_WINDOW_MS',
+      DEFAULT_LOGIN_IP_LIMIT,
+      DEFAULT_LOGIN_IP_WINDOW_MS,
+    ),
     loginAccount: policy(
       env,
       'RATE_LIMIT_LOGIN_ACCOUNT_LIMIT',

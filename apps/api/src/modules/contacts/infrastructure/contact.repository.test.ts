@@ -1,8 +1,15 @@
 import { readFileSync } from 'node:fs';
-import { createTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { requestContextFromSession, type RequestContext } from '../../../common/tenant/request-context';
+import {
+  requestContextFromSession,
+  type RequestContext,
+} from '../../../common/tenant/request-context';
 import { ContactRepository } from './contact.repository';
 
 let prisma: PrismaClient;
@@ -12,7 +19,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await prisma?.$disconnect();
+  await disposeTestPrismaClient(prisma);
 });
 
 beforeEach(async () => {
@@ -38,8 +45,14 @@ describe('ContactRepository', () => {
 
   it('does not let contact services query the contact table directly', () => {
     const repository = readFileSync(new URL('./contact.repository.ts', import.meta.url), 'utf8');
-    const createService = readFileSync(new URL('../application/create-contact.service.ts', import.meta.url), 'utf8');
-    const accessService = readFileSync(new URL('../application/contact-access.service.ts', import.meta.url), 'utf8');
+    const createService = readFileSync(
+      new URL('../application/create-contact.service.ts', import.meta.url),
+      'utf8',
+    );
+    const accessService = readFileSync(
+      new URL('../application/contact-access.service.ts', import.meta.url),
+      'utf8',
+    );
 
     expect(repository.match(/tenantId: this\.tenantId/g)).toHaveLength(3);
     expect(createService).not.toContain('.contact.');
