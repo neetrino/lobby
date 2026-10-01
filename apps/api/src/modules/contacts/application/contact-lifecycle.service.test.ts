@@ -51,9 +51,7 @@ describe('contact lifecycle', () => {
     const first = await service.create(context, { name: 'Ada', email: 'ada@example.com' });
     const second = await service.create(context, { name: 'ada', phone: '555' });
 
-    expect(second.warnings).toEqual([
-      { code: 'POSSIBLE_DUPLICATE', contactId: first.contact.id },
-    ]);
+    expect(second.warnings).toEqual([{ code: 'POSSIBLE_DUPLICATE', contactId: first.contact.id }]);
     expect(JSON.stringify(second.warnings)).not.toContain('ada@example.com');
     await expect(
       service.create(context, { name: 'Other', email: 'Ada@Example.com' }),
@@ -69,7 +67,10 @@ describe('contact lifecycle', () => {
     await service.create(context, { name: 'Bea', phone: '555-0100' });
     await service.create(context, { name: 'Ada', phone: '555-0199' });
 
-    const page = await access.list(context, contactListQuerySchema.parse({ limit: 1, sort: 'asc' }));
+    const page = await access.list(
+      context,
+      contactListQuerySchema.parse({ limit: 1, sort: 'asc' }),
+    );
     expect(page.data.map((contact) => contact.name)).toEqual(['Ada']);
     expect(page.page.nextCursor).toEqual(expect.any(String));
     if (page.page.nextCursor === null) {

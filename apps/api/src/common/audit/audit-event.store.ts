@@ -20,8 +20,7 @@ import {
 import type { AuditEventListQuery } from './list-audit-events.schema';
 
 export type AuditWrite =
-  | Omit<UserSessionsTerminatedAudit, 'schemaVersion'>
-  | Omit<ContactLifecycleAudit, 'schemaVersion'>;
+  Omit<UserSessionsTerminatedAudit, 'schemaVersion'> | Omit<ContactLifecycleAudit, 'schemaVersion'>;
 
 /** Append-only audit rows. There is no update and no delete. */
 @Injectable()

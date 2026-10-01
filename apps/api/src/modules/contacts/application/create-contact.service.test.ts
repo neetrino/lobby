@@ -90,9 +90,7 @@ describe('CreateContactService', () => {
 
     await expect(
       service.create(tenantContext(tenant.id, 'OWNER', tenant.userId), { name: 'Ada' }),
-    ).rejects.toThrow(
-      'outbox unavailable',
-    );
+    ).rejects.toThrow('outbox unavailable');
     expect(await prisma.contact.count()).toBe(0);
     expect(await prisma.outboxEvent.count()).toBe(0);
   });

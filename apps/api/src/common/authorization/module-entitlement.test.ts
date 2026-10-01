@@ -178,10 +178,14 @@ function publicMethodNames(source: string): string[] {
  * One operation checks the module, then the permission.
  * The pair is read from that method only, so a new operation does not change the others.
  */
-function expectEnabledBeforePermission(source: string, methodName: string, permission: string): void {
-  const calls = [...methodBody(source, methodName).matchAll(/requireEnabled\(|requirePermission\([^)]*\)/g)].map(
-    (match) => match[0],
-  );
+function expectEnabledBeforePermission(
+  source: string,
+  methodName: string,
+  permission: string,
+): void {
+  const calls = [
+    ...methodBody(source, methodName).matchAll(/requireEnabled\(|requirePermission\([^)]*\)/g),
+  ].map((match) => match[0]);
   expect(calls, methodName).toEqual([
     'requireEnabled(',
     `requirePermission(context, '${permission}')`,

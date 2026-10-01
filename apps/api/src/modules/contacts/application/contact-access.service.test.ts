@@ -39,7 +39,9 @@ describe('ContactAccessService', () => {
     const service = accessService();
 
     for (const role of ['OWNER', 'ADMIN', 'MEMBER'] as const) {
-      expect((await service.read(requestContext(tenant.id, role), contact.id))?.id).toBe(contact.id);
+      expect((await service.read(requestContext(tenant.id, role), contact.id))?.id).toBe(
+        contact.id,
+      );
       const renamed = await service.update(requestContext(tenant.id, role), contact.id, {
         name: role,
       });

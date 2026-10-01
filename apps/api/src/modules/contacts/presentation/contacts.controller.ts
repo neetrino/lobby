@@ -12,7 +12,12 @@ import { createContactSchema, type CreateContactInput } from '../application/cre
 import { CreateContactService } from '../application/create-contact.service';
 import { contactListQuerySchema, type ContactListQuery } from '../application/list-contacts.schema';
 import { updateContactSchema, type UpdateContactInput } from '../application/update-contact.schema';
-import { contactResponse, toContactView, type ContactResponse, type ContactView } from './contact-view';
+import {
+  contactResponse,
+  toContactView,
+  type ContactResponse,
+  type ContactView,
+} from './contact-view';
 
 const contactIdSchema = z.uuid();
 
