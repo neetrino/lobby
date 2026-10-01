@@ -318,6 +318,8 @@ The web flow uses opaque, high-entropy server-side sessions delivered through `H
 
 Every tenant-scoped operation derives the user's single tenant from the authenticated identity and checks permission, module entitlement, and resource scope. Owner/Admin/Member are stored on `users.role` for the current foundation and are not a substitute for those live checks; platform-operator permissions remain separate. Users cannot select, join, or switch to another organization tenant.
 
+The planned access-management version replaces the fixed tenant-role permission mapping with tenant-defined roles backed by a closed application permission catalog. `OWNER` remains a protected system role. Owners, and Admins holding an explicit role-management permission, may create, rename, disable, and assign tenant roles from organization settings. They cannot grant permissions outside their own authority, cross the tenant boundary, grant platform-operator permissions, or remove the final active Owner. Permission and role changes increment the affected user's authentication version so existing sessions cannot retain stale authority.
+
 ### Tenant registration boundary
 
 Auth accepts registration input, validates the password, and hashes it. Organizations is the only module that writes `tenants` and the founding user. `createWithOwner` commits the tenant, the active owner, and the `tenant.created` outbox event in one PostgreSQL transaction. The event payload never contains a password or password hash.
@@ -338,6 +340,7 @@ The login identifier is tenant subdomain + email + password on `POST /api/v1/aut
 - Use idempotency where retries or duplicate delivery could create duplicate effects.
 - Keep secrets out of source, browser bundles, URLs, and logs; rotate them through an approved process.
 - Record security-sensitive actions in tamper-resistant audit history distinct from operational logs.
+- Audit successful and denied access-management operations, including role creation/update, permission changes, user-role assignment, user disablement, and session termination. Access changes and their success audit record commit atomically.
 - Define upload validation, webhook verification, dependency scanning, backup restoration, and incident response before enabling the corresponding risk surface.
 
 ---

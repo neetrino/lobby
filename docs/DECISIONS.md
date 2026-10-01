@@ -16,6 +16,7 @@ Only approved decisions should be treated as authoritative. Proposed or replaced
 
 The modular monolith, one-user/one-tenant model, revocable Redis sessions, application-enforced tenant scope, and transactional PostgreSQL outbox are implemented decisions documented in the TECH_CARD and architecture document. Create dedicated ADRs when their alternatives and long-term consequences need a durable record.
 
-| Decision                         | Status   | Record                                              |
-| -------------------------------- | -------- | --------------------------------------------------- |
-| Append-only tenant audit history | Approved | [ADR 0001](./architecture/ADR-0001-audit-events.md) |
+| Decision                                                            | Status   | Record                                                 |
+| ------------------------------------------------------------------- | -------- | ------------------------------------------------------ |
+| Append-only tenant audit history                                    | Approved | [ADR 0001](./architecture/ADR-0001-audit-events.md)    |
+| Tenant-configurable roles and permissions with protected Owner role | Planned  | Detailed ADR required before schema/API implementation |

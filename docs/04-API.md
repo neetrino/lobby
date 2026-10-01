@@ -62,6 +62,12 @@ A query or write that omits `scopedTenantId(context)` is not tenant-safe. Revoki
 
 Audit is separate from access enforcement. Session-termination success/denial records and the permissioned audit-list endpoint are implemented. Role changes, assignments, business status transitions, and general permission denials must add audit records when those operations are implemented. PostgreSQL row-level security is not part of this foundation; tenant isolation currently uses application query scope plus tenant-safe constraints.
 
+### Planned role and permission settings
+
+Tenant access-management endpoints will let an Owner, or an Admin with the explicit access-management permission, list/create/update/disable tenant roles, choose permissions from the server-owned permission catalog, and assign one approved role to a tenant user. The API will never accept arbitrary permission strings, tenant ids, platform permissions, or an `OWNER` role definition from the client. It must reject privilege escalation, cross-tenant targets, disabling an assigned role without an approved replacement, and removal of the final active Owner.
+
+Role definition changes, permission-set changes, assignments, and denied attempts are auditable. A successful assignment updates authorization state, increments the affected user's `authenticationVersion`, and inserts its audit event in one database transaction. Redis session removal follows the committed version change, so an old session cannot retain permissions if cache cleanup is interrupted.
+
 ---
 
 ## Response and error shape

@@ -97,6 +97,7 @@
 | Organizations    | Transactional tenant + first ACTIVE OWNER + default entitlements + `tenant.created` outbox event                                   |
 | Contacts         | Create/read/rename pilot with explicit permissions, tenant entitlement, tenant-scoped repository, and `contact.created` event      |
 | Audit            | Append-only events, HMAC-hashed client IP metadata, permissioned cursor-paginated read API                                         |
+| Tenant RBAC      | Current fixed roles; planned Owner/Admin-managed tenant roles from a closed permission catalog with anti-escalation rules          |
 | Reservations     | Contracts, schema, cross-tenant constraints, overlap prevention, and status policy; application/API operations are not implemented |
 | Deals            | Module boundary only; no business implementation                                                                                   |
 | Messenger        | Module boundary only; no business implementation                                                                                   |

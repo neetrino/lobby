@@ -37,6 +37,7 @@ Version 1 establishes the shared workspace and access model first, then delivers
 | ----------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | High        | Organization users and access                                   | Each user belongs to exactly one organization tenant; multi-organization membership and switching are unsupported. |
 | High        | Authentication and access control                               | Owners can invite/remove members and assign approved roles or permissions; revoked access stops working promptly.  |
+| High        | Configurable tenant roles and permissions                       | Owners, and Admins with delegated access-management permission, can create tenant roles from approved permissions. |
 | High        | Contacts                                                        | Authorized members can create, view, update, search, and archive organization contacts.                            |
 | High        | Tasks                                                           | Members can create, assign, prioritize, update, and complete tasks linked to relevant records.                     |
 | High        | Deals and pipeline                                              | Teams can track deals through organization-defined pipeline stages with ownership and status history.              |
@@ -54,6 +55,10 @@ Version 1 establishes the shared workspace and access model first, then delivers
 2. The Owner configures basic organization settings and selects approved modules.
 3. The Owner invites team members and assigns roles or permissions.
 4. Invited users accept access and enter only the authorized organization workspace.
+
+Tenant roles are organization-specific settings. `OWNER` remains a protected system role. An Owner may create named roles such as Sales Manager or Delivery Operator; an Admin may manage them only with an explicit access-management permission. A manager cannot grant permissions they do not hold, grant platform permissions, cross the tenant boundary, or remove the tenant's final active Owner.
+
+Security-sensitive access changes and important business transitions appear in tenant audit history. Records identify the actor, action, outcome, affected resource, time, and safe request metadata without storing passwords, session identifiers, tokens, or raw client IP addresses.
 
 ### 2. Daily CRM workflow
 

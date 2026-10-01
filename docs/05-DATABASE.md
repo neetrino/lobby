@@ -228,6 +228,12 @@ The repository currently contains eight ordered migrations covering tenant/users
 | Orders and delivery     | TBD                                                                                                                                  | Conditional            | Add only if included in Version 1.                                                                                                                                                                                                                                                                                                                                                                        |
 | Audit and outbox        | `audit_events`, `outbox_events`, `processed_events`                                                                                  | Implemented            | `audit_events` is append-only application history, separate from operational logs. List pages use the `(tenant_id, occurred_at, id)` index. No retention job is defined, so rows are not deleted. Pending outbox rows are claimed with `FOR UPDATE SKIP LOCKED`. `processed_events` reserves an external side effect before it starts. Unique key: `(handler_name, event_type, event_version, event_id)`. |
 
+### Planned tenant-defined RBAC storage
+
+The current `users.role` enum remains authoritative until a reviewed migration introduces tenant role definitions, role-permission rows, and user-role assignment. Future role rows carry `tenant_id`; role names are unique within a tenant; permission keys come from the application-owned catalog; and composite foreign keys prevent cross-tenant assignments. `OWNER` is a protected system role, and the database/application transaction must preserve at least one active Owner per tenant. Access changes and their successful audit record are written atomically, and affected users receive an `authentication_version` increment.
+
+Audit history remains append-only. Role creation/update/disable, permission changes, role assignment, user disablement, session termination, and approved sensitive business transitions record actor, tenant, action, outcome, resource, timestamp, request id, and privacy-safe metadata. Secrets, password hashes, session ids, tokens, message bodies, and raw IP addresses are forbidden in audit metadata.
+
 ### Reservation data rules
 
 - Store instants in UTC; each venue stores an IANA timezone for calendar display and local opening-hour interpretation.

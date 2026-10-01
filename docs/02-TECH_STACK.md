@@ -55,15 +55,17 @@ Startup validation is implemented, but some feature providers still reread `proc
 
 ## Authentication and authorization
 
-| Concern          | Implemented choice                                                                    |
-| ---------------- | ------------------------------------------------------------------------------------- |
-| Login identifier | Tenant subdomain + email + password                                                   |
-| Password storage | Argon2id hash; plaintext never enters Organizations                                   |
-| Session          | Opaque Redis-backed session, `HttpOnly` cookie, idle and absolute expiry              |
-| Revocation       | Logout, terminate-all, targeted admin revocation, authentication-version invalidation |
-| Roles            | `OWNER`, `ADMIN`, `MEMBER`                                                            |
-| Authorization    | Route and service permissions, tenant module entitlement, tenant/resource scope       |
-| Tenant model     | One user row belongs to exactly one tenant; no membership table                       |
+| Concern          | Implemented choice                                                                            |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| Login identifier | Tenant subdomain + email + password                                                           |
+| Password storage | Argon2id hash; plaintext never enters Organizations                                           |
+| Session          | Opaque Redis-backed session, `HttpOnly` cookie, idle and absolute expiry                      |
+| Revocation       | Logout, terminate-all, targeted admin revocation, authentication-version invalidation         |
+| Roles            | `OWNER`, `ADMIN`, `MEMBER`                                                                    |
+| Authorization    | Route and service permissions, tenant module entitlement, tenant/resource scope               |
+| Tenant RBAC      | Protected Owner role plus planned tenant-defined roles built from a closed permission catalog |
+| Audit            | Append-only PostgreSQL history for access changes and important business transitions          |
+| Tenant model     | One user row belongs to exactly one tenant; no membership table                               |
 
 Email verification, password recovery, invitations, OAuth/OIDC, and device management are not implemented and require product/provider decisions.
 

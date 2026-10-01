@@ -13,6 +13,8 @@ Security-sensitive actions need a tenant-scoped history that is distinct from op
 
 The action catalog is closed: `user.sessions.terminated`, `user.role.changed`, `user.disabled`, `contact.deleted`, `deal.stage.changed`, `reservation.status.changed`.
 
+When tenant-configurable RBAC is implemented, the reviewed catalog will add role-definition, permission-set, and user-role assignment actions. Successful authorization changes and their audit row commit in the same transaction; denied attempts are also recorded without persisting secrets or attacker-controlled payloads.
+
 `user.sessions.terminated`, `user.role.changed`, and `user.disabled` commit in the same database transaction as the access change. If the audit insert fails, the access change rolls back. The other three actions will be written from the outbox when those use cases exist. The first writer is session termination.
 
 `audit:read` is granted to `OWNER` and `ADMIN`. A query always includes the caller's tenant. No retention period is approved, so nothing deletes audit rows.
