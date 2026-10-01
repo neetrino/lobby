@@ -4,9 +4,10 @@ import { createHmac } from 'node:crypto';
 export const AUDIT_IP_HASH_KEY = Symbol('AUDIT_IP_HASH_KEY');
 
 const AUDIT_IP_HASH_KEY_VARIABLE = 'AUDIT_IP_HASH_KEY';
-/** 32 random bytes, hex-encoded. Length alone is not accepted. */
+/** Shape only: 64 lowercase hex characters. This does not prove the key is random. */
 const AUDIT_IP_HASH_KEY_PATTERN = /^[0-9a-f]{64}$/;
-const AUDIT_IP_HASH_KEY_ERROR = 'AUDIT_IP_HASH_KEY must be 64 hex characters from 32 random bytes.';
+const AUDIT_IP_HASH_KEY_ERROR =
+  'AUDIT_IP_HASH_KEY must be 64 lowercase hex characters and must not be one repeated character.';
 
 /**
  * HMAC-SHA256 hex of a client address.
@@ -19,7 +20,9 @@ export function hashAuditIp(ip: string, key: string): string {
 
 /**
  * Reads `AUDIT_IP_HASH_KEY`.
- * Production must set 64 hex characters from 32 random bytes. Other environments may leave it unset.
+ * Production must set it. Other environments may leave it unset.
+ * A present value must be 64 lowercase hex characters and not one repeated character.
+ * That check does not prove the value was generated randomly.
  */
 export function readAuditIpHashKey(env: NodeJS.ProcessEnv = process.env): string | null {
   const key = env[AUDIT_IP_HASH_KEY_VARIABLE]?.trim() ?? '';

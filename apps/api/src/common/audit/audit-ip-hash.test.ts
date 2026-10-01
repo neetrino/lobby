@@ -20,7 +20,7 @@ describe('hashAuditIp', () => {
   it('rejects a short key and a repeated character without echoing either', () => {
     for (const secret of ['too-short', 'a'.repeat(32), 'a'.repeat(64)]) {
       expect(() => hashAuditIp('127.0.0.1', secret)).toThrow(
-        'AUDIT_IP_HASH_KEY must be 64 hex characters from 32 random bytes.',
+        'AUDIT_IP_HASH_KEY must be 64 lowercase hex characters and must not be one repeated character.',
       );
     }
   });
@@ -34,7 +34,7 @@ describe('readAuditIpHashKey', () => {
       'AUDIT_IP_HASH_KEY is required in production.',
     );
     expect(() => readAuditIpHashKey({ NODE_ENV: 'production', AUDIT_IP_HASH_KEY: 'a'.repeat(64) })).toThrow(
-      'AUDIT_IP_HASH_KEY must be 64 hex characters from 32 random bytes.',
+      'AUDIT_IP_HASH_KEY must be 64 lowercase hex characters and must not be one repeated character.',
     );
   });
 });

@@ -38,7 +38,9 @@ describe('loadApiConfig', () => {
     });
 
     expect(missing.message).toContain('AUDIT_IP_HASH_KEY is required in production.');
-    expect(short.message).toContain('AUDIT_IP_HASH_KEY must be 64 hex characters from 32 random bytes.');
+    expect(short.message).toContain(
+      'AUDIT_IP_HASH_KEY must be 64 lowercase hex characters and must not be one repeated character.',
+    );
     expect(missing.message).not.toContain(secret);
     expect(short.message).not.toContain('a'.repeat(64));
     expect(config.databaseUrl).toBe(databaseUrl);
