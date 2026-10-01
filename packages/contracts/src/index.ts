@@ -33,6 +33,8 @@ export {
 export type { ContactCreatedEvent, TenantCreatedEvent, TenantCreatedEventV1, VersionedEvent } from './events/index.js';
 export { passwordHashSchema, tenantPlanSchema, tenantPlans, tenantSubdomainSchema } from './tenants/index.js';
 export type { TenantPlan } from './tenants/index.js';
+export { DEFAULT_PAGE_LIMIT, MAX_PAGE_LIMIT, pageLimitSchema, sortDirectionSchema } from './pagination/index.js';
+export type { CursorPage, SortDirection } from './pagination/index.js';
 export { defaultLocale, localeSchema, supportedLocales } from './locales.js';
 export type { Locale } from './locales.js';
 export {

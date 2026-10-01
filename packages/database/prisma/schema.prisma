@@ -124,7 +124,7 @@ model AuditEvent {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   actor  User   @relation(fields: [actorUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
 
-  @@index([tenantId, occurredAt])
+  @@index([tenantId, occurredAt, id])
   @@index([tenantId, resourceType, resourceId])
   @@index([tenantId, actorUserId])
   @@map("audit_events")

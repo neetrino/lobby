@@ -23,6 +23,7 @@ describe('route authorization', () => {
     const gaps = controllers.flatMap(authorizationGaps);
 
     expect(controllers.map((controller) => controller.name).sort()).toEqual([
+      'AuditEventsController',
       'AuthController',
       'ContactsController',
       'HealthController',

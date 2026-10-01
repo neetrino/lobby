@@ -8,6 +8,14 @@ import type { Prisma, PrismaClient } from '@lobby/database' with { 'resolution-m
 
 import { PRISMA_CLIENT } from '../database/database.tokens';
 import type { TenantId } from '../tenant/tenant-id';
+import {
+  auditEventListSelect,
+  auditEventListWhere,
+  auditEventOrderBy,
+  toAuditEventPage,
+  type AuditEventPage,
+} from './list-audit-events.query';
+import type { AuditEventListQuery } from './list-audit-events.schema';
 
 export type AuditWrite = Omit<UserSessionsTerminatedAudit, 'schemaVersion'>;
 
@@ -49,28 +57,13 @@ export class AuditEventStore {
     await this.transaction((tx) => this.append(tx, input));
   }
 
-  list(tenantId: TenantId) {
-    return this.prisma.auditEvent.findMany({
-      where: { tenantId },
-      orderBy: { occurredAt: 'asc' },
-      select: {
-        id: true,
-        tenantId: true,
-        occurredAt: true,
-        actorUserId: true,
-        actorRole: true,
-        actorType: true,
-        action: true,
-        resourceType: true,
-        resourceId: true,
-        outcome: true,
-        changes: true,
-        reason: true,
-        requestId: true,
-        ipHash: true,
-        userAgent: true,
-        schemaVersion: true,
-      },
+  async list(tenantId: TenantId, query: AuditEventListQuery): Promise<AuditEventPage> {
+    const rows = await this.prisma.auditEvent.findMany({
+      where: auditEventListWhere(tenantId, query),
+      orderBy: auditEventOrderBy(query.sort),
+      take: query.limit + 1,
+      select: auditEventListSelect,
     });
+    return toAuditEventPage(rows, query);
   }
 }
