@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AUDIT_IP_HASH_KEY, readAuditIpHashKey } from '../../common/audit/audit-ip-hash';
 import { AuditModule } from '../../common/audit/audit.module';
 import { AuthorizationModule } from '../../common/authorization/authorization.module';
 import { DatabaseModule } from '../../common/database/database.module';
@@ -47,6 +48,7 @@ import { SessionGuard } from './presentation/session.guard';
         new RedisSessionStore(redis, users),
       inject: [SESSION_REDIS, PrismaSessionUserStore],
     },
+    { provide: AUDIT_IP_HASH_KEY, useFactory: () => readAuditIpHashKey() },
     PrismaLoginAccountStore,
     PrismaSessionUserStore,
     RegisterService,

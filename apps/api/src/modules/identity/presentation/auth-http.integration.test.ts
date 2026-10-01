@@ -6,6 +6,7 @@ import type { NestExpressApplication } from '@nestjs/platform-express';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import request from 'supertest';
 
+import { AUDIT_IP_HASH_KEY } from '../../../common/audit/audit-ip-hash';
 import { AppModule } from '../../../app.module';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { configureHttpApp } from '../../../common/http/configure-http-app';
@@ -43,6 +44,8 @@ beforeAll(async () => {
     .useValue([origin])
     .overrideProvider(AUTH_RATE_LIMITS)
     .useValue(permissiveAuthRateLimits())
+    .overrideProvider(AUDIT_IP_HASH_KEY)
+    .useValue('fedcba9876543210'.repeat(4))
     .compile();
   app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });
   configureHttpApp(app, { allowedOrigins: [origin], trustProxy: false }, { logger: false });

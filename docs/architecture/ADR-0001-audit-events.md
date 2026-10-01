@@ -17,7 +17,7 @@ The action catalog is closed: `user.sessions.terminated`, `user.role.changed`, `
 
 `audit:read` is granted to `OWNER` and `ADMIN`. A query always includes the caller's tenant. No retention period is approved, so nothing deletes audit rows.
 
-The row stores `schema_version` 1, UTC `timestamptz`, and a SHA-256 hex of the client address. It does not store passwords, hashes, session ids, cookies, tokens, raw IP addresses, or email and phone values.
+The row stores `schema_version` 1, UTC `timestamptz`, and an HMAC-SHA256 hex of the client address keyed with `AUDIT_IP_HASH_KEY`. That key is 64 hex characters from 32 random bytes, stored only in the environment, required in production, and it is not the session or cookie secret. A repeated character is rejected. A plain SHA-256 of the address is not stored. It does not store passwords, hashes, session ids, cookies, tokens, raw IP addresses, or email and phone values.
 
 ## Consequences
 

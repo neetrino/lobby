@@ -17,6 +17,33 @@ describe('loadApiConfig', () => {
     expect(config.allowedOrigins).toEqual(['http://localhost:3000']);
   });
 
+  it('requires AUDIT_IP_HASH_KEY in production and keeps the secret out of the error', async () => {
+    const secret = '0123456789abcdef'.repeat(4);
+    const missing = await configError({
+      NODE_ENV: 'production',
+      DATABASE_URL: databaseUrl,
+      APP_URL: 'http://localhost:3000',
+    });
+    const short = await configError({
+      NODE_ENV: 'production',
+      DATABASE_URL: databaseUrl,
+      APP_URL: 'http://localhost:3000',
+      AUDIT_IP_HASH_KEY: 'a'.repeat(64),
+    });
+    const config = await loadApiConfig({
+      NODE_ENV: 'production',
+      DATABASE_URL: databaseUrl,
+      APP_URL: 'http://localhost:3000',
+      AUDIT_IP_HASH_KEY: secret,
+    });
+
+    expect(missing.message).toContain('AUDIT_IP_HASH_KEY is required in production.');
+    expect(short.message).toContain('AUDIT_IP_HASH_KEY must be 64 hex characters from 32 random bytes.');
+    expect(missing.message).not.toContain(secret);
+    expect(short.message).not.toContain('a'.repeat(64));
+    expect(config.databaseUrl).toBe(databaseUrl);
+  });
+
   it('reads an explicit port and proxy hop count', async () => {
     const config = await loadApiConfig({
       DATABASE_URL: databaseUrl,

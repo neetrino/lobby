@@ -16,6 +16,7 @@ import { SessionCookie } from '../infrastructure/session-cookie';
 import { hashSessionId, sessionKey } from '../infrastructure/session-id';
 import { AuthRateLimitService } from '../application/auth-rate-limit.service';
 import { SessionAccessService } from '../application/session-access.service';
+import { hashAuditIp } from '../../../common/audit/audit-ip-hash';
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
 import { TerminateUserSessionsService } from '../application/terminate-user-sessions.service';
 import { readAuthenticatedSession } from '../../../common/auth/current-request';
@@ -76,6 +77,8 @@ describe('session endpoints', () => {
     await controller(redis).terminateAll(await principal(redis, opened.rawSessionId), response, auditRequest());
 
     expect(response.cleared).toBe(true);
+    const audit = await prisma.auditEvent.findFirstOrThrow({ where: { actorUserId: owner.userId } });
+    expect(audit.ipHash).toBe(hashAuditIp('127.0.0.1', auditIpHashKey));
     expect(redis.strings.has(sessionKey(hashSessionId(opened.rawSessionId)))).toBe(false);
     await expect(principal(redis, opened.rawSessionId)).rejects.toMatchObject({
       code: identityErrorCodes.SESSION_REVOKED,
@@ -118,6 +121,7 @@ function controller(redis: IndexedSessionRedis): SessionController {
   return new SessionController(
     new TerminateUserSessionsService(new PrismaSessionUserStore(prisma), sessions, new AuditEventStore(prisma)),
     new SessionCookie(true),
+    auditIpHashKey,
   );
 }
 
@@ -132,6 +136,8 @@ async function principal(redis: IndexedSessionRedis, rawSessionId: string): Prom
   ).canActivate(httpContext(request, new RecordingCookieWriter()));
   return readAuthenticatedSession(request);
 }
+
+const auditIpHashKey = '0123456789abcdef'.repeat(4);
 
 function auditRequest() {
   return {
