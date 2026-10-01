@@ -1,8 +1,8 @@
 # Architecture Records
 
-This folder will contain detailed architecture material that would make `docs/01-ARCHITECTURE.md` too large.
+This folder contains detailed architecture material that would make `docs/01-ARCHITECTURE.md` too large.
 
-Future content may include:
+Content may include:
 
 - Architecture Decision Records (ADRs);
 - system and deployment diagrams;

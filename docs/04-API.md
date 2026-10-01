@@ -5,7 +5,7 @@
 - **Style:** Versioned REST
 - **Owner:** NestJS API
 - **Version:** 0.3
-- **Status:** Auth and the contacts pilot are implemented. Other modules remain planned.
+- **Status:** ACTIVE — HTTP foundation, auth/session, contacts pilot, and audit listing are implemented; other business endpoints remain planned.
 
 ---
 
@@ -20,7 +20,7 @@
 
 ## Base contract
 
-| Concern        | Proposed rule                                                                                                        |
+| Concern        | Current rule                                                                                                         |
 | -------------- | -------------------------------------------------------------------------------------------------------------------- |
 | Base path      | `/api/v1`, set once in HTTP bootstrap. Controllers do not repeat `v1`. `GET /health` has no version prefix.          |
 | Format         | JSON over HTTPS                                                                                                      |
@@ -28,7 +28,7 @@
 | Tenant context | Copied from the validated session. A client tenant id is not a source of scope.                                      |
 | Validation     | `z.strictObject` on JSON bodies. An unknown field, including `tenantId`, is `400 VALIDATION_ERROR`.                  |
 | Dates          | ISO 8601 UTC in API payloads unless a contract explicitly states otherwise                                           |
-| Identifiers    | Opaque stable IDs; exact format TBD                                                                                  |
+| Identifiers    | UUIDs in the current persistence/API contracts; clients treat them as opaque stable strings                          |
 | Localization   | API returns stable codes; clients translate user-facing messages where practical                                     |
 
 ---
@@ -60,7 +60,7 @@ A protected business operation runs this chain. A later step does not replace an
 
 A query or write that omits `scopedTenantId(context)` is not tenant-safe. Revoking another user stays in the service even when the route already requires `sessions:revoke`. A caller may always revoke their own sessions. That self check is not a permission and is not the contacts tenant scope.
 
-Audit records for role changes, session termination, assignment, status transitions, and permission denials are not part of this chain. They are a later production record. PostgreSQL row-level security is not part of this foundation. Tenant isolation is the application query scope.
+Audit is separate from access enforcement. Session-termination success/denial records and the permissioned audit-list endpoint are implemented. Role changes, assignments, business status transitions, and general permission denials must add audit records when those operations are implemented. PostgreSQL row-level security is not part of this foundation; tenant isolation currently uses application query scope plus tenant-safe constraints.
 
 ---
 
@@ -118,17 +118,17 @@ Successful auth responses stay `{ "data": ... }` and do not add `requestId` to t
 
 ## Endpoint index
 
-| Module                        | Base resource                                                                                                                                                                                                      | Status          | Contract location                                                             |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- | ----------------------------------------------------------------------------- |
-| Authentication and sessions   | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/session`, `POST /api/v1/auth/sessions/terminate-all`, `POST /api/v1/auth/users/{userId}/sessions/terminate` | Implemented     | [`api/auth.openapi.yaml`](./api/auth.openapi.yaml).                           |
-| Audit history                 | `GET /api/v1/audit-events`                                                                                                                                                                                         | Implemented     | `audit:read`. Cursor page. No module entitlement.                             |
-| Tenant organization and users | none                                                                                                                                                                                                               | Foundation only | `Organizations.createWithOwner`. No `POST /organizations` or `POST /tenants`. |
-| Contacts                      | TBD                                                                                                                                                                                                                | Planned         | OpenAPI + module documentation                                                |
-| Tasks                         | TBD                                                                                                                                                                                                                | Planned         | OpenAPI + module documentation                                                |
-| Deals and pipelines           | TBD                                                                                                                                                                                                                | Planned         | OpenAPI + module documentation                                                |
-| Restaurant reservations       | `/reservations`                                                                                                                                                                                                    | Foundation only | Runtime schemas in `@lobby/contracts`; endpoints not implemented              |
-| Orders and delivery           | TBD                                                                                                                                                                                                                | Conditional     | OpenAPI + module documentation                                                |
-| Notifications                 | TBD                                                                                                                                                                                                                | Conditional     | OpenAPI + module documentation                                                |
+| Module                        | Base resource                                                                                                                                                                                                      | Status            | Contract location                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- | ------------------------------------------------------------------------------ |
+| Authentication and sessions   | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/session`, `POST /api/v1/auth/sessions/terminate-all`, `POST /api/v1/auth/users/{userId}/sessions/terminate` | Implemented       | [`api/auth.openapi.yaml`](./api/auth.openapi.yaml).                            |
+| Audit history                 | `GET /api/v1/audit-events`                                                                                                                                                                                         | Implemented       | `audit:read`. Cursor page. No module entitlement.                              |
+| Tenant organization and users | none                                                                                                                                                                                                               | Foundation only   | `Organizations.createWithOwner`. No `POST /organizations` or `POST /tenants`.  |
+| Contacts                      | `POST /api/v1/contacts`, `GET /api/v1/contacts/{contactId}`, `PATCH /api/v1/contacts/{contactId}`                                                                                                                  | Implemented pilot | Runtime Zod schemas, controller/service/repository tests; full OpenAPI pending |
+| Tasks                         | TBD                                                                                                                                                                                                                | Planned           | OpenAPI + module documentation                                                 |
+| Deals and pipelines           | TBD                                                                                                                                                                                                                | Planned           | OpenAPI + module documentation                                                 |
+| Restaurant reservations       | `/reservations`                                                                                                                                                                                                    | Foundation only   | Runtime schemas in `@lobby/contracts`; endpoints not implemented               |
+| Orders and delivery           | TBD                                                                                                                                                                                                                | Conditional       | OpenAPI + module documentation                                                 |
+| Notifications                 | TBD                                                                                                                                                                                                                | Conditional       | OpenAPI + module documentation                                                 |
 
 Add exact methods, paths, permissions, request schemas, response schemas, and error codes only when the corresponding module contract is designed.
 
@@ -243,11 +243,11 @@ Reservation endpoints must derive the tenant from the authenticated session, acc
 
 Pilot tenant-scoped resource. `ContactsController` is covered by the global `SessionGuard` and reads `@CurrentRequest()`. It does not install `IdentityExceptionFilter`. Every role may create, read, and update contacts in its own tenant through `contacts:create`, `contacts:read`, and `contacts:update`. The route declares that with `@Authorize`. The service calls `requireEnabled` for `contacts` and then repeats `requirePermission`. Resource scope is `tenant`: every caller in the tenant may use every contact in that tenant. A contact has no per-user owner. Create copies the tenant id from the authenticated context, then `requireResourceScope` asserts that the new row stays in that tenant. A missing contact and a contact in another tenant are both `404 NOT_FOUND`. Rename and read go through the tenant-bound contact repository, then the service re-reads through that same binding.
 
-| Method  | Path                    | Body                 | Success                                      |
-| ------- | ----------------------- | -------------------- | -------------------------------------------- |
-| `POST`  | `/api/v1/contacts`      | `{ "name": string }` | `201 { "data": { "id", "name" } }`           |
-| `GET`   | `/api/v1/contacts/:id`  |                      | `200 { "data": { "id", "name" } }`           |
-| `PATCH` | `/api/v1/contacts/:id`  | `{ "name": string }` | `200 { "data": { "id", "name" } }`           |
+| Method  | Path                   | Body                 | Success                            |
+| ------- | ---------------------- | -------------------- | ---------------------------------- |
+| `POST`  | `/api/v1/contacts`     | `{ "name": string }` | `201 { "data": { "id", "name" } }` |
+| `GET`   | `/api/v1/contacts/:id` |                      | `200 { "data": { "id", "name" } }` |
+| `PATCH` | `/api/v1/contacts/:id` | `{ "name": string }` | `200 { "data": { "id", "name" } }` |
 
 `id` is a UUID. Authentication is the session cookie. Mutations also require an allowed Origin. The response does not include `tenantId`.
 
@@ -268,7 +268,7 @@ HTTP bootstrap lives in `configureHttpApp`. New controllers inherit it.
 - `GET /health` stays outside `/api/v1` for process probes. It is `@Public()`.
 - CORS uses the explicit `ALLOWED_ORIGINS` list with credentials. `OriginGuard` is global for mutating methods.
 - `helmet` sets the baseline security headers. `Cross-Origin-Resource-Policy` is `cross-origin` because the browser app and the API are different origins. The allowlist still decides who may read the response.
-- Startup calls `loadApiConfig()` before creating the Nest app. Invalid or missing required variables stop the process with a name list. Bootstrap then reads the returned config. Feature modules keep their existing readers for the same variables.
+- Startup calls `loadApiConfig()` before creating the Nest app. Invalid or missing required variables stop the process with a variable-name list and no secret values. Bootstrap uses the returned HTTP config. Some feature providers still reread the validated environment; consolidating all lookups behind one immutable DI config object is open foundation work.
 
 ### Shutdown
 

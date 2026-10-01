@@ -1,37 +1,53 @@
 # Development Progress
 
-This document is the living procedural backlog for the project.
+This is the living procedural backlog. Product scope belongs in `BRIEF.md`, current technical decisions in `TECH_CARD.md`, and architecture-significant decisions in `DECISIONS.md` and `docs/architecture/`.
 
-Use it during development to track work that appears over time, including:
+## Implemented foundation
 
-- planned and active tasks;
-- completed work;
-- new requirements or follow-up changes;
-- blockers and dependencies;
-- bugs and technical debt;
-- validation and release tasks;
-- immediate next steps.
+| Area                                                                                                   | Status |
+| ------------------------------------------------------------------------------------------------------ | ------ |
+| pnpm/Turborepo monorepo, clean dependency build graph                                                  | Done   |
+| Next.js web foundation and `hy`/`ru`/`en` locale resources                                             | Done   |
+| NestJS HTTP bootstrap, `/api/v1`, validation, errors, request IDs, CORS/Origin, Helmet, shutdown       | Done   |
+| Tenant + first ACTIVE OWNER transaction and one-user/one-tenant invariant                              | Done   |
+| Argon2id login/registration and revocable Redis sessions                                               | Done   |
+| Global session authentication, permissions, module entitlements, tenant/resource scope                 | Done   |
+| Prisma schema/migrations and local/CI PostgreSQL integration infrastructure                            | Done   |
+| Transactional outbox, versioned worker registry, retries, durable external-effect reservation, requeue | Done   |
+| Contacts reference vertical slice and cross-tenant HTTP/DB tests                                       | Done   |
+| Reservation schema/constraints/contracts/status-policy foundation                                      | Done   |
+| Append-only audit foundation, HMAC IP metadata, and cursor-paginated tenant read endpoint              | Done   |
+| Shared cursor-page, page-limit, and sort-direction contracts                                           | Done   |
 
-Update it as development progresses. Product scope belongs in `BRIEF.md`, approved technical choices in `TECH_CARD.md`, and important long-term decisions in `DECISIONS.md`.
+## Immediate foundation work
 
-## Authentication implementation order
+| Priority | Work                                                                                               | Reason                                                                           |
+| -------- | -------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Blocker  | Isolate API database integration tests per suite/schema or provide one controlled global lifecycle | The full suite can fail when one file cleans the shared DB while another uses it |
+| High     | Keep `TECH_CARD`, architecture, API, database, and structure docs synchronized with implementation | Agents and reviewers use them as decision sources                                |
+| High     | Enforce module-boundary imports automatically and remove production deep imports                   | Prevent module coupling as the codebase grows                                    |
+| High     | Replace repeated feature `process.env` reads with one validated immutable config provider          | Prevent validation/runtime configuration drift                                   |
+| Medium   | Define and enforce the repository formatting scope, then add `format:check` to CI                  | The current formatting script is not a passing gate                              |
 
-| Phase | Work | Status |
-| --- | --- | --- |
-| 1 | Redis session store, hashed session id, cookie adapter | Done |
-| 2 | Argon2id password hasher and password policy | Done |
-| 3 | Identity module, session domain, Redis store, cookie adapter | Done |
-| 4 | `POST /api/v1/auth/register` | Done |
-| 5 | `POST /api/v1/auth/login` | Done |
-| 6 | SessionGuard, authenticationVersion, tenant context | Done |
-| 7 | Logout and synchronous terminate-all-sessions | Done |
-| 8 | Origin guard, CORS allowlist, auth rate limits | Done |
-| 9 | HTTP integration and security tests, API docs | Done |
+## Module development baseline
 
-Phase 9 checks live in `apps/api/src/modules/identity/presentation/auth-flow.integration.test.ts`. They use the local Postgres test database and the in-memory Redis client. The auth contract is `docs/04-API.md` and `docs/api/auth.openapi.yaml`.
+New business modules should follow the Contacts vertical slice where applicable:
 
-### Next
+1. approve the module's business rules, resource scope, permissions, and entitlement behavior;
+2. add domain/application/infrastructure/presentation layers only when they have real responsibilities;
+3. bind all persistence through the authenticated tenant context;
+4. define transaction/concurrency and idempotency behavior before writes;
+5. add audit records for sensitive actions and outbox events only for real asynchronous consumers;
+6. add unit, database, cross-tenant HTTP, contract, and authorization coverage appropriate to the risk;
+7. update `04-API.md`, `05-DATABASE.md`, contracts, and an ADR when the decision is architecture-significant.
 
-The contacts pilot is on the real Nest chain: the global `SessionGuard`, `@CurrentRequest()`, and the global `ApiExceptionFilter`. A new controller requires a session. Mark only a genuinely public handler with `@Public()`: register, login, logout, and `GET /health`. `@Public()` does not skip `OriginGuard` or CORS. Do not add `@UseGuards(SessionGuard)` or `IdentityExceptionFilter`. Import `@CurrentRequest()` from `common/auth/current-request`. Global guard order is `OriginGuard`, then `SessionGuard`. Declare a route permission with `@Authorize(...)` and import `AuthorizationModule` in that controller's module. A non-public business handler without `@Authorize` fails `route-authorization.test.ts`. Contact services call `ModuleEntitlementService.requireEnabled` before the action permission. A missing or disabled `tenant_modules` row is `403 MODULE_DISABLED`. Contact queries go through `ContactRepository.forTenant(context)`, so a contact method cannot omit the tenant. Session termination writes `user.sessions.terminated` in the same transaction as the authentication version increment. Owner and Admin have `audit:read`. `GET /api/v1/audit-events` lists that tenant with cursor pagination and does not check a module entitlement. Audit rows are not purged. JSON bodies use `z.strictObject`.
+## Production work still open
 
-`POST /api/v1/auth/sessions/terminate-all` revokes the caller. `POST /api/v1/auth/users/{userId}/sessions/terminate` revokes another user in the same tenant.
+- hosting, environment regions, proxy/network topology, domains, and TLS ownership;
+- least-privilege database roles, pool/timeouts, production migration job, backups/PITR, restore tests, RPO/RTO;
+- dependency scanning, metrics, tracing, alerting, error tracking, audit retention, and incident/recovery runbooks;
+- readiness checks for PostgreSQL/session dependencies;
+- web API client, auth bootstrap, UI system, component tests, and browser E2E flows;
+- provider-specific email, storage, messaging, realtime, notification, and payment decisions only when required.
+
+Update this file when work is completed, blocked, or reprioritized. Do not duplicate detailed implementation documentation here.

@@ -2,11 +2,11 @@
 
 > This document records the logical data model, ownership rules, and migration policy. It starts intentionally small; executable truth will live in committed schema files and migrations after implementation begins.
 
-- **Database:** PostgreSQL (proposed)
-- **Toolkit:** Prisma (proposed)
-- **Tenancy:** Shared database with organization-aware isolation (proposed)
+- **Database:** PostgreSQL (implemented)
+- **Toolkit:** Prisma 7 and versioned SQL migrations (implemented)
+- **Tenancy:** Shared database with session-derived organization scope and tenant-safe constraints (implemented; no RLS)
 - **Version:** 0.1-draft
-- **Status:** DRAFT — no physical schema is approved or implemented yet
+- **Status:** ACTIVE — current schema inventory and database rules; future module schemas remain explicitly planned
 
 ---
 
@@ -33,16 +33,16 @@
 
 ## Logical data groups
 
-| Group | Representative entities | Owning area |
-|---|---|---|
-| Tenancy and access | tenants, tenant-owned users, roles, permissions, module entitlements | Organizations / Identity / Access Management |
-| CRM | contacts, deals, pipelines, stages | Contacts / Deals / Pipelines |
-| Work management | tasks and task links | Tasks |
-| Restaurant reservations | venues, dining areas, restaurant tables, service periods, reservations, table assignments, status history | Reservations |
-| Operations | orders, order items, delivery state | Orders and Delivery; conditional |
-| Communication | channel accounts, conversations, messages, notifications | Messaging / Notifications; conditional |
-| Catalog and inventory | products, variants, locations, stock movements, transfers | Catalog / Inventory; later scope |
-| System history | audit records, outbox events, processed-event records | Shared infrastructure with explicit ownership |
+| Group                   | Representative entities                                                                                   | Owning area                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| Tenancy and access      | tenants, tenant-owned users, roles, permissions, module entitlements                                      | Organizations / Identity / Access Management  |
+| CRM                     | contacts, deals, pipelines, stages                                                                        | Contacts / Deals / Pipelines                  |
+| Work management         | tasks and task links                                                                                      | Tasks                                         |
+| Restaurant reservations | venues, dining areas, restaurant tables, service periods, reservations, table assignments, status history | Reservations                                  |
+| Operations              | orders, order items, delivery state                                                                       | Orders and Delivery; conditional              |
+| Communication           | channel accounts, conversations, messages, notifications                                                  | Messaging / Notifications; conditional        |
+| Catalog and inventory   | products, variants, locations, stock movements, transfers                                                 | Catalog / Inventory; later scope              |
+| System history          | audit records, outbox events, processed-event records                                                     | Shared infrastructure with explicit ownership |
 
 These names are conceptual, not final table names.
 
@@ -71,18 +71,18 @@ An approved physical ERD will replace or extend this view when models are design
 
 ## Entity documentation template
 
-| Field | Description |
-|---|---|
-| Entity/table | Logical and physical name |
-| Owner | Functional module responsible for writes |
-| Tenant scope | Global or organization-scoped |
-| Primary key | Type and generation strategy |
-| Important fields | Business meaning, nullability, and defaults |
-| Relationships | Referenced entities and delete/update behavior |
-| Constraints | Unique, check, and cross-tenant protections |
-| Indexes | Query supported and evidence for the index |
-| Retention | Archive/delete/anonymization policy |
-| Audit/events | Relevant audit records and emitted events |
+| Field            | Description                                    |
+| ---------------- | ---------------------------------------------- |
+| Entity/table     | Logical and physical name                      |
+| Owner            | Functional module responsible for writes       |
+| Tenant scope     | Global or organization-scoped                  |
+| Primary key      | Type and generation strategy                   |
+| Important fields | Business meaning, nullability, and defaults    |
+| Relationships    | Referenced entities and delete/update behavior |
+| Constraints      | Unique, check, and cross-tenant protections    |
+| Indexes          | Query supported and evidence for the index     |
+| Retention        | Archive/delete/anonymization policy            |
+| Audit/events     | Relevant audit records and emitted events      |
 
 ---
 
@@ -140,11 +140,11 @@ Retry classification is set on each handler, not on the entry. One event can reg
 
 Dispatch runs handlers in order and stops at the first throw. That handler's classification decides the single outbox row. A later handler does not run, so its classification is not consulted on that attempt. Put a handler that must reject the event before one whose work should not start after that rejection.
 
-| Classification | When that handler throws | Examples |
-|---|---|---|
-| `transient` | Retry with the existing exponential backoff, then `FAILED` | Temporary downstream outage |
-| `permanent` | `FAILED` on the first failure | Business rule that will not change on retry |
-| `idempotent-side-effect` | The outbox row may retry. The external call itself is at-most-once | Email, SMS, webhook, push, third-party API |
+| Classification           | When that handler throws                                           | Examples                                    |
+| ------------------------ | ------------------------------------------------------------------ | ------------------------------------------- |
+| `transient`              | Retry with the existing exponential backoff, then `FAILED`         | Temporary downstream outage                 |
+| `permanent`              | `FAILED` on the first failure                                      | Business rule that will not change on retry |
+| `idempotent-side-effect` | The outbox row may retry. The external call itself is at-most-once | Email, SMS, webhook, push, third-party API  |
 
 A `PermanentDispatchError` is permanent even when that handler's classification is retryable. Invalid payloads are permanent. `idempotent-side-effect` is unused until a handler performs a real external call. No email, SMS, or webhook provider is wired yet, so none of those providers' idempotency keys are available. The worker therefore reserves first instead of asking a provider to dedupe.
 
@@ -158,11 +158,11 @@ A failed insert does not call `handle`. There is no production handler of this k
 
 Current entries:
 
-| Key | Handler | Retry | External side effect |
-|---|---|---|---|
-| `contact.created@1` | `ContactCreatedHandler` | `transient` | no |
-| `tenant.created@1` | `TenantCreatedHandler` | `transient` | no |
-| `tenant.created@2` | `TenantCreatedHandler` | `transient` | no |
+| Key                 | Handler                 | Retry       | External side effect |
+| ------------------- | ----------------------- | ----------- | -------------------- |
+| `contact.created@1` | `ContactCreatedHandler` | `transient` | no                   |
+| `tenant.created@1`  | `TenantCreatedHandler`  | `transient` | no                   |
+| `tenant.created@2`  | `TenantCreatedHandler`  | `transient` | no                   |
 
 ### Adding a handler
 
@@ -212,19 +212,21 @@ Rows that failed as unknown events have no `processed_events` reservation, so th
 
 The runtime uses least-privilege `DATABASE_URL`; privileged migration access such as `DIRECT_URL` is available only inside the migration job.
 
+The repository currently contains eight ordered migrations covering tenant/users, outbox, reservation foundation, authentication fields, processed events, tenant modules, audit events, and the audit pagination index. Local and CI integration tests deploy these migrations into dedicated PostgreSQL test databases.
+
 ---
 
 ## Schema inventory
 
-| Module | Tables/models | Status | Notes |
-|---|---|---|---|
-| Organizations | `tenants`, `users` | Implemented | `createWithOwner` writes the tenant, the ACTIVE OWNER (`password_hash` only), and `tenant.created` version 2 in one transaction. Sessions and module entitlements are separate. Auth hashes the password and calls this operation. |
-| Contacts | `contacts` | Implemented | Tenant-owned contacts. Written in the same transaction as `contact.created` outbox rows. |
-| Tasks | TBD | Planned | Version 1 high priority; relationship model requires approval. |
-| Deals and pipelines | TBD | Planned | Version 1 high priority. |
-| Restaurant reservations | `venues`, `dining_areas`, `restaurant_tables`, `service_periods`, `reservations`, `reservation_tables`, `reservation_status_history` | Foundation implemented | Tenant-safe relations and database-enforced overlap prevention; API operations are not implemented. |
-| Orders and delivery | TBD | Conditional | Add only if included in Version 1. |
-| Audit and outbox | `audit_events`, `outbox_events`, `processed_events` | Implemented | `audit_events` is append-only application history, separate from operational logs. List pages use the `(tenant_id, occurred_at, id)` index. No retention job is defined, so rows are not deleted. Pending outbox rows are claimed with `FOR UPDATE SKIP LOCKED`. `processed_events` reserves an external side effect before it starts. Unique key: `(handler_name, event_type, event_version, event_id)`. |
+| Module                  | Tables/models                                                                                                                        | Status                 | Notes                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Organizations           | `tenants`, `users`                                                                                                                   | Implemented            | `createWithOwner` writes the tenant, the ACTIVE OWNER (`password_hash` only), and `tenant.created` version 2 in one transaction. Sessions and module entitlements are separate. Auth hashes the password and calls this operation.                                                                                                                                                                        |
+| Contacts                | `contacts`                                                                                                                           | Implemented            | Tenant-owned contacts. Written in the same transaction as `contact.created` outbox rows.                                                                                                                                                                                                                                                                                                                  |
+| Tasks                   | TBD                                                                                                                                  | Planned                | Version 1 high priority; relationship model requires approval.                                                                                                                                                                                                                                                                                                                                            |
+| Deals and pipelines     | TBD                                                                                                                                  | Planned                | Version 1 high priority.                                                                                                                                                                                                                                                                                                                                                                                  |
+| Restaurant reservations | `venues`, `dining_areas`, `restaurant_tables`, `service_periods`, `reservations`, `reservation_tables`, `reservation_status_history` | Foundation implemented | Tenant-safe relations and database-enforced overlap prevention; API operations are not implemented.                                                                                                                                                                                                                                                                                                       |
+| Orders and delivery     | TBD                                                                                                                                  | Conditional            | Add only if included in Version 1.                                                                                                                                                                                                                                                                                                                                                                        |
+| Audit and outbox        | `audit_events`, `outbox_events`, `processed_events`                                                                                  | Implemented            | `audit_events` is append-only application history, separate from operational logs. List pages use the `(tenant_id, occurred_at, id)` index. No retention job is defined, so rows are not deleted. Pending outbox rows are claimed with `FOR UPDATE SKIP LOCKED`. `processed_events` reserves an external side effect before it starts. Unique key: `(handler_name, event_type, event_version, event_id)`. |
 
 ### Reservation data rules
 
@@ -241,12 +243,12 @@ Replace `TBD` entries with links to approved model/ERD sections when schema desi
 
 ## Operational decisions still required
 
-- PostgreSQL provider and exact supported version.
-- Prisma and driver versions.
+- Production PostgreSQL provider, region, and supported version. Local/CI currently use PostgreSQL 17.
 - Connection pooling and per-runtime limits.
 - Statement, lock, and idle-transaction timeouts.
 - Backup retention, restore testing, RPO, and RTO.
-- Seed/test-data strategy.
+- Production runtime and migration database roles/grants.
+- Stable test-database isolation. API integration test files currently share one database and cleanup can race; use per-suite schema/database isolation or one controlled global lifecycle.
 - PostgreSQL RLS is not part of this foundation. Tenant isolation is the application query scope. Revisit RLS only with a reviewed pooling and threat plan.
 
 ---
@@ -256,6 +258,6 @@ Replace `TBD` entries with links to approved model/ERD sections when schema desi
 - [`BRIEF.md`](./BRIEF.md) — product and Version 1 scope.
 - [`TECH_CARD.md`](./TECH_CARD.md) — approved database technology and operational decisions.
 - [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) — data ownership and system invariants.
-- [`02-TECH_STACK.md`](./02-TECH_STACK.md) — proposed database and Redis stack.
+- [`02-TECH_STACK.md`](./02-TECH_STACK.md) — implemented database/Redis stack and open provider decisions.
 - [`03-STRUCTURE.md`](./03-STRUCTURE.md) — schema and migration package location.
 - [`04-API.md`](./04-API.md) — request contracts that drive query and transaction design.
