@@ -91,18 +91,18 @@
 
 ## 6. Implemented modules and shared capabilities
 
-| Area             | Current repository state                                                                                                           |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| Identity         | Registration, login, logout, session lookup/revocation, rate limits, cookie/session security                                       |
-| Organizations    | Transactional tenant + first ACTIVE OWNER + default entitlements + `tenant.created` outbox event                                   |
-| Contacts         | Create/read/rename pilot with explicit permissions, tenant entitlement, tenant-scoped repository, and `contact.created` event      |
-| Audit            | Append-only events, HMAC-hashed client IP metadata, permissioned cursor-paginated read API                                         |
-| Tenant RBAC      | Current fixed roles; planned Owner/Admin-managed tenant roles from a closed permission catalog with anti-escalation rules          |
-| Reservations     | Contracts, schema, cross-tenant constraints, overlap prevention, and status policy; application/API operations are not implemented |
-| Deals            | Module boundary only; no business implementation                                                                                   |
-| Messenger        | Module boundary only; no business implementation                                                                                   |
-| Worker           | Versioned dispatch registry, retry classification, durable side-effect reservation, failed-event requeue                           |
-| Shared contracts | Runtime Zod schemas for events, locales, reservations, audit, module keys, and cursor pagination primitives                        |
+| Area             | Current repository state                                                                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity         | Registration, login, logout, session lookup/revocation, rate limits, cookie/session security                                                                                |
+| Organizations    | Transactional tenant + first ACTIVE OWNER + default entitlements + `tenant.created` outbox event                                                                            |
+| Contacts         | Create, read, update, soft archive, and restore, plus the web screen at `/{locale}/contacts`. Permissions, entitlement, tenant scope, and `contact.created` stay in the API |
+| Audit            | Append-only events, HMAC-hashed client IP metadata, permissioned cursor-paginated read API                                                                                  |
+| Tenant RBAC      | Current fixed roles; planned Owner/Admin-managed tenant roles from a closed permission catalog with anti-escalation rules                                                   |
+| Reservations     | Contracts, schema, cross-tenant constraints, overlap prevention, and status policy; application/API operations are not implemented                                          |
+| Deals            | Module boundary only; no business implementation                                                                                                                            |
+| Messenger        | Module boundary only; no business implementation                                                                                                                            |
+| Worker           | Versioned dispatch registry, retry classification, durable side-effect reservation, failed-event requeue                                                                    |
+| Shared contracts | Runtime Zod schemas for events, locales, reservations, audit, module keys, and cursor pagination primitives                                                                 |
 
 ## 7. Security and operations
 

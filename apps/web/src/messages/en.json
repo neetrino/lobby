@@ -1,3 +1,83 @@
 {
-  "appName": "Lobby"
+  "appName": "Lobby",
+  "home": {
+    "title": "Lobby",
+    "contacts": "Contacts"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "description": "Tenant register of people and organizations. Search matches name or phone.",
+    "newContact": "New contact",
+    "active": "Active",
+    "archived": "Archived",
+    "searchPlaceholder": "Search by name or phone",
+    "sortAsc": "Name A–Z",
+    "sortDesc": "Name Z–A",
+    "pageSize": "Page size",
+    "clearFilters": "Clear filters",
+    "columns": {
+      "name": "Contact",
+      "details": "Details",
+      "owner": "Owner",
+      "status": "Status",
+      "registered": "Created",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "archived": "Archived"
+    },
+    "type": {
+      "person": "Person",
+      "organization": "Organization"
+    },
+    "role": {
+      "OWNER": "Owner",
+      "ADMIN": "Admin",
+      "MEMBER": "Member"
+    },
+    "view": "View",
+    "archive": "Archive",
+    "restore": "Restore",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "retry": "Try again",
+    "kind": "Type",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "owner": "Owner",
+    "created": "Created",
+    "updated": "Updated",
+    "loading": "Loading contacts",
+    "empty": "No contacts on this page.",
+    "shown": "{count, plural, one {# contact on this page} other {# contacts on this page}}",
+    "nextPage": "Next",
+    "previousPage": "Previous",
+    "tenant": "Tenant {id}",
+    "createTitle": "New contact",
+    "duplicateTitle": "Possible duplicate",
+    "duplicateBody": "Another active contact shares this name or phone. The save was not blocked.",
+    "openDuplicate": "Open {id}",
+    "dismiss": "Dismiss",
+    "nav": {
+      "contacts": "Contacts",
+      "dashboard": "Dashboard",
+      "deals": "Deals",
+      "messenger": "Messenger",
+      "reservations": "Reservations",
+      "audit": "Audit",
+      "settings": "Settings"
+    },
+    "errors": {
+      "unauthenticated": "Sign in to view contacts.",
+      "forbidden": "You cannot change this contact.",
+      "moduleDisabled": "Contacts are not enabled for this organization.",
+      "emailTaken": "A contact with this email already exists.",
+      "notFound": "This contact is not in your organization.",
+      "validation": "Check the highlighted fields.",
+      "generic": "The request could not be completed."
+    }
+  }
 }

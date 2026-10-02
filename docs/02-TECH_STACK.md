@@ -83,7 +83,7 @@ Production still needs provider-specific pool limits, database timeouts, least-p
 
 ## Frontend baseline
 
-The web application builds and has locale routes/messages for Armenian, Russian, and English. Broad feature UI work still needs explicit choices for:
+The web application builds and has locale routes/messages for Armenian, Russian, and English. The contacts screen at `/{locale}/contacts` lists, creates, updates, archives, and restores contacts through `/api/v1/contacts`. It keeps filters in the URL and does not invent totals, merge, tags, or cross-module counts. Broad feature UI work still needs explicit choices for:
 
 - design tokens and component primitives;
 - API client and server-state/cache strategy;

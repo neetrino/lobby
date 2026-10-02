@@ -1,6 +1,7 @@
-import { notFound } from 'next/navigation';
-
 import { supportedLocales, type Locale } from '@lobby/contracts';
+import { notFound } from 'next/navigation';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
+import Link from 'next/link';
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -8,10 +9,21 @@ type PageProps = {
 
 export default async function LocalizedHomePage({ params }: PageProps) {
   const { locale } = await params;
-
-  if (!supportedLocales.includes(locale as Locale)) {
+  if (!isLocale(locale)) {
     notFound();
   }
 
-  return <main>Lobby</main>;
+  setRequestLocale(locale);
+  const t = await getTranslations('home');
+
+  return (
+    <main>
+      <p>{t('title')}</p>
+      <Link href={`/${locale}/contacts`}>{t('contacts')}</Link>
+    </main>
+  );
+}
+
+function isLocale(value: string): value is Locale {
+  return supportedLocales.some((locale) => locale === value);
 }
