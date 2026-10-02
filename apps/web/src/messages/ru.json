@@ -21,23 +21,33 @@
     "active": "Активные",
     "archived": "Архив",
     "searchPlaceholder": "Искать по имени или телефону",
+    "searchName": "Имя",
+    "clearSearch": "Очистить поиск",
     "sortAsc": "Имя А–Я",
     "sortDesc": "Имя Я–А",
     "pageSize": "Размер страницы",
     "clearFilters": "Сбросить фильтры",
     "columns": {
-      "name": "Контакт",
-      "details": "Данные",
+      "name": "Имя / Организация",
+      "details": "Контактные данные",
       "owner": "Ответственный",
       "status": "Статус",
       "registered": "Создан",
       "actions": "Действия"
     },
+    "selectedCount": "Выбрано {count} / {total}",
+    "selectAll": "Выбрать всех на странице",
+    "selectRow": "Выбрать {name}",
+    "clearSelection": "Снять выбор",
     "status": {
       "active": "Активен",
       "archived": "В архиве"
     },
     "type": {
+      "person": "Человек",
+      "organization": "Организация"
+    },
+    "typeBadge": {
       "person": "Человек",
       "organization": "Организация"
     },
@@ -68,7 +78,9 @@
     "tenant": "Организация {id}",
     "createTitle": "Новый контакт",
     "duplicateTitle": "Возможный дубликат",
-    "duplicateBody": "У другого активного контакта то же имя или телефон. Запись не заблокирована.",
+    "duplicateNotice": "уведомление",
+    "duplicateBody": "Найдено {count} возможных дубликата по имени или телефону. Запись не заблокирована.",
+    "viewDuplicates": "Смотреть дубликаты",
     "openDuplicate": "Открыть {id}",
     "dismiss": "Закрыть",
     "nav": {

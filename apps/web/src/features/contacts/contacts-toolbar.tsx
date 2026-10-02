@@ -48,15 +48,7 @@ export function ContactsToolbar({
 
   return (
     <div className={styles.toolbar}>
-      <label className={styles.search}>
-        <span className={styles.srOnly}>{t('searchPlaceholder')}</span>
-        <input
-          value={search}
-          maxLength={100}
-          placeholder={t('searchPlaceholder')}
-          onChange={(event) => onSearch(event.target.value)}
-        />
-      </label>
+      <SearchField search={search} onSearch={onSearch} />
       <label>
         <span className={styles.srOnly}>{t('sortAsc')}</span>
         <select
@@ -91,6 +83,41 @@ export function ContactsToolbar({
         {t('clearFilters')}
       </button>
     </div>
+  );
+}
+
+function SearchField({ search, onSearch }: { search: string; onSearch: (search: string) => void }) {
+  const t = useTranslations('contacts');
+  return (
+    <label className={styles.search}>
+      <SearchIcon />
+      <input
+        value={search}
+        maxLength={100}
+        aria-label={t('searchPlaceholder')}
+        placeholder={t('searchName')}
+        onChange={(event) => onSearch(event.target.value)}
+      />
+      {search.length === 0 ? null : (
+        <button
+          type="button"
+          className={styles.searchClear}
+          aria-label={t('clearSearch')}
+          onClick={() => onSearch('')}
+        >
+          ×
+        </button>
+      )}
+    </label>
+  );
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="6" />
+      <path d="M16 16l4 4" />
+    </svg>
   );
 }
 

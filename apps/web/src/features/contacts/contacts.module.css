@@ -233,7 +233,37 @@ button:disabled {
 }
 
 .search {
-  flex: 1 1 220px;
+  position: relative;
+  flex: 0 1 240px;
+}
+
+.search svg {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: #8b90a5;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.searchClear {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #8b90a5;
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .search input,
@@ -248,6 +278,13 @@ button:disabled {
   color: var(--ink);
   font: inherit;
   padding: 8px 10px;
+}
+
+.search input {
+  height: 36px;
+  padding: 0 36px;
+  border-radius: 10px;
+  background: #eef2ff;
 }
 
 .search input:focus,
@@ -292,7 +329,7 @@ button:focus-visible {
 }
 
 .selectedRow {
-  background: rgb(219 225 255 / 45%);
+  background: #eef4ff;
 }
 
 .nameButton {
@@ -359,9 +396,71 @@ button:focus-visible {
 }
 
 .warning {
-  padding: 12px;
-  background: var(--warn-bg);
-  color: var(--warn);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff1e4;
+  color: #5c3b12;
+}
+
+.warningCopy {
+  min-width: 0;
+}
+
+.warningMark {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: #ffddb8;
+  font-weight: 700;
+}
+
+.warningCode {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: #5c3b12;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.warning p {
+  margin: 6px 0 0;
+  color: #5c3b12;
+  font-size: 13px;
+}
+
+.warningView,
+.warningClose {
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+}
+
+.warningView {
+  margin-left: auto;
+  padding: 8px 12px;
+  border: 1px solid #e6d3c0;
+  border-radius: 8px;
+  background: #fff;
+  color: #5c3b12;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.warningClose {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: transparent;
+  color: #5c3b12;
+  font-size: 18px;
 }
 
 .editor {

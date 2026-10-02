@@ -21,24 +21,34 @@
     "active": "Ակտիվ",
     "archived": "Արխիվացված",
     "searchPlaceholder": "Փնտրել ըստ անվան կամ հեռախոսահամարի",
+    "searchName": "Անուն",
+    "clearSearch": "Մաքրել որոնումը",
     "sortAsc": "Անուն Ա–Ֆ",
     "sortDesc": "Անուն Ֆ–Ա",
     "pageSize": "Էջի չափ",
     "clearFilters": "Մաքրել ֆիլտրերը",
     "columns": {
-      "name": "Կոնտակտ",
-      "details": "Տվյալներ",
+      "name": "Անուն / Կազմակերպություն",
+      "details": "Կոնտակտային տվյալներ",
       "owner": "Պատասխանատու",
       "status": "Կարգավիճակ",
       "registered": "Գրանցում",
       "actions": "Գործողություններ"
     },
+    "selectedCount": "Ընտրված է {count} / {total}",
+    "selectAll": "Ընտրել էջի բոլորը",
+    "selectRow": "Ընտրել {name}",
+    "clearSelection": "Հանել ընտրությունը",
     "status": {
       "active": "Ակտիվ",
       "archived": "Արխիվացված"
     },
     "type": {
       "person": "Անհատ",
+      "organization": "Կազմակերպություն"
+    },
+    "typeBadge": {
+      "person": "Անձ",
       "organization": "Կազմակերպություն"
     },
     "role": {
@@ -68,7 +78,9 @@
     "tenant": "Կազմակերպություն {id}",
     "createTitle": "Նոր կոնտակտ",
     "duplicateTitle": "Հնարավոր կրկնօրինակ",
-    "duplicateBody": "Այլ ակտիվ կոնտակտ ունի նույն անունը կամ հեռախոսը։ Գրանցումը չի արգելափակվել։",
+    "duplicateNotice": "ծանուցում",
+    "duplicateBody": "Հայտնաբերվել է {count} հնարավոր կրկնօրինակ (անուն կամ հեռախոս)։ Գործողությունը արգելափակված չէ։",
+    "viewDuplicates": "Դիտել կրկնօրինակները",
     "openDuplicate": "Բացել {id}",
     "dismiss": "Փակել",
     "nav": {

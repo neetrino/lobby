@@ -21,23 +21,33 @@
     "active": "Active",
     "archived": "Archived",
     "searchPlaceholder": "Search by name or phone",
+    "searchName": "Name",
+    "clearSearch": "Clear search",
     "sortAsc": "Name A–Z",
     "sortDesc": "Name Z–A",
     "pageSize": "Page size",
     "clearFilters": "Clear filters",
     "columns": {
-      "name": "Contact",
-      "details": "Details",
+      "name": "Name / Organization",
+      "details": "Contact details",
       "owner": "Owner",
       "status": "Status",
       "registered": "Created",
       "actions": "Actions"
     },
+    "selectedCount": "{count} / {total} selected",
+    "selectAll": "Select all on this page",
+    "selectRow": "Select {name}",
+    "clearSelection": "Clear selection",
     "status": {
       "active": "Active",
       "archived": "Archived"
     },
     "type": {
+      "person": "Person",
+      "organization": "Organization"
+    },
+    "typeBadge": {
       "person": "Person",
       "organization": "Organization"
     },
@@ -68,7 +78,9 @@
     "tenant": "Tenant {id}",
     "createTitle": "New contact",
     "duplicateTitle": "Possible duplicate",
-    "duplicateBody": "Another active contact shares this name or phone. The save was not blocked.",
+    "duplicateNotice": "notice",
+    "duplicateBody": "{count} possible duplicates share this name or phone. The save was not blocked.",
+    "viewDuplicates": "View duplicates",
     "openDuplicate": "Open {id}",
     "dismiss": "Dismiss",
     "nav": {

@@ -2,9 +2,13 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 
-import { canManageLifecycle, type Contact, type SessionPrincipal } from './contact';
-import { formatContactDate, shortId } from './contact-format';
+import { ContactAvatar, OwnerMark, TypeBadge } from './contact-avatar';
+import type { Contact, SessionPrincipal } from './contact';
+import { formatContactStamp, shortId } from './contact-format';
+import { SelectionBar } from './contacts-selection-bar';
 import styles from './contacts.module.css';
+import tableStyles from './contacts-table.module.css';
+import { usePageSelection } from './use-page-selection';
 
 export function ContactsTable({
   rows,
@@ -28,26 +32,43 @@ export function ContactsTable({
   nextCursor: string | null;
   hasPrevious: boolean;
   onOpen: (contact: Contact) => void;
-  onArchive: (contact: Contact) => void;
-  onRestore: (contact: Contact) => void;
+  onArchive: (contact: Contact) => Promise<void>;
+  onRestore: (contact: Contact) => Promise<void>;
   onNext: () => void;
   onPrevious: () => void;
 }) {
   const t = useTranslations('contacts');
   const locale = useLocale();
+  const selection = usePageSelection(rows);
 
   return (
     <section className={styles.tableCard} aria-busy={pending}>
+      <SelectionBar
+        selected={selection.picked}
+        pageCount={rows.length}
+        session={session}
+        pending={pending}
+        onArchive={onArchive}
+        onRestore={onRestore}
+        onClear={selection.clear}
+      />
       <table className={styles.table}>
         <caption className={styles.srOnly}>{t('title')}</caption>
         <thead>
           <tr>
+            <th className={tableStyles.check}>
+              <PageCheckbox
+                checked={selection.allPicked}
+                indeterminate={selection.somePicked}
+                label={t('selectAll')}
+                onChange={selection.togglePage}
+              />
+            </th>
             <th>{t('columns.name')}</th>
             <th>{t('columns.details')}</th>
             <th>{t('columns.owner')}</th>
             <th>{t('columns.status')}</th>
             <th>{t('columns.registered')}</th>
-            <th>{t('columns.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -56,11 +77,10 @@ export function ContactsTable({
               key={contact.id}
               contact={contact}
               locale={locale}
-              selected={contact.id === selectedId}
-              session={session}
+              picked={selection.isPicked(contact.id)}
+              open={contact.id === selectedId}
+              onToggle={() => selection.toggle(contact.id)}
               onOpen={onOpen}
-              onArchive={onArchive}
-              onRestore={onRestore}
             />
           ))}
         </tbody>
@@ -95,61 +115,91 @@ function footerText(
   return '';
 }
 
+function PageCheckbox({
+  checked,
+  indeterminate,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  indeterminate: boolean;
+  label: string;
+  onChange: () => void;
+}) {
+  return (
+    <input
+      ref={(node) => {
+        if (node !== null) {
+          node.indeterminate = indeterminate;
+        }
+      }}
+      type="checkbox"
+      checked={checked}
+      aria-label={label}
+      onChange={onChange}
+    />
+  );
+}
+
 function ContactRow({
   contact,
   locale,
-  selected,
-  session,
+  picked,
+  open,
+  onToggle,
   onOpen,
-  onArchive,
-  onRestore,
 }: {
   contact: Contact;
   locale: string;
-  selected: boolean;
-  session: SessionPrincipal | null;
+  picked: boolean;
+  open: boolean;
+  onToggle: () => void;
   onOpen: (contact: Contact) => void;
-  onArchive: (contact: Contact) => void;
-  onRestore: (contact: Contact) => void;
 }) {
   const t = useTranslations('contacts');
   const archived = contact.archivedAt !== null;
-  const manageable = session !== null && canManageLifecycle(session, contact);
+  const stamp = formatContactStamp(contact.createdAt, locale);
 
   return (
-    <tr className={selected ? styles.selectedRow : undefined}>
+    <tr className={picked || open ? styles.selectedRow : undefined}>
+      <td className={tableStyles.check}>
+        <input
+          type="checkbox"
+          checked={picked}
+          aria-label={t('selectRow', { name: contact.name })}
+          onChange={onToggle}
+        />
+      </td>
       <td>
-        <button type="button" className={styles.nameButton} onClick={() => onOpen(contact)}>
-          <strong>{contact.name}</strong>
-          <span>{t(`type.${contact.type}`)}</span>
-        </button>
-        <small title={contact.id}>{shortId(contact.id)}</small>
+        <div className={tableStyles.identity}>
+          <ContactAvatar name={contact.name} type={contact.type} id={contact.id} />
+          <div>
+            <button type="button" className={styles.nameButton} onClick={() => onOpen(contact)}>
+              <strong>{contact.name}</strong>
+              <TypeBadge type={contact.type} />
+            </button>
+            <small title={contact.id}>ID: {contact.id.slice(0, 18)}</small>
+          </div>
+        </div>
       </td>
       <td>
         <div>{contact.email ?? '—'}</div>
         <small>{contact.phone ?? '—'}</small>
       </td>
-      <td title={contact.ownerUserId}>{shortId(contact.ownerUserId)}</td>
       <td>
-        <span className={archived ? styles.badgeMuted : styles.badgeActive}>
+        <span className={tableStyles.owner} title={contact.ownerUserId}>
+          <OwnerMark />
+          <span>{shortId(contact.ownerUserId)}</span>
+        </span>
+      </td>
+      <td>
+        <span className={archived ? tableStyles.statusArchived : tableStyles.statusActive}>
           {archived ? t('status.archived') : t('status.active')}
         </span>
       </td>
-      <td>{formatContactDate(contact.createdAt, locale)}</td>
-      <td className={styles.actions}>
-        <button type="button" onClick={() => onOpen(contact)}>
-          {t('view')}
-        </button>
-        {manageable && !archived ? (
-          <button type="button" onClick={() => onArchive(contact)}>
-            {t('archive')}
-          </button>
-        ) : null}
-        {manageable && archived ? (
-          <button type="button" onClick={() => onRestore(contact)}>
-            {t('restore')}
-          </button>
-        ) : null}
+      <td>
+        <div>{stamp.date}</div>
+        <small>{stamp.time}</small>
       </td>
     </tr>
   );

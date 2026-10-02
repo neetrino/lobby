@@ -3,7 +3,8 @@
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import type { ContactListFilters } from './contact';
+import type { ContactListFilters, ContactWarning } from './contact';
+import { duplicateNotices } from './duplicate-notices';
 import { ContactEditor } from './contact-editor';
 import { contactErrorText } from './contact-error';
 import { ContactsShell } from './contacts-shell';
@@ -22,7 +23,9 @@ export function ContactsWorkspace() {
   const { session } = useSession();
   const editor = useContactEditor(list.reload);
   const [history, setHistory] = useState<Array<string | undefined>>([]);
+  const [noticeHidden, setNoticeHidden] = useState(false);
   const listError = list.error ?? editor.error;
+  const notices = visibleNotices(editor.warnings, duplicateNotices(list.rows), noticeHidden);
   const { search, setSearch } = useContactSearch(filters, changeFilters);
 
   function changeFilters(next: ContactListFilters): void {
@@ -55,34 +58,20 @@ export function ContactsWorkspace() {
           filters={filters}
           session={session}
           search={search}
-          duplicateCount={editor.warnings.length}
+          duplicateCount={notices.length}
           onSearch={setSearch}
           onChange={changeFilters}
           onCreate={editor.openCreate}
         />
         <div className={styles.body}>
-          {editor.warnings.length === 0 ? null : (
-            <div className={styles.warning} role="status">
-              <div>
-                <strong>{t('duplicateTitle')}</strong>
-                <p>{t('duplicateBody')}</p>
-              </div>
-              <div className={styles.warningActions}>
-                {editor.warnings.map((warning) => (
-                  <button
-                    key={warning.contactId}
-                    type="button"
-                    onClick={() => void editor.openDuplicate(warning.contactId)}
-                  >
-                    {t('openDuplicate', { id: warning.contactId.slice(0, 8) })}
-                  </button>
-                ))}
-                <button type="button" onClick={editor.dismissWarnings}>
-                  {t('dismiss')}
-                </button>
-              </div>
-            </div>
-          )}
+          <DuplicateNotice
+            notices={notices}
+            onOpen={(contactId) => void editor.openDuplicate(contactId)}
+            onDismiss={() => {
+              setNoticeHidden(true);
+              editor.dismissWarnings();
+            }}
+          />
           {listError === null || editor.mode !== 'closed' ? null : (
             <p className={styles.errorBanner} role="alert">
               {contactErrorText(t, listError.code)}
@@ -104,8 +93,8 @@ export function ContactsWorkspace() {
               nextCursor={list.nextCursor}
               hasPrevious={history.length > 0}
               onOpen={editor.openContact}
-              onArchive={(contact) => void editor.changeArchive(contact, true)}
-              onRestore={(contact) => void editor.changeArchive(contact, false)}
+              onArchive={(contact) => editor.changeArchive(contact, true)}
+              onRestore={(contact) => editor.changeArchive(contact, false)}
               onNext={showNext}
               onPrevious={showPrevious}
             />
@@ -135,6 +124,59 @@ export function ContactsWorkspace() {
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function visibleNotices(
+  saved: readonly ContactWarning[],
+  listed: readonly ContactWarning[],
+  hidden: boolean,
+): ContactWarning[] {
+  if (saved.length > 0) {
+    return [...saved];
+  }
+  return hidden ? [] : [...listed];
+}
+
+function DuplicateNotice({
+  notices,
+  onOpen,
+  onDismiss,
+}: {
+  notices: readonly ContactWarning[];
+  onOpen: (contactId: string) => void;
+  onDismiss: () => void;
+}) {
+  const t = useTranslations('contacts');
+  const duplicate = notices[0];
+  if (duplicate === undefined) {
+    return null;
+  }
+  return (
+    <div className={styles.warning} role="status">
+      <span className={styles.warningMark} aria-hidden="true">
+        !
+      </span>
+      <div className={styles.warningCopy}>
+        <span className={styles.warningCode}>POSSIBLE_DUPLICATE {t('duplicateNotice')}</span>
+        <p>{t('duplicateBody', { count: notices.length })}</p>
+      </div>
+      <button
+        type="button"
+        className={styles.warningView}
+        onClick={() => onOpen(duplicate.contactId)}
+      >
+        {t('viewDuplicates')}
+      </button>
+      <button
+        type="button"
+        className={styles.warningClose}
+        aria-label={t('dismiss')}
+        onClick={onDismiss}
+      >
+        ×
+      </button>
     </div>
   );
 }
