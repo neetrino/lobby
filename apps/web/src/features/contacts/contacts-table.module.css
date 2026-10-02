@@ -1,0 +1,252 @@
+.bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e6ebf5;
+  background: #f7f9ff;
+}
+
+.barTools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.count {
+  margin: 0;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  min-width: 0;
+}
+
+.identityText,
+.lines,
+.stamp {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nameLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.identityText strong {
+  font-size: 14px;
+}
+
+.identityText small,
+.lines span:last-child,
+.stamp small,
+.owner span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.stack {
+  display: flex;
+  flex: 1;
+  align-items: center;
+}
+
+.stack > span + span {
+  margin-left: -8px;
+  box-shadow: 0 0 0 2px #f7f9ff;
+}
+
+.archive,
+.clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.clear {
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.archive > svg,
+.orgAvatar svg,
+.ownerMark svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconButton {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.solidIcon {
+  display: block;
+}
+
+.archivedRow {
+  color: #8b97ad;
+  opacity: 0.72;
+}
+
+.archivedName,
+.archivedName strong,
+.archivedRow small,
+.archivedRow td {
+  color: #8b97ad;
+}
+
+.archivedMark {
+  display: block;
+  margin-top: 2px;
+  color: #8b97ad;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.check {
+  width: 44px;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar,
+.orgAvatar,
+.ownerMark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.avatar,
+.orgAvatar {
+  width: 40px;
+  height: 40px;
+  color: #fff;
+}
+
+.avatar {
+  border-radius: 50%;
+}
+
+.orgAvatar {
+  border-radius: 10px;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ownerMark {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e8eefc;
+  color: #3b4c7a;
+}
+
+.personBadge,
+.orgBadgeLabel,
+.statusActive,
+.statusArchived {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.personBadge {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.orgBadgeLabel {
+  background: #e8eef5;
+  color: #334155;
+}
+
+.statusActive,
+.statusArchived {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statusActive {
+  background: #d8ffef;
+  color: #006c49;
+}
+
+.statusArchived {
+  background: #eceff4;
+  color: #434655;
+}
+
+.statusActive::before,
+.statusArchived::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}

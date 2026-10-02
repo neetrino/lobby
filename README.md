@@ -1,69 +1,98 @@
-# Զարգացման կանոնների կաղապար (Cursor AI)
+# Lobby
 
-Cursor-ում AI-զարգացման կանոններով repo-ի կաղապար։ Next.js / NestJS, ճարտարապետություն, կոդ, անվտանգություն, թեստեր, դեպլոյ։
+Lobby is a multi-tenant CRM and operations platform being developed as a TypeScript monorepo. The current Stage 1 architecture is a Next.js web application, a NestJS modular-monolith API, PostgreSQL through Prisma, Redis-backed sessions/rate limits, and a separate PostgreSQL-outbox worker.
 
----
+Each user belongs to exactly one organization tenant. Tenant selection never comes from a client-controlled request field.
 
-## Ինչպես սկսել
+## Workspace
 
-1. **Repo** — GitHub → Use this template → clone, բացի՛ր պրոյեկտի թղթապանակը Cursor-ում։
-2. **BRIEF** — լրացրու՛ `docs/BRIEF.md` (նկարագրություն, ֆունկցիաներ, ինտեգրացիաներ)։
-3. **AI** — chat-ում. «Կարդա՛ docs/BRIEF.md, սկսի՛ր ըստ [project-onboarding Skill](.agents/skills/project-onboarding/SKILL.md)-ի. Փուլ 1 — չափը, Փուլ 2 — TECH_CARD. Սպասում եմ հաստատում կոդից առաջ»։
-4. **Հաստատում** — TECH_CARD և ճարտարապետությունը հաստատի՛ր, ապա env։
-
----
-
-## Մշակողի դերը
-
-- **Կոդից առաջ:** BRIEF, TECH_CARD, ճարտարապետություն — AI-ն առաջարկում է, դու հաստատում ես։
-- **Տվյալներ (AI-ն կխնդրի ըստ need-ի):** Neon (DATABASE_URL), R2 (bucket + բանալիներ), Vercel (env), Auth (OAuth), Resend/Stripe/Դոմեն — անհրաժեշտության դեպքում։
-- **Env:** Ստեղծել `.env` + `.env.example` (առանց գաղտնիքների), `.gitignore`-ում — `.env`, `.env.local`. 
-Հերթականություն. 
-Neon → `.env`
-R2 →  `.env`
-Resend / Upstash (եթե պետք է) → `.env`. Գաղտնիքները միայն env-ում, `.env` — չի commit-վում։
-- **Ընթացքում:** Պատասխանի՛ր AI-ի հարցերին, ստուգի՛ր PROGRESS.md, թեստավորի՛ր փուլերը։
-- **Ավարտին:** TECH_CARD ✅, PROGRESS 100%, դեպլոյ + .env.example փաստաթղթավորված։
-
----
-
-## Նախագծերի չափեր
-
-| Չափ | Նկարագրություն | Կառուցվածք |
-|-----|-----------------|------------|
-| **A** | 1–3 ամիս, 5–15 ֆիչ | `src/app`, `components`, `lib` |
-| **B** | 3–6 ամիս, 15–50 ֆիչ | `src/features/*`, `shared/*` |
-| **C** | 6+ ամիս, 50+ ֆիչ | Monorepo `apps/*`, `packages/*` |
-
-**Տեղեկատուներ.** [project sizing](.agents/skills/project-onboarding/references/project-sizing.md), `docs/reference/knowledge-base/`, `docs/reference/templates/` — նախագծի չափեր, տեխնիկական տեղեկություններ և փաստաթղթերի կաղապարներ։ Agent համակարգի կառուցվածքը՝ [`.agents/system/ARCHITECTURE.md`](.agents/system/ARCHITECTURE.md)։
-
-## Rules և Skills
-
-- `docs/` — ստեղծվող product-ի փաստաթղթեր։
-- `.cursor/rules/` — Cursor-ի մշտական և file-scoped coding standards։
-- `.agents/skills/` — Cursor-ի և Codex-ի reusable task workflow-ներ։
-- [`.agents/catalog/`](.agents/catalog/) — Skill registry, profiles և external provenance։
-- `.agents/system/` — Agent համակարգի architecture և governance փաստաթղթեր։
-- Skill-ի մանրամասն references-ը բացվում են միայն անհրաժեշտության դեպքում։
-
-Կառուցվածքի ստուգում՝
-
-```bash
-node scripts/validate-agent-config.mjs
+```text
+apps/web          Next.js frontend and localization foundation
+apps/api          NestJS API, authentication, authorization, audit, and business modules
+apps/worker       Transactional-outbox relay and event handlers
+packages/contracts  Shared Zod contracts and versioned events
+packages/database   Prisma schema, migrations, generated client, and DB tooling
+docs              Product, architecture, API, database, and decision documentation
 ```
 
----
+## Requirements
 
-## Կանոնների թարմացում
+- Node.js 24 or newer in the Node 24 line
+- pnpm 10.18.0
+- PostgreSQL for database integration tests and local persistence
+- Redis/Upstash-compatible credentials for real session and rate-limit storage
 
-Template-ի կանոնները թարմացվում են։ Գոյություն ունեցող նախագծում. ավելացրու՛ կաղապարը remote, fetch արա՛, ապա merge/checkout արա՛ անհրաժեշտ `.cursor/rules/*.mdc` ֆայլերը (մանրամասներ — Git-ի remote/fetch/checkout ուղեցույցներ)։
+Local PostgreSQL is described by `docker-compose.yml` and listens on `127.0.0.1:54329` when the compose service is running.
 
----
+## Setup
 
-## Quality Automation
+```bash
+pnpm install --frozen-lockfile
+```
 
-Պրոյեկտ ստեղծելուց հետո AI-ն կարգավորում է TECH_CARD-ում հաստատված quality workflow-ը։ Մշակողը կարգավորում է Branch Protection (`main`), Secret Protection և dependency updates՝ ըստ ընտրված platform-ի։ Օրինակը՝ `docs/reference/workflows/ci-quality.yml.example`։
+Copy the variable names from `.env.example` into an ignored root `.env` and provide local values. Never commit `.env` or real credentials.
 
----
+Generate the Prisma client when needed:
 
-[MIT](LICENSE) — ազատ օգտագործում և հարմարեցում։
+```bash
+pnpm db:generate
+```
+
+Development processes:
+
+```bash
+pnpm dev
+pnpm --filter @lobby/api dev
+pnpm --filter @lobby/web dev
+pnpm --filter @lobby/worker start
+```
+
+The API uses `/api/v1`. Its public liveness endpoint is `GET /health`.
+
+## Quality checks
+
+```bash
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
+
+Database integration tests require the local PostgreSQL service. Every test client receives a unique PostgreSQL schema, and explicit disposal drops only that schema, so parallel suites cannot erase each other's rows.
+
+CI runs `pnpm format:check` before lint, typecheck, tests, and build. Generated output, migrations, archived/reference documentation, and local agent/tool folders are excluded by `.prettierignore`.
+
+## Current implementation
+
+- tenant registration with the first ACTIVE OWNER;
+- Argon2id authentication and opaque Redis-backed sessions;
+- global session authentication, permissions, module entitlements, and tenant/resource scope;
+- Contacts reference module with tenant-scoped persistence;
+- append-only audit records and a paginated audit-list endpoint;
+- reservation database/contracts/domain-policy foundation;
+- transactional outbox, exact-version worker registry, retry classification, and failed-event requeue;
+- Armenian, Russian, and English localization resources with English fallback.
+
+Deals and Messenger currently contain module boundaries only. Tasks, notifications, inventory/transfers, analytics, and most feature UI remain to be implemented.
+
+## Documentation
+
+- [`docs/BRIEF.md`](docs/BRIEF.md) — product scope and procedures
+- [`docs/TECH_CARD.md`](docs/TECH_CARD.md) — implemented and open technical decisions
+- [`docs/01-ARCHITECTURE.md`](docs/01-ARCHITECTURE.md) — architecture, boundaries, security, deployment, and scaling
+- [`docs/02-TECH_STACK.md`](docs/02-TECH_STACK.md) — actual stack and open provider decisions
+- [`docs/03-STRUCTURE.md`](docs/03-STRUCTURE.md) — repository and module ownership
+- [`docs/04-API.md`](docs/04-API.md) — HTTP contracts and endpoint inventory
+- [`docs/05-DATABASE.md`](docs/05-DATABASE.md) — schema, migrations, tenancy, outbox, and database rules
+- [`docs/DECISIONS.md`](docs/DECISIONS.md) — accepted ADR index
+- [`docs/PROGRESS.md`](docs/PROGRESS.md) — procedural backlog and current gaps
+
+Repository rules are in [`AGENTS.md`](AGENTS.md). Product documentation and agent-system documentation remain separate.
+
+## Safety boundaries
+
+- Do not run production migrations from application startup, request handlers, builds, or routine developer machines.
+- Do not weaken tenant scope, authorization, audit, validation, or tests to make a feature pass.
+- Add infrastructure only for an approved capability or a measured bottleneck.
+
+[MIT](LICENSE)

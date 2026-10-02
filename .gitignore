@@ -15,6 +15,7 @@ node_modules/
 dist/
 build/
 coverage/
+*.tsbuildinfo
 
 # Logs and temp
 *.log
@@ -22,6 +23,10 @@ npm-debug.log*
 tmp/
 temp/
 .cache/
+.turbo/
+
+# Generated clients
+packages/database/generated/
 
 # IDE (optional, uncomment if needed)
 # .idea/

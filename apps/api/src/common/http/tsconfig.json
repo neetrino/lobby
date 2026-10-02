@@ -1,0 +1,9 @@
+{
+  "extends": "../../../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": "../../.."
+  },
+  "include": ["./http-foundation.test.ts"],
+  "exclude": []
+}
