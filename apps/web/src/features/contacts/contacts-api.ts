@@ -71,6 +71,28 @@ export function readSession(signal?: AbortSignal): Promise<SessionPrincipal> {
   return requestJson('/api/v1/auth/session', { method: 'GET' }, signal, parseSession);
 }
 
+export type ContactAuditEvent = {
+  id: string;
+  occurredAt: string;
+  action: string;
+  outcome: string;
+  actorRole: 'OWNER' | 'ADMIN' | 'MEMBER' | null;
+};
+
+/** Tenant audit rows for one contact. Owner and admin only. */
+export function listContactAudit(
+  contactId: string,
+  signal?: AbortSignal,
+): Promise<ContactAuditEvent[]> {
+  const query = new URLSearchParams({
+    resourceType: 'contact',
+    resourceId: contactId,
+    limit: '50',
+    sort: 'desc',
+  });
+  return requestJson(`/api/v1/audit-events?${query}`, { method: 'GET' }, signal, parseAuditPage);
+}
+
 export function toRequestError(error: unknown): ContactsRequestError {
   if (error instanceof ContactsRequestError) {
     return error;
@@ -167,6 +189,39 @@ function parseSession(body: unknown): SessionPrincipal {
     throw new ContactsRequestError(200, 'REQUEST_FAILED');
   }
   return body.data;
+}
+
+function parseAuditPage(body: unknown): ContactAuditEvent[] {
+  if (!isRecord(body) || !Array.isArray(body.data)) {
+    throw new ContactsRequestError(200, 'REQUEST_FAILED');
+  }
+  return body.data.map(parseAuditEvent);
+}
+
+function parseAuditEvent(value: unknown): ContactAuditEvent {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    typeof value.occurredAt !== 'string' ||
+    typeof value.action !== 'string' ||
+    typeof value.outcome !== 'string'
+  ) {
+    throw new ContactsRequestError(200, 'REQUEST_FAILED');
+  }
+  return {
+    id: value.id,
+    occurredAt: value.occurredAt,
+    action: value.action,
+    outcome: value.outcome,
+    actorRole: actorRole(value.actorRole),
+  };
+}
+
+function actorRole(value: unknown): ContactAuditEvent['actorRole'] {
+  if (value === 'OWNER' || value === 'ADMIN' || value === 'MEMBER') {
+    return value;
+  }
+  return null;
 }
 
 function parseWarnings(value: unknown): ContactWarning[] {

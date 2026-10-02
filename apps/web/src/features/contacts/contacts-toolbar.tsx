@@ -49,39 +49,41 @@ export function ContactsToolbar({
   return (
     <div className={styles.toolbar}>
       <SearchField search={search} onSearch={onSearch} />
-      <label>
-        <span className={styles.srOnly}>{t('sortAsc')}</span>
-        <select
-          value={filters.sort}
-          onChange={(event) =>
-            onChange({ ...filters, sort: event.target.value === 'desc' ? 'desc' : 'asc' })
-          }
+      <div className={styles.toolbarControls}>
+        <label>
+          <span className={styles.srOnly}>{t('sortAsc')}</span>
+          <select
+            value={filters.sort}
+            onChange={(event) =>
+              onChange({ ...filters, sort: event.target.value === 'desc' ? 'desc' : 'asc' })
+            }
+          >
+            <option value="asc">{t('sortAsc')}</option>
+            <option value="desc">{t('sortDesc')}</option>
+          </select>
+        </label>
+        <label>
+          <span className={styles.srOnly}>{t('pageSize')}</span>
+          <select
+            value={filters.limit}
+            onChange={(event) => onChange({ ...filters, limit: pageLimit(event.target.value) })}
+          >
+            <option value={25}>25</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          className={styles.clearFilters}
+          onClick={() => {
+            onSearch('');
+            onChange({ search: '', archived: false, sort: 'asc', limit: 50 });
+          }}
         >
-          <option value="asc">{t('sortAsc')}</option>
-          <option value="desc">{t('sortDesc')}</option>
-        </select>
-      </label>
-      <label>
-        <span className={styles.srOnly}>{t('pageSize')}</span>
-        <select
-          value={filters.limit}
-          onChange={(event) => onChange({ ...filters, limit: pageLimit(event.target.value) })}
-        >
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-          <option value={100}>100</option>
-        </select>
-      </label>
-      <button
-        type="button"
-        className={styles.secondaryButton}
-        onClick={() => {
-          onSearch('');
-          onChange({ search: '', archived: false, sort: 'asc', limit: 50 });
-        }}
-      >
-        {t('clearFilters')}
-      </button>
+          {t('clearFilters')}
+        </button>
+      </div>
     </div>
   );
 }

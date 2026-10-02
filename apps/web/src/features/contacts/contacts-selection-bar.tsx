@@ -1,11 +1,12 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
 
 import { ContactAvatar, TypeBadge } from './contact-avatar';
+import { TrashIcon } from './contact-row-actions';
 import { canManageLifecycle, type Contact, type SessionPrincipal } from './contact';
 import { formatContactStamp } from './contact-format';
+import type { LifecycleAction } from './use-lifecycle-prompt';
 import styles from './contacts-table.module.css';
 
 export function SelectionBar({
@@ -13,16 +14,14 @@ export function SelectionBar({
   pageCount,
   session,
   pending,
-  onArchive,
-  onRestore,
+  onAsk,
   onClear,
 }: {
   selected: readonly Contact[];
   pageCount: number;
   session: SessionPrincipal | null;
   pending: boolean;
-  onArchive: (contact: Contact) => Promise<void>;
-  onRestore: (contact: Contact) => Promise<void>;
+  onAsk: (contacts: readonly Contact[], action: LifecycleAction) => void;
   onClear: () => void;
 }) {
   const t = useTranslations('contacts');
@@ -38,13 +37,7 @@ export function SelectionBar({
         <p className={styles.count}>
           {t('selectedCount', { count: selected.length, total: pageCount })}
         </p>
-        <LifecycleButton
-          selected={selected}
-          session={session}
-          pending={pending}
-          onArchive={onArchive}
-          onRestore={onRestore}
-        />
+        <LifecycleButton selected={selected} session={session} pending={pending} onAsk={onAsk} />
         <button
           type="button"
           className={styles.clear}
@@ -106,17 +99,14 @@ function LifecycleButton({
   selected,
   session,
   pending,
-  onArchive,
-  onRestore,
+  onAsk,
 }: {
   selected: readonly Contact[];
   session: SessionPrincipal | null;
   pending: boolean;
-  onArchive: (contact: Contact) => Promise<void>;
-  onRestore: (contact: Contact) => Promise<void>;
+  onAsk: (contacts: readonly Contact[], action: LifecycleAction) => void;
 }) {
   const t = useTranslations('contacts');
-  const [busy, setBusy] = useState(false);
   const first = selected[0];
   if (first === undefined) {
     return null;
@@ -133,34 +123,13 @@ function LifecycleButton({
     <button
       type="button"
       className={styles.archive}
-      disabled={!allowed || pending || busy}
-      onClick={() => void runLifecycle(selected, archived, onArchive, onRestore, setBusy)}
+      disabled={!allowed || pending}
+      onClick={() => onAsk(selected, archived ? 'restore' : 'archive')}
     >
-      <ArchiveIcon />
+      {archived ? <ArchiveIcon /> : <TrashIcon />}
       {archived ? t('restore') : t('archive')}
     </button>
   );
-}
-
-async function runLifecycle(
-  selected: readonly Contact[],
-  archived: boolean,
-  onArchive: (contact: Contact) => Promise<void>,
-  onRestore: (contact: Contact) => Promise<void>,
-  setBusy: (busy: boolean) => void,
-): Promise<void> {
-  setBusy(true);
-  try {
-    for (const contact of selected) {
-      if (archived) {
-        await onRestore(contact);
-      } else {
-        await onArchive(contact);
-      }
-    }
-  } finally {
-    setBusy(false);
-  }
 }
 
 function ArchiveIcon() {

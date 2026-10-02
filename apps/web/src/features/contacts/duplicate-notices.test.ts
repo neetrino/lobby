@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Contact } from './contact';
-import { duplicateNotices } from './duplicate-notices';
+import { duplicateNotices, duplicatePeers } from './duplicate-notices';
 
 describe('duplicateNotices', () => {
   it('keeps a name match after the list is loaded again', () => {
@@ -21,6 +21,13 @@ describe('duplicateNotices', () => {
     ]);
 
     expect(notices).toEqual([]);
+  });
+
+  it('returns the other active contact that shares a name', () => {
+    const current = contact('1', 'Աննա Հակոբյան', null);
+    const peer = contact('2', 'աննա հակոբյան', null);
+
+    expect(duplicatePeers(current, [current, peer]).map((row) => row.id)).toEqual(['2']);
   });
 });
 

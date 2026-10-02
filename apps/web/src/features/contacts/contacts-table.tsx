@@ -1,10 +1,12 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import type { ReactElement } from 'react';
 
 import { ContactAvatar, OwnerMark, TypeBadge } from './contact-avatar';
 import type { Contact, SessionPrincipal } from './contact';
-import { formatContactStamp, shortId } from './contact-format';
+import { ContactRowActions } from './contact-row-actions';
+import { formatArchivedMark, formatContactStamp, shortId } from './contact-format';
 import { SelectionBar } from './contacts-selection-bar';
 import styles from './contacts.module.css';
 import tableStyles from './contacts-table.module.css';
@@ -19,8 +21,8 @@ export function ContactsTable({
   nextCursor,
   hasPrevious,
   onOpen,
-  onArchive,
-  onRestore,
+  onEdit,
+  onAskLifecycle,
   onNext,
   onPrevious,
 }: {
@@ -32,8 +34,8 @@ export function ContactsTable({
   nextCursor: string | null;
   hasPrevious: boolean;
   onOpen: (contact: Contact) => void;
-  onArchive: (contact: Contact) => Promise<void>;
-  onRestore: (contact: Contact) => Promise<void>;
+  onEdit: (contact: Contact) => void;
+  onAskLifecycle: (contacts: readonly Contact[], action: 'archive' | 'restore') => void;
   onNext: () => void;
   onPrevious: () => void;
 }) {
@@ -48,8 +50,7 @@ export function ContactsTable({
         pageCount={rows.length}
         session={session}
         pending={pending}
-        onArchive={onArchive}
-        onRestore={onRestore}
+        onAsk={onAskLifecycle}
         onClear={selection.clear}
       />
       <table className={styles.table}>
@@ -69,6 +70,7 @@ export function ContactsTable({
             <th>{t('columns.owner')}</th>
             <th>{t('columns.status')}</th>
             <th>{t('columns.registered')}</th>
+            <th>{t('columns.actions')}</th>
           </tr>
         </thead>
         <tbody>
@@ -79,8 +81,12 @@ export function ContactsTable({
               locale={locale}
               picked={selection.isPicked(contact.id)}
               open={contact.id === selectedId}
+              session={session}
               onToggle={() => selection.toggle(contact.id)}
               onOpen={onOpen}
+              onEdit={onEdit}
+              onArchive={() => onAskLifecycle([contact], 'archive')}
+              onRestore={() => onAskLifecycle([contact], 'restore')}
             />
           ))}
         </tbody>
@@ -98,6 +104,26 @@ export function ContactsTable({
         </div>
       </footer>
     </section>
+  );
+}
+
+function rowClass(selected: boolean, archived: boolean): string | undefined {
+  const names = [
+    archived ? tableStyles.archivedRow : '',
+    selected ? styles.selectedRow : '',
+  ].filter((name) => name !== '');
+  return names.length === 0 ? undefined : names.join(' ');
+}
+
+function RowSubtitle({ contact }: { contact: Contact }): ReactElement {
+  const t = useTranslations('contacts');
+  if (contact.archivedAt === null) {
+    return <small title={contact.id}>ID: {contact.id.slice(0, 18)}</small>;
+  }
+  return (
+    <small className={tableStyles.archivedMark}>
+      {t('archivedAt', { stamp: formatArchivedMark(contact.archivedAt) })}
+    </small>
   );
 }
 
@@ -146,22 +172,30 @@ function ContactRow({
   locale,
   picked,
   open,
+  session,
   onToggle,
   onOpen,
+  onEdit,
+  onArchive,
+  onRestore,
 }: {
   contact: Contact;
   locale: string;
   picked: boolean;
   open: boolean;
+  session: SessionPrincipal | null;
   onToggle: () => void;
   onOpen: (contact: Contact) => void;
+  onEdit: (contact: Contact) => void;
+  onArchive: () => void;
+  onRestore: () => void;
 }) {
   const t = useTranslations('contacts');
   const archived = contact.archivedAt !== null;
   const stamp = formatContactStamp(contact.createdAt, locale);
 
   return (
-    <tr className={picked || open ? styles.selectedRow : undefined}>
+    <tr className={rowClass(picked || open, archived)}>
       <td className={tableStyles.check}>
         <input
           type="checkbox"
@@ -174,11 +208,17 @@ function ContactRow({
         <div className={tableStyles.identity}>
           <ContactAvatar name={contact.name} type={contact.type} id={contact.id} />
           <div>
-            <button type="button" className={styles.nameButton} onClick={() => onOpen(contact)}>
+            <button
+              type="button"
+              className={
+                archived ? `${styles.nameButton} ${tableStyles.archivedName}` : styles.nameButton
+              }
+              onClick={() => onOpen(contact)}
+            >
               <strong>{contact.name}</strong>
               <TypeBadge type={contact.type} />
             </button>
-            <small title={contact.id}>ID: {contact.id.slice(0, 18)}</small>
+            <RowSubtitle contact={contact} />
           </div>
         </div>
       </td>
@@ -200,6 +240,15 @@ function ContactRow({
       <td>
         <div>{stamp.date}</div>
         <small>{stamp.time}</small>
+      </td>
+      <td>
+        <ContactRowActions
+          contact={contact}
+          session={session}
+          onEdit={onEdit}
+          onArchive={onArchive}
+          onRestore={onRestore}
+        />
       </td>
     </tr>
   );

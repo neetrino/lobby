@@ -26,16 +26,19 @@ export function useContactEditor(reload: () => void): {
   pending: boolean;
   error: ContactsRequestError | null;
   warnings: ContactWarning[];
+  placement: 'inline' | 'portal';
   openCreate: () => void;
   openContact: (contact: Contact) => void;
+  openEditor: (contact: Contact) => void;
   openDuplicate: (contactId: string) => Promise<void>;
   close: () => void;
   setDraft: (draft: ContactDraft) => void;
-  save: () => Promise<void>;
-  changeArchive: (contact: Contact, archived: boolean) => Promise<void>;
+  save: () => Promise<SaveResult>;
+  changeArchive: (contact: Contact, archived: boolean) => Promise<MutationResult>;
   dismissWarnings: () => void;
 } {
   const [mode, setMode] = useState<'closed' | 'create' | 'edit'>('closed');
+  const [placement, setPlacement] = useState<'inline' | 'portal'>('inline');
   const [contact, setContact] = useState<Contact | null>(null);
   const [draft, setDraft] = useState<ContactDraft>(EMPTY_DRAFT);
   const [pending, setPending] = useState(false);
@@ -43,6 +46,7 @@ export function useContactEditor(reload: () => void): {
   const [warnings, setWarnings] = useState<ContactWarning[]>([]);
 
   function openCreate(): void {
+    setPlacement('inline');
     setMode('create');
     setContact(null);
     setDraft(EMPTY_DRAFT);
@@ -50,10 +54,11 @@ export function useContactEditor(reload: () => void): {
   }
 
   function openContact(next: Contact): void {
-    setMode('edit');
-    setContact(next);
-    setDraft(draftFromContact(next));
-    setError(null);
+    showContact(next, 'inline', setPlacement, setMode, setContact, setDraft, setError);
+  }
+
+  function openEditor(next: Contact): void {
+    showContact(next, 'portal', setPlacement, setMode, setContact, setDraft, setError);
   }
 
   function close(): void {
@@ -74,31 +79,39 @@ export function useContactEditor(reload: () => void): {
     }
   }
 
-  async function save(): Promise<void> {
+  async function save(): Promise<SaveResult> {
+    const created = mode === 'create';
     setPending(true);
     setError(null);
     try {
-      const written =
-        mode === 'create' ? await createContact(draft) : await updateLoaded(contact, draft);
+      const written = created ? await createContact(draft) : await updateLoaded(contact, draft);
       setWarnings(written.warnings);
-      openContact(written.contact);
+      close();
       reload();
+      return { ok: true, created };
     } catch (caught) {
-      setError(toRequestError(caught));
+      const error = toRequestError(caught);
+      setError(error);
+      return { ok: false, error };
     } finally {
       setPending(false);
     }
   }
 
-  async function changeArchive(target: Contact, archived: boolean): Promise<void> {
+  async function changeArchive(target: Contact, archived: boolean): Promise<MutationResult> {
     setPending(true);
     setError(null);
     try {
-      const next = archived ? await archiveContact(target.id) : await restoreContact(target.id);
-      openContact(next);
+      await (archived ? archiveContact(target.id) : restoreContact(target.id));
+      if (contact?.id === target.id) {
+        close();
+      }
       reload();
+      return { ok: true };
     } catch (caught) {
-      setError(toRequestError(caught));
+      const error = toRequestError(caught);
+      setError(error);
+      return { ok: false, error };
     } finally {
       setPending(false);
     }
@@ -106,6 +119,7 @@ export function useContactEditor(reload: () => void): {
 
   return {
     mode,
+    placement,
     contact,
     draft,
     pending,
@@ -113,6 +127,7 @@ export function useContactEditor(reload: () => void): {
     warnings,
     openCreate,
     openContact,
+    openEditor,
     openDuplicate,
     close,
     setDraft,
@@ -120,6 +135,27 @@ export function useContactEditor(reload: () => void): {
     changeArchive,
     dismissWarnings: () => setWarnings([]),
   };
+}
+
+export type MutationResult = { ok: true } | { ok: false; error: ContactsRequestError };
+
+export type SaveResult =
+  { ok: true; created: boolean } | { ok: false; error: ContactsRequestError };
+
+function showContact(
+  next: Contact,
+  nextPlacement: 'inline' | 'portal',
+  setPlacement: (placement: 'inline' | 'portal') => void,
+  setMode: (mode: 'closed' | 'create' | 'edit') => void,
+  setContact: (contact: Contact) => void,
+  setDraft: (draft: ContactDraft) => void,
+  setError: (error: ContactsRequestError | null) => void,
+): void {
+  setPlacement(nextPlacement);
+  setMode('edit');
+  setContact(next);
+  setDraft(draftFromContact(next));
+  setError(null);
 }
 
 async function updateLoaded(

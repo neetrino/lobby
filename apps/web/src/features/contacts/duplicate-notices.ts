@@ -12,6 +12,16 @@ export function duplicateNotices(rows: readonly Contact[]): ContactWarning[] {
   return [...ids].map((contactId) => ({ code: 'POSSIBLE_DUPLICATE', contactId }));
 }
 
+/** Other active contacts on this page that share a name or phone with `contact`. */
+export function duplicatePeers(contact: Contact, rows: readonly Contact[]): Contact[] {
+  if (contact.archivedAt !== null) {
+    return [];
+  }
+  return rows.filter(
+    (row) => row.id !== contact.id && row.archivedAt === null && sameContact(contact, row),
+  );
+}
+
 function sameContact(left: Contact, right: Contact): boolean {
   return sameName(left.name, right.name) || samePhone(left.phone, right.phone);
 }

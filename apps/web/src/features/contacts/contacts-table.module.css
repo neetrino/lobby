@@ -91,7 +91,7 @@
   font-size: 18px;
 }
 
-.archive svg,
+.archive > svg,
 .orgAvatar svg,
 .ownerMark svg {
   fill: none;
@@ -99,6 +99,47 @@
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.rowActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.iconButton {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.solidIcon {
+  display: block;
+}
+
+.archivedRow {
+  color: #8b97ad;
+  opacity: 0.72;
+}
+
+.archivedName,
+.archivedName strong,
+.archivedRow small,
+.archivedRow td {
+  color: #8b97ad;
+}
+
+.archivedMark {
+  display: block;
+  margin-top: 2px;
+  color: #8b97ad;
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .check {

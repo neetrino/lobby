@@ -1,20 +1,26 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
+import { ActionToastView, type ActionToast } from './action-toast';
 import type { ContactListFilters, ContactWarning } from './contact';
 import { duplicateNotices } from './duplicate-notices';
 import { ContactEditor } from './contact-editor';
+import { downloadContactsCsv } from './export-contacts-csv';
 import { contactErrorText } from './contact-error';
+import { toRequestError } from './contacts-api';
 import { ContactsShell } from './contacts-shell';
 import { ContactsTable } from './contacts-table';
 import { ContactsToolbar, useContactSearch } from './contacts-toolbar';
 import { ContactsTop } from './contacts-top';
+import { LifecycleConfirm } from './lifecycle-confirm';
+import { EditorOverlay } from './overlay-portal';
 import styles from './contacts.module.css';
 import { useContactEditor } from './use-contact-editor';
 import { useContactFilters } from './use-contact-filters';
 import { useContactList, useSession } from './use-contact-list';
+import { useLifecyclePrompt, type LifecycleAction } from './use-lifecycle-prompt';
 
 export function ContactsWorkspace() {
   const t = useTranslations('contacts');
@@ -22,8 +28,13 @@ export function ContactsWorkspace() {
   const list = useContactList(query);
   const { session } = useSession();
   const editor = useContactEditor(list.reload);
+  const lifecycle = useLifecyclePrompt(editor.changeArchive);
   const [history, setHistory] = useState<Array<string | undefined>>([]);
   const [noticeHidden, setNoticeHidden] = useState(false);
+  const [toast, setToast] = useState<ActionToast | null>(null);
+  const dismissToast = useCallback((id: number) => {
+    setToast((current) => (current?.id === id ? null : current));
+  }, []);
   const listError = list.error ?? editor.error;
   const notices = visibleNotices(editor.warnings, duplicateNotices(list.rows), noticeHidden);
   const { search, setSearch } = useContactSearch(filters, changeFilters);
@@ -50,8 +61,62 @@ export function ContactsWorkspace() {
     replace(prior === undefined ? withoutCursor(filters) : { ...filters, cursor: prior });
   }
 
+  function showToast(tone: ActionToast['tone'], text: string): void {
+    setToast({ id: Date.now(), tone, text });
+  }
+
+  async function saveContact(): Promise<void> {
+    const result = await editor.save();
+    if (result.ok) {
+      showToast('ok', result.created ? t('toast.created') : t('toast.saved'));
+      return;
+    }
+    showToast('danger', contactErrorText(t, result.error.code));
+  }
+
+  async function confirmLifecycle(): Promise<void> {
+    const result = await lifecycle.confirm();
+    if (result === null) {
+      return;
+    }
+    if (!result.ok) {
+      showToast('danger', contactErrorText(t, result.error.code));
+      return;
+    }
+    showToast('ok', t(lifecycleToastKey(result.action, result.count), result));
+  }
+
+  async function exportCsv(): Promise<void> {
+    try {
+      const count = await downloadContactsCsv(
+        {
+          search: filters.search,
+          archived: filters.archived,
+          sort: filters.sort,
+          limit: filters.limit,
+        },
+        {
+          name: t('columns.name'),
+          type: t('kind'),
+          email: t('email'),
+          phone: t('phone'),
+          status: t('columns.status'),
+          created: t('created'),
+          person: t('type.person'),
+          organization: t('type.organization'),
+          active: t('status.active'),
+          archived: t('status.archived'),
+        },
+      );
+      showToast('ok', t('toast.exported', { count }));
+    } catch (caught) {
+      showToast('danger', contactErrorText(t, toRequestError(caught).code));
+    }
+  }
+
   return (
     <div className={styles.app}>
+      <ActionToastView toast={toast} onDone={dismissToast} />
       <ContactsShell session={session} />
       <main className={styles.main}>
         <ContactsTop
@@ -62,6 +127,7 @@ export function ContactsWorkspace() {
           onSearch={setSearch}
           onChange={changeFilters}
           onCreate={editor.openCreate}
+          onExport={exportCsv}
         />
         <div className={styles.body}>
           <DuplicateNotice
@@ -72,7 +138,7 @@ export function ContactsWorkspace() {
               editor.dismissWarnings();
             }}
           />
-          {listError === null || editor.mode !== 'closed' ? null : (
+          {listError === null || editor.mode !== 'closed' || lifecycle.prompt !== null ? null : (
             <p className={styles.errorBanner} role="alert">
               {contactErrorText(t, listError.code)}
             </p>
@@ -93,39 +159,67 @@ export function ContactsWorkspace() {
               nextCursor={list.nextCursor}
               hasPrevious={history.length > 0}
               onOpen={editor.openContact}
-              onArchive={(contact) => editor.changeArchive(contact, true)}
-              onRestore={(contact) => editor.changeArchive(contact, false)}
+              onEdit={editor.openEditor}
+              onAskLifecycle={lifecycle.ask}
               onNext={showNext}
               onPrevious={showPrevious}
             />
-            {editor.mode === 'closed' ? null : (
-              <ContactEditor
-                mode={editor.mode}
-                contact={editor.contact}
-                draft={editor.draft}
-                session={session}
+            {lifecycle.prompt === null ? null : (
+              <LifecycleConfirm
+                contacts={lifecycle.prompt.contacts}
+                action={lifecycle.prompt.action}
                 pending={editor.pending}
-                error={editor.error}
-                onDraft={editor.setDraft}
-                onClose={editor.close}
-                onSave={() => void editor.save()}
-                onArchive={() => {
-                  if (editor.contact !== null) {
-                    void editor.changeArchive(editor.contact, true);
-                  }
-                }}
-                onRestore={() => {
-                  if (editor.contact !== null) {
-                    void editor.changeArchive(editor.contact, false);
-                  }
-                }}
+                error={lifecycle.failed ? editor.error : null}
+                onConfirm={() => void confirmLifecycle()}
+                onCancel={lifecycle.cancel}
               />
             )}
+            <EditorOverlay
+              portal={editor.placement === 'portal' && editor.mode !== 'closed'}
+              label={editor.contact?.name ?? t('edit')}
+              onDismiss={editor.pending ? undefined : editor.close}
+            >
+              {editor.mode === 'closed' ? null : (
+                <ContactEditor
+                  mode={editor.mode}
+                  contact={editor.contact}
+                  draft={editor.draft}
+                  rows={list.rows}
+                  session={session}
+                  pending={editor.pending}
+                  error={editor.error}
+                  onDraft={editor.setDraft}
+                  onClose={editor.close}
+                  onInvalid={() => showToast('danger', t('errors.validation'))}
+                  onSave={() => void saveContact()}
+                  onArchive={() => {
+                    if (editor.contact !== null) {
+                      lifecycle.ask([editor.contact], 'archive');
+                    }
+                  }}
+                  onRestore={() => {
+                    if (editor.contact !== null) {
+                      lifecycle.ask([editor.contact], 'restore');
+                    }
+                  }}
+                />
+              )}
+            </EditorOverlay>
           </div>
         </div>
       </main>
     </div>
   );
+}
+
+function lifecycleToastKey(
+  action: LifecycleAction,
+  count: number,
+): 'toast.archivedOne' | 'toast.archivedMany' | 'toast.restoredOne' | 'toast.restoredMany' {
+  if (action === 'archive') {
+    return count === 1 ? 'toast.archivedOne' : 'toast.archivedMany';
+  }
+  return count === 1 ? 'toast.restoredOne' : 'toast.restoredMany';
 }
 
 function visibleNotices(

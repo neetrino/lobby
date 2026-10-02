@@ -54,6 +54,7 @@
 .headerCreate:focus-visible,
 .segment:focus-visible,
 .segmentActive:focus-visible,
+.exportButton:focus-visible,
 .crumbs a:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
@@ -277,9 +278,36 @@
   box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
 }
 
+.exportButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+  color: #0b1c30;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.exportButton:hover {
+  background: #f8fafc;
+}
+
+.exportButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .segment svg,
 .segmentActive svg,
-.ghost svg {
+.ghost svg,
+.exportButton svg {
   width: 16px;
   height: 16px;
   flex: none;

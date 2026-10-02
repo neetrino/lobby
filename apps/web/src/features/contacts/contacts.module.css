@@ -234,7 +234,8 @@ button:disabled {
 
 .search {
   position: relative;
-  flex: 0 1 240px;
+  flex: 1 1 220px;
+  max-width: 320px;
 }
 
 .search svg {
@@ -287,6 +288,50 @@ button:disabled {
   background: #eef2ff;
 }
 
+.toolbarControls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.toolbar select {
+  width: auto;
+  height: 36px;
+  padding: 0 30px 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%2364748b' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  color: #0b1c30;
+  font-size: 13px;
+  font-weight: 600;
+  appearance: none;
+  cursor: pointer;
+}
+
+.clearFilters {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #475569;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clearFilters:hover {
+  background: #f8fafc;
+  color: #0b1c30;
+}
+
 .search input:focus,
 .toolbar select:focus,
 .form input:focus,
@@ -298,7 +343,8 @@ button:focus-visible {
 }
 
 .workspace {
-  align-items: start;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 .tableCard {
@@ -464,9 +510,11 @@ button:focus-visible {
 }
 
 .editor {
-  flex: 1 1 320px;
-  max-width: 420px;
-  padding: 16px;
+  flex: none;
+  width: 100%;
+  max-width: none;
+  padding: 0;
+  scroll-margin-top: 80px;
 }
 
 .editor h2 {

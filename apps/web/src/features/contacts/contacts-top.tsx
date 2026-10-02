@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import Link from 'next/link';
 
 import type { ContactListFilters, SessionPrincipal } from './contact';
@@ -15,6 +16,7 @@ export function ContactsTop({
   onSearch,
   onChange,
   onCreate,
+  onExport,
 }: {
   filters: ContactListFilters;
   session: SessionPrincipal | null;
@@ -23,6 +25,7 @@ export function ContactsTop({
   onSearch: (search: string) => void;
   onChange: (filters: ContactListFilters) => void;
   onCreate: () => void;
+  onExport: () => Promise<void>;
 }) {
   const t = useTranslations('contacts');
   const locale = useLocale();
@@ -51,6 +54,7 @@ export function ContactsTop({
         duplicateCount={duplicateCount}
         onChange={onChange}
         onCreate={onCreate}
+        onExport={onExport}
       />
     </>
   );
@@ -100,11 +104,13 @@ function TitleCard({
   duplicateCount,
   onChange,
   onCreate,
+  onExport,
 }: {
   filters: ContactListFilters;
   duplicateCount: number;
   onChange: (filters: ContactListFilters) => void;
   onCreate: () => void;
+  onExport: () => Promise<void>;
 }) {
   const t = useTranslations('contacts');
   return (
@@ -120,7 +126,7 @@ function TitleCard({
         </div>
         <p>{t('pageDescription')}</p>
       </div>
-      <TitleActions filters={filters} onChange={onChange} onCreate={onCreate} />
+      <TitleActions filters={filters} onChange={onChange} onCreate={onCreate} onExport={onExport} />
     </section>
   );
 }
@@ -129,12 +135,25 @@ function TitleActions({
   filters,
   onChange,
   onCreate,
+  onExport,
 }: {
   filters: ContactListFilters;
   onChange: (filters: ContactListFilters) => void;
   onCreate: () => void;
+  onExport: () => Promise<void>;
 }) {
   const t = useTranslations('contacts');
+  const [exporting, setExporting] = useState(false);
+
+  async function exportCsv(): Promise<void> {
+    setExporting(true);
+    try {
+      await onExport();
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className={styles.titleActions}>
       <div className={styles.segments} role="group" aria-label={t('status.active')}>
@@ -155,11 +174,15 @@ function TitleActions({
           {t('archived')}
         </button>
       </div>
-      <span className={styles.ghost}>
+      <button
+        type="button"
+        className={styles.exportButton}
+        disabled={exporting}
+        onClick={() => void exportCsv()}
+      >
         <DownloadIcon />
         {t('csv')}
-      </span>
-      <span className={styles.ghost}>{t('apiDoc')}</span>
+      </button>
       <button type="button" className={styles.create} onClick={onCreate}>
         {t('createShort')}
         <CaretIcon />

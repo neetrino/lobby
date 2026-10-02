@@ -10,6 +10,20 @@ export function formatContactDate(iso: string, locale: string): string {
   }).format(date);
 }
 
+/** `dd.mm.yyyy HH:mm` in UTC, shown under an archived contact name. */
+export function formatArchivedMark(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return iso;
+  }
+  const pad = (value: number): string => String(value).padStart(2, '0');
+  const day = pad(date.getUTCDate());
+  const month = pad(date.getUTCMonth() + 1);
+  const hours = pad(date.getUTCHours());
+  const minutes = pad(date.getUTCMinutes());
+  return `${day}.${month}.${date.getUTCFullYear()} ${hours}:${minutes}`;
+}
+
 export function shortId(id: string): string {
   return id.slice(0, 8);
 }
