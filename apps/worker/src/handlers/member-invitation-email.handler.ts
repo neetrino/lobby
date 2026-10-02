@@ -35,6 +35,7 @@ export class MemberInvitationEmailHandler {
       inviterName: event.payload.inviterName,
       invitationUrl,
       locale: event.payload.locale,
+      idempotencyKey: event.eventId,
     });
   }
 }

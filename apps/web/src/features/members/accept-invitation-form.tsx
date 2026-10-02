@@ -9,7 +9,12 @@ import { authErrorText, fieldErrorText } from '../auth/auth-copy';
 import { signInRequiredHref, signupFieldErrors } from '../auth/auth-draft';
 import { AuthFrame } from '../auth/auth-frame';
 import styles from '../auth/auth.module.css';
-import { acceptInvitation, previewInvitation, type InvitationPreview } from './members-api';
+import {
+  acceptInvitation,
+  exchangeInvitation,
+  previewInvitation,
+  type InvitationPreview,
+} from './members-api';
 
 export function AcceptInvitationForm({
   invitationId,
@@ -25,17 +30,23 @@ export function AcceptInvitationForm({
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [banner, setBanner] = useState<string | null>(
-    invitationId.length === 0 || token.length === 0 ? t('acceptMissing') : null,
-  );
+  const [banner, setBanner] = useState<string | null>(invitationId.length === 0 ? t('acceptMissing') : null);
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    if (invitationId.length === 0 || token.length === 0) {
+    if (invitationId.length === 0) {
       return;
     }
     let active = true;
-    previewInvitation(invitationId, token)
+    const ready =
+      token.length === 0
+        ? Promise.resolve()
+        : exchangeInvitation(invitationId, token).finally(() => {
+            const url = `/${locale}/invitations/accept?id=${encodeURIComponent(invitationId)}`;
+            window.history.replaceState(window.history.state, '', url);
+          });
+    ready
+      .then(() => previewInvitation(invitationId))
       .then((next) => {
         if (active) {
           setPreview(next);
@@ -49,7 +60,7 @@ export function AcceptInvitationForm({
     return () => {
       active = false;
     };
-  }, [invitationId, t, token]);
+  }, [invitationId, locale, t, token]);
 
   async function submit(): Promise<void> {
     const errors = signupFieldErrors({
@@ -70,7 +81,7 @@ export function AcceptInvitationForm({
     setPending(true);
     setBanner(null);
     try {
-      await acceptInvitation({ invitationId, token, name, password });
+      await acceptInvitation({ invitationId, name, password });
       router.push(`/${locale}/contacts`);
     } catch (caught) {
       if (caught instanceof AuthRequestError && caught.code === 'ACCOUNT_CREATED_SIGN_IN_REQUIRED' && preview !== null) {

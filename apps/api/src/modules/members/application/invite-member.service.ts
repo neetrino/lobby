@@ -10,6 +10,7 @@ import type { RequestContext } from '../../../common/tenant/request-context';
 import type { AuditClient } from '../../identity/application/terminate-user-sessions.service';
 import { invitationAuditActions, invitationAuditRecord } from './invitation-audit';
 import { invitationCreatedEvent } from './invitation-events';
+import { rethrowInvitationConflict } from './invitation-conflict';
 import { InvitationError, invitationErrorCodes } from '../domain/invitation.errors';
 import { invitationExpiresAt, type InvitableRole } from '../domain/invitation-policy';
 import {
@@ -44,22 +45,26 @@ export class InviteMemberService {
     const now = new Date();
     const secret = createInvitationSecret();
     const ciphertext = sealInvitationToken(secret.token, key);
-    return this.invitations.transaction(async (tx) => {
-      await this.assertEmailFree(tx, context.tenantId, input.email, now);
-      const expiresAt = invitationExpiresAt(now);
-      const stored = await this.storeInvitation(tx, context, input, secret.tokenHash, expiresAt);
-      await this.enqueue(tx, context, input, stored.id, ciphertext);
-      await this.audit.append(
-        tx,
-        invitationAuditRecord({
-          context,
-          invitationId: stored.id,
-          action: invitationAuditActions.created,
-          client,
-        }),
-      );
-      return { id: stored.id, expiresAt };
-    });
+    try {
+      return await this.invitations.transaction(async (tx) => {
+        await this.assertEmailFree(tx, context.tenantId, input.email, now);
+        const expiresAt = invitationExpiresAt(now);
+        const stored = await this.storeInvitation(tx, context, input, secret.tokenHash, expiresAt);
+        await this.enqueue(tx, context, input, stored.id, ciphertext);
+        await this.audit.append(
+          tx,
+          invitationAuditRecord({
+            context,
+            invitationId: stored.id,
+            action: invitationAuditActions.created,
+            client,
+          }),
+        );
+        return { id: stored.id, expiresAt };
+      });
+    } catch (error) {
+      rethrowInvitationConflict(error);
+    }
   }
 
   private requireKey(): Buffer {

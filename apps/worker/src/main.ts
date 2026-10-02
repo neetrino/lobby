@@ -7,7 +7,10 @@ import {
 
 import { createDispatchLogger } from './dispatch/dispatch-logger.js';
 import { PrismaProcessedEventStore } from './dispatch/prisma-processed-event-store.js';
-import { readEmailProvider } from './email/email-provider.js';
+import {
+  assertProductionInvitationEmailConfig,
+  readEmailProvider,
+} from './email/email-provider.js';
 import { ContactCreatedHandler } from './handlers/contact-created.handler.js';
 import { MemberInvitationEmailHandler } from './handlers/member-invitation-email.handler.js';
 import { TenantCreatedHandler } from './handlers/tenant-created.handler.js';
@@ -16,6 +19,7 @@ import { OutboxRelay } from './outbox/outbox-relay.js';
 import { OutboxRepository } from './outbox/outbox-repository.js';
 
 export async function startOutboxRelay(signal: AbortSignal): Promise<void> {
+  assertProductionInvitationEmailConfig();
   const config = readOutboxWorkerConfig();
   const prisma = createPrismaClient(readDatabaseUrl());
   const repository = new OutboxRepository(prisma, config);

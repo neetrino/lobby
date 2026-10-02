@@ -21,6 +21,7 @@ describe('MemberInvitationEmailHandler', () => {
     await handler.handle(event(sealInvitationToken(secret.token, key)));
 
     expect(sent).toHaveLength(1);
+    expect(sent[0]?.idempotencyKey).toBe('11111111-1111-4111-8111-111111111111');
     expect(sent[0]?.invitationUrl).toContain(secret.token);
     expect(sent[0]?.invitationUrl.startsWith('http://localhost:3000/hy/invitations/accept?')).toBe(
       true,

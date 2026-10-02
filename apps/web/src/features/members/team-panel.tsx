@@ -94,6 +94,7 @@ export function TeamPanel() {
             meta={`${t('invitedBy', { name: invitation.invitedByName })} · ${t('expires', { date: invitation.expiresAt.slice(0, 16).replace('T', ' ') })}`}
             onResend={() => resendInvitation(invitation.id, locale).then(() => reload())}
             onRevoke={() => revokeInvitation(invitation.id).then(() => reload())}
+            onFailure={(caught) => setBanner(failureText(t, caught))}
           />
         ))}
         <p>
@@ -114,21 +115,39 @@ function InvitationRow({
   meta,
   onResend,
   onRevoke,
+  onFailure,
 }: {
   email: string;
   meta: string;
   onResend: () => Promise<void>;
   onRevoke: () => Promise<void>;
+  onFailure: (error: unknown) => void;
 }) {
   const t = useTranslations('auth');
+  const [busy, setBusy] = useState(false);
+  async function run(action: () => Promise<void>): Promise<void> {
+    setBusy(true);
+    try {
+      await action();
+    } catch (caught) {
+      onFailure(caught);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <p>
       {email}
       <span className={styles.hint}> {meta}</span>{' '}
-      <button type="button" className={styles.textButton} onClick={() => void onResend()}>
+      <button
+        type="button"
+        className={styles.textButton}
+        disabled={busy}
+        onClick={() => void run(onResend)}
+      >
         {t('resend')}
       </button>{' '}
-      <button type="button" className={styles.textButton} onClick={() => void onRevoke()}>
+      <button type="button" className={styles.textButton} disabled={busy} onClick={() => void run(onRevoke)}>
         {t('revoke')}
       </button>
     </p>

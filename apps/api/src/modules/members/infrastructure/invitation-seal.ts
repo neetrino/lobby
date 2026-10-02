@@ -46,6 +46,43 @@ export function openInvitationToken(sealed: string, key: Buffer): string {
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
 }
 
+export type InvitationAccess = {
+  invitationId: string;
+  token: string;
+};
+
+/** Seals the rotated invitation token for an HttpOnly cookie. The cookie value is not the raw token. */
+export function sealInvitationAccess(access: InvitationAccess, key: Buffer): string {
+  return sealInvitationToken(JSON.stringify(access), key);
+}
+
+/** Opens a cookie seal. A bad seal or a foreign shape returns null. */
+export function openInvitationAccess(sealed: string, key: Buffer): InvitationAccess | null {
+  try {
+    return parseInvitationAccess(openInvitationToken(sealed, key));
+  } catch {
+    return null;
+  }
+}
+
+function parseInvitationAccess(value: string): InvitationAccess | null {
+  const parsed: unknown = JSON.parse(value);
+  if (typeof parsed !== 'object' || parsed === null) {
+    return null;
+  }
+  if (!('invitationId' in parsed) || !('token' in parsed)) {
+    return null;
+  }
+  const { invitationId, token } = parsed;
+  if (typeof invitationId !== 'string' || typeof token !== 'string') {
+    return null;
+  }
+  if (invitationId.length === 0 || token.length === 0) {
+    return null;
+  }
+  return { invitationId, token };
+}
+
 /** AES-256-GCM seal. The stored value is base64url(iv | tag | ciphertext). */
 export function sealInvitationToken(token: string, key: Buffer): string {
   assertInvitationKey(key);

@@ -126,7 +126,7 @@ An approved physical ERD will replace or extend this view when models are design
 - Inventory, state transitions, uniqueness-sensitive writes, and outbox claiming require an explicit locking, optimistic-concurrency, or idempotency strategy.
 - Business data and its critical outbox event are committed in the same transaction.
 - Consumers tolerate at-least-once delivery and record idempotent processing where needed.
-- `ContactCreatedHandler` and `TenantCreatedHandler` have no external side effect. Their in-memory event sets are process-local. A handler that sends email, SMS, a webhook, a push, or another third-party call must register with `defineExternalHandler`, which reserves a `processed_events` row before the call.
+- `ContactCreatedHandler` and `TenantCreatedHandler` have no external side effect. Their in-memory event sets are process-local. A handler that sends email, SMS, a webhook, a push, or another third-party call without a provider idempotency key must register with `defineExternalHandler`, which reserves a `processed_events` row before the call. `invitation.created` uses `defineConfirmedExternalHandler`: the row is inserted only after the provider accepts the send, and Resend receives the outbox `eventId` as `Idempotency-Key`.
 - Active table assignments use a PostgreSQL exclusion constraint over tenant, table, and half-open UTC time range (`[start, end)`) so concurrent requests cannot double-book a table.
 - Reservation status and each assignment's `blocks_availability` flag change in one transaction; terminal outcomes release availability according to module policy.
 
@@ -144,9 +144,9 @@ Dispatch runs handlers in order and stops at the first throw. That handler's cla
 | ------------------------ | ------------------------------------------------------------------ | ------------------------------------------- |
 | `transient`              | Retry with the existing exponential backoff, then `FAILED`         | Temporary downstream outage                 |
 | `permanent`              | `FAILED` on the first failure                                      | Business rule that will not change on retry |
-| `idempotent-side-effect` | The outbox row may retry. The external call itself is at-most-once | Email, SMS, webhook, push, third-party API  |
+| `idempotent-side-effect` | The outbox row may retry. Reserve-before handlers stay at-most-once. Invitation email retries a failed send and lets Resend dedupe a successful one | Email, SMS, webhook, push, third-party API  |
 
-A `PermanentDispatchError` is permanent even when that handler's classification is retryable. Invalid payloads are permanent. `idempotent-side-effect` is unused until a handler performs a real external call. No email, SMS, or webhook provider is wired yet, so none of those providers' idempotency keys are available. The worker therefore reserves first instead of asking a provider to dedupe.
+A `PermanentDispatchError` is permanent even when that handler's classification is retryable. Invalid payloads are permanent. `invitation.created@1` is the email handler. It confirms `processed_events` after Resend accepts the message. A provider error, including a timeout, leaves no row, so the outbox retry sends again with the same `Idempotency-Key`. Reserve-before delivery remains available through `defineExternalHandler` for a provider that cannot dedupe. Production startup refuses to poll when `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `APP_URL`, or `INVITATION_TOKEN_KEY` is missing. Other environments still start the relay.
 
 ### External side effects
 
@@ -154,15 +154,16 @@ A `PermanentDispatchError` is permanent even when that handler's classification 
 
 This is at-most-once. If the process dies after the provider accepted the call, the reservation remains and a retry does not send again. The same is true if `handle` throws after the reservation and the provider never accepted the call: the worker cannot tell those two cases apart, so it does not retry the call. A later poll can still mark the outbox row `PUBLISHED`, because the effect will not be started again. Deleting the `processed_events` row is a separate manual step and is required before a forced resend. Requeue does not delete it.
 
-A failed insert does not call `handle`. There is no production handler of this kind yet. The mechanism is covered by tests that use a mock handler. The first real handler must be registered with `defineExternalHandler` and a `PrismaProcessedEventStore`. Do not implement `wasAlreadyApplied` on the handler.
+A failed insert does not call `handle`. Reserve-before delivery is covered by tests that use a mock handler. `MemberInvitationEmailHandler` is the production caller of `defineConfirmedExternalHandler`. Do not implement `wasAlreadyApplied` on the handler.
 
 Current entries:
 
-| Key                 | Handler                 | Retry       | External side effect |
-| ------------------- | ----------------------- | ----------- | -------------------- |
-| `contact.created@1` | `ContactCreatedHandler` | `transient` | no                   |
-| `tenant.created@1`  | `TenantCreatedHandler`  | `transient` | no                   |
-| `tenant.created@2`  | `TenantCreatedHandler`  | `transient` | no                   |
+| Key                    | Handler                        | Retry                    | External side effect      |
+| ---------------------- | ------------------------------ | ------------------------ | ------------------------- |
+| `contact.created@1`    | `ContactCreatedHandler`        | `transient`              | no                        |
+| `tenant.created@1`     | `TenantCreatedHandler`         | `transient`              | no                        |
+| `tenant.created@2`     | `TenantCreatedHandler`         | `transient`              | no                        |
+| `invitation.created@1` | `MemberInvitationEmailHandler` | `idempotent-side-effect` | yes, confirmed after send |
 
 ### Adding a handler
 
@@ -172,9 +173,9 @@ Deploy the worker that understands the new key before the API starts writing it.
 2. Deploy that contract and the worker. Confirm the worker is up (health check or logs) before the next step.
 3. Only then deploy the API that enqueues the new event.
 4. Set each handler's `retryClassification` to `transient`, `permanent`, or `idempotent-side-effect`. Do not infer it from whichever error the handler happens to throw. Do not put one classification on the whole entry.
-5. Register email, SMS, webhook, push, or another third-party call with `defineExternalHandler` and a `PrismaProcessedEventStore`. Do not set `hasExternalSideEffect` by hand and do not add a handler-local dedupe check.
+5. Register a third-party call that cannot dedupe with `defineExternalHandler`. Register one that accepts a stable idempotency key with `defineConfirmedExternalHandler`. Both use a `PrismaProcessedEventStore`. Do not set `hasExternalSideEffect` by hand and do not add a handler-local dedupe check.
 6. Leave database-only and pure handlers on `bindSideEffectFree` (`hasExternalSideEffect: false`).
-7. Add a delivery test for the new key. When the handler has an external side effect, dispatch the same event twice, including a retry after a simulated crash, and assert the effect runs once.
+7. Add a delivery test for the new key. For reserve-before delivery, a retry after a simulated crash must not call the effect again. For confirm-after delivery, a failed send must call the effect again, and a successful send must not.
 
 ### Requeue a FAILED outbox row
 

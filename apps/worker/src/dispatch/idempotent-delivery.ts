@@ -43,6 +43,38 @@ export function bindIdempotentDelivery(
   };
 }
 
+/**
+ * Send, then record.
+ * A failed `handle` leaves no row, so the outbox retry calls the provider again.
+ * The provider must dedupe with its own idempotency key when a crash lands between those two steps.
+ */
+export function bindConfirmedDelivery(
+  handler: DeliveredHandler,
+  store: ProcessedEventStore,
+  identity: DeliveryIdentity,
+): DurableDelivery {
+  return {
+    [DURABLE_DELIVERY]: true,
+    run(event: unknown): Promise<void> {
+      return deliverAfterSuccess(handler, store, identity, event);
+    },
+  };
+}
+
+async function deliverAfterSuccess(
+  handler: DeliveredHandler,
+  store: ProcessedEventStore,
+  identity: DeliveryIdentity,
+  event: unknown,
+): Promise<void> {
+  const key = reservationKey(handler.name, identity, event);
+  if (await store.isProcessed(key)) {
+    return;
+  }
+  await handler.handle(event);
+  await store.tryReserve(key);
+}
+
 async function deliverOnce(
   handler: DeliveredHandler,
   store: ProcessedEventStore,

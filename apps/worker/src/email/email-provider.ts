@@ -1,4 +1,5 @@
 import type { Locale } from '@lobby/contracts';
+import { readInvitationTokenKey } from '@lobby/database';
 
 /** Delivery contract. Provider SDKs stay behind this interface. */
 export type MemberInvitationEmail = {
@@ -7,6 +8,7 @@ export type MemberInvitationEmail = {
   inviterName: string;
   invitationUrl: string;
   locale: Locale;
+  idempotencyKey: string;
 };
 
 export interface EmailProvider {
@@ -14,6 +16,23 @@ export interface EmailProvider {
 }
 
 const PLACEHOLDER_RESEND_KEY = 're_...';
+
+/** One hung Resend call must not hold the outbox poll open. */
+export const RESEND_REQUEST_TIMEOUT_MS = 10_000;
+
+/**
+ * Production refuses to poll until invitation email can be sent.
+ * Other environments keep the relay up so contact and tenant handlers still run.
+ */
+export function assertProductionInvitationEmailConfig(env: NodeJS.ProcessEnv = process.env): void {
+  if (env.NODE_ENV !== 'production') {
+    return;
+  }
+  const missing = missingInvitationEmailConfig(env);
+  if (missing.length > 0) {
+    throw new Error(`Invitation email configuration is incomplete: ${missing.join(', ')}.`);
+  }
+}
 
 /** Resend HTTP API. Returns null when the key or sender address is not configured. */
 export function readEmailProvider(env: NodeJS.ProcessEnv = process.env): EmailProvider | null {
@@ -35,9 +54,11 @@ export class ResendEmailProvider implements EmailProvider {
   async sendMemberInvitation(input: MemberInvitationEmail): Promise<void> {
     const response = await this.fetchImpl('https://api.resend.com/emails', {
       method: 'POST',
+      signal: AbortSignal.timeout(RESEND_REQUEST_TIMEOUT_MS),
       headers: {
         authorization: `Bearer ${this.apiKey}`,
         'content-type': 'application/json',
+        'idempotency-key': input.idempotencyKey,
       },
       body: JSON.stringify({
         from: this.from,
@@ -49,6 +70,32 @@ export class ResendEmailProvider implements EmailProvider {
     if (!response.ok) {
       throw new Error('Email provider rejected the invitation.');
     }
+  }
+}
+
+function missingInvitationEmailConfig(env: NodeJS.ProcessEnv): string[] {
+  const missing: string[] = [];
+  const apiKey = env.RESEND_API_KEY?.trim() ?? '';
+  if (apiKey.length === 0 || apiKey === PLACEHOLDER_RESEND_KEY) {
+    missing.push('RESEND_API_KEY');
+  }
+  if ((env.RESEND_FROM_EMAIL?.trim() ?? '').length === 0) {
+    missing.push('RESEND_FROM_EMAIL');
+  }
+  if ((env.APP_URL?.trim() ?? '').length === 0) {
+    missing.push('APP_URL');
+  }
+  if (!hasInvitationTokenKey(env)) {
+    missing.push('INVITATION_TOKEN_KEY');
+  }
+  return missing;
+}
+
+function hasInvitationTokenKey(env: NodeJS.ProcessEnv): boolean {
+  try {
+    return readInvitationTokenKey(env) !== null;
+  } catch {
+    return false;
   }
 }
 

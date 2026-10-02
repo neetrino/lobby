@@ -12,6 +12,7 @@ import { invitationExpiresAt } from '../domain/invitation-policy';
 import { MemberInvitationRepository } from '../infrastructure/member-invitation.repository';
 import { invitationAuditActions, invitationAuditRecord } from './invitation-audit';
 import { invitationCreatedEvent } from './invitation-events';
+import { rethrowInvitationConflict } from './invitation-conflict';
 import { INVITATION_TOKEN_KEY } from './invite-member.service';
 
 /** Replaces the invitation token and queues a new email. The previous token stops working. */
@@ -38,12 +39,19 @@ export class ResendInvitationService {
     const secret = createInvitationSecret();
     const ciphertext = sealInvitationToken(secret.token, key);
     const expiresAt = invitationExpiresAt(now);
-    return this.invitations.transaction(async (tx) => {
+    try {
+      return await this.invitations.transaction(async (tx) => {
       const current = await this.invitations.findById(tx, invitationId);
       if (current === null || current.tenantId !== context.tenantId || current.acceptedAt !== null || current.revokedAt !== null) {
         throw new InvitationError(invitationErrorCodes.INVALID);
       }
-      const replaced = await this.invitations.replaceToken(tx, invitationId, secret.tokenHash, expiresAt);
+      const replaced = await this.invitations.replaceToken(
+        tx,
+        invitationId,
+        current.tokenHash,
+        secret.tokenHash,
+        expiresAt,
+      );
       if (replaced !== 1) {
         throw new InvitationError(invitationErrorCodes.INVALID);
       }
@@ -74,6 +82,9 @@ export class ResendInvitationService {
         }),
       );
       return { id: invitationId, expiresAt };
-    });
+      });
+    } catch (error) {
+      rethrowInvitationConflict(error);
+    }
   }
 }

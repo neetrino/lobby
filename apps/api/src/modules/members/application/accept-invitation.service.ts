@@ -1,6 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 
-import { invitationTokenMatches } from '../infrastructure/invitation-seal';
+import { InvitationAccessCookie } from '../infrastructure/invitation-access-cookie';
+import {
+  openInvitationAccess,
+  sealInvitationAccess,
+  invitationTokenMatches,
+  createInvitationSecret,
+} from '../infrastructure/invitation-seal';
 
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
 import { requestContextFromSession } from '../../../common/tenant/request-context';
@@ -16,10 +22,11 @@ import {
   type InvitationRow,
 } from '../infrastructure/member-invitation.repository';
 import { invitationAuditActions, invitationAuditRecord } from './invitation-audit';
+import { rethrowInvitationConflict } from './invitation-conflict';
+import { INVITATION_TOKEN_KEY } from './invite-member.service';
 
 export type AcceptInvitationInput = {
   invitationId: string;
-  token: string;
   name: string;
   password: string;
   requestId: string;
@@ -49,24 +56,96 @@ export class AcceptInvitationService {
     @Inject(PASSWORD_HASHER) private readonly passwords: PasswordHasher,
     private readonly sessions: RedisSessionStore,
     @Inject(INCIDENT_LOGGER) private readonly incidents: IncidentLogger,
+ի    private readonly accessCookie: InvitationAccessCookie,
+    @Inject(INVITATION_TOKEN_KEY) private readonly tokenKey: Buffer | null,
   ) {}
 
-  async preview(invitationId: string, token: string): Promise<InvitationPreview> {
+  /**
+   * Replaces the email token before the cookie reaches the browser.
+   * A dropped response leaves the email link invalid; an Owner or Admin resend recovers it.
+   * The seal lives only in that response, for the invitation's remaining lifetime.
+   */
+  async exchange(
+    invitationId: string,
+    token: string,
+    now: Date,
+  ): Promise<{ sealed: string; maxAgeMs: number }> {
+    const key = this.requireKey();
+    const invitation = await this.openInvitation(invitationId, token, now);
+    const secret = createInvitationSecret();
+    try {
+      await this.rotateToken(invitation, secret.tokenHash);
+    } catch (error) {
+      rethrowInvitationConflict(error);
+    }
+    const maxAgeMs = Math.max(invitation.expiresAt.getTime() - now.getTime(), 1);
+    return { sealed: sealInvitationAccess({ invitationId, token: secret.token }, key), maxAgeMs };
+  }
+
+  async preview(
+    invitationId: string,
+    cookieHeader: string | readonly string[] | undefined,
+  ): Promise<InvitationPreview> {
+    const token = this.cookieToken(invitationId, cookieHeader);
     const invitation = await this.openInvitation(invitationId, token, new Date());
     const tenant = await this.invitations.loadTenant(invitation.tenantId);
     return previewFrom(invitation, tenant);
   }
 
-  async accept(input: AcceptInvitationInput, client: AuditClient): Promise<AcceptedInvitation> {
+  async accept(
+    input: AcceptInvitationInput,
+    cookieHeader: string | readonly string[] | undefined,
+    client: AuditClient,
+  ): Promise<AcceptedInvitation> {
     const now = new Date();
-    const invitation = await this.openInvitation(input.invitationId, input.token, now);
+    const invitation = await this.openInvitation(
+      input.invitationId,
+      this.cookieToken(input.invitationId, cookieHeader),
+      now,
+    );
     const passwordHash = await this.passwords.hash(input.password);
-    const created = await this.commitMember(invitation, input, passwordHash, client, now);
+    const created = await this.commitMember(invitation, input, passwordHash, client, now).catch(
+      rethrowInvitationConflict,
+    );
     const rawSessionId = await this.openSession(created);
     return {
       account: { tenant: created.tenant, user: created.user },
       rawSessionId,
     };
+  }
+
+  private async rotateToken(invitation: InvitationRow, tokenHash: string): Promise<void> {
+    const replaced = await this.invitations.transaction((tx) =>
+      this.invitations.replaceToken(
+        tx,
+        invitation.id,
+        invitation.tokenHash,
+        tokenHash,
+        invitation.expiresAt,
+      ),
+    );
+    if (replaced !== 1) {
+      throw new InvitationError(invitationErrorCodes.INVALID);
+    }
+  }
+
+  private cookieToken(
+    invitationId: string,
+    cookieHeader: string | readonly string[] | undefined,
+  ): string {
+    const sealed = this.accessCookie.read(cookieHeader);
+    const access = sealed === null ? null : openInvitationAccess(sealed, this.requireKey());
+    if (access === null || access.invitationId !== invitationId) {
+      throw new InvitationError(invitationErrorCodes.INVALID);
+    }
+    return access.token;
+  }
+
+  private requireKey(): Buffer {
+    if (this.tokenKey === null) {
+      throw new InvitationError(invitationErrorCodes.UNAVAILABLE);
+    }
+    return this.tokenKey;
   }
 
   private async openInvitation(
@@ -103,7 +182,12 @@ export class AcceptInvitationService {
         name: input.name,
         passwordHash,
       });
-      const accepted = await this.invitations.markAccepted(tx, invitation.id, now);
+      const accepted = await this.invitations.markAccepted(
+        tx,
+        invitation.id,
+        now,
+        invitation.tokenHash,
+      );
       if (accepted !== 1) {
         throw new InvitationError(invitationErrorCodes.INVALID);
       }

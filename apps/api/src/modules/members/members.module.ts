@@ -12,6 +12,7 @@ import { INVITATION_TOKEN_KEY, InviteMemberService } from './application/invite-
 import { ListTeamService } from './application/list-team.service';
 import { ResendInvitationService } from './application/resend-invitation.service';
 import { RevokeInvitationService } from './application/revoke-invitation.service';
+import { InvitationAccessCookie, invitationAccessCookie } from './infrastructure/invitation-access-cookie';
 import { MemberInvitationRepository } from './infrastructure/member-invitation.repository';
 import { InvitationAcceptController } from './presentation/invitation-accept.controller';
 import { MemberInvitationsController } from './presentation/member-invitations.controller';
@@ -21,6 +22,7 @@ import { MemberInvitationsController } from './presentation/member-invitations.c
   controllers: [MemberInvitationsController, InvitationAcceptController],
   providers: [
     { provide: INVITATION_TOKEN_KEY, useFactory: () => readInvitationTokenKey() },
+    { provide: InvitationAccessCookie, useFactory: invitationAccessCookie },
     MemberInvitationRepository,
     InviteMemberService,
     ResendInvitationService,

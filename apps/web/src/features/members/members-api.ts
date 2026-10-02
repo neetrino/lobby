@@ -49,13 +49,29 @@ export function revokeInvitation(invitationId: string): Promise<void> {
   return sendEmpty(`/api/v1/members/invitations/${invitationId}/revoke`);
 }
 
-export function previewInvitation(invitationId: string, token: string): Promise<InvitationPreview> {
-  return sendJson('/api/v1/auth/invitations/preview', { invitationId, token });
+const pendingExchanges = new Map<string, Promise<void>>();
+
+/** Turns the URL token into an HttpOnly cookie. A repeated call shares the in-flight exchange. */
+export function exchangeInvitation(invitationId: string, token: string): Promise<void> {
+  const existing = pendingExchanges.get(invitationId);
+  if (existing !== undefined) {
+    return existing;
+  }
+  const pending = sendEmptyBody('/api/v1/auth/invitations/exchange', { invitationId, token }).finally(
+    () => {
+      pendingExchanges.delete(invitationId);
+    },
+  );
+  pendingExchanges.set(invitationId, pending);
+  return pending;
+}
+
+export function previewInvitation(invitationId: string): Promise<InvitationPreview> {
+  return sendJson('/api/v1/auth/invitations/preview', { invitationId });
 }
 
 export function acceptInvitation(input: {
   invitationId: string;
-  token: string;
   name: string;
   password: string;
 }): Promise<void> {

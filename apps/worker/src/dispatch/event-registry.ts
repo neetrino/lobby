@@ -9,6 +9,7 @@ import type { ContactCreatedHandler } from '../handlers/contact-created.handler.
 import type { MemberInvitationEmailHandler } from '../handlers/member-invitation-email.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import {
+  bindConfirmedDelivery,
   bindIdempotentDelivery,
   isDurableDelivery,
   type DurableDelivery,
@@ -127,7 +128,7 @@ export function createWorkerEventRegistry(handlers: WorkerHandlers) {
 
 export type WorkerEventRegistry = ReturnType<typeof createWorkerEventRegistry>;
 
-/** External email delivery for `invitation.created@1`, reserved before send. */
+/** External email delivery for `invitation.created@1`. The processed row is written after send. */
 export function invitationEmailRegistryEntry(
   handler: MemberInvitationEmailHandler,
   store: ProcessedEventStore,
@@ -138,7 +139,7 @@ export function invitationEmailRegistryEntry(
     eventVersion: 1,
     schema,
     handlers: [
-      defineExternalHandler({
+      defineConfirmedExternalHandler({
         handler: {
           name: 'MemberInvitationEmailHandler',
           handle: (event) => handler.handle(schema.parse(event)),
@@ -191,7 +192,25 @@ function workerRegistryEntries(
   ];
 }
 
-/** Binds an external handler to the shared durable reservation. There is no production caller yet. */
+/**
+ * Records success after `handle`.
+ * A provider failure stays retryable because no `processed_events` row is written.
+ */
+export function defineConfirmedExternalHandler(
+  input: ExternalHandlerInput,
+): ExternalSideEffectHandler {
+  return {
+    handler: input.handler,
+    retryClassification: input.retryClassification ?? 'idempotent-side-effect',
+    hasExternalSideEffect: true,
+    delivery: bindConfirmedDelivery(input.handler, input.store, {
+      eventType: input.eventType,
+      eventVersion: input.eventVersion,
+    }),
+  };
+}
+
+/** Binds an external handler to a reservation taken before the call. */
 export function defineExternalHandler(input: ExternalHandlerInput): ExternalSideEffectHandler {
   return {
     handler: input.handler,

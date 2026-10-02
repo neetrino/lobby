@@ -357,7 +357,7 @@ The login identifier is tenant subdomain + email + password on `POST /api/v1/aut
 
 ### Infrastructure
 
-Stage 1 uses one logical web app, one modular API, one primary database, and one Redis deployment, plus only approved worker/scheduler/storage needs. Apply bounded DB pooling; PgBouncer deployment and provider selection require TECH_CARD alignment. Run controlled, compatible migrations once per release, not independently on each API startup. See [`02-TECH_STACK.md`](./02-TECH_STACK.md) for technology/provider decisions.
+Stage 1 uses one logical web app, one modular API, one primary database, and one Redis deployment, plus only approved worker/scheduler/storage needs. The web origin and the API origin stay on the same site so `SameSite=Lax` session and invitation cookies are sent on credentialed fetch. Apply bounded DB pooling; PgBouncer deployment and provider selection require TECH_CARD alignment. Run controlled, compatible migrations once per release, not independently on each API startup. See [`02-TECH_STACK.md`](./02-TECH_STACK.md) for technology/provider decisions.
 
 Each runnable component must expose an appropriate health signal, emit correlated telemetry, receive secrets through the approved environment mechanism, and have documented ownership. Hosting regions, network boundaries, backup/restore targets, deployment ordering, rollback behavior, and disaster-recovery objectives remain pending TECH_CARD approval.
 

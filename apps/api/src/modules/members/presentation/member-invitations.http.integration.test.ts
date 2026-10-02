@@ -91,25 +91,37 @@ describe('member invitations HTTP', () => {
     const created = await invite(http, owner, { email: 'member@example.com', role: 'MEMBER' });
     const invitationId = created.body.data.id as string;
     const token = await sealedToken(invitationId);
-    const preview = await postPublic(http, '/api/v1/auth/invitations/preview', {
+    const exchanged = await postPublic(http, '/api/v1/auth/invitations/exchange', {
       invitationId,
       token,
     });
-    const accepted = await postPublic(http, '/api/v1/auth/invitations/accept', {
+    const accessCookie = namedCookie(exchanged.headers['set-cookie'], 'invitation_accept');
+    const preview = await postCookie(http, '/api/v1/auth/invitations/preview', accessCookie, {
       invitationId,
-      token,
+    });
+    const accepted = await postCookie(http, '/api/v1/auth/invitations/accept', accessCookie, {
+      invitationId,
       name: 'Aram',
       password,
     });
-    const repeated = await postPublic(http, '/api/v1/auth/invitations/accept', {
+    const repeated = await postCookie(http, '/api/v1/auth/invitations/accept', accessCookie, {
       invitationId,
-      token,
       name: 'Aram',
       password,
     });
     const memberCookie = sessionCookie(accepted.headers['set-cookie']);
     const memberInvite = await invite(http, memberCookie, { email: 'other@example.com', role: 'MEMBER' });
 
+    const replayed = await postPublic(http, '/api/v1/auth/invitations/exchange', {
+      invitationId,
+      token,
+    });
+    expect(exchanged.status).toBe(200);
+    expect(replayed.status).toBe(400);
+    expect(replayed.body.error.code).toBe('INVITATION_INVALID');
+    expect(JSON.stringify(exchanged.body)).not.toContain(token);
+    expect(accessCookie).not.toContain(token);
+    expect(JSON.stringify(exchanged.headers['set-cookie'])).toContain('HttpOnly');
     expect(preview.status).toBe(200);
     expect(preview.body.data).toMatchObject({ email: 'member@example.com', role: 'MEMBER' });
     expect(accepted.status).toBe(200);
@@ -132,7 +144,7 @@ describe('member invitations HTTP', () => {
       .set('Cookie', owner)
       .send({ locale: 'en' });
     const nextToken = await sealedToken(invitationId);
-    const stale = await postPublic(http, '/api/v1/auth/invitations/preview', {
+    const stale = await postPublic(http, '/api/v1/auth/invitations/exchange', {
       invitationId,
       token: firstToken,
     });
@@ -199,6 +211,25 @@ function invite(
 
 function postPublic(http: Parameters<typeof request>[0], path: string, body: object) {
   return request(http).post(path).set('Origin', origin).send(body);
+}
+
+function postCookie(
+  http: Parameters<typeof request>[0],
+  path: string,
+  cookie: string,
+  body: object,
+) {
+  return request(http).post(path).set('Origin', origin).set('Cookie', cookie).send(body);
+}
+
+function namedCookie(header: string | string[] | undefined, name: string): string {
+  const values = Array.isArray(header) ? header : header === undefined ? [] : [header];
+  const value = values.find((item) => item.startsWith(`${name}=`));
+  const pair = value?.split(';')[0];
+  if (pair === undefined || pair.length === 0) {
+    throw new Error('Invitation cookie was not set.');
+  }
+  return pair;
 }
 
 function sessionCookie(header: string | string[] | undefined): string {

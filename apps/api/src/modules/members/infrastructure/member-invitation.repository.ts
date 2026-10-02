@@ -112,12 +112,13 @@ export class MemberInvitationRepository {
   replaceToken(
     db: InvitationDb,
     id: string,
+    expectedTokenHash: string,
     tokenHash: string,
     expiresAt: Date,
   ): Promise<number> {
     return db.memberInvitation
       .updateMany({
-        where: { id, acceptedAt: null, revokedAt: null },
+        where: { id, tokenHash: expectedTokenHash, acceptedAt: null, revokedAt: null },
         data: { tokenHash, expiresAt },
       })
       .then((result) => result.count);
@@ -132,10 +133,16 @@ export class MemberInvitationRepository {
       .then((result) => result.count);
   }
 
-  markAccepted(db: InvitationDb, id: string, acceptedAt: Date): Promise<number> {
+  markAccepted(db: InvitationDb, id: string, acceptedAt: Date, tokenHash: string): Promise<number> {
     return db.memberInvitation
       .updateMany({
-        where: { id, acceptedAt: null, revokedAt: null, expiresAt: { gt: acceptedAt } },
+        where: {
+          id,
+          tokenHash,
+          acceptedAt: null,
+          revokedAt: null,
+          expiresAt: { gt: acceptedAt },
+        },
         data: { acceptedAt },
       })
       .then((result) => result.count);

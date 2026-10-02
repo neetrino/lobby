@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     return {};
   }
   const t = await getTranslations({ locale, namespace: 'auth' });
-  return { title: t('acceptAction') };
+  return { title: t('acceptAction'), referrer: 'no-referrer' };
 }
 
 export default async function AcceptInvitationPage({ params, searchParams }: PageProps) {

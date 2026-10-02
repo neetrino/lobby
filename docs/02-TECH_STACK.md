@@ -115,13 +115,13 @@ Known gaps:
 
 ## Observability and operations
 
-Implemented foundations are request IDs, safe API errors, Nest logging, audit history, and structured worker dispatch errors. Production operations still require metrics, alerting, error tracking, telemetry retention/redaction ownership, worker backlog/failure alerts, and recovery runbooks.
+Implemented foundations are request IDs, safe API errors, Nest logging, audit history, and structured worker dispatch errors. Production operations still require metrics, alerting, error tracking, telemetry retention/redaction ownership, worker backlog/failure alerts, and recovery runbooks. Web and CDN access logs for `/:locale/invitations/accept` must omit or redact the query string, because the invitation email puts the raw token there for the first request.
 
 `GET /health` is currently liveness only. Add dependency readiness checks before deployment orchestration relies on it.
 
 ## Deployment status
 
-No production platform is approved in this document. Vercel remains a candidate for the web application; the API and worker require an approved Node/container runtime. Development, staging, and production must use separate credentials and resources.
+No production platform is approved in this document. Vercel remains a candidate for the web application; the API and worker require an approved Node/container runtime. The web origin and the API origin must be the same site so `SameSite=Lax` session and invitation cookies are sent. `app.example.com` with `api.example.com` fits. A web host and an API host on different sites do not. Development, staging, and production must use separate credentials and resources.
 
 Production migrations must run once through a designated release job. They must not run from application startup, request paths, builds, or routine developer laptops.
 

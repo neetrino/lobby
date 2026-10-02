@@ -5,7 +5,7 @@ import type { AuditClient } from '../../identity/application/terminate-user-sess
 
 export type InvitationHttpRequest = {
   requestId?: string;
-  headers?: { 'user-agent'?: string | string[] };
+  headers?: { 'user-agent'?: string | string[]; cookie?: string | string[] };
   ip?: string;
   socket?: { remoteAddress?: string };
 };

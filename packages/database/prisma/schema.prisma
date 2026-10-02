@@ -220,8 +220,8 @@ model OutboxEvent {
   @@map("outbox_events")
 }
 
-/// Reservation committed before an external side effect.
-/// Duplicate `(handler_name, event_type, event_version, event_id)` means the effect already started.
+/// Durable record that an external effect must not run again.
+/// Reserve-before handlers insert before the call. Invitation email inserts after the provider accepts it.
 model ProcessedEvent {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   handlerName  String   @map("handler_name")

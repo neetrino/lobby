@@ -12,6 +12,19 @@ export class PrismaProcessedEventStore implements ProcessedEventStore {
   tryReserve(key: ProcessedEventKey): Promise<boolean> {
     return this.prisma.$transaction((tx) => insertReservation(tx, key));
   }
+
+  async isProcessed(key: ProcessedEventKey): Promise<boolean> {
+    const rows = await this.prisma.$queryRaw<Array<{ event_id: string }>>`
+      SELECT event_id
+      FROM processed_events
+      WHERE handler_name = ${key.handlerName}
+        AND event_type = ${key.eventType}
+        AND event_version = ${key.eventVersion}
+        AND event_id = CAST(${key.eventId} AS uuid)
+      LIMIT 1
+    `;
+    return rows.length === 1;
+  }
 }
 
 async function insertReservation(

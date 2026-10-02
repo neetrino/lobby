@@ -18,9 +18,13 @@ export const resendInvitationSchema = z.strictObject({
 
 export const invitationIdSchema = z.uuid();
 
-export const previewInvitationSchema = z.strictObject({
+export const exchangeInvitationSchema = z.strictObject({
   invitationId: invitationIdSchema,
   token: invitationToken,
+});
+
+export const previewInvitationSchema = z.strictObject({
+  invitationId: invitationIdSchema,
 });
 
 export const acceptInvitationSchema = previewInvitationSchema.extend({
@@ -30,5 +34,6 @@ export const acceptInvitationSchema = previewInvitationSchema.extend({
 
 export type InviteMemberBody = z.infer<typeof inviteMemberSchema>;
 export type ResendInvitationBody = z.infer<typeof resendInvitationSchema>;
+export type ExchangeInvitationBody = z.infer<typeof exchangeInvitationSchema>;
 export type PreviewInvitationBody = z.infer<typeof previewInvitationSchema>;
 export type AcceptInvitationBody = z.infer<typeof acceptInvitationSchema>;

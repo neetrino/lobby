@@ -7,11 +7,12 @@ export type ProcessedEventKey = {
 };
 
 /**
- * Durable reservation store.
- * `tryReserve` commits before the caller performs an external side effect.
+ * Durable record that an external effect must not run again.
+ * `tryReserve` inserts the row. `isProcessed` only reads it.
  */
 export type ProcessedEventStore = {
   tryReserve(key: ProcessedEventKey): Promise<boolean>;
+  isProcessed(key: ProcessedEventKey): Promise<boolean>;
 };
 
 /** In-memory stand-in for tests. A new delivery object can share this store across a simulated restart. */
@@ -25,6 +26,10 @@ export class MemoryProcessedEventStore implements ProcessedEventStore {
     }
     this.reserved.add(id);
     return true;
+  }
+
+  async isProcessed(key: ProcessedEventKey): Promise<boolean> {
+    return this.reserved.has(reservationId(key));
   }
 }
 

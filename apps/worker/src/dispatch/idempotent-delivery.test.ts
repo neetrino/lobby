@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { bindIdempotentDelivery } from './idempotent-delivery.js';
+import { bindConfirmedDelivery, bindIdempotentDelivery } from './idempotent-delivery.js';
 import { MemoryProcessedEventStore, type ProcessedEventStore } from './processed-event-store.js';
 
 const identity = { eventType: 'contact.created', eventVersion: 1 };
@@ -48,6 +48,9 @@ describe('idempotent delivery', () => {
       async tryReserve(): Promise<boolean> {
         throw new Error('processed_events insert failed');
       },
+      async isProcessed(): Promise<boolean> {
+        return false;
+      },
     };
     const handler = {
       name: 'Mailer',
@@ -60,5 +63,27 @@ describe('idempotent delivery', () => {
       'processed_events insert failed',
     );
     expect(sends).toBe(0);
+  });
+
+  it('retries a confirmed delivery when the provider rejects the first send', async () => {
+    const store = new MemoryProcessedEventStore();
+    let sends = 0;
+    const handler = {
+      name: 'MemberInvitationEmailHandler',
+      async handle(): Promise<void> {
+        sends += 1;
+        if (sends === 1) {
+          throw new Error('Email provider rejected the invitation.');
+        }
+      },
+    };
+
+    await expect(bindConfirmedDelivery(handler, store, identity).run(event)).rejects.toThrow(
+      'Email provider rejected the invitation.',
+    );
+    await bindConfirmedDelivery(handler, store, identity).run(event);
+    await bindConfirmedDelivery(handler, store, identity).run(event);
+
+    expect(sends).toBe(2);
   });
 });
