@@ -43,6 +43,14 @@ export class ContactAccessService {
     return toContactPage(rows, input);
   }
 
+  /** Active contacts in the caller's tenant. Archived rows are excluded. */
+  async activeCount(context: RequestContext): Promise<number> {
+    const tenantId = scopedTenantId(context);
+    await this.entitlements.requireEnabled(tenantId, 'contacts');
+    requirePermission(context, 'contacts:read');
+    return this.contacts.forTenant(context).countActive();
+  }
+
   async update(
     context: RequestContext,
     contactId: string,

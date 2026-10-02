@@ -50,6 +50,12 @@ export class ContactsController {
     return { data: page.data.map(toContactView), page: page.page };
   }
 
+  @Get('summary')
+  @Authorize('contacts:read')
+  async summary(@CurrentRequest() context: RequestContext): Promise<{ data: { active: number } }> {
+    return { data: { active: await this.access.activeCount(context) } };
+  }
+
   @Get(':id')
   @Authorize('contacts:read')
   async read(

@@ -20,6 +20,7 @@ export function useContactList(query: string): {
   status: 'loading' | 'ready' | 'error';
   error: ContactsRequestError | null;
   pending: boolean;
+  revision: number;
   reload: () => void;
 } {
   const [reloadToken, setReloadToken] = useState(0);
@@ -74,6 +75,7 @@ export function useContactList(query: string): {
     status: snapshot.token < 0 ? 'loading' : snapshot.status,
     error: snapshot.token < 0 ? null : snapshot.error,
     pending,
+    revision: snapshot.token,
     reload,
   };
 }

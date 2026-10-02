@@ -20,6 +20,8 @@ export default async function LocalizedHomePage({ params }: PageProps) {
     <main>
       <p>{t('title')}</p>
       <Link href={`/${locale}/contacts`}>{t('contacts')}</Link>
+      <Link href={`/${locale}/login`}>{t('signIn')}</Link>
+      <Link href={`/${locale}/sign-up`}>{t('createWorkspace')}</Link>
     </main>
   );
 }

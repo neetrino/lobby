@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
+import { isTopLayer, pushLayer, removeLayer, trapTab } from './portal-layer';
 import styles from './overlay-portal.module.css';
 
 /** Full-screen dimmed layer rendered on `document.body` through React's portal. */
@@ -16,19 +17,38 @@ export function OverlayPortal({
   children: ReactNode;
 }): ReactNode {
   const mounted = useSyncExternalStore(subscribe, isClient, isServer);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const dismissRef = useRef(onDismiss);
 
   useEffect(() => {
-    if (!mounted || onDismiss === undefined) {
+    dismissRef.current = onDismiss;
+  });
+
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!mounted || root === null) {
       return undefined;
     }
+    const dialog: HTMLElement = root;
+    pushLayer(dialog);
     function onKey(event: KeyboardEvent): void {
-      if (event.key === 'Escape') {
-        onDismiss?.();
+      if (!isTopLayer(dialog)) {
+        return;
+      }
+      if (event.key === 'Escape' && dismissRef.current !== undefined) {
+        event.preventDefault();
+        dismissRef.current();
+      }
+      if (event.key === 'Tab') {
+        trapTab(event, dialog);
       }
     }
     document.addEventListener('keydown', onKey);
-    return () => document.removeEventListener('keydown', onKey);
-  }, [mounted, onDismiss]);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      removeLayer(dialog);
+    };
+  }, [mounted]);
 
   if (!mounted) {
     return null;
@@ -36,7 +56,9 @@ export function OverlayPortal({
 
   return createPortal(
     <div
+      ref={rootRef}
       className={raised ? styles.backdropRaised : styles.backdrop}
+      tabIndex={-1}
       onClick={() => {
         onDismiss?.();
       }}

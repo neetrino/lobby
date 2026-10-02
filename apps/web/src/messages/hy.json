@@ -2,7 +2,47 @@
   "appName": "Lobby",
   "home": {
     "title": "Lobby",
-    "contacts": "Կոնտակտներ"
+    "contacts": "Կոնտակտներ",
+    "signIn": "Մտնել",
+    "createWorkspace": "Ստեղծել աշխատատեղ"
+  },
+  "auth": {
+    "welcome": "Բարի վերադարձ",
+    "workspace": "Աշխատատեղ",
+    "email": "Էլ. փոստ",
+    "password": "Գաղտնաբառ",
+    "signIn": "Մտնել",
+    "forgot": "Մոռացե՞լ եք գաղտնաբառը",
+    "createPrompt": "Ուզում եք ստեղծել նոր կազմակերպություն։",
+    "createWorkspace": "Ստեղծել աշխատատեղ",
+    "invitedTitle": "Ձեզ հրավիրե՞լ են",
+    "invitedBody": "Բացեք էլ. փոստով ուղարկված հրավերի հղումը։",
+    "signupTitle": "Ստեղծեք նոր կազմակերպության աշխատատեղ",
+    "signupNote": "Այս էջը նախատեսված չէ աշխատակիցների համար։",
+    "organization": "Կազմակերպության անուն",
+    "ownerName": "Ձեր անունը",
+    "confirmPassword": "Կրկնել գաղտնաբառը",
+    "language": "Լեզու",
+    "haveAccount": "Արդեն ունե՞ք աշխատատեղ։",
+    "localeName": {
+      "hy": "Հայերեն",
+      "ru": "Русский",
+      "en": "English"
+    },
+    "errors": {
+      "invalid": "Այս տվյալները չընդունվեցին։",
+      "taken": "Այս աշխատատեղի անունն արդեն զբաղված է։",
+      "disabled": "Նոր աշխատատեղի գրանցումն անջատված է։",
+      "validation": "Ստուգեք նշված դաշտերը։",
+      "rate": "Չափից շատ փորձ եղավ։ Մի փոքր սպասեք և նորից փորձեք։",
+      "created": "Աշխատատեղը ստեղծվեց։ Շարունակելու համար մտեք։",
+      "required": "Այս դաշտը պարտադիր է։",
+      "workspace": "Օգտագործեք փոքրատառեր, թվեր և գծիկ։",
+      "email": "Մուտքագրեք վավեր էլ. փոստ։",
+      "passwordLength": "Օգտագործեք 12-ից 128 նիշ։",
+      "mismatch": "Գաղտնաբառերը չեն համընկնում։",
+      "failed": "Ինչ-որ բան սխալ գնաց։ Նորից փորձեք։"
+    }
   },
   "contacts": {
     "title": "Կոնտակտներ",
@@ -13,10 +53,20 @@
     "headerSearch": "Փնտրել հաճախորդներ, գործարքներ, IMEI, ապրանքներ...",
     "branch": "Երևան Մոլ Մասնաճյուղ",
     "headerCreate": "+ Նոր Կոնտակտ / Գործարք",
+    "language": {
+      "label": "Լեզու",
+      "hy": "Հայ",
+      "ru": "Рус",
+      "en": "Eng",
+      "hyCode": "ARM",
+      "ruCode": "RUS",
+      "enCode": "ENG"
+    },
     "createShort": "+ Նոր Կոնտակտ",
     "csv": "CSV Արտահանում",
     "apiDoc": "API Doc",
-    "duplicateCount": "{count} Կրկնօրինակ",
+    "activeCount": "{count, number} ակտիվ",
+    "duplicateCount": "{count} կրկնօրինակ այս էջում",
     "newContact": "Նոր կոնտակտ",
     "active": "Ակտիվ",
     "archived": "Արխիվացված",
@@ -68,7 +118,10 @@
       "archivedMany": "{count} կոնտակտ արխիվացվեց",
       "restoredOne": "{name}-ը վերականգնվեց",
       "restoredMany": "{count} կոնտակտ վերականգնվեց",
-      "exported": "Արտահանվեց {count} կոնտակտ"
+      "exported": "Արտահանվեց {count} կոնտակտ",
+      "exportLimit": "Արտահանումը կանգնեց {count} կոնտակտից հետո։ Նեղացրեք ցուցակը և արտահանեք մնացածը։",
+      "archivedPartial": "Արխիվացվեց {completed}-ը {count}-ից։ Մնացածը չփոխվեց։",
+      "restoredPartial": "Վերականգնվեց {completed}-ը {count}-ից։ Մնացածը չփոխվեց։"
     },
     "confirmArchiveTitle": "Արխիվացնե՞լ",
     "confirmRestoreTitle": "Վերականգնե՞լ",

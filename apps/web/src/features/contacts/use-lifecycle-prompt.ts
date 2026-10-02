@@ -15,12 +15,25 @@ export type LifecyclePrompt = {
 
 export type LifecycleResult =
   | { ok: true; action: LifecycleAction; count: number; name: string }
-  | { ok: false; error: ContactsRequestError }
+  | {
+      ok: false;
+      error: ContactsRequestError;
+      action: LifecycleAction;
+      completed: number;
+      total: number;
+    }
   | null;
+
+type ChangeArchive = (
+  contact: Contact,
+  archived: boolean,
+  options?: { reload?: boolean },
+) => Promise<MutationResult>;
 
 /** Holds an archive or restore request until the user confirms it. */
 export function useLifecyclePrompt(
-  changeArchive: (contact: Contact, archived: boolean) => Promise<MutationResult>,
+  changeArchive: ChangeArchive,
+  reload: () => void,
 ): {
   prompt: LifecyclePrompt | null;
   failed: boolean;
@@ -38,7 +51,7 @@ export function useLifecyclePrompt(
       setFailed(false);
       setPrompt({ contacts: [...contacts], action });
     },
-    confirm: () => confirmPrompt(prompt, changeArchive, setPrompt, setFailed),
+    confirm: () => confirmPrompt(prompt, changeArchive, reload, setPrompt, setFailed),
     cancel: () => {
       setFailed(false);
       setPrompt(null);
@@ -48,7 +61,8 @@ export function useLifecyclePrompt(
 
 async function confirmPrompt(
   prompt: LifecyclePrompt | null,
-  changeArchive: (contact: Contact, archived: boolean) => Promise<MutationResult>,
+  changeArchive: ChangeArchive,
+  reload: () => void,
   setPrompt: (prompt: LifecyclePrompt | null) => void,
   setFailed: (failed: boolean) => void,
 ): Promise<LifecycleResult> {
@@ -56,15 +70,28 @@ async function confirmPrompt(
     return null;
   }
   const archive = prompt.action === 'archive';
+  let completed = 0;
   for (const contact of prompt.contacts) {
-    const saved = await changeArchive(contact, archive);
+    const saved = await changeArchive(contact, archive, { reload: false });
     if (!saved.ok) {
+      if (completed > 0) {
+        reload();
+      }
       setFailed(true);
-      return saved;
+      setPrompt({ ...prompt, contacts: prompt.contacts.slice(completed) });
+      return {
+        ok: false,
+        error: saved.error,
+        action: prompt.action,
+        completed,
+        total: prompt.contacts.length,
+      };
     }
+    completed += 1;
   }
   setFailed(false);
   setPrompt(null);
+  reload();
   return {
     ok: true,
     action: prompt.action,

@@ -28,7 +28,7 @@ export function shortId(id: string): string {
   return id.slice(0, 8);
 }
 
-/** Calendar date and UTC clock, matching the contacts list stamp. */
+/** Calendar date and hours:minutes for the contacts list. */
 export function formatContactStamp(iso: string, locale: string): { date: string; time: string } {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
@@ -43,9 +43,8 @@ export function formatContactStamp(iso: string, locale: string): { date: string;
   const timeText = new Intl.DateTimeFormat(locale, {
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit',
     hourCycle: 'h23',
     timeZone: 'UTC',
   }).format(date);
-  return { date: dateText, time: `${timeText} UTC` };
+  return { date: dateText, time: timeText };
 }

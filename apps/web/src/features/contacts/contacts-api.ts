@@ -71,6 +71,11 @@ export function readSession(signal?: AbortSignal): Promise<SessionPrincipal> {
   return requestJson('/api/v1/auth/session', { method: 'GET' }, signal, parseSession);
 }
 
+/** Active contacts for the signed-in tenant. One count query, not a page walk. */
+export function readActiveContactCount(signal?: AbortSignal): Promise<number> {
+  return requestJson('/api/v1/contacts/summary', { method: 'GET' }, signal, parseActiveCount);
+}
+
 export type ContactAuditEvent = {
   id: string;
   occurredAt: string;
@@ -182,6 +187,13 @@ function parseContactWrite(body: unknown): { contact: Contact; warnings: Contact
     throw new ContactsRequestError(200, 'REQUEST_FAILED');
   }
   return { contact: parseContact(body.data), warnings: parseWarnings(body.warnings) };
+}
+
+function parseActiveCount(body: unknown): number {
+  if (!isRecord(body) || !isRecord(body.data) || typeof body.data.active !== 'number') {
+    throw new ContactsRequestError(200, 'REQUEST_FAILED');
+  }
+  return body.data.active;
 }
 
 function parseSession(body: unknown): SessionPrincipal {

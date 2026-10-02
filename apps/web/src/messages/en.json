@@ -2,7 +2,47 @@
   "appName": "Lobby",
   "home": {
     "title": "Lobby",
-    "contacts": "Contacts"
+    "contacts": "Contacts",
+    "signIn": "Sign in",
+    "createWorkspace": "Create workspace"
+  },
+  "auth": {
+    "welcome": "Welcome back",
+    "workspace": "Workspace",
+    "email": "Email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "forgot": "Forgot password?",
+    "createPrompt": "Want to create a new organization?",
+    "createWorkspace": "Create workspace",
+    "invitedTitle": "Were you invited?",
+    "invitedBody": "Open the invitation link sent to your email.",
+    "signupTitle": "Create a new organization workspace",
+    "signupNote": "This page is not for employees.",
+    "organization": "Organization name",
+    "ownerName": "Your name",
+    "confirmPassword": "Confirm password",
+    "language": "Language",
+    "haveAccount": "Already have a workspace?",
+    "localeName": {
+      "hy": "Հայերեն",
+      "ru": "Русский",
+      "en": "English"
+    },
+    "errors": {
+      "invalid": "Those details were not accepted.",
+      "taken": "This workspace name is already taken.",
+      "disabled": "New workspace registration is turned off.",
+      "validation": "Check the highlighted fields.",
+      "rate": "Too many attempts. Wait a moment and try again.",
+      "created": "The workspace was created. Sign in to continue.",
+      "required": "This field is required.",
+      "workspace": "Use lowercase letters, numbers, and hyphens.",
+      "email": "Enter a valid email address.",
+      "passwordLength": "Use 12 to 128 characters.",
+      "mismatch": "Passwords do not match.",
+      "failed": "Something went wrong. Try again."
+    }
   },
   "contacts": {
     "title": "Contacts",
@@ -13,10 +53,20 @@
     "headerSearch": "Search customers, deals, IMEI, products...",
     "branch": "Yerevan Mall branch",
     "headerCreate": "+ New contact / deal",
+    "language": {
+      "label": "Language",
+      "hy": "Հայ",
+      "ru": "Рус",
+      "en": "Eng",
+      "hyCode": "ARM",
+      "ruCode": "RUS",
+      "enCode": "ENG"
+    },
     "createShort": "+ New contact",
     "csv": "Export CSV",
     "apiDoc": "API Doc",
-    "duplicateCount": "{count} duplicates",
+    "activeCount": "{count, number} active",
+    "duplicateCount": "{count} duplicates on this page",
     "newContact": "New contact",
     "active": "Active",
     "archived": "Archived",
@@ -68,7 +118,10 @@
       "archivedMany": "{count} contacts were archived",
       "restoredOne": "{name} was restored",
       "restoredMany": "{count} contacts were restored",
-      "exported": "Exported {count} contacts"
+      "exported": "Exported {count} contacts",
+      "exportLimit": "Export stopped after {count} contacts. Narrow the list and export the rest.",
+      "archivedPartial": "Archived {completed} of {count}. The rest were not changed.",
+      "restoredPartial": "Restored {completed} of {count}. The rest were not changed."
     },
     "confirmArchiveTitle": "Archive?",
     "confirmRestoreTitle": "Restore?",

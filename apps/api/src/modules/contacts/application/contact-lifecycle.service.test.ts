@@ -119,6 +119,7 @@ describe('contact lifecycle', () => {
 
     expect(archived?.archivedAt).toBeInstanceOf(Date);
     expect(active.data).toHaveLength(0);
+    expect(await access.activeCount(ownerContext)).toBe(0);
     expect(hidden.data.map((contact) => contact.id)).toEqual([created.contact.id]);
     expect(await access.read(ownerContext, created.contact.id)).toMatchObject({ name: 'Ada' });
     expect(audit.action).toBe('contact.archived');

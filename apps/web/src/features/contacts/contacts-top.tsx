@@ -6,12 +6,14 @@ import Link from 'next/link';
 
 import type { ContactListFilters, SessionPrincipal } from './contact';
 import { shortId } from './contact-format';
+import { LanguageSwitch } from './language-switch';
 import styles from './contacts-top.module.css';
 
 export function ContactsTop({
   filters,
   session,
   search,
+  activeCount,
   duplicateCount,
   onSearch,
   onChange,
@@ -21,6 +23,7 @@ export function ContactsTop({
   filters: ContactListFilters;
   session: SessionPrincipal | null;
   search: string;
+  activeCount: number | null;
   duplicateCount: number;
   onSearch: (search: string) => void;
   onChange: (filters: ContactListFilters) => void;
@@ -51,6 +54,7 @@ export function ContactsTop({
       </div>
       <TitleCard
         filters={filters}
+        activeCount={activeCount}
         duplicateCount={duplicateCount}
         onChange={onChange}
         onCreate={onCreate}
@@ -94,19 +98,24 @@ function TopBar({
       <span className={styles.bell} aria-hidden="true">
         <BellIcon />
       </span>
-      <UserChip session={session} />
+      <div className={styles.account}>
+        <LanguageSwitch />
+        <UserChip session={session} />
+      </div>
     </header>
   );
 }
 
 function TitleCard({
   filters,
+  activeCount,
   duplicateCount,
   onChange,
   onCreate,
   onExport,
 }: {
   filters: ContactListFilters;
+  activeCount: number | null;
   duplicateCount: number;
   onChange: (filters: ContactListFilters) => void;
   onCreate: () => void;
@@ -118,8 +127,12 @@ function TitleCard({
       <div className={styles.titleCopy}>
         <div className={styles.titleLine}>
           <h1>{t('pageTitle')}</h1>
+          {activeCount === null ? null : (
+            <span className={styles.activeBadge}>{t('activeCount', { count: activeCount })}</span>
+          )}
           {duplicateCount === 0 ? null : (
             <span className={styles.duplicateBadge}>
+              <i aria-hidden="true" />
               {t('duplicateCount', { count: duplicateCount })}
             </span>
           )}

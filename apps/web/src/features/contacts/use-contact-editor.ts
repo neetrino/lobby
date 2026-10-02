@@ -34,7 +34,11 @@ export function useContactEditor(reload: () => void): {
   close: () => void;
   setDraft: (draft: ContactDraft) => void;
   save: () => Promise<SaveResult>;
-  changeArchive: (contact: Contact, archived: boolean) => Promise<MutationResult>;
+  changeArchive: (
+    contact: Contact,
+    archived: boolean,
+    options?: { reload?: boolean },
+  ) => Promise<MutationResult>;
   dismissWarnings: () => void;
 } {
   const [mode, setMode] = useState<'closed' | 'create' | 'edit'>('closed');
@@ -98,7 +102,11 @@ export function useContactEditor(reload: () => void): {
     }
   }
 
-  async function changeArchive(target: Contact, archived: boolean): Promise<MutationResult> {
+  async function changeArchive(
+    target: Contact,
+    archived: boolean,
+    options?: { reload?: boolean },
+  ): Promise<MutationResult> {
     setPending(true);
     setError(null);
     try {
@@ -106,7 +114,9 @@ export function useContactEditor(reload: () => void): {
       if (contact?.id === target.id) {
         close();
       }
-      reload();
+      if (options?.reload !== false) {
+        reload();
+      }
       return { ok: true };
     } catch (caught) {
       const error = toRequestError(caught);

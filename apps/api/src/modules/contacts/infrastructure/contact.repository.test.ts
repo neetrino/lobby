@@ -64,11 +64,55 @@ describe('ContactRepository', () => {
       'utf8',
     );
 
-    expect(repository.match(/tenantId: this\.tenantId/g)).toHaveLength(7);
+    const queries = classBody(repository, 'ContactQueries');
+    const operations = methodNames(queries);
+    expect(operations.sort()).toEqual(typeMethodNames(repository, 'ContactOperations').sort());
+    for (const operation of operations) {
+      expect(methodBody(queries, operation), operation).toContain('this.tenantId');
+    }
+    expect(methodBody(classBody(repository, 'TenantContactScope'), 'transaction')).toContain(
+      'this.tenantId',
+    );
     expect(createService).not.toContain('.contact.');
     expect(accessService).not.toContain('.contact.');
   });
 });
+
+/** Source of one class, through the following class declaration. */
+function classBody(source: string, className: string): string {
+  const start = source.indexOf(`class ${className}`);
+  expect(start, className).toBeGreaterThan(-1);
+  const next = source.indexOf('\nclass ', start + 1);
+  return source.slice(start, next === -1 ? source.length : next);
+}
+
+/** Public methods declared on a class body. */
+function methodNames(body: string): string[] {
+  return [...body.matchAll(/\n  (?!private |constructor)(?:async )?([A-Za-z0-9_]+)\(/g)].map(
+    (match) => match[1] ?? '',
+  );
+}
+
+/** Method names declared on an exported operation type. */
+function typeMethodNames(source: string, typeName: string): string[] {
+  const start = source.indexOf(`export type ${typeName} = {`);
+  expect(start, typeName).toBeGreaterThan(-1);
+  const end = source.indexOf('\n};', start);
+  const body = source.slice(start, end === -1 ? source.length : end);
+  return [...body.matchAll(/\n  ([A-Za-z0-9_]+)\(/g)].map((match) => match[1] ?? '');
+}
+
+/** One method, from its signature through the line before the next method. */
+function methodBody(body: string, methodName: string): string {
+  const signature = new RegExp(`\\n  (?:async )?${methodName}(?:<[^>]+>)?\\(`);
+  const start = body.search(signature);
+  expect(start, methodName).toBeGreaterThan(-1);
+  const fromMethod = body.slice(start + 1);
+  const lineBreak = fromMethod.indexOf('\n');
+  const next = fromMethod.slice(lineBreak + 1).search(/\n  (?:async )?[A-Za-z]/);
+  const end = next === -1 ? body.length : start + 1 + lineBreak + 1 + next;
+  return body.slice(start, end);
+}
 
 function requestContext(tenantId: string, userId: string): RequestContext {
   return requestContextFromSession(

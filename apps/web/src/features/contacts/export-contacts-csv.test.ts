@@ -1,7 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { Contact } from './contact';
-import { contactsToCsv, type ContactCsvLabels } from './export-contacts-csv';
+import { listContacts } from './contacts-api';
+import { contactsToCsv, downloadContactsCsv, type ContactCsvLabels } from './export-contacts-csv';
+
+vi.mock('./contacts-api', () => ({
+  listContacts: vi.fn(),
+}));
 
 const labels: ContactCsvLabels = {
   name: 'Name',
@@ -36,6 +41,19 @@ describe('contactsToCsv', () => {
     expect(csv).toContain('Organization');
     expect(csv).toContain('Archived');
     expect(csv).toContain('contact@softproject.am');
+  });
+});
+
+describe('downloadContactsCsv', () => {
+  it('rejects instead of saving a file when another page remains after the cap', async () => {
+    vi.mocked(listContacts).mockResolvedValue({
+      data: [contact({})],
+      page: { nextCursor: 'next' },
+    });
+
+    await expect(
+      downloadContactsCsv({ search: '', archived: false, sort: 'asc', limit: 50 }, labels),
+    ).rejects.toMatchObject({ code: 'EXPORT_LIMIT', count: 20 });
   });
 });
 

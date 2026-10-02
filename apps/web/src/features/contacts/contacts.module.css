@@ -374,6 +374,11 @@ button:focus-visible {
   vertical-align: top;
 }
 
+.table tbody tr {
+  transition: background-color 120ms ease;
+}
+
+.table tbody tr:hover,
 .selectedRow {
   background: #eef4ff;
 }

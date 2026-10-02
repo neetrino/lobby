@@ -5,6 +5,15 @@ import { contactsQueryString } from './contacts-query';
 const EXPORT_PAGE_SIZE = 100;
 const EXPORT_MAX_PAGES = 20;
 
+export class CsvExportLimitError extends Error {
+  readonly code = 'EXPORT_LIMIT';
+
+  constructor(readonly count: number) {
+    super('EXPORT_LIMIT');
+    this.name = 'CsvExportLimitError';
+  }
+}
+
 export type ContactCsvLabels = {
   name: string;
   type: string;
@@ -76,7 +85,7 @@ async function collectContacts(filters: ContactListFilters): Promise<Contact[]> 
     }
     cursor = result.page.nextCursor;
   }
-  return rows;
+  throw new CsvExportLimitError(rows.length);
 }
 
 function csvCell(value: string): string {

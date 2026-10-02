@@ -6,3 +6,11 @@
 body {
   margin: 0;
 }
+
+* {
+  scrollbar-width: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}

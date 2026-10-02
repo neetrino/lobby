@@ -1,13 +1,14 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
 import { ActionToastView, type ActionToast } from './action-toast';
 import type { ContactListFilters, ContactWarning } from './contact';
 import { duplicateNotices } from './duplicate-notices';
 import { ContactEditor } from './contact-editor';
-import { downloadContactsCsv } from './export-contacts-csv';
+import { CsvExportLimitError, downloadContactsCsv } from './export-contacts-csv';
 import { contactErrorText } from './contact-error';
 import { toRequestError } from './contacts-api';
 import { ContactsShell } from './contacts-shell';
@@ -19,16 +20,27 @@ import { EditorOverlay } from './overlay-portal';
 import styles from './contacts.module.css';
 import { useContactEditor } from './use-contact-editor';
 import { useContactFilters } from './use-contact-filters';
+import { useActiveContactCount } from './use-active-contact-count';
 import { useContactList, useSession } from './use-contact-list';
 import { useLifecyclePrompt, type LifecycleAction } from './use-lifecycle-prompt';
 
 export function ContactsWorkspace() {
   const t = useTranslations('contacts');
+  const locale = useLocale();
+  const router = useRouter();
   const { filters, query, replace, replaceWithoutCursor } = useContactFilters();
   const list = useContactList(query);
-  const { session } = useSession();
+  const activeCount = useActiveContactCount(list.revision);
+  const { session, error: sessionError } = useSession();
   const editor = useContactEditor(list.reload);
-  const lifecycle = useLifecyclePrompt(editor.changeArchive);
+  const lifecycle = useLifecyclePrompt(editor.changeArchive, list.reload);
+  const signedOut = signedOutCode(sessionError?.code ?? list.error?.code);
+
+  useEffect(() => {
+    if (signedOut) {
+      router.replace(`/${locale}/login`);
+    }
+  }, [locale, router, signedOut]);
   const [history, setHistory] = useState<Array<string | undefined>>([]);
   const [noticeHidden, setNoticeHidden] = useState(false);
   const [toast, setToast] = useState<ActionToast | null>(null);
@@ -80,10 +92,16 @@ export function ContactsWorkspace() {
       return;
     }
     if (!result.ok) {
-      showToast('danger', contactErrorText(t, result.error.code));
+      showToast('danger', lifecycleFailureText(t, result));
       return;
     }
-    showToast('ok', t(lifecycleToastKey(result.action, result.count), result));
+    showToast(
+      'ok',
+      t(lifecycleToastKey(result.action, result.count), {
+        count: result.count,
+        name: result.name,
+      }),
+    );
   }
 
   async function exportCsv(): Promise<void> {
@@ -110,6 +128,10 @@ export function ContactsWorkspace() {
       );
       showToast('ok', t('toast.exported', { count }));
     } catch (caught) {
+      if (caught instanceof CsvExportLimitError) {
+        showToast('danger', t('toast.exportLimit', { count: caught.count }));
+        return;
+      }
       showToast('danger', contactErrorText(t, toRequestError(caught).code));
     }
   }
@@ -123,6 +145,7 @@ export function ContactsWorkspace() {
           filters={filters}
           session={session}
           search={search}
+          activeCount={activeCount}
           duplicateCount={notices.length}
           onSearch={setSearch}
           onChange={changeFilters}
@@ -210,6 +233,21 @@ export function ContactsWorkspace() {
       </main>
     </div>
   );
+}
+
+function signedOutCode(code: string | undefined): boolean {
+  return code === 'UNAUTHENTICATED' || code === 'SESSION_EXPIRED' || code === 'SESSION_REVOKED';
+}
+
+function lifecycleFailureText(
+  t: ReturnType<typeof useTranslations<'contacts'>>,
+  result: { action: LifecycleAction; completed: number; total: number; error: { code: string } },
+): string {
+  if (result.completed === 0) {
+    return contactErrorText(t, result.error.code);
+  }
+  const key = result.action === 'archive' ? 'toast.archivedPartial' : 'toast.restoredPartial';
+  return t(key, { completed: result.completed, count: result.total });
 }
 
 function lifecycleToastKey(

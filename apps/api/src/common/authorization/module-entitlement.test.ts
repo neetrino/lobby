@@ -106,6 +106,7 @@ describe('module entitlement', () => {
       'utf8',
     );
     const accessPermissions: Record<string, string> = {
+      activeCount: 'contacts:read',
       read: 'contacts:read',
       list: 'contacts:read',
       update: 'contacts:update',

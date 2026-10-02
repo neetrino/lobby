@@ -67,6 +67,7 @@ export type ContactOperations = {
   findById(id: string): Promise<ContactRecord | null>;
   findSummaries(ids: readonly string[]): Promise<Array<{ id: string; name: string }>>;
   list(query: ContactListQuery): Promise<ContactRecord[]>;
+  countActive(): Promise<number>;
   findDuplicateIds(probe: ContactDuplicateProbe): Promise<string[]>;
   update(id: string, input: ContactUpdateInput): Promise<number>;
   setArchived(id: string, archivedAt: Date | null): Promise<number>;
@@ -109,6 +110,12 @@ class ContactQueries implements ContactOperations {
       orderBy: contactListOrder(query.sort),
       take: query.limit + 1,
       select: contactSelect,
+    });
+  }
+
+  countActive(): Promise<number> {
+    return this.db.contact.count({
+      where: { tenantId: this.tenantId, archivedAt: null },
     });
   }
 
