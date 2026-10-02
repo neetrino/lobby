@@ -74,12 +74,21 @@ describe('UpstashSessionRedis', () => {
     );
   });
 
-  it('stays closed when Upstash credentials are missing', () => {
+  it('stays closed when Upstash credentials are missing in production', () => {
     const client = createSessionRedisClient({
+      NODE_ENV: 'production',
       UPSTASH_REDIS_REST_URL: 'https://...',
       UPSTASH_REDIS_REST_TOKEN: '',
+      LOBBY_LOCAL_SESSION: 'memory',
     });
 
     return expect(client.get('session:abc')).rejects.toThrow('Session store is unavailable.');
+  });
+
+  it('keeps sessions in memory when local development has no Upstash credentials', async () => {
+    const client = createSessionRedisClient({ NODE_ENV: 'test', LOBBY_LOCAL_SESSION: 'memory' });
+
+    await client.set('session:abc', 'payload', Date.now() + 60_000);
+    await expect(client.get('session:abc')).resolves.toBe('payload');
   });
 });

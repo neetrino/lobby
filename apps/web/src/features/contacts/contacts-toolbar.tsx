@@ -8,14 +8,10 @@ import styles from './contacts.module.css';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
-export function ContactsToolbar({
-  filters,
-  onChange,
-}: {
-  filters: ContactListFilters;
-  onChange: (filters: ContactListFilters) => void;
-}) {
-  const t = useTranslations('contacts');
+export function useContactSearch(
+  filters: ContactListFilters,
+  onChange: (filters: ContactListFilters) => void,
+): { search: string; setSearch: (search: string) => void } {
   const [search, setSearch] = useState(filters.search);
   const filtersRef = useRef(filters);
 
@@ -34,31 +30,31 @@ export function ContactsToolbar({
     return () => clearTimeout(timer);
   }, [onChange, search]);
 
+  return { search, setSearch };
+}
+
+export function ContactsToolbar({
+  filters,
+  search,
+  onSearch,
+  onChange,
+}: {
+  filters: ContactListFilters;
+  search: string;
+  onSearch: (search: string) => void;
+  onChange: (filters: ContactListFilters) => void;
+}) {
+  const t = useTranslations('contacts');
+
   return (
     <div className={styles.toolbar}>
-      <div className={styles.segments} role="group" aria-label={t('status.active')}>
-        <button
-          type="button"
-          className={filters.archived ? styles.segment : styles.segmentActive}
-          onClick={() => onChange({ ...filters, archived: false })}
-        >
-          {t('active')}
-        </button>
-        <button
-          type="button"
-          className={filters.archived ? styles.segmentActive : styles.segment}
-          onClick={() => onChange({ ...filters, archived: true })}
-        >
-          {t('archived')}
-        </button>
-      </div>
       <label className={styles.search}>
         <span className={styles.srOnly}>{t('searchPlaceholder')}</span>
         <input
           value={search}
           maxLength={100}
           placeholder={t('searchPlaceholder')}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => onSearch(event.target.value)}
         />
       </label>
       <label>
@@ -88,7 +84,7 @@ export function ContactsToolbar({
         type="button"
         className={styles.secondaryButton}
         onClick={() => {
-          setSearch('');
+          onSearch('');
           onChange({ search: '', archived: false, sort: 'asc', limit: 50 });
         }}
       >

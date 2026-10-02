@@ -1,5 +1,8 @@
 import { z } from 'zod';
 
+import { Logger } from '@nestjs/common';
+
+import { LocalMemorySessionRedis } from './local-memory-session-redis';
 import { SessionStoreUnavailableError } from './session-store-error';
 import type { SessionRedisClient } from './session-redis';
 import { UnavailableSessionRedis } from './unavailable-session-redis';
@@ -133,9 +136,33 @@ export function readSessionRedisTimeoutMs(env: NodeJS.ProcessEnv = process.env):
   return parsed.data;
 }
 
+/** Local process store when Upstash is unset. Production stays closed. */
+export function allowsLocalSessionStore(env: NodeJS.ProcessEnv): boolean {
+  if (env.NODE_ENV === 'production') {
+    return false;
+  }
+  return (
+    env.NODE_ENV === 'development' ||
+    env.NODE_ENV === 'test' ||
+    env.LOBBY_LOCAL_SESSION === 'memory'
+  );
+}
+
 export function createSessionRedisClient(env: NodeJS.ProcessEnv = process.env): SessionRedisClient {
   const config = readUpstashSessionConfig(env);
-  return config === null
-    ? new UnavailableSessionRedis()
-    : new UpstashSessionRedis(config, fetch, readSessionRedisTimeoutMs(env));
+  if (config !== null) {
+    return new UpstashSessionRedis(config, fetch, readSessionRedisTimeoutMs(env));
+  }
+  if (allowsLocalSessionStore(env)) {
+    noteLocalStore(env, 'session');
+    return new LocalMemorySessionRedis();
+  }
+  return new UnavailableSessionRedis();
+}
+
+function noteLocalStore(env: NodeJS.ProcessEnv, purpose: string): void {
+  if (env.NODE_ENV === 'test') {
+    return;
+  }
+  new Logger('SessionStore').warn(`Upstash is unset. Using a process-local ${purpose} store.`);
 }

@@ -1,8 +1,13 @@
 import { z } from 'zod';
 
+import { MemoryRateLimitRedis } from './memory-rate-limit-redis';
 import type { RateLimitRedis } from './rate-limit-redis';
-import { readSessionRedisTimeoutMs, readUpstashSessionConfig } from './upstash-session-redis';
 import { UnavailableRateLimitRedis } from './unavailable-rate-limit-redis';
+import {
+  allowsLocalSessionStore,
+  readSessionRedisTimeoutMs,
+  readUpstashSessionConfig,
+} from './upstash-session-redis';
 
 const RATE_LIMIT_STORE_UNAVAILABLE = 'Rate limit store is unavailable.';
 
@@ -78,9 +83,13 @@ export class UpstashRateLimitRedis implements RateLimitRedis {
 
 export function createRateLimitRedisClient(env: NodeJS.ProcessEnv = process.env): RateLimitRedis {
   const config = readUpstashSessionConfig(env);
-  return config === null
-    ? new UnavailableRateLimitRedis()
-    : new UpstashRateLimitRedis(config, fetch, readSessionRedisTimeoutMs(env));
+  if (config !== null) {
+    return new UpstashRateLimitRedis(config, fetch, readSessionRedisTimeoutMs(env));
+  }
+  if (allowsLocalSessionStore(env)) {
+    return new MemoryRateLimitRedis();
+  }
+  return new UnavailableRateLimitRedis();
 }
 
 function requireCount(result: unknown): number {

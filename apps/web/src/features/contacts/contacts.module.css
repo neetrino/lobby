@@ -1,4 +1,6 @@
 .app {
+  height: 100vh;
+  overflow: hidden;
   --primary: #004ac6;
   --primary-container: #2563eb;
   --on-primary: #ffffff;
@@ -26,6 +28,8 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
+  overflow: auto;
   padding: 16px 12px;
   background: var(--card);
   border-right: 1px solid var(--high);
@@ -109,7 +113,12 @@
 
 .main {
   min-width: 0;
-  padding: 24px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.body {
+  padding: 16px 24px 24px;
 }
 
 .pageHeader h1,
@@ -405,6 +414,7 @@ button:focus-visible {
 @media (max-width: 900px) {
   .app {
     grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
   }
 
   .sidebar {
