@@ -59,6 +59,14 @@ import { SessionGuard } from './presentation/session.guard';
     TerminateUserSessionsService,
     AuthRateLimitService,
   ],
-  exports: [SessionGuard],
+  exports: [
+    SessionGuard,
+    AUDIT_IP_HASH_KEY,
+    PASSWORD_HASHER,
+    RedisSessionStore,
+    INCIDENT_LOGGER,
+    SessionCookie,
+    AuthRateLimitService,
+  ],
 })
 export class IdentityModule {}

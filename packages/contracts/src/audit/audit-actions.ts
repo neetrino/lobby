@@ -6,6 +6,10 @@ import { z } from 'zod';
  */
 export const auditActions = {
   USER_SESSIONS_TERMINATED: 'user.sessions.terminated',
+  INVITATION_CREATED: 'invitation.created',
+  INVITATION_RESENT: 'invitation.resent',
+  INVITATION_REVOKED: 'invitation.revoked',
+  INVITATION_ACCEPTED: 'invitation.accepted',
   USER_ROLE_CHANGED: 'user.role.changed',
   USER_DISABLED: 'user.disabled',
   CONTACT_DELETED: 'contact.deleted',
@@ -17,6 +21,10 @@ export const auditActions = {
 
 export const auditActionValues = [
   auditActions.USER_SESSIONS_TERMINATED,
+  auditActions.INVITATION_CREATED,
+  auditActions.INVITATION_RESENT,
+  auditActions.INVITATION_REVOKED,
+  auditActions.INVITATION_ACCEPTED,
   auditActions.USER_ROLE_CHANGED,
   auditActions.USER_DISABLED,
   auditActions.CONTACT_DELETED,
@@ -38,7 +46,13 @@ export const auditActorTypes = ['USER'] as const;
 export const auditActorTypeSchema = z.enum(auditActorTypes);
 export type AuditActorType = z.infer<typeof auditActorTypeSchema>;
 
-export const auditResourceTypes = ['user', 'contact', 'deal', 'reservation'] as const;
+export const auditResourceTypes = [
+  'user',
+  'memberInvitation',
+  'contact',
+  'deal',
+  'reservation',
+] as const;
 export const auditResourceTypeSchema = z.enum(auditResourceTypes);
 export type AuditResourceType = z.infer<typeof auditResourceTypeSchema>;
 

@@ -21,3 +21,15 @@ export function registerIpKey(ip: string): string {
 export function invalidSessionIpKey(ip: string): string {
   return `rate_limit:session:ip:${hashRateLimitSubject(ip)}`;
 }
+
+export function inviteIpKey(ip: string): string {
+  return `rate_limit:invite:ip:${hashRateLimitSubject(ip)}`;
+}
+
+export function inviteUserKey(tenantId: string, userId: string): string {
+  return `rate_limit:invite:user:${hashRateLimitSubject(`${tenantId}\0${userId}`)}`;
+}
+
+export function acceptIpKey(ip: string): string {
+  return `rate_limit:accept:ip:${hashRateLimitSubject(ip)}`;
+}

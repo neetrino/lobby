@@ -53,6 +53,11 @@ export class RegisterService {
     @Inject(INCIDENT_LOGGER) private readonly incidents: IncidentLogger,
   ) {}
 
+  /** Public registration switch. Closed unless `REGISTRATION_ENABLED` is exactly true. */
+  registrationOpen(): boolean {
+    return this.registrationEnabled;
+  }
+
   async register(input: RegisterInput): Promise<RegisteredSession> {
     if (!this.registrationEnabled) {
       throw new IdentityError(identityErrorCodes.REGISTRATION_DISABLED);

@@ -1,10 +1,12 @@
 import {
   contactCreatedEventSchema,
+  invitationCreatedEventSchema,
   tenantCreatedEventSchema,
   tenantCreatedEventV1Schema,
 } from '@lobby/contracts';
 
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
+import type { MemberInvitationEmailHandler } from '../handlers/member-invitation-email.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import {
   bindIdempotentDelivery,
@@ -124,6 +126,30 @@ export function createWorkerEventRegistry(handlers: WorkerHandlers) {
 }
 
 export type WorkerEventRegistry = ReturnType<typeof createWorkerEventRegistry>;
+
+/** External email delivery for `invitation.created@1`, reserved before send. */
+export function invitationEmailRegistryEntry(
+  handler: MemberInvitationEmailHandler,
+  store: ProcessedEventStore,
+): EventRegistryEntry<1> {
+  const schema = asEventSchema(invitationCreatedEventSchema);
+  return defineEventRegistryEntry({
+    eventType: 'invitation.created',
+    eventVersion: 1,
+    schema,
+    handlers: [
+      defineExternalHandler({
+        handler: {
+          name: 'MemberInvitationEmailHandler',
+          handle: (event) => handler.handle(schema.parse(event)),
+        },
+        store,
+        eventType: 'invitation.created',
+        eventVersion: 1,
+      }),
+    ],
+  });
+}
 
 function workerRegistryEntries(
   handlers: WorkerHandlers,

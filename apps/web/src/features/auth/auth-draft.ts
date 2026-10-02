@@ -54,6 +54,40 @@ export function isAuthLocale(value: string): value is AuthLocale {
   return supportedLocales.some((locale) => locale === value);
 }
 
+export type LoginPrefill = {
+  workspace: string;
+  email: string;
+  accountCreated: boolean;
+};
+
+/** Login query after the workspace exists but the session was not stored. */
+export function signInRequiredHref(locale: string, workspace: string, email: string): string {
+  const params = new URLSearchParams({
+    workspace: workspace.trim().toLowerCase(),
+    email: email.trim().toLowerCase(),
+    notice: 'created',
+  });
+  return `/${locale}/login?${params.toString()}`;
+}
+
+/** Reads workspace and email from the login query. A password query is ignored. */
+export function loginPrefill(params: {
+  workspace?: string | string[];
+  email?: string | string[];
+  notice?: string | string[];
+}): LoginPrefill {
+  return {
+    workspace: firstQueryValue(params.workspace),
+    email: firstQueryValue(params.email),
+    accountCreated: firstQueryValue(params.notice) === 'created',
+  };
+}
+
+function firstQueryValue(value: string | string[] | undefined): string {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw ?? '';
+}
+
 function required(
   value: string,
   field: LoginField | SignupField,

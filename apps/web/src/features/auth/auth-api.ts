@@ -45,6 +45,39 @@ export function registerOwner(input: {
   });
 }
 
+export type RegistrationStatus = 'enabled' | 'disabled' | 'unavailable';
+
+/** Maps the public registration switch. A missing value stays unavailable. */
+export function toRegistrationStatus(enabled: boolean | undefined): RegistrationStatus {
+  if (enabled === true) {
+    return 'enabled';
+  }
+  if (enabled === false) {
+    return 'disabled';
+  }
+  return 'unavailable';
+}
+
+/** Reads whether public registration is open. A failed read is `unavailable`. */
+export async function readRegistrationStatus(): Promise<RegistrationStatus> {
+  try {
+    const response = await fetch(`${API_ORIGIN}/api/v1/auth/registration`, {
+      method: 'GET',
+      headers: { accept: 'application/json' },
+      cache: 'no-store',
+    });
+    if (!response.ok) {
+      return 'unavailable';
+    }
+    const body: unknown = await response.json();
+    const data = isRecord(body) ? body.data : undefined;
+    const enabled = isRecord(data) && typeof data.enabled === 'boolean' ? data.enabled : undefined;
+    return toRegistrationStatus(enabled);
+  } catch {
+    return 'unavailable';
+  }
+}
+
 export async function hasSession(): Promise<boolean> {
   const response = await fetch(`${API_ORIGIN}/api/v1/auth/session`, {
     method: 'GET',

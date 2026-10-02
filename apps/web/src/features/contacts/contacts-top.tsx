@@ -76,6 +76,7 @@ function TopBar({
   onCreate: () => void;
 }) {
   const t = useTranslations('contacts');
+  const locale = useLocale();
   return (
     <header className={styles.bar}>
       <label className={styles.headerSearch}>
@@ -99,6 +100,11 @@ function TopBar({
         <BellIcon />
       </span>
       <div className={styles.account}>
+        {session?.user.role === 'OWNER' || session?.user.role === 'ADMIN' ? (
+          <Link className={styles.teamLink} href={`/${locale}/settings/team`}>
+            {t('team')}
+          </Link>
+        ) : null}
         <LanguageSwitch />
         <UserChip session={session} />
       </div>

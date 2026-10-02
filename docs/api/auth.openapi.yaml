@@ -12,6 +12,24 @@ servers:
 tags:
   - name: Auth
 paths:
+  /api/v1/auth/registration:
+    get:
+      tags: [Auth]
+      operationId: registrationStatus
+      summary: Report whether public owner registration is open
+      description: >
+        Public. No session. Returns the REGISTRATION_ENABLED switch and no
+        tenant, user, or secret.
+      responses:
+        '200':
+          description: Registration switch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationStatusResponse'
+              example:
+                data:
+                  enabled: false
   /api/v1/auth/register:
     post:
       tags: [Auth]
@@ -292,6 +310,16 @@ components:
           type: string
           minLength: 1
           maxLength: 128
+    RegistrationStatusResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [enabled]
+          properties:
+            enabled:
+              type: boolean
     AccountResponse:
       type: object
       required: [data]

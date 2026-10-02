@@ -5,10 +5,17 @@ import { notFound } from 'next/navigation';
 
 import { supportedLocales } from '@lobby/contracts';
 
+import { readRegistrationStatus } from '../../../features/auth/auth-api';
+import { loginPrefill } from '../../../features/auth/auth-draft';
 import { LoginForm } from '../../../features/auth/login-form';
 
 type PageProps = {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{
+    workspace?: string | string[];
+    email?: string | string[];
+    notice?: string | string[];
+  }>;
 };
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
@@ -20,11 +27,15 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return { title: t('welcome') };
 }
 
-export default async function LoginPage({ params }: PageProps) {
+export default async function LoginPage({ params, searchParams }: PageProps) {
   const { locale } = await params;
   if (!hasLocale(supportedLocales, locale)) {
     notFound();
   }
   setRequestLocale(locale);
-  return <LoginForm />;
+  const [registrationStatus, query] = await Promise.all([
+    readRegistrationStatus(),
+    searchParams,
+  ]);
+  return <LoginForm registrationStatus={registrationStatus} prefill={loginPrefill(query)} />;
 }

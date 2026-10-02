@@ -12,6 +12,7 @@ This is the living procedural backlog. Product scope belongs in `BRIEF.md`, curr
 | Tenant + first ACTIVE OWNER transaction and one-user/one-tenant invariant                              | Done   |
 | Argon2id login/registration and revocable Redis sessions                                               | Done   |
 | Web sign-in and owner workspace pages (`/{locale}/login`, `/{locale}/sign-up`)                         | Done   |
+| Member invitations through the outbox, worker email delivery, and acceptance page                     | Done   |
 | Global session authentication, permissions, module entitlements, tenant/resource scope                 | Done   |
 | Prisma schema/migrations and local/CI PostgreSQL integration infrastructure                            | Done   |
 | Transactional outbox, versioned worker registry, retries, durable external-effect reservation, requeue | Done   |

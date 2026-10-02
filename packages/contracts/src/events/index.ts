@@ -1,4 +1,9 @@
 export {
+  INVITATION_CREATED_EVENT_VERSION,
+  invitationCreatedEventSchema,
+} from './invitation-created-event.js';
+export type { InvitationCreatedEvent } from './invitation-created-event.js';
+export {
   CONTACT_ARCHIVED_EVENT_VERSION,
   contactArchivedEventSchema,
 } from './contact-archived-event.js';

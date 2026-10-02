@@ -7,7 +7,10 @@ import {
   type RateLimitPolicy,
 } from '../infrastructure/rate-limit-config';
 import {
+  acceptIpKey,
   invalidSessionIpKey,
+  inviteIpKey,
+  inviteUserKey,
   loginAccountKey,
   loginIpKey,
   registerIpKey,
@@ -38,6 +41,15 @@ export class AuthRateLimitService {
 
   async consumeRegister(ip: string | null): Promise<void> {
     await this.hit(registerIpKey(this.requireAddress(ip)), this.config.registerIp);
+  }
+
+  async consumeInvite(ip: string | null, tenantId: string, userId: string): Promise<void> {
+    await this.hit(inviteIpKey(this.requireAddress(ip)), this.config.inviteIp);
+    await this.hit(inviteUserKey(tenantId, userId), this.config.inviteUser);
+  }
+
+  async consumeAccept(ip: string | null): Promise<void> {
+    await this.hit(acceptIpKey(this.requireAddress(ip)), this.config.acceptIp);
   }
 
   async recordInvalidSession(ip: string | null): Promise<void> {

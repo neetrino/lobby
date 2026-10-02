@@ -28,10 +28,14 @@ describe('role permissions', () => {
       expect(() => requirePermission({ role }, 'contacts:read')).not.toThrow();
       expect(() => requirePermission({ role }, 'contacts:update')).not.toThrow();
     }
+    expect(hasPermission('MEMBER', 'members:invite')).toBe(false);
+    expect(hasPermission('OWNER', 'members:invite')).toBe(true);
+    expect(hasPermission('ADMIN', 'members:invite')).toBe(true);
     expect(ROLE_PERMISSIONS.MEMBER).toEqual([...contactPermissions]);
     expect(ROLE_PERMISSIONS.ADMIN).toEqual([
       'sessions:revoke',
       'audit:read',
+      'members:invite',
       ...contactPermissions,
     ]);
     expect(ROLE_PERMISSIONS.OWNER).toEqual(ROLE_PERMISSIONS.ADMIN);

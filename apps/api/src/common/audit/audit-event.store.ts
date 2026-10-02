@@ -2,8 +2,10 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   auditSchemaVersion,
   contactLifecycleAuditSchema,
+  invitationAuditSchema,
   userSessionsTerminatedAuditSchema,
   type ContactLifecycleAudit,
+  type InvitationAudit,
   type UserSessionsTerminatedAudit,
 } from '@lobby/contracts';
 import type { Prisma, PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
@@ -20,7 +22,9 @@ import {
 import type { AuditEventListQuery } from './list-audit-events.schema';
 
 export type AuditWrite =
-  Omit<UserSessionsTerminatedAudit, 'schemaVersion'> | Omit<ContactLifecycleAudit, 'schemaVersion'>;
+  | Omit<UserSessionsTerminatedAudit, 'schemaVersion'>
+  | Omit<ContactLifecycleAudit, 'schemaVersion'>
+  | Omit<InvitationAudit, 'schemaVersion'>;
 
 /** Append-only audit rows. There is no update and no delete. */
 @Injectable()
@@ -68,10 +72,15 @@ export class AuditEventStore {
   }
 }
 
-function parseAuditWrite(input: AuditWrite): UserSessionsTerminatedAudit | ContactLifecycleAudit {
+function parseAuditWrite(
+  input: AuditWrite,
+): UserSessionsTerminatedAudit | ContactLifecycleAudit | InvitationAudit {
   const record = { ...input, schemaVersion: auditSchemaVersion };
   if (input.action === 'contact.archived' || input.action === 'contact.restored') {
     return contactLifecycleAuditSchema.parse(record);
+  }
+  if (input.resourceType === 'memberInvitation') {
+    return invitationAuditSchema.parse(record);
   }
   return userSessionsTerminatedAuditSchema.parse(record);
 }

@@ -11,6 +11,7 @@ export {
   auditSchemaVersion,
   authenticationVersionChangeSchema,
   contactLifecycleAuditSchema,
+  invitationAuditSchema,
   userSessionsTerminatedAuditSchema,
 } from './audit/index.js';
 export type {
@@ -20,6 +21,7 @@ export type {
   AuditResourceType,
   AuthenticationVersionChange,
   ContactLifecycleAudit,
+  InvitationAudit,
   UserSessionsTerminatedAudit,
 } from './audit/index.js';
 export { moduleKeySchema, moduleKeys } from './enums/index.js';
@@ -28,10 +30,12 @@ export {
   CONTACT_ARCHIVED_EVENT_VERSION,
   CONTACT_CREATED_EVENT_VERSION,
   CONTACT_UPDATED_EVENT_VERSION,
+  INVITATION_CREATED_EVENT_VERSION,
   TENANT_CREATED_EVENT_VERSION,
   contactArchivedEventSchema,
   contactCreatedEventSchema,
   contactUpdatedEventSchema,
+  invitationCreatedEventSchema,
   tenantCreatedEventSchema,
   tenantCreatedEventV1Schema,
   versionedEventSchema,
@@ -40,6 +44,7 @@ export type {
   ContactArchivedEvent,
   ContactCreatedEvent,
   ContactUpdatedEvent,
+  InvitationCreatedEvent,
   TenantCreatedEvent,
   TenantCreatedEventV1,
   VersionedEvent,

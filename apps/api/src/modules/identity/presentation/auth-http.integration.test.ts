@@ -70,6 +70,13 @@ beforeEach(async () => {
 });
 
 describe('Nest auth HTTP', () => {
+  it('reports whether public registration is open', async () => {
+    const response = await request(app.getHttpServer()).get('/api/v1/auth/registration');
+
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual({ data: { enabled: true } });
+  });
+
   it('registers, reads the session, then rejects the same cookie after logout', async () => {
     const http = app.getHttpServer();
     const registered = await request(http)

@@ -150,6 +150,7 @@ describe('registration', () => {
       { error() {} },
     );
 
+    expect(service.registrationOpen()).toBe(false);
     await expect(
       service.register(registration('disabled-shop', 'ada@example.com')),
     ).rejects.toMatchObject({

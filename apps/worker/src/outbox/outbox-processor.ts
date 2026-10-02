@@ -8,13 +8,17 @@ import {
   type PermanentFailureCode,
 } from '../dispatch/dispatch-logger.js';
 import {
+  buildEventRegistry,
   createWorkerEventRegistry,
+  invitationEmailRegistryEntry,
+  type EventRegistry,
   type EventRegistryEntry,
-  type WorkerEventRegistry,
 } from '../dispatch/event-registry.js';
 import { runRegisteredHandlers } from '../dispatch/run-handlers.js';
 import { outboxFailureAction } from '../dispatch/retry-classification.js';
+import type { ProcessedEventStore } from '../dispatch/processed-event-store.js';
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
+import type { MemberInvitationEmailHandler } from '../handlers/member-invitation-email.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import type { OutboxRepository } from './outbox-repository.js';
 import { sanitizeOutboxError } from './sanitize-outbox-error.js';
@@ -22,7 +26,7 @@ import { sanitizeOutboxError } from './sanitize-outbox-error.js';
 type ReadEventResult = { ok: true; event: unknown } | { ok: false };
 
 export class OutboxProcessor {
-  private readonly registry: WorkerEventRegistry;
+  private readonly registry: EventRegistry;
 
   constructor(
     private readonly repository: OutboxRepository,
@@ -31,8 +35,16 @@ export class OutboxProcessor {
     private readonly config: OutboxWorkerConfig,
     private readonly now: () => Date = () => new Date(),
     private readonly logger: DispatchLogger = createDispatchLogger(),
+    invitation?: { handler: MemberInvitationEmailHandler; store: ProcessedEventStore },
   ) {
-    this.registry = createWorkerEventRegistry({ contactCreated, tenantCreated });
+    const registry = createWorkerEventRegistry({ contactCreated, tenantCreated });
+    this.registry =
+      invitation === undefined
+        ? registry
+        : buildEventRegistry([
+            ...registry.list(),
+            invitationEmailRegistryEntry(invitation.handler, invitation.store),
+          ]);
   }
 
   async process(record: OutboxEventRecord): Promise<void> {

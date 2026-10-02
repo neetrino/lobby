@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { ContactCreatedEvent, TenantCreatedEvent } from '@lobby/contracts';
+import type { ContactCreatedEvent, InvitationCreatedEvent, TenantCreatedEvent } from '@lobby/contracts';
 import type { Prisma } from '@lobby/database' with { 'resolution-mode': 'import' };
 
-type OutboxEnqueueEvent = ContactCreatedEvent | TenantCreatedEvent;
+type OutboxEnqueueEvent = ContactCreatedEvent | TenantCreatedEvent | InvitationCreatedEvent;
 
 @Injectable()
 export class OutboxService {

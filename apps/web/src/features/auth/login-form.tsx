@@ -5,19 +5,41 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-import { AuthRequestError, hasSession, loginAccount } from './auth-api';
+import {
+  AuthRequestError,
+  hasSession,
+  loginAccount,
+  type RegistrationStatus,
+} from './auth-api';
 import { authErrorText, fieldErrorText } from './auth-copy';
-import { loginFieldErrors, type LoginDraft, type LoginField } from './auth-draft';
+import {
+  loginFieldErrors,
+  type LoginDraft,
+  type LoginField,
+  type LoginPrefill,
+} from './auth-draft';
 import { AuthFrame } from './auth-frame';
 import styles from './auth.module.css';
 
-export function LoginForm() {
+export function LoginForm({
+  registrationStatus,
+  prefill,
+}: {
+  registrationStatus: RegistrationStatus;
+  prefill: LoginPrefill;
+}) {
   const t = useTranslations('auth');
   const locale = useLocale();
   const router = useRouter();
-  const [draft, setDraft] = useState<LoginDraft>({ workspace: '', email: '', password: '' });
+  const [draft, setDraft] = useState<LoginDraft>({
+    workspace: prefill.workspace,
+    email: prefill.email,
+    password: '',
+  });
   const [errors, setErrors] = useState<Partial<Record<LoginField, FieldErrorView>>>({});
-  const [banner, setBanner] = useState<string | null>(null);
+  const [banner, setBanner] = useState<string | null>(
+    prefill.accountCreated ? t('errors.created') : null,
+  );
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -96,20 +118,41 @@ export function LoginForm() {
         <button type="button" className={styles.textButton} disabled>
           {t('forgot')}
         </button>
+        <p className={styles.hint}>{t('forgotNote')}</p>
       </form>
       <footer className={styles.footer}>
-        <p>
-          {t('createPrompt')}{' '}
-          <Link className={styles.link} href={`/${locale}/sign-up`}>
-            {t('createWorkspace')}
-          </Link>
-        </p>
+        <RegistrationEntry locale={locale} status={registrationStatus} />
         <p>
           <strong>{t('invitedTitle')}</strong>
         </p>
         <p className={styles.hint}>{t('invitedBody')}</p>
       </footer>
     </AuthFrame>
+  );
+}
+
+function RegistrationEntry({
+  locale,
+  status,
+}: {
+  locale: string;
+  status: RegistrationStatus;
+}) {
+  const t = useTranslations('auth');
+  if (status === 'enabled') {
+    return (
+      <p>
+        {t('createPrompt')}{' '}
+        <Link className={styles.link} href={`/${locale}/sign-up`}>
+          {t('createWorkspace')}
+        </Link>
+      </p>
+    );
+  }
+  return (
+    <p className={styles.hint}>
+      {status === 'disabled' ? t('errors.disabled') : t('errors.unavailable')}
+    </p>
   );
 }
 

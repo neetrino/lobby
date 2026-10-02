@@ -1,4 +1,4 @@
-import { Controller, HttpCode, Post, Req, Res } from '@nestjs/common';
+import { Controller, Get, HttpCode, Post, Req, Res } from '@nestjs/common';
 
 import { Public } from '../../../common/auth/public';
 import { ZodBody } from '../../../common/pipes/zod-input';
@@ -25,6 +25,13 @@ export class AuthController {
     private readonly sessionCookie: SessionCookie,
     private readonly rates: AuthRateLimitService,
   ) {}
+
+  /** Whether public owner registration is open. No session and no tenant data. */
+  @Public()
+  @Get('registration')
+  registration(): { data: { enabled: boolean } } {
+    return { data: { enabled: this.registerUser.registrationOpen() } };
+  }
 
   @Public()
   @Post('register')

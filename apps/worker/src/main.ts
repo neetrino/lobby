@@ -1,6 +1,15 @@
-import { createPrismaClient, readDatabaseUrl, readOutboxWorkerConfig } from '@lobby/database';
+import {
+  createPrismaClient,
+  readDatabaseUrl,
+  readInvitationTokenKey,
+  readOutboxWorkerConfig,
+} from '@lobby/database';
 
+import { createDispatchLogger } from './dispatch/dispatch-logger.js';
+import { PrismaProcessedEventStore } from './dispatch/prisma-processed-event-store.js';
+import { readEmailProvider } from './email/email-provider.js';
 import { ContactCreatedHandler } from './handlers/contact-created.handler.js';
+import { MemberInvitationEmailHandler } from './handlers/member-invitation-email.handler.js';
 import { TenantCreatedHandler } from './handlers/tenant-created.handler.js';
 import { OutboxProcessor } from './outbox/outbox-processor.js';
 import { OutboxRelay } from './outbox/outbox-relay.js';
@@ -15,6 +24,16 @@ export async function startOutboxRelay(signal: AbortSignal): Promise<void> {
     new ContactCreatedHandler(),
     new TenantCreatedHandler(),
     config,
+    () => new Date(),
+    createDispatchLogger(),
+    {
+      handler: new MemberInvitationEmailHandler(
+        readEmailProvider(),
+        readInvitationTokenKey(),
+        process.env.APP_URL?.trim() ?? '',
+      ),
+      store: new PrismaProcessedEventStore(prisma),
+    },
   );
   const relay = new OutboxRelay(repository, processor, config);
 

@@ -6,10 +6,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { AuthRequestError, registerOwner } from './auth-api';
+import { AuthRequestError, registerOwner, type RegistrationStatus } from './auth-api';
 import { authErrorText, fieldErrorText } from './auth-copy';
 import {
   isAuthLocale,
+  signInRequiredHref,
   signupFieldErrors,
   type FieldError,
   type SignupDraft,
@@ -18,7 +19,7 @@ import {
 import { AuthFrame } from './auth-frame';
 import styles from './auth.module.css';
 
-export function SignUpForm() {
+export function SignUpForm({ registrationStatus }: { registrationStatus: RegistrationStatus }) {
   const t = useTranslations('auth');
   const locale = useLocale();
   const current = isAuthLocale(locale) ? locale : 'en';
@@ -53,9 +54,30 @@ export function SignUpForm() {
       router.push(`/${draft.locale}/contacts`);
     } catch (caught) {
       const code = caught instanceof AuthRequestError ? caught.code : 'REQUEST_FAILED';
+      if (code === 'ACCOUNT_CREATED_SIGN_IN_REQUIRED') {
+        router.push(signInRequiredHref(draft.locale, draft.workspace, draft.email));
+        return;
+      }
       setBanner(authErrorText(t, code));
       setPending(false);
     }
+  }
+
+  if (registrationStatus !== 'enabled') {
+    return (
+      <AuthFrame title={t('signupTitle')} note={t('signupNote')}>
+        <p className={styles.banner}>
+          {registrationStatus === 'disabled' ? t('errors.disabled') : t('errors.unavailable')}
+        </p>
+        <footer className={styles.footer}>
+          <p>
+            <Link className={styles.link} href={`/${locale}/login`}>
+              {t('signIn')}
+            </Link>
+          </p>
+        </footer>
+      </AuthFrame>
+    );
   }
 
   return (

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 
 import { supportedLocales } from '@lobby/contracts';
 
+import { readRegistrationStatus } from '../../../features/auth/auth-api';
 import { SignUpForm } from '../../../features/auth/sign-up-form';
 
 type PageProps = {
@@ -26,5 +27,6 @@ export default async function SignUpPage({ params }: PageProps) {
     notFound();
   }
   setRequestLocale(locale);
-  return <SignUpForm />;
+  const registrationStatus = await readRegistrationStatus();
+  return <SignUpForm registrationStatus={registrationStatus} />;
 }

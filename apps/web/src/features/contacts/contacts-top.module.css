@@ -131,6 +131,13 @@
   margin-left: auto;
 }
 
+.teamLink {
+  color: #243b67;
+  font-size: 13px;
+  font-weight: 650;
+  text-decoration: none;
+}
+
 .user {
   display: flex;
   align-items: center;

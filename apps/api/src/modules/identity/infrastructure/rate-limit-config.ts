@@ -11,6 +11,9 @@ export type AuthRateLimitConfig = {
   loginAccount: RateLimitPolicy;
   registerIp: RateLimitPolicy;
   invalidSessionIp: RateLimitPolicy;
+  inviteIp: RateLimitPolicy;
+  inviteUser: RateLimitPolicy;
+  acceptIp: RateLimitPolicy;
 };
 
 /**
@@ -25,6 +28,12 @@ const DEFAULT_REGISTER_IP_LIMIT = 5;
 const DEFAULT_REGISTER_IP_WINDOW_MS = 60 * 60 * 1000;
 const DEFAULT_INVALID_SESSION_IP_LIMIT = 30;
 const DEFAULT_INVALID_SESSION_IP_WINDOW_MS = 5 * 60 * 1000;
+const DEFAULT_INVITE_IP_LIMIT = 5;
+const DEFAULT_INVITE_IP_WINDOW_MS = 60 * 60 * 1000;
+const DEFAULT_INVITE_USER_LIMIT = 20;
+const DEFAULT_INVITE_USER_WINDOW_MS = 60 * 60 * 1000;
+const DEFAULT_ACCEPT_IP_LIMIT = 20;
+const DEFAULT_ACCEPT_IP_WINDOW_MS = 15 * 60 * 1000;
 
 export function readAuthRateLimitConfig(env: NodeJS.ProcessEnv = process.env): AuthRateLimitConfig {
   return {
@@ -56,13 +65,42 @@ export function readAuthRateLimitConfig(env: NodeJS.ProcessEnv = process.env): A
       DEFAULT_INVALID_SESSION_IP_LIMIT,
       DEFAULT_INVALID_SESSION_IP_WINDOW_MS,
     ),
+    inviteIp: policy(
+      env,
+      'RATE_LIMIT_INVITE_IP_LIMIT',
+      'RATE_LIMIT_INVITE_IP_WINDOW_MS',
+      DEFAULT_INVITE_IP_LIMIT,
+      DEFAULT_INVITE_IP_WINDOW_MS,
+    ),
+    inviteUser: policy(
+      env,
+      'RATE_LIMIT_INVITE_USER_LIMIT',
+      'RATE_LIMIT_INVITE_USER_WINDOW_MS',
+      DEFAULT_INVITE_USER_LIMIT,
+      DEFAULT_INVITE_USER_WINDOW_MS,
+    ),
+    acceptIp: policy(
+      env,
+      'RATE_LIMIT_ACCEPT_IP_LIMIT',
+      'RATE_LIMIT_ACCEPT_IP_WINDOW_MS',
+      DEFAULT_ACCEPT_IP_LIMIT,
+      DEFAULT_ACCEPT_IP_WINDOW_MS,
+    ),
   };
 }
 
 /** High ceilings for tests that are not exercising the limiter. */
 export function permissiveAuthRateLimits(): AuthRateLimitConfig {
   const open = { limit: 1_000, windowMs: 60_000 };
-  return { loginIp: open, loginAccount: open, registerIp: open, invalidSessionIp: open };
+  return {
+    loginIp: open,
+    loginAccount: open,
+    registerIp: open,
+    invalidSessionIp: open,
+    inviteIp: open,
+    inviteUser: open,
+    acceptIp: open,
+  };
 }
 
 function policy(
