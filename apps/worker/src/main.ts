@@ -13,6 +13,7 @@ import {
 } from './email/email-provider.js';
 import { ContactCreatedHandler } from './handlers/contact-created.handler.js';
 import { MemberInvitationEmailHandler } from './handlers/member-invitation-email.handler.js';
+import { PasswordResetEmailHandler } from './handlers/password-reset-email.handler.js';
 import { TenantCreatedHandler } from './handlers/tenant-created.handler.js';
 import { OutboxProcessor } from './outbox/outbox-processor.js';
 import { OutboxRelay } from './outbox/outbox-relay.js';
@@ -23,6 +24,10 @@ export async function startOutboxRelay(signal: AbortSignal): Promise<void> {
   const config = readOutboxWorkerConfig();
   const prisma = createPrismaClient(readDatabaseUrl());
   const repository = new OutboxRepository(prisma, config);
+  const processed = new PrismaProcessedEventStore(prisma);
+  const email = readEmailProvider();
+  const tokenKey = readInvitationTokenKey();
+  const appUrl = process.env.APP_URL?.trim() ?? '';
   const processor = new OutboxProcessor(
     repository,
     new ContactCreatedHandler(),
@@ -31,12 +36,12 @@ export async function startOutboxRelay(signal: AbortSignal): Promise<void> {
     () => new Date(),
     createDispatchLogger(),
     {
-      handler: new MemberInvitationEmailHandler(
-        readEmailProvider(),
-        readInvitationTokenKey(),
-        process.env.APP_URL?.trim() ?? '',
-      ),
-      store: new PrismaProcessedEventStore(prisma),
+      handler: new MemberInvitationEmailHandler(email, tokenKey, appUrl),
+      store: processed,
+    },
+    {
+      handler: new PasswordResetEmailHandler(email, tokenKey, appUrl),
+      store: processed,
     },
   );
   const relay = new OutboxRelay(repository, processor, config);

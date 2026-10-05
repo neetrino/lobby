@@ -20,6 +20,8 @@ export { contactLifecycleAuditSchema } from './contact-lifecycle-audit.js';
 export type { ContactLifecycleAudit } from './contact-lifecycle-audit.js';
 export { invitationAuditSchema } from './invitation-audit.js';
 export type { InvitationAudit } from './invitation-audit.js';
+export { passwordResetAuditSchema } from './password-reset-audit.js';
+export type { PasswordResetAudit } from './password-reset-audit.js';
 export {
   authenticationVersionChangeSchema,
   userSessionsTerminatedAuditSchema,

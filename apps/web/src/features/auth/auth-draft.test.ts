@@ -4,6 +4,8 @@ import { toRegistrationStatus } from './auth-api';
 import {
   loginFieldErrors,
   loginPrefill,
+  recoveryFieldErrors,
+  resetFieldErrors,
   signInRequiredHref,
   signupFieldErrors,
   type SignupDraft,
@@ -68,6 +70,25 @@ describe('signInRequiredHref', () => {
       workspace: 'yerevan-mall',
       email: 'owner@yerevan-mall.test',
       accountCreated: true,
+      passwordReset: false,
+    });
+  });
+});
+
+describe('recoveryFieldErrors', () => {
+  it('requires a workspace and a valid email', () => {
+    expect(recoveryFieldErrors({ workspace: 'Bad Name', email: 'not-an-email' })).toEqual({
+      workspace: 'workspace',
+      email: 'email',
+    });
+  });
+});
+
+describe('resetFieldErrors', () => {
+  it('requires a long password that matches the confirmation', () => {
+    expect(resetFieldErrors({ password: 'short', confirmPassword: 'other-password' })).toEqual({
+      password: 'passwordLength',
+      confirmPassword: 'mismatch',
     });
   });
 });

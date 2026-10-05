@@ -33,3 +33,16 @@ export function inviteUserKey(tenantId: string, userId: string): string {
 export function acceptIpKey(ip: string): string {
   return `rate_limit:accept:ip:${hashRateLimitSubject(ip)}`;
 }
+
+export function passwordResetIpKey(ip: string): string {
+  return `rate_limit:password_reset:ip:${hashRateLimitSubject(ip)}`;
+}
+
+export function passwordResetAccountKey(subdomain: string, email: string): string {
+  const subject = `${subdomain.trim().toLowerCase()}\0${email.trim().toLowerCase()}`;
+  return `rate_limit:password_reset:account:${hashRateLimitSubject(subject)}`;
+}
+
+export function passwordResetConfirmIpKey(ip: string): string {
+  return `rate_limit:password_reset:confirm:ip:${hashRateLimitSubject(ip)}`;
+}

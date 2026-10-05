@@ -18,6 +18,10 @@ export function authErrorText(t: AuthText, code: string): string {
       return t('errors.rate');
     case 'ACCOUNT_CREATED_SIGN_IN_REQUIRED':
       return t('errors.created');
+    case 'PASSWORD_RESET_INVALID':
+      return t('errors.resetInvalid');
+    case 'PASSWORD_RESET_UNAVAILABLE':
+      return t('errors.recoveryUnavailable');
     default:
       return t('errors.failed');
   }

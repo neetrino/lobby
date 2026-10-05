@@ -11,6 +11,7 @@ import {
   buildEventRegistry,
   createWorkerEventRegistry,
   invitationEmailRegistryEntry,
+  passwordResetEmailRegistryEntry,
   type EventRegistry,
   type EventRegistryEntry,
 } from '../dispatch/event-registry.js';
@@ -19,6 +20,7 @@ import { outboxFailureAction } from '../dispatch/retry-classification.js';
 import type { ProcessedEventStore } from '../dispatch/processed-event-store.js';
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
 import type { MemberInvitationEmailHandler } from '../handlers/member-invitation-email.handler.js';
+import type { PasswordResetEmailHandler } from '../handlers/password-reset-email.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import type { OutboxRepository } from './outbox-repository.js';
 import { sanitizeOutboxError } from './sanitize-outbox-error.js';
@@ -36,15 +38,18 @@ export class OutboxProcessor {
     private readonly now: () => Date = () => new Date(),
     private readonly logger: DispatchLogger = createDispatchLogger(),
     invitation?: { handler: MemberInvitationEmailHandler; store: ProcessedEventStore },
+    passwordReset?: { handler: PasswordResetEmailHandler; store: ProcessedEventStore },
   ) {
     const registry = createWorkerEventRegistry({ contactCreated, tenantCreated });
+    const extras: EventRegistryEntry[] = [];
+    if (invitation !== undefined) {
+      extras.push(invitationEmailRegistryEntry(invitation.handler, invitation.store));
+    }
+    if (passwordReset !== undefined) {
+      extras.push(passwordResetEmailRegistryEntry(passwordReset.handler, passwordReset.store));
+    }
     this.registry =
-      invitation === undefined
-        ? registry
-        : buildEventRegistry([
-            ...registry.list(),
-            invitationEmailRegistryEntry(invitation.handler, invitation.store),
-          ]);
+      extras.length === 0 ? registry : buildEventRegistry([...registry.list(), ...extras]);
   }
 
   async process(record: OutboxEventRecord): Promise<void> {

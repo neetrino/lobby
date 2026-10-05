@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import Link from 'next/link';
 
+import { SignOutButton } from '../auth/sign-out-button';
 import type { ContactListFilters, SessionPrincipal } from './contact';
 import { shortId } from './contact-format';
 import { LanguageSwitch } from './language-switch';
@@ -107,6 +108,7 @@ function TopBar({
         ) : null}
         <LanguageSwitch />
         <UserChip session={session} />
+        {session === null ? null : <SignOutButton className={styles.signOut} />}
       </div>
     </header>
   );

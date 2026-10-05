@@ -11,8 +11,17 @@ export type MemberInvitationEmail = {
   idempotencyKey: string;
 };
 
+export type PasswordResetEmail = {
+  to: string;
+  organizationName: string;
+  resetUrl: string;
+  locale: Locale;
+  idempotencyKey: string;
+};
+
 export interface EmailProvider {
   sendMemberInvitation(input: MemberInvitationEmail): Promise<void>;
+  sendPasswordReset(input: PasswordResetEmail): Promise<void>;
 }
 
 const PLACEHOLDER_RESEND_KEY = 're_...';
@@ -51,7 +60,33 @@ export class ResendEmailProvider implements EmailProvider {
     private readonly fetchImpl: typeof fetch = fetch,
   ) {}
 
-  async sendMemberInvitation(input: MemberInvitationEmail): Promise<void> {
+  sendMemberInvitation(input: MemberInvitationEmail): Promise<void> {
+    return this.deliver({
+      to: input.to,
+      subject: invitationSubject(input),
+      text: invitationText(input),
+      idempotencyKey: input.idempotencyKey,
+      failure: 'Email provider rejected the invitation.',
+    });
+  }
+
+  sendPasswordReset(input: PasswordResetEmail): Promise<void> {
+    return this.deliver({
+      to: input.to,
+      subject: resetSubject(input),
+      text: resetText(input),
+      idempotencyKey: input.idempotencyKey,
+      failure: 'Email provider rejected the password reset.',
+    });
+  }
+
+  private async deliver(input: {
+    to: string;
+    subject: string;
+    text: string;
+    idempotencyKey: string;
+    failure: string;
+  }): Promise<void> {
     const response = await this.fetchImpl('https://api.resend.com/emails', {
       method: 'POST',
       signal: AbortSignal.timeout(RESEND_REQUEST_TIMEOUT_MS),
@@ -63,12 +98,12 @@ export class ResendEmailProvider implements EmailProvider {
       body: JSON.stringify({
         from: this.from,
         to: [input.to],
-        subject: invitationSubject(input),
-        text: invitationText(input),
+        subject: input.subject,
+        text: input.text,
       }),
     });
     if (!response.ok) {
-      throw new Error('Email provider rejected the invitation.');
+      throw new Error(input.failure);
     }
   }
 }
@@ -97,6 +132,47 @@ function hasInvitationTokenKey(env: NodeJS.ProcessEnv): boolean {
   } catch {
     return false;
   }
+}
+
+function resetSubject(input: PasswordResetEmail): string {
+  if (input.locale === 'hy') {
+    return `${input.organizationName} գաղտնաբառի վերականգնում`;
+  }
+  if (input.locale === 'ru') {
+    return `Восстановление пароля ${input.organizationName}`;
+  }
+  return `Reset your ${input.organizationName} password`;
+}
+
+function resetText(input: PasswordResetEmail): string {
+  if (input.locale === 'hy') {
+    return [
+      `${input.organizationName}-ի գաղտնաբառը վերականգնելու հղում։`,
+      '',
+      input.resetUrl,
+      '',
+      'Հղումը գործում է 30 րոպե և մեկ անգամ։',
+      'Եթե սա չէիք սպասում, անտեսեք այս նամակը։',
+    ].join('\n');
+  }
+  if (input.locale === 'ru') {
+    return [
+      `Ссылка для восстановления пароля ${input.organizationName}.`,
+      '',
+      input.resetUrl,
+      '',
+      'Ссылка действует 30 минут и только один раз.',
+      'Если вы её не ждали, проигнорируйте это письмо.',
+    ].join('\n');
+  }
+  return [
+    `Use this link to reset your ${input.organizationName} password.`,
+    '',
+    input.resetUrl,
+    '',
+    'The link works once and expires in 30 minutes.',
+    'If you were not expecting it, ignore this email.',
+  ].join('\n');
 }
 
 function invitationSubject(input: MemberInvitationEmail): string {

@@ -87,7 +87,9 @@
 | Roles                                               | `OWNER`, `ADMIN`, `MEMBER`                                                               | Implemented                                  |
 | Module activation                                   | `tenant_modules`; a missing row is disabled                                              | Implemented                                  |
 | CSRF boundary                                       | Credentialed CORS allowlist plus Origin/Referer validation for mutations                 | Implemented for the current same-site design |
-| Verification, recovery, invitation flow, OAuth/OIDC | No provider or flow implemented                                                          | Unresolved by capability                     |
+| Password recovery                               | One-time emailed token, 30-minute expiry, authentication version bump                   | Implemented                                  |
+| Member invitations                              | Owner/Admin invite, accept, revoke, and resend                                          | Implemented                                  |
+| Email verification and OAuth/OIDC               | No provider or flow implemented                                                          | Unresolved by capability                     |
 
 ## 6. Implemented modules and shared capabilities
 
@@ -140,7 +142,7 @@ The shared API integration-test database is not safely isolated between test fil
 3. Backup retention, restore testing, RPO/RTO, deployment rollback, and migration-job ownership.
 4. Metrics, alerting, error tracking, log retention/redaction ownership, and worker-failure operations.
 5. Audit retention and database-level append-only grants.
-6. Email/recovery/invitation providers and their security policies if those flows enter scope.
+6. Email verification and OAuth/OIDC providers if those flows enter scope. Password recovery and invitations already use the configured mail provider.
 7. Object storage, messaging providers, realtime, payments, and webhooks only when approved modules require them.
 
 These items do not block isolated business-module development. Every new module must follow the authorization, tenant-scoped persistence, validation, transaction, audit/event, and testing rules documented in the linked architecture documents.

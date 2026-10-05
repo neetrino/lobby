@@ -131,11 +131,26 @@
   margin-left: auto;
 }
 
-.teamLink {
+.teamLink,
+.signOut {
   color: #243b67;
   font-size: 13px;
   font-weight: 650;
   text-decoration: none;
+}
+
+.signOut {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.signOut:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 .user {

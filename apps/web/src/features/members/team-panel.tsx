@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { AuthRequestError } from '../auth/auth-api';
+import { SignOutButton } from '../auth/sign-out-button';
 import { authErrorText } from '../auth/auth-copy';
 import { AuthFrame } from '../auth/auth-frame';
 import styles from '../auth/auth.module.css';
@@ -105,6 +106,7 @@ export function TeamPanel() {
             {member.name} · {member.email} · {member.role}
           </p>
         ))}
+        <SignOutButton className={styles.textButton} />
       </section>
     </AuthFrame>
   );

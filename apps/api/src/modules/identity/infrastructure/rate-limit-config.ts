@@ -14,6 +14,9 @@ export type AuthRateLimitConfig = {
   inviteIp: RateLimitPolicy;
   inviteUser: RateLimitPolicy;
   acceptIp: RateLimitPolicy;
+  passwordResetIp: RateLimitPolicy;
+  passwordResetAccount: RateLimitPolicy;
+  passwordResetConfirmIp: RateLimitPolicy;
 };
 
 /**
@@ -34,58 +37,49 @@ const DEFAULT_INVITE_USER_LIMIT = 20;
 const DEFAULT_INVITE_USER_WINDOW_MS = 60 * 60 * 1000;
 const DEFAULT_ACCEPT_IP_LIMIT = 20;
 const DEFAULT_ACCEPT_IP_WINDOW_MS = 15 * 60 * 1000;
+const DEFAULT_PASSWORD_RESET_IP_LIMIT = 10;
+const DEFAULT_PASSWORD_RESET_IP_WINDOW_MS = 15 * 60 * 1000;
+const DEFAULT_PASSWORD_RESET_ACCOUNT_LIMIT = 5;
+const DEFAULT_PASSWORD_RESET_ACCOUNT_WINDOW_MS = 15 * 60 * 1000;
+const DEFAULT_PASSWORD_RESET_CONFIRM_IP_LIMIT = 10;
+const DEFAULT_PASSWORD_RESET_CONFIRM_IP_WINDOW_MS = 15 * 60 * 1000;
 
 export function readAuthRateLimitConfig(env: NodeJS.ProcessEnv = process.env): AuthRateLimitConfig {
   return {
-    loginIp: policy(
-      env,
-      'RATE_LIMIT_LOGIN_IP_LIMIT',
-      'RATE_LIMIT_LOGIN_IP_WINDOW_MS',
-      DEFAULT_LOGIN_IP_LIMIT,
-      DEFAULT_LOGIN_IP_WINDOW_MS,
-    ),
-    loginAccount: policy(
-      env,
-      'RATE_LIMIT_LOGIN_ACCOUNT_LIMIT',
-      'RATE_LIMIT_LOGIN_ACCOUNT_WINDOW_MS',
-      DEFAULT_LOGIN_ACCOUNT_LIMIT,
-      DEFAULT_LOGIN_ACCOUNT_WINDOW_MS,
-    ),
-    registerIp: policy(
-      env,
-      'RATE_LIMIT_REGISTER_IP_LIMIT',
-      'RATE_LIMIT_REGISTER_IP_WINDOW_MS',
-      DEFAULT_REGISTER_IP_LIMIT,
-      DEFAULT_REGISTER_IP_WINDOW_MS,
-    ),
-    invalidSessionIp: policy(
-      env,
-      'RATE_LIMIT_INVALID_SESSION_IP_LIMIT',
-      'RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS',
-      DEFAULT_INVALID_SESSION_IP_LIMIT,
-      DEFAULT_INVALID_SESSION_IP_WINDOW_MS,
-    ),
-    inviteIp: policy(
-      env,
-      'RATE_LIMIT_INVITE_IP_LIMIT',
-      'RATE_LIMIT_INVITE_IP_WINDOW_MS',
-      DEFAULT_INVITE_IP_LIMIT,
-      DEFAULT_INVITE_IP_WINDOW_MS,
-    ),
-    inviteUser: policy(
-      env,
-      'RATE_LIMIT_INVITE_USER_LIMIT',
-      'RATE_LIMIT_INVITE_USER_WINDOW_MS',
-      DEFAULT_INVITE_USER_LIMIT,
-      DEFAULT_INVITE_USER_WINDOW_MS,
-    ),
-    acceptIp: policy(
-      env,
-      'RATE_LIMIT_ACCEPT_IP_LIMIT',
-      'RATE_LIMIT_ACCEPT_IP_WINDOW_MS',
-      DEFAULT_ACCEPT_IP_LIMIT,
-      DEFAULT_ACCEPT_IP_WINDOW_MS,
-    ),
+    ...credentialPolicies(env),
+    ...invitationPolicies(env),
+    ...passwordResetPolicies(env),
+  };
+}
+
+function credentialPolicies(env: NodeJS.ProcessEnv): Pick<
+  AuthRateLimitConfig,
+  'loginIp' | 'loginAccount' | 'registerIp' | 'invalidSessionIp'
+> {
+  return {
+    loginIp: policy(env, 'RATE_LIMIT_LOGIN_IP_LIMIT', 'RATE_LIMIT_LOGIN_IP_WINDOW_MS', DEFAULT_LOGIN_IP_LIMIT, DEFAULT_LOGIN_IP_WINDOW_MS),
+    loginAccount: policy(env, 'RATE_LIMIT_LOGIN_ACCOUNT_LIMIT', 'RATE_LIMIT_LOGIN_ACCOUNT_WINDOW_MS', DEFAULT_LOGIN_ACCOUNT_LIMIT, DEFAULT_LOGIN_ACCOUNT_WINDOW_MS),
+    registerIp: policy(env, 'RATE_LIMIT_REGISTER_IP_LIMIT', 'RATE_LIMIT_REGISTER_IP_WINDOW_MS', DEFAULT_REGISTER_IP_LIMIT, DEFAULT_REGISTER_IP_WINDOW_MS),
+    invalidSessionIp: policy(env, 'RATE_LIMIT_INVALID_SESSION_IP_LIMIT', 'RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS', DEFAULT_INVALID_SESSION_IP_LIMIT, DEFAULT_INVALID_SESSION_IP_WINDOW_MS),
+  };
+}
+
+function invitationPolicies(env: NodeJS.ProcessEnv): Pick<AuthRateLimitConfig, 'inviteIp' | 'inviteUser' | 'acceptIp'> {
+  return {
+    inviteIp: policy(env, 'RATE_LIMIT_INVITE_IP_LIMIT', 'RATE_LIMIT_INVITE_IP_WINDOW_MS', DEFAULT_INVITE_IP_LIMIT, DEFAULT_INVITE_IP_WINDOW_MS),
+    inviteUser: policy(env, 'RATE_LIMIT_INVITE_USER_LIMIT', 'RATE_LIMIT_INVITE_USER_WINDOW_MS', DEFAULT_INVITE_USER_LIMIT, DEFAULT_INVITE_USER_WINDOW_MS),
+    acceptIp: policy(env, 'RATE_LIMIT_ACCEPT_IP_LIMIT', 'RATE_LIMIT_ACCEPT_IP_WINDOW_MS', DEFAULT_ACCEPT_IP_LIMIT, DEFAULT_ACCEPT_IP_WINDOW_MS),
+  };
+}
+
+function passwordResetPolicies(env: NodeJS.ProcessEnv): Pick<
+  AuthRateLimitConfig,
+  'passwordResetIp' | 'passwordResetAccount' | 'passwordResetConfirmIp'
+> {
+  return {
+    passwordResetIp: policy(env, 'RATE_LIMIT_PASSWORD_RESET_IP_LIMIT', 'RATE_LIMIT_PASSWORD_RESET_IP_WINDOW_MS', DEFAULT_PASSWORD_RESET_IP_LIMIT, DEFAULT_PASSWORD_RESET_IP_WINDOW_MS),
+    passwordResetAccount: policy(env, 'RATE_LIMIT_PASSWORD_RESET_ACCOUNT_LIMIT', 'RATE_LIMIT_PASSWORD_RESET_ACCOUNT_WINDOW_MS', DEFAULT_PASSWORD_RESET_ACCOUNT_LIMIT, DEFAULT_PASSWORD_RESET_ACCOUNT_WINDOW_MS),
+    passwordResetConfirmIp: policy(env, 'RATE_LIMIT_PASSWORD_RESET_CONFIRM_IP_LIMIT', 'RATE_LIMIT_PASSWORD_RESET_CONFIRM_IP_WINDOW_MS', DEFAULT_PASSWORD_RESET_CONFIRM_IP_LIMIT, DEFAULT_PASSWORD_RESET_CONFIRM_IP_WINDOW_MS),
   };
 }
 
@@ -100,6 +94,9 @@ export function permissiveAuthRateLimits(): AuthRateLimitConfig {
     inviteIp: open,
     inviteUser: open,
     acceptIp: open,
+    passwordResetIp: open,
+    passwordResetAccount: open,
+    passwordResetConfirmIp: open,
   };
 }
 

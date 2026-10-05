@@ -78,6 +78,29 @@ export async function readRegistrationStatus(): Promise<RegistrationStatus> {
   }
 }
 
+export function logoutAccount(): Promise<void> {
+  return send('/api/v1/auth/logout', undefined, true);
+}
+
+export function requestPasswordReset(input: {
+  workspace: string;
+  email: string;
+  locale: string;
+}): Promise<void> {
+  return send('/api/v1/auth/password-resets', {
+    subdomain: input.workspace.trim().toLowerCase(),
+    email: input.email.trim().toLowerCase(),
+    locale: input.locale,
+  });
+}
+
+export function confirmPasswordReset(input: { token: string; password: string }): Promise<void> {
+  return send('/api/v1/auth/password-resets/confirm', {
+    token: input.token,
+    password: input.password,
+  });
+}
+
 export async function hasSession(): Promise<boolean> {
   const response = await fetch(`${API_ORIGIN}/api/v1/auth/session`, {
     method: 'GET',
@@ -87,12 +110,14 @@ export async function hasSession(): Promise<boolean> {
   return response.ok;
 }
 
-async function send(path: string, body: unknown): Promise<void> {
+async function send(path: string, body: unknown, empty = false): Promise<void> {
   const response = await fetch(`${API_ORIGIN}${path}`, {
     method: 'POST',
     credentials: 'include',
-    headers: { accept: 'application/json', 'content-type': 'application/json' },
-    body: JSON.stringify(body),
+    headers: empty
+      ? { accept: 'application/json' }
+      : { accept: 'application/json', 'content-type': 'application/json' },
+    body: empty ? undefined : JSON.stringify(body),
   });
   if (!response.ok) {
     throw await readError(response);

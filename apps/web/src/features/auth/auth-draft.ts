@@ -37,6 +37,24 @@ export function loginFieldErrors(draft: LoginDraft): Partial<Record<LoginField, 
   };
 }
 
+export function recoveryFieldErrors(
+  draft: RecoveryDraft,
+): Partial<Record<keyof RecoveryDraft, FieldError>> {
+  return {
+    ...required(draft.workspace, 'workspace'),
+    ...workspaceError(draft.workspace),
+    ...required(draft.email, 'email'),
+    ...emailError(draft.email),
+  };
+}
+
+export function resetFieldErrors(draft: ResetDraft): Partial<Record<keyof ResetDraft, FieldError>> {
+  return {
+    ...passwordError(draft.password),
+    ...confirmError(draft.password, draft.confirmPassword),
+  };
+}
+
 export function signupFieldErrors(draft: SignupDraft): Partial<Record<SignupField, FieldError>> {
   return {
     ...required(draft.organization, 'organization'),
@@ -54,10 +72,21 @@ export function isAuthLocale(value: string): value is AuthLocale {
   return supportedLocales.some((locale) => locale === value);
 }
 
+export type RecoveryDraft = {
+  workspace: string;
+  email: string;
+};
+
+export type ResetDraft = {
+  password: string;
+  confirmPassword: string;
+};
+
 export type LoginPrefill = {
   workspace: string;
   email: string;
   accountCreated: boolean;
+  passwordReset: boolean;
 };
 
 /** Login query after the workspace exists but the session was not stored. */
@@ -80,6 +109,7 @@ export function loginPrefill(params: {
     workspace: firstQueryValue(params.workspace),
     email: firstQueryValue(params.email),
     accountCreated: firstQueryValue(params.notice) === 'created',
+    passwordReset: firstQueryValue(params.notice) === 'reset',
   };
 }
 

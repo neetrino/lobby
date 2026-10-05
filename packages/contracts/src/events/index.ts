@@ -4,6 +4,11 @@ export {
 } from './invitation-created-event.js';
 export type { InvitationCreatedEvent } from './invitation-created-event.js';
 export {
+  PASSWORD_RESET_REQUESTED_EVENT_VERSION,
+  passwordResetRequestedEventSchema,
+} from './password-reset-requested-event.js';
+export type { PasswordResetRequestedEvent } from './password-reset-requested-event.js';
+export {
   CONTACT_ARCHIVED_EVENT_VERSION,
   contactArchivedEventSchema,
 } from './contact-archived-event.js';

@@ -214,6 +214,78 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/auth/password-resets:
+    post:
+      tags: [Auth]
+      operationId: requestPasswordReset
+      summary: Email a one-time password reset link
+      description: >
+        Public. The response is 204 whether or not an active account matches.
+        A missing INVITATION_TOKEN_KEY is 503 before any lookup. The raw token
+        is not stored or returned.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '204':
+          description: Request accepted
+        '400':
+          $ref: '#/components/responses/RequestRejected'
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Password recovery is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: PASSWORD_RESET_UNAVAILABLE
+                  message: Password recovery is not configured.
+                  requestId: 4f0b1c2a-6d7e-4f11-9a22-1b3c4d5e6f70
+  /api/v1/auth/password-resets/confirm:
+    post:
+      tags: [Auth]
+      operationId: confirmPasswordReset
+      summary: Set a new password from a reset link
+      description: >
+        Public. A missing, used, or expired token is PASSWORD_RESET_INVALID.
+        Success increments authenticationVersion, writes user.password.reset,
+        and deletes that user's sessions. The response has no session cookie.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+      responses:
+        '204':
+          description: Password updated
+        '400':
+          description: The reset link is not valid, or the body failed validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: PASSWORD_RESET_INVALID
+                  message: This password reset link is not valid.
+                  requestId: 4f0b1c2a-6d7e-4f11-9a22-1b3c4d5e6f70
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /api/v1/auth/logout:
     post:
       tags: [Auth]
@@ -292,6 +364,32 @@ components:
         email:
           type: string
           format: email
+        password:
+          type: string
+          minLength: 12
+          maxLength: 128
+    PasswordResetRequest:
+      type: object
+      additionalProperties: false
+      required: [subdomain, email, locale]
+      properties:
+        subdomain:
+          type: string
+        email:
+          type: string
+          format: email
+        locale:
+          type: string
+          enum: [hy, ru, en]
+    PasswordResetConfirm:
+      type: object
+      additionalProperties: false
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          minLength: 20
+          maxLength: 200
         password:
           type: string
           minLength: 12

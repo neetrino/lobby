@@ -37,8 +37,9 @@ export function LoginForm({
     password: '',
   });
   const [errors, setErrors] = useState<Partial<Record<LoginField, FieldErrorView>>>({});
-  const [banner, setBanner] = useState<string | null>(
-    prefill.accountCreated ? t('errors.created') : null,
+  const [banner, setBanner] = useState<string | null>(openingNotice(t, prefill));
+  const [tone, setTone] = useState<'error' | 'success'>(
+    prefill.passwordReset ? 'success' : 'error',
   );
   const [pending, setPending] = useState(false);
 
@@ -68,6 +69,7 @@ export function LoginForm({
     }
     setPending(true);
     setBanner(null);
+    setTone('error');
     try {
       await loginAccount(draft);
       router.push(`/${locale}/contacts`);
@@ -88,7 +90,9 @@ export function LoginForm({
           void submit();
         }}
       >
-        {banner === null ? null : <p className={styles.banner}>{banner}</p>}
+        {banner === null ? null : (
+          <p className={tone === 'success' ? styles.success : styles.banner}>{banner}</p>
+        )}
         <Field
           label={t('workspace')}
           value={draft.workspace}
@@ -115,10 +119,9 @@ export function LoginForm({
         <button type="submit" className={styles.submit} disabled={pending}>
           {t('signIn')}
         </button>
-        <button type="button" className={styles.textButton} disabled>
+        <Link className={styles.link} href={`/${locale}/forgot-password`}>
           {t('forgot')}
-        </button>
-        <p className={styles.hint}>{t('forgotNote')}</p>
+        </Link>
       </form>
       <footer className={styles.footer}>
         <RegistrationEntry locale={locale} status={registrationStatus} />
@@ -154,6 +157,19 @@ function RegistrationEntry({
       {status === 'disabled' ? t('errors.disabled') : t('errors.unavailable')}
     </p>
   );
+}
+
+function openingNotice(
+  t: ReturnType<typeof useTranslations<'auth'>>,
+  prefill: LoginPrefill,
+): string | null {
+  if (prefill.accountCreated) {
+    return t('errors.created');
+  }
+  if (prefill.passwordReset) {
+    return t('resetDone');
+  }
+  return null;
 }
 
 type FieldErrorView = NonNullable<ReturnType<typeof loginFieldErrors>[LoginField]>;

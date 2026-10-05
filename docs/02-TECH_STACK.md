@@ -67,7 +67,7 @@ Startup validation is implemented, but some feature providers still reread `proc
 | Audit            | Append-only PostgreSQL history for access changes and important business transitions          |
 | Tenant model     | One user row belongs to exactly one tenant; no membership table                               |
 
-Email verification, password recovery, invitations, OAuth/OIDC, and device management are not implemented and require product/provider decisions.
+Email verification, OAuth/OIDC, and device management are not implemented and require product/provider decisions. Password recovery and member invitations send mail through the configured email provider.
 
 ## Database and asynchronous delivery
 

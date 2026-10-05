@@ -28,6 +28,8 @@ describe('IdentityExceptionFilter', () => {
         503,
         'The account was created. Sign in to continue.',
       ],
+      [identityErrorCodes.PASSWORD_RESET_INVALID, 400, 'This password reset link is not valid.'],
+      [identityErrorCodes.PASSWORD_RESET_UNAVAILABLE, 503, 'Password recovery is not configured.'],
       [identityErrorCodes.SERVICE_UNAVAILABLE, 503, 'The session store is unavailable.'],
     ] as const;
 

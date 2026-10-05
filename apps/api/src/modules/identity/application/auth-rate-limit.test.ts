@@ -49,6 +49,9 @@ const tight: AuthRateLimitConfig = {
   inviteIp: { limit: 20, windowMs: 60_000 },
   inviteUser: { limit: 20, windowMs: 60_000 },
   acceptIp: { limit: 20, windowMs: 60_000 },
+  passwordResetIp: { limit: 20, windowMs: 60_000 },
+  passwordResetAccount: { limit: 20, windowMs: 60_000 },
+  passwordResetConfirmIp: { limit: 20, windowMs: 60_000 },
 };
 
 let prisma: PrismaClient;

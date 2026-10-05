@@ -1,12 +1,14 @@
 import {
   contactCreatedEventSchema,
   invitationCreatedEventSchema,
+  passwordResetRequestedEventSchema,
   tenantCreatedEventSchema,
   tenantCreatedEventV1Schema,
 } from '@lobby/contracts';
 
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
 import type { MemberInvitationEmailHandler } from '../handlers/member-invitation-email.handler.js';
+import type { PasswordResetEmailHandler } from '../handlers/password-reset-email.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import {
   bindConfirmedDelivery,
@@ -146,6 +148,30 @@ export function invitationEmailRegistryEntry(
         },
         store,
         eventType: 'invitation.created',
+        eventVersion: 1,
+      }),
+    ],
+  });
+}
+
+/** External email delivery for `password_reset.requested@1`. */
+export function passwordResetEmailRegistryEntry(
+  handler: PasswordResetEmailHandler,
+  store: ProcessedEventStore,
+): EventRegistryEntry<1> {
+  const schema = asEventSchema(passwordResetRequestedEventSchema);
+  return defineEventRegistryEntry({
+    eventType: 'password_reset.requested',
+    eventVersion: 1,
+    schema,
+    handlers: [
+      defineConfirmedExternalHandler({
+        handler: {
+          name: 'PasswordResetEmailHandler',
+          handle: (event) => handler.handle(schema.parse(event)),
+        },
+        store,
+        eventType: 'password_reset.requested',
         eventVersion: 1,
       }),
     ],

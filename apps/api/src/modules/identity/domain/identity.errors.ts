@@ -11,6 +11,8 @@ export const identityErrorCodes = {
   REGISTRATION_DISABLED: 'REGISTRATION_DISABLED',
   TENANT_SUBDOMAIN_TAKEN: 'TENANT_SUBDOMAIN_TAKEN',
   ACCOUNT_CREATED_SIGN_IN_REQUIRED: 'ACCOUNT_CREATED_SIGN_IN_REQUIRED',
+  PASSWORD_RESET_INVALID: 'PASSWORD_RESET_INVALID',
+  PASSWORD_RESET_UNAVAILABLE: 'PASSWORD_RESET_UNAVAILABLE',
   SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
 } as const;
 
@@ -32,6 +34,14 @@ const identityCatalog = {
   },
   [identityErrorCodes.ACCOUNT_CREATED_SIGN_IN_REQUIRED]: {
     message: 'The account was created. Sign in to continue.',
+    statusCode: 503,
+  },
+  [identityErrorCodes.PASSWORD_RESET_INVALID]: {
+    message: 'This password reset link is not valid.',
+    statusCode: 400,
+  },
+  [identityErrorCodes.PASSWORD_RESET_UNAVAILABLE]: {
+    message: 'Password recovery is not configured.',
     statusCode: 503,
   },
   [identityErrorCodes.SERVICE_UNAVAILABLE]: {

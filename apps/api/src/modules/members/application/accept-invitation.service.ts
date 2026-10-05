@@ -56,7 +56,7 @@ export class AcceptInvitationService {
     @Inject(PASSWORD_HASHER) private readonly passwords: PasswordHasher,
     private readonly sessions: RedisSessionStore,
     @Inject(INCIDENT_LOGGER) private readonly incidents: IncidentLogger,
-ի    private readonly accessCookie: InvitationAccessCookie,
+    private readonly accessCookie: InvitationAccessCookie,
     @Inject(INVITATION_TOKEN_KEY) private readonly tokenKey: Buffer | null,
   ) {}
 

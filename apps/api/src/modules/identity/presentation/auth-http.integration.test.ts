@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import { openInvitationToken } from '@lobby/database';
 import {
   createTestPrismaClient,
   disposeTestPrismaClient,
@@ -21,9 +22,15 @@ import { MemoryRateLimitRedis } from '../infrastructure/memory-rate-limit-redis'
 import { REGISTRATION_ENABLED } from '../infrastructure/registration-config';
 import { SESSION_REDIS } from '../infrastructure/session-redis';
 import { clearTenantRows, IndexedSessionRedis } from './session-guard.fixtures';
+import {
+  hashPasswordResetToken,
+  PASSWORD_RESET_TOKEN_KEY,
+} from '../infrastructure/password-reset-seal';
 
 const origin = 'http://localhost:3000';
 const password = 'correct-horse-battery';
+const nextPassword = 'replacement-horse-battery';
+const tokenKey = Buffer.alloc(32, 9);
 const sessions = new IndexedSessionRedis();
 const rateLimit = new MemoryRateLimitRedis();
 
@@ -50,6 +57,8 @@ beforeAll(async () => {
     .useValue(permissiveAuthRateLimits())
     .overrideProvider(AUDIT_IP_HASH_KEY)
     .useValue('fedcba9876543210'.repeat(4))
+    .overrideProvider(PASSWORD_RESET_TOKEN_KEY)
+    .useValue(tokenKey)
     .compile();
   app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });
   configureHttpApp(app, { allowedOrigins: [origin], trustProxy: false }, { logger: false });
@@ -153,6 +162,34 @@ describe('Nest auth HTTP', () => {
     expect(login.headers['access-control-allow-origin']).toBeUndefined();
     expect(loggedOut.status).toBe(204);
   });
+
+  it('issues a reset through the outbox, then accepts only the new password', async () => {
+    const http = app.getHttpServer();
+    const missing = await postReset(http);
+    expect(missing.status).toBe(204);
+    expect(await resetEventCount()).toBe(0);
+    const registered = await request(http)
+      .post('/api/v1/auth/register')
+      .set('Origin', origin)
+      .send(registration('nest-reset'));
+    const requested = await postReset(http);
+    const token = await readResetToken();
+    const confirmed = await postConfirm(http, token);
+    const signedIn = await postLogin(http, nextPassword);
+    const rejected = await postLogin(http, password);
+    const reused = await postConfirm(http, token);
+
+    expect(registered.status).toBe(201);
+    expect(requested.status).toBe(204);
+    expect(await resetEventCount()).toBe(1);
+    expect(confirmed.status).toBe(204);
+    expect(confirmed.headers['set-cookie']).toBeUndefined();
+    expect(signedIn.status).toBe(200);
+    expect(rejected.status).toBe(401);
+    expect(rejected.body).toMatchObject({ error: { code: 'INVALID_CREDENTIALS' } });
+    expect(reused.status).toBe(400);
+    expect(reused.body).toMatchObject({ error: { code: 'PASSWORD_RESET_INVALID' } });
+  }, 45_000);
 });
 
 @Controller('guard-probe')
@@ -173,6 +210,52 @@ function registration(subdomain: string) {
     tenant: { name: subdomain, subdomain, plan: 'starter' },
     owner: { name: 'Ada', email: 'ada@example.com', password },
   };
+}
+
+function postReset(http: ReturnType<NestExpressApplication['getHttpServer']>) {
+  return request(http)
+    .post('/api/v1/auth/password-resets')
+    .set('Origin', origin)
+    .send({ subdomain: 'nest-reset', email: 'ada@example.com', locale: 'hy' });
+}
+
+function postConfirm(http: ReturnType<NestExpressApplication['getHttpServer']>, token: string) {
+  return request(http)
+    .post('/api/v1/auth/password-resets/confirm')
+    .set('Origin', origin)
+    .send({ token, password: nextPassword });
+}
+
+function postLogin(http: ReturnType<NestExpressApplication['getHttpServer']>, next: string) {
+  return request(http)
+    .post('/api/v1/auth/login')
+    .set('Origin', origin)
+    .send({ subdomain: 'nest-reset', email: 'ada@example.com', password: next });
+}
+
+function resetEventCount(): Promise<number> {
+  return prisma.outboxEvent.count({ where: { eventType: 'password_reset.requested' } });
+}
+
+async function readResetToken(): Promise<string> {
+  const event = await prisma.outboxEvent.findFirstOrThrow({
+    where: { eventType: 'password_reset.requested' },
+  });
+  const payload = event.payload;
+  if (typeof payload !== 'object' || payload === null || !('tokenCiphertext' in payload)) {
+    throw new Error('Reset event is missing the seal.');
+  }
+  const sealed = payload.tokenCiphertext;
+  if (typeof sealed !== 'string') {
+    throw new Error('Reset seal is not a string.');
+  }
+  const token = openInvitationToken(sealed, tokenKey);
+  expect(payload).toMatchObject({ recipientEmail: 'ada@example.com', locale: 'hy' });
+  expect(JSON.stringify(payload)).not.toContain(token);
+  expect(
+    await prisma.passwordReset.findUnique({ where: { tokenHash: hashPasswordResetToken(token) } }),
+  ).not.toBeNull();
+  return token;
 }
 
 function sessionCookie(header: string | string[] | undefined): string {

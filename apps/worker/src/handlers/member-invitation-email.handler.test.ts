@@ -15,6 +15,9 @@ describe('MemberInvitationEmailHandler', () => {
         sent.push(input);
         return Promise.resolve();
       },
+      sendPasswordReset() {
+        return Promise.resolve();
+      },
     };
     const handler = new MemberInvitationEmailHandler(email, key, 'http://localhost:3000');
 

@@ -9,6 +9,9 @@ import {
 import {
   acceptIpKey,
   invalidSessionIpKey,
+  passwordResetAccountKey,
+  passwordResetConfirmIpKey,
+  passwordResetIpKey,
   inviteIpKey,
   inviteUserKey,
   loginAccountKey,
@@ -50,6 +53,17 @@ export class AuthRateLimitService {
 
   async consumeAccept(ip: string | null): Promise<void> {
     await this.hit(acceptIpKey(this.requireAddress(ip)), this.config.acceptIp);
+  }
+
+  /** Counts a reset request for the address and the account, whether or not it exists. */
+  async consumePasswordResetRequest(ip: string | null, subdomain: string, email: string): Promise<void> {
+    const address = this.requireAddress(ip);
+    await this.hit(passwordResetIpKey(address), this.config.passwordResetIp);
+    await this.hit(passwordResetAccountKey(subdomain, email), this.config.passwordResetAccount);
+  }
+
+  async consumePasswordResetConfirm(ip: string | null): Promise<void> {
+    await this.hit(passwordResetConfirmIpKey(this.requireAddress(ip)), this.config.passwordResetConfirmIp);
   }
 
   async recordInvalidSession(ip: string | null): Promise<void> {

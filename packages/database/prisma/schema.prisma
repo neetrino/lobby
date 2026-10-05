@@ -45,6 +45,7 @@ model Tenant {
   reservationStatusHistory ReservationStatusHistory[]
   auditEvents              AuditEvent[]
   memberInvitations        MemberInvitation[]
+  passwordResets           PasswordReset[]
 
   @@map("tenants")
 }
@@ -71,6 +72,7 @@ model User {
   createdContacts          Contact[]                  @relation("ContactCreatedBy")
   ownedContacts            Contact[]                  @relation("ContactOwner")
   memberInvitations        MemberInvitation[]         @relation("MemberInvitationInvitedBy")
+  passwordResets           PasswordReset[]
 
   @@unique([tenantId, email])
   @@unique([id, tenantId])
@@ -153,6 +155,23 @@ model MemberInvitation {
 
   @@index([tenantId, email])
   @@map("member_invitations")
+}
+
+/// One-time password reset. The raw token is not a column.
+model PasswordReset {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user   User   @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([tenantId, userId])
+  @@map("password_resets")
 }
 
 enum ContactType {
