@@ -7,6 +7,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthorizationError } from '../../../common/auth/authorization';
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
 import { ModuleEntitlementService } from '../../../common/authorization/module-entitlement';
 import { ROLE_PERMISSIONS } from '../../../common/authorization/role-permissions';
@@ -35,12 +36,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.auditEvent.deleteMany();
-  await prisma.outboxEvent.deleteMany();
-  await prisma.contact.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenantModule.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('contact lifecycle', () => {

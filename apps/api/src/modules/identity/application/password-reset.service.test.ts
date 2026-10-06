@@ -7,6 +7,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { identityErrorCodes } from '../domain/identity.errors';
 import { Argon2PasswordHasher } from '../infrastructure/argon2-password-hasher';
@@ -34,12 +35,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.passwordReset.deleteMany();
-  await prisma.auditEvent.deleteMany();
-  await prisma.outboxEvent.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenantModule.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('password reset', () => {

@@ -6,6 +6,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ModuleEntitlementService } from '../../../common/authorization/module-entitlement';
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { ContactRepository } from '../infrastructure/contact.repository';
 import {
   requestContextFromSession,
@@ -25,11 +26,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.outboxEvent.deleteMany();
-  await prisma.contact.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenantModule.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('ContactAccessService', () => {

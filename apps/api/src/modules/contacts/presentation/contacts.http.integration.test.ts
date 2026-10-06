@@ -10,6 +10,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AppModule } from '../../../app.module';
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { configureHttpApp } from '../../../common/http/configure-http-app';
 import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
@@ -216,23 +217,8 @@ function sessionCookie(header: string | string[] | undefined): string {
   return pair;
 }
 
-async function clearRows(database: PrismaClient | undefined): Promise<void> {
-  if (!database) {
-    return;
-  }
-  await database.reservationStatusHistory.deleteMany();
-  await database.reservationTable.deleteMany();
-  await database.reservation.deleteMany();
-  await database.servicePeriod.deleteMany();
-  await database.restaurantTable.deleteMany();
-  await database.diningArea.deleteMany();
-  await database.venue.deleteMany();
-  await database.auditEvent.deleteMany();
-  await database.outboxEvent.deleteMany();
-  await database.contact.deleteMany();
-  await database.tenantModule.deleteMany();
-  await database.user.deleteMany();
-  await database.tenant.deleteMany();
+function clearRows(database: PrismaClient | undefined): Promise<void> {
+  return clearTestTenantData(database);
 }
 
 class MemorySessionRedis implements SessionRedisClient {

@@ -191,6 +191,7 @@ export async function patchCard(
   cardId: string,
   patch: CardPatch,
   after?: AfterWrite,
+  onMove?: AfterWrite,
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await lockCard(tx, cardId);
@@ -205,6 +206,7 @@ export async function patchCard(
     }).catch(rethrowWrite);
     if (moved) {
       await compactColumn(tx, tenantId, card.columnId);
+      await onMove?.(tx);
     } else if (patch.position !== undefined) {
       await placeAt(tx, tenantId, card.columnId, cardId, card.position, patch.position);
     }

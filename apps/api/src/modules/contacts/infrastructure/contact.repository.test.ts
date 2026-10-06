@@ -10,6 +10,7 @@ import {
   requestContextFromSession,
   type RequestContext,
 } from '../../../common/tenant/request-context';
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { ContactRepository } from './contact.repository';
 
 let prisma: PrismaClient;
@@ -23,10 +24,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.contact.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenantModule.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('ContactRepository', () => {

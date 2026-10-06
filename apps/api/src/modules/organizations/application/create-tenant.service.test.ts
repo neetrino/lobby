@@ -7,6 +7,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { CreateTenantService } from './create-tenant.service';
 
@@ -25,14 +26,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.outboxEvent.deleteMany();
-  await prisma.contact.deleteMany();
-  await prisma.pipelineCard.deleteMany();
-  await prisma.pipelineColumn.deleteMany();
-  await prisma.pipeline.deleteMany();
-  await prisma.tenantModule.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('CreateTenantService', () => {

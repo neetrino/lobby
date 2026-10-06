@@ -3,6 +3,8 @@ import {
   disposeTestPrismaClient,
   type PrismaClient,
 } from '@lobby/database/testing';
+
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 const passwordHash =
@@ -19,10 +21,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.outboxEvent.deleteMany();
-  await prisma.contact.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('tenant database invariants', () => {

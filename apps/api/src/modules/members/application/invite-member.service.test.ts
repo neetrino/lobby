@@ -6,6 +6,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { requestContextFromSession } from '../../../common/tenant/request-context';
 import { MemberInvitationRepository } from '../infrastructure/member-invitation.repository';
@@ -24,12 +25,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.auditEvent.deleteMany();
-  await prisma.outboxEvent.deleteMany();
-  await prisma.memberInvitation.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenantModule.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('InviteMemberService', () => {

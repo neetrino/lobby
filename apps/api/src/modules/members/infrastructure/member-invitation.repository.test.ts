@@ -5,6 +5,7 @@ import {
 } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { MemberInvitationRepository } from './member-invitation.repository';
 
 let prisma: PrismaClient;
@@ -18,9 +19,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.memberInvitation.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('MemberInvitationRepository.markAccepted', () => {

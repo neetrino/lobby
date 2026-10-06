@@ -7,6 +7,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthorizationError, scopedTenantId } from '../auth/authorization';
+import { clearTestTenantData } from '../../testing/clear-test-tenant-data';
 import { mapHttpException } from '../http/map-http-exception';
 import { requestContextFromSession } from '../tenant/request-context';
 import type { TenantId } from '../tenant/tenant-id';
@@ -24,8 +25,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.tenantModule.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('module entitlement', () => {

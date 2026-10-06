@@ -6,6 +6,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AuthorizationError } from '../auth/authorization';
+import { clearTestTenantData } from '../../testing/clear-test-tenant-data';
 import { requestContextFromSession, type RequestContext } from '../tenant/request-context';
 import { AuditAccessService } from './audit-access.service';
 import { AuditEventStore } from './audit-event.store';
@@ -22,10 +23,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.auditEvent.deleteMany();
-  await prisma.contact.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe.sequential('AuditAccessService', () => {

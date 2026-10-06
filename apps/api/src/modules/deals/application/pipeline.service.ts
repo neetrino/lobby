@@ -100,7 +100,15 @@ export class PipelineService {
     await this.gate(context, cardPermission(kind, 'update'));
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
-    await patchCard(this.prisma, tenantId, pipeline.id, cardId, patch, this.cardTrace(context, kind, cardId, patch));
+    await patchCard(
+      this.prisma,
+      tenantId,
+      pipeline.id,
+      cardId,
+      patch,
+      this.fieldChange(context, kind, cardId, patch),
+      this.stageChange(context, kind, cardId),
+    );
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
@@ -159,33 +167,8 @@ export class PipelineService {
     });
   }
 
-  private cardTrace(
-    context: RequestContext,
-    kind: PipelineKindName,
-    cardId: string,
-    patch: CardPatch,
-  ): AfterWrite | undefined {
-    const traces = [this.stageChange(context, kind, cardId, patch), this.fieldChange(context, kind, cardId, patch)];
-    const pending = traces.filter((trace): trace is AfterWrite => trace !== undefined);
-    if (pending.length === 0) {
-      return undefined;
-    }
-    return async (tx) => {
-      for (const trace of pending) {
-        await trace(tx);
-      }
-    };
-  }
-
-  private stageChange(
-    context: RequestContext,
-    kind: PipelineKindName,
-    cardId: string,
-    patch: CardPatch,
-  ): AfterWrite | undefined {
-    if (patch.columnId === undefined) {
-      return undefined;
-    }
+  /** Called by patchCard only after it has seen that the card left its column. */
+  private stageChange(context: RequestContext, kind: PipelineKindName, cardId: string): AfterWrite {
     return pipelineTrace(this.audit, this.outbox, context, {
       action: kind === 'lead' ? 'lead.stage.changed' : 'deal.stage.changed',
       resourceType: kind,

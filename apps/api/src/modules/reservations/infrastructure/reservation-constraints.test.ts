@@ -5,6 +5,8 @@ import {
 } from '@lobby/database/testing';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
+
 let prisma: PrismaClient;
 
 beforeAll(async () => {
@@ -136,14 +138,6 @@ function at(time: string): Date {
   return new Date(`2026-10-01T${time}:00.000Z`);
 }
 
-async function clearReservationData(): Promise<void> {
-  if (!prisma) return;
-  await prisma.reservationStatusHistory.deleteMany();
-  await prisma.reservationTable.deleteMany();
-  await prisma.reservation.deleteMany();
-  await prisma.servicePeriod.deleteMany();
-  await prisma.restaurantTable.deleteMany();
-  await prisma.diningArea.deleteMany();
-  await prisma.venue.deleteMany();
-  await prisma.tenant.deleteMany();
+function clearReservationData(): Promise<void> {
+  return clearTestTenantData(prisma);
 }

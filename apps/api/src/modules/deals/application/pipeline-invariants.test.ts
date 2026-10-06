@@ -3,6 +3,8 @@ import {
   disposeTestPrismaClient,
   type PrismaClient,
 } from '@lobby/database/testing';
+
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 let prisma: PrismaClient;
@@ -16,10 +18,7 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.pipelineCard.deleteMany();
-  await prisma.pipelineColumn.deleteMany();
-  await prisma.pipeline.deleteMany();
-  await prisma.tenant.deleteMany();
+  await clearTestTenantData(prisma);
 });
 
 describe('pipeline database invariants', () => {

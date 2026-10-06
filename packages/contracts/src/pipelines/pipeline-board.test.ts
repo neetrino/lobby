@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { pipelineBoardResponseSchema } from './pipeline-board';
+import { pipelineBoardResponseSchema } from './pipeline-board.js';
 
 describe('pipelineBoardResponseSchema', () => {
   it('accepts a board and rejects a card with a missing amount', () => {

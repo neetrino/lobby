@@ -7,6 +7,7 @@ import {
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
+import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { CreateTenantService } from '../../organizations';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
@@ -210,22 +211,8 @@ function invoke(exception: unknown): { statusCode: number; body: unknown } {
   return captureException(new IdentityExceptionFilter(), exception);
 }
 
-async function clearTenants(): Promise<void> {
-  if (!prisma) {
-    return;
-  }
-  await prisma.reservationStatusHistory.deleteMany();
-  await prisma.reservationTable.deleteMany();
-  await prisma.reservation.deleteMany();
-  await prisma.servicePeriod.deleteMany();
-  await prisma.restaurantTable.deleteMany();
-  await prisma.diningArea.deleteMany();
-  await prisma.venue.deleteMany();
-  await prisma.outboxEvent.deleteMany();
-  await prisma.contact.deleteMany();
-  await prisma.tenantModule.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.tenant.deleteMany();
+function clearTenants(): Promise<void> {
+  return clearTestTenantData(prisma);
 }
 
 class RecordingCookieWriter implements SessionCookieWriter {

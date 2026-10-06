@@ -129,6 +129,14 @@ describe('pipeline card details', () => {
 
     expect(moved.status).toBe(200);
     expect(source.map((card) => [card.title, card.position])).toEqual([['A', 0], ['C', 1]]);
+    expect(await prisma.auditEvent.count({ where: { action: 'lead.stage.changed' } })).toBe(1);
+    const sameColumn = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${middle?.id}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: destinationId });
+    expect(sameColumn.status).toBe(200);
+    expect(await prisma.auditEvent.count({ where: { action: 'lead.stage.changed' } })).toBe(1);
     expect(priced.status).toBe(200);
     expect(afterDelete.map((card) => [card.title, card.position])).toEqual([['C', 0]]);
     const audit = await prisma.auditEvent.findFirst({ where: { action: 'pipeline.card.updated' } });
