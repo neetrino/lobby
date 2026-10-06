@@ -21,6 +21,7 @@ export const auditActions = {
   LEAD_CONVERTED: 'lead.converted',
   PIPELINE_CONFIGURED: 'pipeline.configured',
   PIPELINE_CARD_DELETED: 'pipeline.card.deleted',
+  PIPELINE_CARD_UPDATED: 'pipeline.card.updated',
   RESERVATION_STATUS_CHANGED: 'reservation.status.changed',
 } as const;
 
@@ -41,6 +42,7 @@ export const auditActionValues = [
   auditActions.LEAD_CONVERTED,
   auditActions.PIPELINE_CONFIGURED,
   auditActions.PIPELINE_CARD_DELETED,
+  auditActions.PIPELINE_CARD_UPDATED,
   auditActions.RESERVATION_STATUS_CHANGED,
 ] as const;
 

@@ -1,7 +1,7 @@
 import { localeSchema } from '@lobby/contracts';
 import { z } from 'zod';
 
-import { passwordPolicySchema } from '../../../identity/domain/password-policy';
+import { passwordPolicySchema } from '../../../identity';
 
 const normalizedEmail = z.string().trim().toLowerCase().pipe(z.email());
 const invitationToken = z.string().trim().min(43).max(128);

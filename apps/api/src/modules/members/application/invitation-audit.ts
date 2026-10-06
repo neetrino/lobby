@@ -1,6 +1,6 @@
 import { auditActions, type InvitationAudit } from '@lobby/contracts';
 
-import type { AuditClient } from '../../identity/application/terminate-user-sessions.service';
+import type { AuditClient } from '../../identity';
 import type { RequestContext } from '../../../common/tenant/request-context';
 
 type InvitationAuditAction = InvitationAudit['action'];

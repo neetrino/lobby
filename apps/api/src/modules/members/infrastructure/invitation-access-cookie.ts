@@ -1,4 +1,4 @@
-import { readSessionCookieSecure } from '../../identity/infrastructure/session-cookie';
+import { readSessionCookieSecure } from '../../identity';
 
 export const INVITATION_ACCESS_COOKIE = 'invitation_accept';
 export const INVITATION_ACCESS_COOKIE_PATH = '/api/v1/auth/invitations';

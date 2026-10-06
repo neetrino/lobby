@@ -100,7 +100,7 @@ export class PipelineService {
     await this.gate(context, cardPermission(kind, 'update'));
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
-    await patchCard(this.prisma, tenantId, pipeline.id, cardId, patch, this.stageChange(context, kind, cardId, patch));
+    await patchCard(this.prisma, tenantId, pipeline.id, cardId, patch, this.cardTrace(context, kind, cardId, patch));
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
@@ -159,6 +159,24 @@ export class PipelineService {
     });
   }
 
+  private cardTrace(
+    context: RequestContext,
+    kind: PipelineKindName,
+    cardId: string,
+    patch: CardPatch,
+  ): AfterWrite | undefined {
+    const traces = [this.stageChange(context, kind, cardId, patch), this.fieldChange(context, kind, cardId, patch)];
+    const pending = traces.filter((trace): trace is AfterWrite => trace !== undefined);
+    if (pending.length === 0) {
+      return undefined;
+    }
+    return async (tx) => {
+      for (const trace of pending) {
+        await trace(tx);
+      }
+    };
+  }
+
   private stageChange(
     context: RequestContext,
     kind: PipelineKindName,
@@ -174,6 +192,24 @@ export class PipelineService {
       resourceId: cardId,
       kind,
       change: 'moved',
+    });
+  }
+
+  private fieldChange(
+    context: RequestContext,
+    kind: PipelineKindName,
+    cardId: string,
+    patch: CardPatch,
+  ): AfterWrite | undefined {
+    if (!tracksCardFields(patch)) {
+      return undefined;
+    }
+    return pipelineTrace(this.audit, this.outbox, context, {
+      action: 'pipeline.card.updated',
+      resourceType: kind,
+      resourceId: cardId,
+      kind,
+      change: 'updated',
     });
   }
 
@@ -202,6 +238,15 @@ const cardPermissions = {
     delete: 'deals:delete',
   },
 } as const satisfies Record<PipelineKindName, Record<'create' | 'read' | 'update' | 'delete', Permission>>;
+
+function tracksCardFields(patch: CardPatch): boolean {
+  return (
+    patch.amount !== undefined ||
+    patch.outcome !== undefined ||
+    patch.contactId !== undefined ||
+    patch.ownerUserId !== undefined
+  );
+}
 
 function cardPermission(
   kind: PipelineKindName,

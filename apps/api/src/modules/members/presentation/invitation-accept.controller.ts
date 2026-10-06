@@ -3,8 +3,7 @@ import { Controller, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
 import { Public } from '../../../common/auth/public';
 import { ZodBody } from '../../../common/pipes/zod-input';
 import { readClientAddress } from '../../../common/security/client-address';
-import { AuthRateLimitService } from '../../identity/application/auth-rate-limit.service';
-import { SessionCookie, type SessionCookieWriter } from '../../identity/infrastructure/session-cookie';
+import { AuthRateLimitService, SessionCookie, type SessionCookieWriter } from '../../identity';
 import { AcceptInvitationService } from '../application/accept-invitation.service';
 import {
   InvitationAccessCookie,

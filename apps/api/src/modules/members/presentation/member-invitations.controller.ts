@@ -4,7 +4,7 @@ import { CurrentRequest } from '../../../common/auth/current-request';
 import { Authorize } from '../../../common/authorization/permission.guard';
 import { ZodBody, ZodParam } from '../../../common/pipes/zod-input';
 import type { RequestContext } from '../../../common/tenant/request-context';
-import { AuthRateLimitService } from '../../identity/application/auth-rate-limit.service';
+import { AuthRateLimitService } from '../../identity';
 import { readClientAddress } from '../../../common/security/client-address';
 import { InviteMemberService } from '../application/invite-member.service';
 import { ListTeamService } from '../application/list-team.service';

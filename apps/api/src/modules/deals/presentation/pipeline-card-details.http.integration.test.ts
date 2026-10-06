@@ -93,6 +93,48 @@ describe('pipeline card details', () => {
     expect(event?.payload).toMatchObject({ kind: 'lead', change: 'deleted' });
   }, 30_000);
 
+  it('compacts positions after a move or delete and audits an amount change', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-compact', 'ada@example.com');
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const sourceId = lead.body.data.columns[0].id as string;
+    const destinationId = lead.body.data.columns[1].id as string;
+    for (const title of ['A', 'B', 'C']) {
+      await request(http)
+        .post('/api/v1/pipelines/lead/cards')
+        .set('Origin', origin)
+        .set('Cookie', owner)
+        .send({ columnId: sourceId, title });
+    }
+    const listed = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const sourceCards = listed.body.data.columns[0].cards as Array<{ id: string; title: string }>;
+    const middle = sourceCards.find((card) => card.title === 'B');
+    const first = sourceCards.find((card) => card.title === 'A');
+    const moved = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${middle?.id}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: destinationId });
+    const priced = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${middle?.id}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ amount: 20 });
+    const removed = await request(http)
+      .delete(`/api/v1/pipelines/lead/cards/${first?.id}`)
+      .set('Origin', origin)
+      .set('Cookie', owner);
+    const source = columnCards(moved.body, sourceId);
+    const afterDelete = columnCards(removed.body, sourceId);
+
+    expect(moved.status).toBe(200);
+    expect(source.map((card) => [card.title, card.position])).toEqual([['A', 0], ['C', 1]]);
+    expect(priced.status).toBe(200);
+    expect(afterDelete.map((card) => [card.title, card.position])).toEqual([['C', 0]]);
+    const audit = await prisma.auditEvent.findFirst({ where: { action: 'pipeline.card.updated' } });
+    expect(audit?.resourceType).toBe('lead');
+  }, 30_000);
+
   it('hides lead routes when the account turns leads off', async () => {
     const http = app.getHttpServer();
     const owner = await login(http, 'pipe-hide', 'ada@example.com');
@@ -105,6 +147,13 @@ describe('pipeline card details', () => {
     expect(deal.status).toBe(200);
   }, 30_000);
 });
+
+function columnCards(
+  body: { data: { columns: Array<{ id: string; cards: Array<{ title: string; position: number }> }> } },
+  columnId: string,
+): Array<{ title: string; position: number }> {
+  return body.data.columns.find((column) => column.id === columnId)?.cards ?? [];
+}
 
 async function login(http: Parameters<typeof request>[0], subdomain: string, email: string): Promise<string> {
   const registered = await request(http).post('/api/v1/auth/register').set('Origin', origin).send({

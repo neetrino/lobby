@@ -10,11 +10,17 @@ import {
 
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
 import { requestContextFromSession } from '../../../common/tenant/request-context';
-import { IdentityError, identityErrorCodes } from '../../identity/domain/identity.errors';
-import { PASSWORD_HASHER, type PasswordHasher } from '../../identity/domain/password-hasher';
-import type { AuditClient } from '../../identity/application/terminate-user-sessions.service';
-import { INCIDENT_LOGGER, type IncidentLogger } from '../../identity/infrastructure/incident-logger';
-import { RedisSessionStore, StaleSessionError } from '../../identity/infrastructure/redis-session.store';
+import {
+  INCIDENT_LOGGER,
+  IdentityError,
+  PASSWORD_HASHER,
+  RedisSessionStore,
+  StaleSessionError,
+  identityErrorCodes,
+  type AuditClient,
+  type IncidentLogger,
+  type PasswordHasher,
+} from '../../identity';
 import { InvitationError, invitationErrorCodes } from '../domain/invitation.errors';
 import { isInvitationOpen } from '../domain/invitation-policy';
 import {

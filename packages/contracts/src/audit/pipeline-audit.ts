@@ -19,6 +19,7 @@ export const pipelineAuditSchema = z.strictObject({
   action: z.enum([
     auditActions.PIPELINE_CONFIGURED,
     auditActions.PIPELINE_CARD_DELETED,
+    auditActions.PIPELINE_CARD_UPDATED,
     auditActions.DEAL_STAGE_CHANGED,
     auditActions.LEAD_STAGE_CHANGED,
     auditActions.LEAD_CONVERTED,

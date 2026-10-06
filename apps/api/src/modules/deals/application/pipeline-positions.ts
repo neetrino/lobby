@@ -85,6 +85,26 @@ async function shiftPositions(
   });
 }
 
+/** Rewrites one column so the remaining cards occupy 0, 1, 2, … in their current order. */
+export async function compactColumn(tx: Tx, tenantId: TenantId, columnId: string): Promise<void> {
+  await lockColumn(tx, columnId);
+  const cards = await tx.pipelineCard.findMany({
+    where: { tenantId, columnId },
+    orderBy: [{ position: 'asc' }, { id: 'asc' }],
+    select: { id: true, position: true },
+  });
+  if (cards.every((card, index) => card.position === index)) {
+    return;
+  }
+  await tx.pipelineCard.updateMany({
+    where: { tenantId, columnId },
+    data: { position: { increment: 1_000_000 } },
+  });
+  for (const [index, card] of cards.entries()) {
+    await tx.pipelineCard.update({ where: { id: card.id }, data: { position: index } });
+  }
+}
+
 export async function requireColumn(
   tx: Tx,
   tenantId: TenantId,

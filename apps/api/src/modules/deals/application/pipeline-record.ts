@@ -14,6 +14,7 @@ import type { PipelineKindName } from './pipeline-defaults';
 type PipelineAction =
   | 'pipeline.configured'
   | 'pipeline.card.deleted'
+  | 'pipeline.card.updated'
   | 'deal.stage.changed'
   | 'lead.stage.changed'
   | 'lead.converted';

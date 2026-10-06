@@ -8,6 +8,7 @@ import type { PipelineKindName } from './pipeline-defaults';
 import { lockCard, lockColumn, lockPipeline } from './pipeline-lock';
 import {
   nextColumnPosition,
+  compactColumn,
   placeAt,
   placeCard,
   requireCard,
@@ -202,7 +203,9 @@ export async function patchCard(
       where: { id: cardId },
       data: cardChanges(patch, moved, destination, position),
     }).catch(rethrowWrite);
-    if (!moved && patch.position !== undefined) {
+    if (moved) {
+      await compactColumn(tx, tenantId, card.columnId);
+    } else if (patch.position !== undefined) {
       await placeAt(tx, tenantId, card.columnId, cardId, card.position, patch.position);
     }
     await after?.(tx);
@@ -218,8 +221,9 @@ export async function deleteCard(
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await lockCard(tx, cardId);
-    await requireCard(tx, tenantId, pipelineId, cardId);
+    const card = await requireCard(tx, tenantId, pipelineId, cardId);
     await tx.pipelineCard.delete({ where: { id: cardId } }).catch(rethrowWrite);
+    await compactColumn(tx, tenantId, card.columnId);
     await after?.(tx);
   });
 }

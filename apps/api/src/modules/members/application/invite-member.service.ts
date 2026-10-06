@@ -7,7 +7,7 @@ import { createInvitationSecret, sealInvitationToken } from '../infrastructure/i
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import type { RequestContext } from '../../../common/tenant/request-context';
-import type { AuditClient } from '../../identity/application/terminate-user-sessions.service';
+import type { AuditClient } from '../../identity';
 import { invitationAuditActions, invitationAuditRecord } from './invitation-audit';
 import { invitationCreatedEvent } from './invitation-events';
 import { rethrowInvitationConflict } from './invitation-conflict';

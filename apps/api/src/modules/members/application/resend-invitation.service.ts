@@ -6,7 +6,7 @@ import { createInvitationSecret, sealInvitationToken } from '../infrastructure/i
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import type { RequestContext } from '../../../common/tenant/request-context';
-import type { AuditClient } from '../../identity/application/terminate-user-sessions.service';
+import type { AuditClient } from '../../identity';
 import { InvitationError, invitationErrorCodes } from '../domain/invitation.errors';
 import { invitationExpiresAt } from '../domain/invitation-policy';
 import { MemberInvitationRepository } from '../infrastructure/member-invitation.repository';

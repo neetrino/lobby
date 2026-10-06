@@ -88,6 +88,7 @@ function parseAuditWrite(
   if (
     input.action === 'pipeline.configured' ||
     input.action === 'pipeline.card.deleted' ||
+    input.action === 'pipeline.card.updated' ||
     input.action === 'deal.stage.changed' ||
     input.action === 'lead.stage.changed' ||
     input.action === 'lead.converted'

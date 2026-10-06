@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
 import type { RequestContext } from '../../../common/tenant/request-context';
-import type { AuditClient } from '../../identity/application/terminate-user-sessions.service';
+import type { AuditClient } from '../../identity';
 import { InvitationError, invitationErrorCodes } from '../domain/invitation.errors';
 import { MemberInvitationRepository } from '../infrastructure/member-invitation.repository';
 import { invitationAuditActions, invitationAuditRecord } from './invitation-audit';

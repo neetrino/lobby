@@ -1,7 +1,7 @@
 import { AUDIT_IP_HASH_KEY, hashAuditIp } from '../../../common/audit/audit-ip-hash';
 import { currentRequestId } from '../../../common/http/request-context';
 import { readClientAddress } from '../../../common/security/client-address';
-import type { AuditClient } from '../../identity/application/terminate-user-sessions.service';
+import type { AuditClient } from '../../identity';
 
 export type InvitationHttpRequest = {
   requestId?: string;

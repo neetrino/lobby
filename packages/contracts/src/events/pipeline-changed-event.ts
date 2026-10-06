@@ -11,7 +11,7 @@ export const pipelineChangedEventSchema = versionedEventSchema.extend({
   aggregateType: z.literal('pipeline'),
   payload: z.strictObject({
     kind: z.enum(['lead', 'deal']),
-    change: z.enum(['configured', 'deleted', 'moved', 'converted']),
+    change: z.enum(['configured', 'deleted', 'moved', 'converted', 'updated']),
   }),
 });
 
