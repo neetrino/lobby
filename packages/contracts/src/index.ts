@@ -12,6 +12,7 @@ export {
   authenticationVersionChangeSchema,
   contactLifecycleAuditSchema,
   invitationAuditSchema,
+  pipelineAuditSchema,
   passwordResetAuditSchema,
   userSessionsTerminatedAuditSchema,
 } from './audit/index.js';
@@ -23,9 +24,27 @@ export type {
   AuthenticationVersionChange,
   ContactLifecycleAudit,
   InvitationAudit,
+  PipelineAudit,
   PasswordResetAudit,
   UserSessionsTerminatedAudit,
 } from './audit/index.js';
+export {
+  dashboardRangeDays,
+  dashboardRangeDaysSchema,
+  dashboardScopeSchema,
+  dashboardScopes,
+  dashboardWidgetKeySchema,
+  dashboardWidgetKeys,
+} from './dashboard/dashboard.js';
+export type { DashboardRangeDays, DashboardScope, DashboardWidgetKey } from './dashboard/dashboard.js';
+export {
+  PIPELINE_AMOUNT_MAX,
+  pipelineBoardResponseSchema,
+  pipelineBoardSchema,
+  pipelineKindSchema,
+  pipelineKinds,
+} from './pipelines/index.js';
+export type { PipelineBoard, PipelineKindName } from './pipelines/index.js';
 export { moduleKeySchema, moduleKeys } from './enums/index.js';
 export type { ModuleKey } from './enums/index.js';
 export {
@@ -34,9 +53,11 @@ export {
   CONTACT_UPDATED_EVENT_VERSION,
   INVITATION_CREATED_EVENT_VERSION,
   PASSWORD_RESET_REQUESTED_EVENT_VERSION,
+  PIPELINE_CHANGED_EVENT_VERSION,
   TENANT_CREATED_EVENT_VERSION,
   contactArchivedEventSchema,
   contactCreatedEventSchema,
+  pipelineChangedEventSchema,
   contactUpdatedEventSchema,
   invitationCreatedEventSchema,
   passwordResetRequestedEventSchema,
@@ -47,6 +68,7 @@ export {
 export type {
   ContactArchivedEvent,
   ContactCreatedEvent,
+  PipelineChangedEvent,
   ContactUpdatedEvent,
   InvitationCreatedEvent,
   PasswordResetRequestedEvent,

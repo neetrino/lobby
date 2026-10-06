@@ -48,7 +48,7 @@ export function LoginForm({
     hasSession()
       .then((signedIn) => {
         if (active && signedIn) {
-          router.replace(`/${locale}/contacts`);
+          router.replace(`/${locale}/dashboard`);
         }
       })
       .catch(() => undefined);
@@ -72,7 +72,7 @@ export function LoginForm({
     setTone('error');
     try {
       await loginAccount(draft);
-      router.push(`/${locale}/contacts`);
+      router.push(`/${locale}/dashboard`);
     } catch (caught) {
       const code = caught instanceof AuthRequestError ? caught.code : 'REQUEST_FAILED';
       setBanner(authErrorText(t, code));

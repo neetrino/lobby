@@ -1,11 +1,11 @@
-import { Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs/common';
+import { Controller, Get, HttpCode, Inject, NotFoundException, Patch, Post, Req, Res } from '@nestjs/common';
 import { z } from 'zod';
 
 import type { AuthenticatedSession } from '../../../common/auth/authenticated-session';
 import { CurrentSession } from '../../../common/auth/current-request';
 import { Authorize } from '../../../common/authorization/permission.guard';
 import { currentRequestId } from '../../../common/http/request-context';
-import { ZodParam } from '../../../common/pipes/zod-input';
+import { ZodBody, ZodParam } from '../../../common/pipes/zod-input';
 import { AUDIT_IP_HASH_KEY, hashAuditIp } from '../../../common/audit/audit-ip-hash';
 import { readClientAddress } from '../../../common/security/client-address';
 import { requestContextFromSession } from '../../../common/tenant/request-context';
@@ -13,18 +13,21 @@ import {
   TerminateUserSessionsService,
   type AuditClient,
 } from '../application/terminate-user-sessions.service';
+import { PrismaSessionUserStore } from '../infrastructure/prisma-session-user';
 import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
 
 const userIdSchema = z.uuid();
+const leadsPreferenceSchema = z.strictObject({ enabled: z.boolean() });
 
 export type SessionView = {
-  user: { id: string; role: AuthenticatedSession['role'] };
+  user: { id: string; name: string; role: AuthenticatedSession['role']; leadsEnabled: boolean };
   tenant: { id: string };
 };
 
 @Controller('auth')
 export class SessionController {
   constructor(
+    private readonly users: PrismaSessionUserStore,
     private readonly terminateSessions: TerminateUserSessionsService,
     private readonly sessionCookie: SessionCookie,
     @Inject(AUDIT_IP_HASH_KEY) private readonly auditIpHashKey: string | null,
@@ -32,13 +35,32 @@ export class SessionController {
 
   /** Safe principal. The raw session id and password hash are not included. */
   @Get('session')
-  session(@CurrentSession() current: AuthenticatedSession): { data: SessionView } {
+  async session(@CurrentSession() current: AuthenticatedSession): Promise<{ data: SessionView }> {
+    const account = await this.users.findAccount(current.userId, current.tenantId);
     return {
       data: {
-        user: { id: current.userId, role: current.role },
+        user: {
+          id: current.userId,
+          name: account?.name ?? '',
+          role: current.role,
+          leadsEnabled: account?.leadsEnabled ?? true,
+        },
         tenant: { id: current.tenantId },
       },
     };
+  }
+
+  /** The caller's own Leads switch. It does not change the organization module. */
+  @Patch('session/leads')
+  async updateLeads(
+    @CurrentSession() current: AuthenticatedSession,
+    @ZodBody(leadsPreferenceSchema) body: { enabled: boolean },
+  ): Promise<{ data: SessionView }> {
+    const updated = await this.users.setLeadsEnabled(current.userId, current.tenantId, body.enabled);
+    if (!updated) {
+      throw new NotFoundException();
+    }
+    return this.session(current);
   }
 
   /** Revokes every session of the caller, including the cookie used for this request. */

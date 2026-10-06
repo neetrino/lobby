@@ -10,8 +10,8 @@ describe('formatArchivedMark', () => {
 
 describe('formatContactStamp', () => {
   it('shows hours and minutes without seconds', () => {
-    expect(formatContactStamp('2026-10-02T09:30:07.460Z', 'en-GB')).toEqual({
-      date: '02/10/2026',
+    expect(formatContactStamp('2026-10-02T09:30:07.460Z', 'en')).toEqual({
+      date: 'Oct 2, 2026',
       time: '09:30',
     });
   });

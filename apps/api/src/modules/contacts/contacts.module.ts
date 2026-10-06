@@ -6,9 +6,11 @@ import { DatabaseModule } from '../../common/database/database.module';
 import { OutboxModule } from '../../common/outbox';
 import { ContactAccessService } from './application/contact-access.service';
 import { ContactLifecycleService } from './application/contact-lifecycle.service';
+import { ContactsDashboardProjection } from './application/contacts-dashboard.projection';
 import { ContactsReadService } from './application/contacts-read.service';
 import { CreateContactService } from './application/create-contact.service';
 import { ContactRepository } from './infrastructure/contact.repository';
+import { ContactsDashboardQuery } from './infrastructure/contacts-dashboard.query';
 import { ContactsController } from './presentation/contacts.controller';
 
 @Module({
@@ -20,7 +22,9 @@ import { ContactsController } from './presentation/contacts.controller';
     ContactAccessService,
     ContactLifecycleService,
     ContactsReadService,
+    ContactsDashboardQuery,
+    ContactsDashboardProjection,
   ],
-  exports: [ContactsReadService],
+  exports: [ContactsReadService, ContactsDashboardProjection],
 })
 export class ContactsModule {}

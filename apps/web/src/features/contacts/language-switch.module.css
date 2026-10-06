@@ -40,6 +40,17 @@
   background: #e4ebf6;
 }
 
+.compact {
+  height: 40px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #e2e8f4;
+}
+
+.compact:hover {
+  background: #f8fafc;
+}
+
 .trigger:focus-visible,
 .option:focus-visible,
 .optionActive:focus-visible {

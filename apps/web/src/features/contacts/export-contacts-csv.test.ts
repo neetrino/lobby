@@ -52,7 +52,10 @@ describe('downloadContactsCsv', () => {
     });
 
     await expect(
-      downloadContactsCsv({ search: '', archived: false, sort: 'asc', limit: 50 }, labels),
+      downloadContactsCsv(
+        { search: '', archived: false, sort: 'asc', limit: 50, type: 'all', owner: '' },
+        labels,
+      ),
     ).rejects.toMatchObject({ code: 'EXPORT_LIMIT', count: 20 });
   });
 });
@@ -69,6 +72,7 @@ function contact(overrides: Partial<Contact>): Contact {
     updatedAt: '2026-10-02T08:43:50.000Z',
     createdByUserId: 'user',
     ownerUserId: 'user',
+    ownerName: 'Anna S.',
     ...overrides,
   };
 }

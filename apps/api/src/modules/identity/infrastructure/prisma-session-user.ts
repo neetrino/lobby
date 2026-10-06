@@ -26,6 +26,35 @@ export type SessionVersionReader = {
 export class PrismaSessionUserStore {
   constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
 
+  /** Name and the caller's Leads preference. The session record itself does not store them. */
+  async findAccount(
+    userId: string,
+    tenantId: string,
+  ): Promise<{ name: string; leadsEnabled: boolean } | null> {
+    return this.prisma.user.findUnique({
+      where: { id_tenantId: { id: userId, tenantId } },
+      select: { name: true, leadsEnabled: true },
+    });
+  }
+
+  /** Turns Leads on or off for this account. Deal access is unchanged. */
+  async setLeadsEnabled(userId: string, tenantId: string, enabled: boolean): Promise<boolean> {
+    const updated = await this.prisma.user.updateMany({
+      where: { id: userId, tenantId },
+      data: { leadsEnabled: enabled },
+    });
+    return updated.count === 1;
+  }
+
+  /** Name shown in the workspace shell. The session record itself does not store it. */
+  async findName(userId: string, tenantId: string): Promise<string | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { id_tenantId: { id: userId, tenantId } },
+      select: { name: true },
+    });
+    return user?.name ?? null;
+  }
+
   /** Loads the live user row for the session's own tenant. Redis is not enough. */
   async findSecurity(userId: string, tenantId: string): Promise<SessionUserSecurity | null> {
     const user = await this.prisma.user.findUnique({

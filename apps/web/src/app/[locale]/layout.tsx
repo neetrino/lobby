@@ -1,4 +1,4 @@
-import { Noto_Sans, Noto_Sans_Armenian } from 'next/font/google';
+import { Inter, Noto_Sans, Noto_Sans_Armenian } from 'next/font/google';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
@@ -11,11 +11,19 @@ import { LocaleDocumentLang } from './locale-document-lang';
 const sans = Noto_Sans({
   subsets: ['latin', 'cyrillic'],
   weight: ['400', '600', '700'],
+  variable: '--font-sans',
 });
 
 const armenian = Noto_Sans_Armenian({
   subsets: ['armenian'],
   weight: ['400', '600', '700'],
+  variable: '--font-armenian',
+});
+
+const inter = Inter({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '600', '700'],
+  variable: '--font-inter',
 });
 
 type LocaleLayoutProps = {
@@ -37,7 +45,8 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       <LocaleDocumentLang locale={locale} />
       <div
         lang={locale}
-        style={{ fontFamily: `${armenian.style.fontFamily}, ${sans.style.fontFamily}, sans-serif` }}
+        className={`${inter.variable} ${armenian.variable} ${sans.variable}`}
+        style={{ fontFamily: 'var(--font-armenian), var(--font-sans), sans-serif' }}
       >
         {children}
       </div>

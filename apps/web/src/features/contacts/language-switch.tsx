@@ -7,7 +7,7 @@ import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
 import styles from './language-switch.module.css';
 
-export function LanguageSwitch() {
+export function LanguageSwitch({ compact = false }: { compact?: boolean }) {
   const t = useTranslations('contacts.language');
   const router = useRouter();
   const locale = useLocale();
@@ -30,7 +30,7 @@ export function LanguageSwitch() {
     <div className={styles.language} ref={rootRef}>
       <button
         type="button"
-        className={styles.trigger}
+        className={compact ? `${styles.trigger} ${styles.compact}` : styles.trigger}
         aria-label={t('label')}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -38,11 +38,7 @@ export function LanguageSwitch() {
         onClick={() => setOpen((value) => !value)}
       >
         <GlobeIcon />
-        <span>{nameOf(t, current)}</span>
-        <span className={styles.bar} aria-hidden="true">
-          |
-        </span>
-        <span>{codeOf(t, current)}</span>
+        <span>{compact ? codeOf(t, current) : nameOf(t, current)}</span>
         <ChevronIcon />
       </button>
       {open ? (
@@ -57,7 +53,6 @@ export function LanguageSwitch() {
                 onClick={() => choose(item)}
               >
                 <span>{nameOf(t, item)}</span>
-                <span className={styles.code}>{codeOf(t, item)}</span>
               </button>
             </li>
           ))}

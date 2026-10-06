@@ -62,10 +62,13 @@ describe('session endpoints', () => {
     const owner = await createUser('acme', 'OWNER');
     const opened = await openSession(redis, owner);
     const current = await principal(redis, opened.rawSessionId);
-    const body = controller(redis).session(current);
+    const body = await controller(redis).session(current);
 
     expect(body).toEqual({
-      data: { user: { id: owner.userId, role: 'OWNER' }, tenant: { id: owner.tenantId } },
+      data: {
+        user: { id: owner.userId, name: 'OWNER', role: 'OWNER', leadsEnabled: true },
+        tenant: { id: owner.tenantId },
+      },
     });
     expect(JSON.stringify(body)).not.toContain(opened.rawSessionId);
     expect(JSON.stringify(body)).not.toContain('passwordHash');
@@ -133,6 +136,7 @@ function roleContext(role: 'OWNER' | 'ADMIN' | 'MEMBER'): ExecutionContext {
 function controller(redis: IndexedSessionRedis): SessionController {
   const sessions = new RedisSessionStore(redis, new PrismaSessionUserStore(prisma));
   return new SessionController(
+    new PrismaSessionUserStore(prisma),
     new TerminateUserSessionsService(
       new PrismaSessionUserStore(prisma),
       sessions,

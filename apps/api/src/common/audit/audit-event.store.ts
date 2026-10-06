@@ -4,10 +4,12 @@ import {
   contactLifecycleAuditSchema,
   invitationAuditSchema,
   passwordResetAuditSchema,
+  pipelineAuditSchema,
   userSessionsTerminatedAuditSchema,
   type ContactLifecycleAudit,
   type InvitationAudit,
   type PasswordResetAudit,
+  type PipelineAudit,
   type UserSessionsTerminatedAudit,
 } from '@lobby/contracts';
 import type { Prisma, PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
@@ -27,7 +29,8 @@ export type AuditWrite =
   | Omit<UserSessionsTerminatedAudit, 'schemaVersion'>
   | Omit<ContactLifecycleAudit, 'schemaVersion'>
   | Omit<InvitationAudit, 'schemaVersion'>
-  | Omit<PasswordResetAudit, 'schemaVersion'>;
+  | Omit<PasswordResetAudit, 'schemaVersion'>
+  | Omit<PipelineAudit, 'schemaVersion'>;
 
 /** Append-only audit rows. There is no update and no delete. */
 @Injectable()
@@ -77,10 +80,19 @@ export class AuditEventStore {
 
 function parseAuditWrite(
   input: AuditWrite,
-): UserSessionsTerminatedAudit | ContactLifecycleAudit | InvitationAudit | PasswordResetAudit {
+): UserSessionsTerminatedAudit | ContactLifecycleAudit | InvitationAudit | PasswordResetAudit | PipelineAudit {
   const record = { ...input, schemaVersion: auditSchemaVersion };
   if (input.action === 'contact.archived' || input.action === 'contact.restored') {
     return contactLifecycleAuditSchema.parse(record);
+  }
+  if (
+    input.action === 'pipeline.configured' ||
+    input.action === 'pipeline.card.deleted' ||
+    input.action === 'deal.stage.changed' ||
+    input.action === 'lead.stage.changed' ||
+    input.action === 'lead.converted'
+  ) {
+    return pipelineAuditSchema.parse(record);
   }
   if (input.resourceType === 'memberInvitation') {
     return invitationAuditSchema.parse(record);

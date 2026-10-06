@@ -46,6 +46,10 @@ model Tenant {
   auditEvents              AuditEvent[]
   memberInvitations        MemberInvitation[]
   passwordResets           PasswordReset[]
+  dashboardLayouts         UserDashboardLayout[]
+  pipelines                Pipeline[]
+  pipelineColumns          PipelineColumn[]
+  pipelineCards            PipelineCard[]
 
   @@map("tenants")
 }
@@ -62,6 +66,7 @@ model User {
   role                  TenantRole
   authenticationVersion Int        @default(1) @map("authentication_version")
   passwordChangedAt     DateTime?  @map("password_changed_at") @db.Timestamptz(3)
+  leadsEnabled          Boolean    @default(true) @map("leads_enabled")
   createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
@@ -73,6 +78,8 @@ model User {
   ownedContacts            Contact[]                  @relation("ContactOwner")
   memberInvitations        MemberInvitation[]         @relation("MemberInvitationInvitedBy")
   passwordResets           PasswordReset[]
+  dashboardLayout          UserDashboardLayout?
+  ownedPipelineCards       PipelineCard[]             @relation("PipelineCardOwner")
 
   @@unique([tenantId, email])
   @@unique([id, tenantId])
@@ -174,6 +181,23 @@ model PasswordReset {
   @@map("password_resets")
 }
 
+/// Per-user dashboard layout. The dashboard module owns this table and does not store other modules' facts here.
+model UserDashboardLayout {
+  tenantId    String   @map("tenant_id") @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  rangeDays   Int      @default(30) @map("range_days")
+  scope       String   @default("all")
+  customized  Boolean  @default(false)
+  widgetOrder String[] @default([]) @map("widget_order")
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  user   User   @relation(fields: [userId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@id([userId, tenantId])
+  @@map("user_dashboard_layouts")
+}
+
 enum ContactType {
   PERSON
   ORGANIZATION
@@ -198,6 +222,7 @@ model Contact {
   createdBy    User          @relation("ContactCreatedBy", fields: [createdByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
   owner        User          @relation("ContactOwner", fields: [ownerUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
   reservations Reservation[]
+  pipelineCards PipelineCard[]
 
   @@unique([id, tenantId])
   @@unique([tenantId, email])
@@ -425,4 +450,91 @@ model ReservationStatusHistory {
 
   @@index([tenantId, reservationId, changedAt])
   @@map("reservation_status_history")
+}
+
+enum PipelineKind {
+  LEAD
+  DEAL
+}
+
+/// One lead board and one deal board per tenant. Stage names belong to the tenant.
+model Pipeline {
+  id          String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String       @map("tenant_id") @db.Uuid
+  kind        PipelineKind
+  name        String
+  amountLabel String       @default("") @map("amount_label")
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  columns PipelineColumn[]
+  cards   PipelineCard[]
+
+  @@unique([tenantId, kind])
+  @@unique([id, tenantId])
+  @@map("pipelines")
+}
+
+/// Tenant-defined kanban column. Width is in pixels and stays inside 220–640.
+model PipelineColumn {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  pipelineId String   @map("pipeline_id") @db.Uuid
+  name       String
+  position   Int
+  widthPx    Int      @default(300) @map("width_px")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  pipeline Pipeline       @relation(fields: [pipelineId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  cards    PipelineCard[]
+
+  @@unique([pipelineId, position])
+  @@unique([id, tenantId])
+  @@unique([id, pipelineId, tenantId])
+  @@index([tenantId, pipelineId])
+  @@map("pipeline_columns")
+}
+
+enum PipelineCardOutcome {
+  OPEN
+  WON
+  LOST
+  DISQUALIFIED
+  CONVERTED
+}
+
+/// A lead or deal card. Amount is a PostgreSQL integer until a currency decimal is introduced.
+model PipelineCard {
+  id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String              @map("tenant_id") @db.Uuid
+  pipelineId       String              @map("pipeline_id") @db.Uuid
+  columnId         String              @map("column_id") @db.Uuid
+  title            String
+  company          String              @default("")
+  amount           Int                 @default(0)
+  position         Int
+  source           String              @default("")
+  qualification    String              @default("")
+  nextAction       String              @default("") @map("next_action")
+  lostReason       String              @default("") @map("lost_reason")
+  outcome          PipelineCardOutcome @default(OPEN)
+  expectedCloseOn  DateTime?           @map("expected_close_on") @db.Date
+  contactId        String?             @map("contact_id") @db.Uuid
+  ownerUserId      String?             @map("owner_user_id") @db.Uuid
+  createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  pipeline Pipeline       @relation(fields: [pipelineId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  column   PipelineColumn @relation(fields: [columnId, pipelineId, tenantId], references: [id, pipelineId, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  contact  Contact?       @relation(fields: [contactId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  owner    User?          @relation("PipelineCardOwner", fields: [ownerUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([id, tenantId])
+  @@unique([columnId, position])
+  @@index([tenantId, columnId, position])
+  @@map("pipeline_cards")
 }

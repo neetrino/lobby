@@ -17,6 +17,7 @@ const GUARDS_METADATA = '__guards__';
  */
 const callerSessionRoutes = new Set([
   'SessionController.session',
+  'SessionController.updateLeads',
   'SessionController.terminateAll',
 ]);
 
@@ -29,10 +30,12 @@ describe('route authorization', () => {
       'AuditEventsController',
       'AuthController',
       'ContactsController',
+      'DashboardController',
       'HealthController',
       'InvitationAcceptController',
       'MemberInvitationsController',
       'PasswordResetController',
+      'PipelinesController',
       'SessionController',
     ]);
     expect(gaps).toEqual([]);

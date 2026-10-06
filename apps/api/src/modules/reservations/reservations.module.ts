@@ -1,11 +1,19 @@
 import { Module } from '@nestjs/common';
 
+import { AuthorizationModule } from '../../common/authorization/authorization.module';
+import { DatabaseModule } from '../../common/database/database.module';
+import { ReservationsDashboardProjection } from './application/reservations-dashboard.projection';
+import { ReservationLoadQuery } from './infrastructure/reservation-load.query';
+import { ReservationsDashboardQuery } from './infrastructure/reservations-dashboard.query';
+
 /**
  * Reservation capability boundary.
- *
- * Controllers and application services are added only when their API contracts
- * and authorization rules are approved. Domain rules and persistence remain
- * owned by this module.
+ * The dashboard reads through `ReservationsDashboardProjection`.
+ * Reservation write endpoints stay out until their API contract is approved.
  */
-@Module({})
+@Module({
+  imports: [AuthorizationModule, DatabaseModule],
+  providers: [ReservationsDashboardQuery, ReservationLoadQuery, ReservationsDashboardProjection],
+  exports: [ReservationsDashboardProjection],
+})
 export class ReservationsModule {}

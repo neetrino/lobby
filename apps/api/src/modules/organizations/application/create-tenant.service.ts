@@ -4,6 +4,8 @@ import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'i
 
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { PlanEntitlementGrant } from '../../../common/modules/plan-entitlement-grant';
+import { planModules } from '../../../common/modules/plan-module-policy';
+import { provisionDefaultPipelines } from '../../deals/application/pipeline-provision';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import {
   createTenantWithOwnerSchema,
@@ -45,6 +47,9 @@ export class CreateTenantService {
         },
       });
       await this.planEntitlements.grant(tx, tenant.id, data.tenant.plan);
+      if (planModules[data.tenant.plan].some((moduleKey) => moduleKey === 'deals')) {
+        await provisionDefaultPipelines(tx, tenant.id);
+      }
       const event = tenantCreatedEventSchema.parse({
         eventId: crypto.randomUUID(),
         eventType: 'tenant.created',

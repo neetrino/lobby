@@ -1,10 +1,12 @@
 .app {
   height: 100vh;
   overflow: hidden;
+  --app-header-height: 64px;
+  --contacts-toolbar-height: 56px;
   --primary: #004ac6;
   --primary-container: #2563eb;
   --on-primary: #ffffff;
-  --surface: #f8f9ff;
+  --surface: #f6f8fc;
   --card: #ffffff;
   --low: #eff4ff;
   --high: #dce9ff;
@@ -18,7 +20,7 @@
   --danger: #ba1a1a;
   --danger-bg: #ffdad6;
   display: grid;
-  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-columns: 256px minmax(0, 1fr);
   min-height: 100vh;
   background: var(--surface);
   color: var(--ink);
@@ -27,16 +29,16 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
+  width: 100%;
   min-height: 0;
   overflow: auto;
-  padding: 16px 12px;
+  padding: 16px 8px 12px;
   background: var(--card);
-  border-right: 1px solid var(--high);
+  border-right: 1px solid #e6eaf2;
 }
 
 .brand,
-.session,
 .pageHeader,
 .editorHeader,
 .warning,
@@ -50,6 +52,12 @@
 
 .brand {
   justify-content: flex-start;
+  gap: 10px;
+  margin: 0 8px 8px;
+  padding: 4px 8px 16px;
+  border-bottom: 1px solid var(--high);
+  color: inherit;
+  text-decoration: none;
 }
 
 .brandMark {
@@ -64,7 +72,6 @@
 }
 
 .brand small,
-.session,
 .note,
 .meta,
 .table small {
@@ -81,34 +88,144 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
+  padding: 0 8px;
 }
 
 .navActive,
+.navLink,
 .navIdle {
-  border-radius: 8px;
-  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 40px;
+  border-radius: 10px;
+  padding: 0 12px;
   font-size: 14px;
   text-decoration: none;
 }
 
 .navActive {
-  background: var(--primary-container);
-  color: var(--on-primary);
+  background: #eff6ff;
+  color: #2563eb;
   font-weight: 600;
+}
+
+.navLink {
+  color: var(--ink);
+}
+
+.navLink:hover,
+.navIdle:hover {
+  background: #f4f7fb;
 }
 
 .navIdle {
   color: var(--muted);
+  cursor: default;
 }
 
-.session {
-  flex-direction: column;
-  align-items: flex-start;
-  margin: 0;
-  padding: 12px;
+.navIcon {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.account {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: auto 8px 0;
+  padding: 12px 0 4px;
+  border-top: 1px solid var(--high);
+}
+
+.accountButton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.accountButton:hover {
+  background: #f4f7fb;
+}
+
+.accountMenu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% - 4px);
+  left: 0;
+  z-index: 5;
+  padding: 6px;
   border-radius: 12px;
-  background: var(--low);
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(11 28 48 / 14%);
+}
+
+.accountAction {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.accountAction:hover {
+  background: #f4f7fb;
+}
+
+.accountMenuGroup {
+  display: block;
+}
+
+.account strong,
+.account small {
+  display: block;
+}
+
+.account strong {
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.account small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.avatar {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  place-items: center;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 700;
 }
 
 .main {
@@ -118,7 +235,7 @@
 }
 
 .body {
-  padding: 16px 24px 24px;
+  padding: 12px 32px 32px;
 }
 
 .pageHeader h1,
@@ -155,9 +272,12 @@
   font-weight: 600;
 }
 
-.primaryButton:hover,
-.navActive:hover {
+.primaryButton:hover {
   background: var(--primary);
+}
+
+.navActive:hover {
+  background: #d7e6ff;
 }
 
 .secondaryButton,
@@ -200,8 +320,23 @@ button:disabled {
 }
 
 .toolbar {
+  position: sticky;
+  top: var(--app-header-height);
+  z-index: 15;
   align-items: center;
-  padding: 12px;
+  min-height: var(--contacts-toolbar-height);
+  margin-bottom: 0;
+  padding: 10px 12px;
+  border: 1px solid #e7eaf0;
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  box-shadow: none;
+}
+
+.toolbar + .workspace .tableCard {
+  margin-top: 0;
+  border-top: 0;
+  border-radius: 0 0 12px 12px;
 }
 
 .segments {
@@ -213,19 +348,37 @@ button:disabled {
 
 .segment,
 .segmentActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
   border: 0;
   border-radius: 6px;
   background: transparent;
   color: var(--muted);
   cursor: pointer;
   font: inherit;
+  font-size: 13px;
   font-weight: 600;
-  padding: 6px 10px;
+  padding: 0 10px;
 }
 
 .segmentActive {
   background: var(--card);
   color: var(--ink);
+  box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
+}
+
+.segment svg,
+.segmentActive svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .tableCard[aria-busy='true'] {
@@ -234,8 +387,9 @@ button:disabled {
 
 .search {
   position: relative;
-  flex: 1 1 220px;
-  max-width: 320px;
+  flex: 0 1 240px;
+  width: 220px;
+  max-width: 240px;
 }
 
 .search svg {
@@ -284,8 +438,38 @@ button:disabled {
 .search input {
   height: 36px;
   padding: 0 36px;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
-  background: #eef2ff;
+  background: #fff;
+}
+
+.filterField {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 8px 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.filterField span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.filterField select {
+  width: auto;
+  height: 34px;
+  padding: 0 22px 0 0;
+  border: 0;
+  background-color: transparent;
+  color: #0b1c30;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .toolbarControls {
@@ -312,6 +496,16 @@ button:disabled {
   font-weight: 600;
   appearance: none;
   cursor: pointer;
+}
+
+.toolbar .filterField select {
+  width: auto;
+  height: 34px;
+  padding: 0 22px 0 0;
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+  background-position: right 0 center;
 }
 
 .clearFilters {
@@ -350,43 +544,81 @@ button:focus-visible {
 .tableCard {
   flex: 1 1 640px;
   min-width: 0;
-  overflow: auto;
+  overflow: visible;
+  border: 1px solid #e7eaf0;
 }
 
 .table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   text-align: left;
 }
 
 .table th {
-  padding: 8px 12px;
-  background: var(--low);
+  position: sticky;
+  top: calc(var(--app-header-height) + var(--contacts-toolbar-height));
+  z-index: 10;
+  padding: 10px 14px;
+  background: #f8fafc;
   color: var(--muted);
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  box-shadow: inset 0 -1px 0 #e7eaf0;
 }
 
 .table td {
-  padding: 10px 12px;
-  border-top: 1px solid var(--low);
-  vertical-align: top;
+  padding: 12px 14px;
+  border-top: 1px solid #eef2f6;
+  line-height: 1.15;
+  vertical-align: middle;
+}
+
+.comfortable td {
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 
 .table tbody tr {
   transition: background-color 120ms ease;
 }
 
-.table tbody tr:hover,
-.selectedRow {
-  background: #eef4ff;
+.table th.checkCol,
+.table td.checkCol {
+  width: 1%;
+  padding-right: 4px;
+  padding-left: 12px;
+  white-space: nowrap;
+}
+
+.table .checkCol input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+.table th.nameCol,
+.table td.nameCol {
+  width: 1%;
+  padding-left: 8px;
+  white-space: nowrap;
+}
+
+.table tbody tr:hover td {
+  background: #f8fafc;
+}
+
+.table tbody tr.selectedRow td,
+.table tbody tr.selectedRow:hover td {
+  background: #eff6ff;
 }
 
 .nameButton {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
+  line-height: 1.15;
   padding: 0;
   border: 0;
   background: transparent;
@@ -424,8 +656,131 @@ button:focus-visible {
 }
 
 .pager {
-  padding: 12px;
-  background: var(--low);
+  padding: 12px 16px;
+  background: #fff;
+  border-top: 1px solid #e7eaf0;
+}
+
+.pagerTools {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pageSize {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pageSize select,
+.filterOff,
+.filterOn {
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #0b1c30;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.filterOn {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.filterOff,
+.filterOn {
+  cursor: pointer;
+}
+
+.exportButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #0b1c30;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.exportButton:hover {
+  background: #f8fafc;
+}
+
+.exportButton:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.exportButton svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.density {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.menuWrap {
+  position: relative;
+}
+
+.columnMenu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 180px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(11 28 48 / 14%);
+}
+
+.columnOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pager button {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.pager button:disabled {
+  opacity: 1;
+  border-color: #e7eaf0;
+  background: #f8fafc;
+  color: #94a3b8;
 }
 
 .note,

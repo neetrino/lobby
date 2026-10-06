@@ -71,6 +71,16 @@ export function readSession(signal?: AbortSignal): Promise<SessionPrincipal> {
   return requestJson('/api/v1/auth/session', { method: 'GET' }, signal, parseSession);
 }
 
+/** Turns Leads on or off for the signed-in account. */
+export function updateLeadsEnabled(enabled: boolean): Promise<SessionPrincipal> {
+  return requestJson(
+    '/api/v1/auth/session/leads',
+    { method: 'PATCH', body: JSON.stringify({ enabled }) },
+    undefined,
+    parseSession,
+  );
+}
+
 /** Active contacts for the signed-in tenant. One count query, not a page walk. */
 export function readActiveContactCount(signal?: AbortSignal): Promise<number> {
   return requestJson('/api/v1/contacts/summary', { method: 'GET' }, signal, parseActiveCount);
@@ -278,7 +288,8 @@ function isContact(value: unknown): value is Contact {
     typeof value.createdAt === 'string' &&
     typeof value.updatedAt === 'string' &&
     typeof value.createdByUserId === 'string' &&
-    typeof value.ownerUserId === 'string'
+    typeof value.ownerUserId === 'string' &&
+    typeof value.ownerName === 'string'
   );
 }
 
@@ -289,7 +300,9 @@ function isSession(value: Record<string, unknown>): value is SessionPrincipal {
   const role = value.user.role;
   return (
     typeof value.user.id === 'string' &&
+    typeof value.user.name === 'string' &&
     (role === 'OWNER' || role === 'ADMIN' || role === 'MEMBER') &&
+    typeof value.user.leadsEnabled === 'boolean' &&
     typeof value.tenant.id === 'string'
   );
 }

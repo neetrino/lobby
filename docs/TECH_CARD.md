@@ -98,9 +98,10 @@
 | Identity         | Registration, login, logout, session lookup/revocation, rate limits, cookie/session security                                                                                |
 | Organizations    | Transactional tenant + first ACTIVE OWNER + default entitlements + `tenant.created` outbox event                                                                            |
 | Contacts         | Create, read, update, soft archive, and restore, plus the web screen at `/{locale}/contacts`. Permissions, entitlement, tenant scope, and `contact.created` stay in the API |
+| Dashboard        | Read-only `GET /api/v1/dashboard` and per-user layout. Contacts, reservation, and accepted-invitation projections. Deals, messenger, and inventory stay hidden until those modules expose a projection |
 | Audit            | Append-only events, HMAC-hashed client IP metadata, permissioned cursor-paginated read API                                                                                  |
 | Tenant RBAC      | Current fixed roles; planned Owner/Admin-managed tenant roles from a closed permission catalog with anti-escalation rules                                                   |
-| Reservations     | Contracts, schema, cross-tenant constraints, overlap prevention, and status policy; application/API operations are not implemented                                          |
+| Reservations     | Contracts, schema, cross-tenant constraints, overlap prevention, status policy, and a read-only dashboard projection. Reservation write endpoints are not implemented |
 | Deals            | Module boundary only; no business implementation                                                                                                                            |
 | Messenger        | Module boundary only; no business implementation                                                                                                                            |
 | Worker           | Versioned dispatch registry, retry classification, durable side-effect reservation, failed-event requeue                                                                    |

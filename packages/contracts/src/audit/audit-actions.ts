@@ -17,6 +17,10 @@ export const auditActions = {
   CONTACT_ARCHIVED: 'contact.archived',
   CONTACT_RESTORED: 'contact.restored',
   DEAL_STAGE_CHANGED: 'deal.stage.changed',
+  LEAD_STAGE_CHANGED: 'lead.stage.changed',
+  LEAD_CONVERTED: 'lead.converted',
+  PIPELINE_CONFIGURED: 'pipeline.configured',
+  PIPELINE_CARD_DELETED: 'pipeline.card.deleted',
   RESERVATION_STATUS_CHANGED: 'reservation.status.changed',
 } as const;
 
@@ -33,6 +37,10 @@ export const auditActionValues = [
   auditActions.CONTACT_ARCHIVED,
   auditActions.CONTACT_RESTORED,
   auditActions.DEAL_STAGE_CHANGED,
+  auditActions.LEAD_STAGE_CHANGED,
+  auditActions.LEAD_CONVERTED,
+  auditActions.PIPELINE_CONFIGURED,
+  auditActions.PIPELINE_CARD_DELETED,
   auditActions.RESERVATION_STATUS_CHANGED,
 ] as const;
 
@@ -53,6 +61,8 @@ export const auditResourceTypes = [
   'memberInvitation',
   'contact',
   'deal',
+  'lead',
+  'pipeline',
   'reservation',
 ] as const;
 export const auditResourceTypeSchema = z.enum(auditResourceTypes);

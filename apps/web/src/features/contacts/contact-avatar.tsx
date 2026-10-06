@@ -37,10 +37,10 @@ export function TypeBadge({ type }: { type: Contact['type'] }) {
   return <span className={className}>{t(`typeBadge.${type}`)}</span>;
 }
 
-export function OwnerMark() {
+export function OwnerAvatar({ name }: { name: string }) {
   return (
     <span className={styles.ownerMark} aria-hidden="true">
-      <PersonIcon />
+      {initials(name)}
     </span>
   );
 }
@@ -66,15 +66,6 @@ function BuildingIcon() {
   return (
     <svg viewBox="0 0 24 24" width="18" height="18">
       <path d="M4 20h16M6 20V6l6-3 6 3v14M10 20v-4h4v4M9 9h.01M15 9h.01M9 13h.01M15 13h.01" />
-    </svg>
-  );
-}
-
-function PersonIcon() {
-  return (
-    <svg viewBox="0 0 24 24" width="14" height="14">
-      <circle cx="12" cy="8" r="3" />
-      <path d="M5 19c1.5-3 3.8-4.5 7-4.5S17.5 16 19 19" />
     </svg>
   );
 }

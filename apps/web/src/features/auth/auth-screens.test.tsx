@@ -49,23 +49,23 @@ describe('auth screens', () => {
     vi.unstubAllGlobals();
   });
 
-  it('opens contacts when a session already exists', async () => {
+  it('opens the dashboard when a session already exists', async () => {
     replies['/api/v1/auth/session'] = { status: 200, body: { data: {} } };
     renderLogin();
 
     await waitFor(() => {
-      expect(router.replace).toHaveBeenCalledWith('/hy/contacts');
+      expect(router.replace).toHaveBeenCalledWith('/hy/dashboard');
     });
   });
 
-  it('opens contacts after a successful sign-in', async () => {
+  it('opens the dashboard after a successful sign-in', async () => {
     replies['/api/v1/auth/login'] = { status: 200, body: { data: {} } };
     renderLogin();
     await fillLogin();
     fireEvent.click(screen.getByRole('button', { name: 'Մտնել' }));
 
     await waitFor(() => {
-      expect(router.push).toHaveBeenCalledWith('/hy/contacts');
+      expect(router.push).toHaveBeenCalledWith('/hy/dashboard');
     });
     expect(posted('/api/v1/auth/login')).toMatchObject({
       subdomain: 'acme',

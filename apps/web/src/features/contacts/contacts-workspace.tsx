@@ -13,6 +13,7 @@ import { contactErrorText } from './contact-error';
 import { toRequestError } from './contacts-api';
 import { ContactsShell } from './contacts-shell';
 import { ContactsTable } from './contacts-table';
+import { ContactsListUi } from './contacts-list-ui';
 import { ContactsToolbar, useContactSearch } from './contacts-toolbar';
 import { ContactsTop } from './contacts-top';
 import { LifecycleConfirm } from './lifecycle-confirm';
@@ -112,6 +113,8 @@ export function ContactsWorkspace() {
           archived: filters.archived,
           sort: filters.sort,
           limit: filters.limit,
+          type: filters.type,
+          owner: filters.owner,
         },
         {
           name: t('columns.name'),
@@ -142,15 +145,10 @@ export function ContactsWorkspace() {
       <ContactsShell session={session} />
       <main className={styles.main}>
         <ContactsTop
-          filters={filters}
           session={session}
-          search={search}
           activeCount={activeCount}
           duplicateCount={notices.length}
-          onSearch={setSearch}
-          onChange={changeFilters}
           onCreate={editor.openCreate}
-          onExport={exportCsv}
         />
         <div className={styles.body}>
           <DuplicateNotice
@@ -166,11 +164,15 @@ export function ContactsWorkspace() {
               {contactErrorText(t, listError.code)}
             </p>
           )}
+          <ContactsListUi>
           <ContactsToolbar
             filters={filters}
             search={search}
+            rows={list.rows}
+            session={session}
             onSearch={setSearch}
             onChange={changeFilters}
+            onExport={exportCsv}
           />
           <div className={styles.workspace}>
             <ContactsTable
@@ -181,11 +183,15 @@ export function ContactsWorkspace() {
               pending={list.pending}
               nextCursor={list.nextCursor}
               hasPrevious={history.length > 0}
+              filters={filters}
+              activeCount={activeCount}
+              pageIndex={history.length}
               onOpen={editor.openContact}
               onEdit={editor.openEditor}
               onAskLifecycle={lifecycle.ask}
               onNext={showNext}
               onPrevious={showPrevious}
+              onLimit={(limit) => changeFilters({ ...filters, limit })}
             />
             {lifecycle.prompt === null ? null : (
               <LifecycleConfirm
@@ -229,6 +235,7 @@ export function ContactsWorkspace() {
               )}
             </EditorOverlay>
           </div>
+          </ContactsListUi>
         </div>
       </main>
     </div>
@@ -319,6 +326,8 @@ function withoutCursor(filters: ContactListFilters): ContactListFilters {
     archived: filters.archived,
     sort: filters.sort,
     limit: filters.limit,
+    type: filters.type,
+    owner: filters.owner,
   };
 }
 

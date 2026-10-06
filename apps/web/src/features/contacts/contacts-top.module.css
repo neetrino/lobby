@@ -1,7 +1,7 @@
 .bar {
   position: sticky;
   top: 0;
-  z-index: 2;
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -186,6 +186,108 @@
   font-weight: 700;
 }
 
+.pageHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 28px 32px 4px;
+}
+
+.pageHead h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.pageHead p,
+.countLine,
+.duplicateLine {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.countLine {
+  color: #434655;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.userMenu {
+  position: relative;
+}
+
+.userTrigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 8px 0 4px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.userTrigger strong,
+.userTrigger small {
+  display: block;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.userTrigger strong {
+  font-size: 13px;
+}
+
+.userTrigger small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.userPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 40;
+  min-width: 180px;
+  padding: 6px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(11 28 48 / 14%);
+}
+
+.menuLink,
+.menuAction {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #0b1c30;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.menuLink:hover,
+.menuAction:hover {
+  background: #f4f7fb;
+}
+
+.menuGroup {
+  display: block;
+}
+
 .context,
 .titleLine,
 .titleActions,
@@ -223,25 +325,6 @@
 .crumbs strong {
   color: #0b1c30;
   font-weight: 600;
-}
-
-.tenant {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: #dce9ff;
-  color: #434655;
-  font-size: 11px;
-  font-weight: 600;
-}
-
-.tenant i {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #006c49;
 }
 
 .titleCard {

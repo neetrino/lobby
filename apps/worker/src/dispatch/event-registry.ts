@@ -2,6 +2,7 @@ import {
   contactCreatedEventSchema,
   invitationCreatedEventSchema,
   passwordResetRequestedEventSchema,
+  pipelineChangedEventSchema,
   tenantCreatedEventSchema,
   tenantCreatedEventV1Schema,
 } from '@lobby/contracts';
@@ -180,10 +181,11 @@ export function passwordResetEmailRegistryEntry(
 
 function workerRegistryEntries(
   handlers: WorkerHandlers,
-): readonly [EventRegistryEntry<1>, EventRegistryEntry<1>, EventRegistryEntry<2>] {
+): readonly [EventRegistryEntry<1>, EventRegistryEntry<1>, EventRegistryEntry<2>, EventRegistryEntry<1>] {
   const contactSchema = asEventSchema(contactCreatedEventSchema);
   const tenantV1Schema = asEventSchema(tenantCreatedEventV1Schema);
   const tenantSchema = asEventSchema(tenantCreatedEventSchema);
+  const pipelineSchema = asEventSchema(pipelineChangedEventSchema);
   return [
     defineEventRegistryEntry({
       eventType: 'contact.created',
@@ -213,6 +215,14 @@ function workerRegistryEntries(
         bindSideEffectFree('TenantCreatedHandler', tenantSchema, 'transient', (event) =>
           handlers.tenantCreated.handle(event),
         ),
+      ],
+    }),
+    defineEventRegistryEntry({
+      eventType: 'pipeline.changed',
+      eventVersion: 1,
+      schema: pipelineSchema,
+      handlers: [
+        bindSideEffectFree('PipelineChangedHandler', pipelineSchema, 'transient', async () => undefined),
       ],
     }),
   ];

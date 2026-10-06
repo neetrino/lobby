@@ -27,6 +27,9 @@ afterAll(async () => {
 beforeEach(async () => {
   await prisma.outboxEvent.deleteMany();
   await prisma.contact.deleteMany();
+  await prisma.pipelineCard.deleteMany();
+  await prisma.pipelineColumn.deleteMany();
+  await prisma.pipeline.deleteMany();
   await prisma.tenantModule.deleteMany();
   await prisma.user.deleteMany();
   await prisma.tenant.deleteMany();
@@ -77,6 +80,8 @@ describe('CreateTenantService', () => {
       { moduleKey: 'contacts', status: 'ENABLED' },
       { moduleKey: 'deals', status: 'ENABLED' },
     ]);
+    expect(await prisma.pipeline.count({ where: { tenantId: created.tenant.id } })).toBe(2);
+    expect(await prisma.pipelineColumn.count({ where: { tenantId: created.tenant.id } })).toBe(8);
   });
 
   it('allows the same email in a second tenant', async () => {

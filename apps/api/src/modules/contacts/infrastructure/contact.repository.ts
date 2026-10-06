@@ -22,6 +22,7 @@ export type ContactRecord = {
   updatedAt: Date;
   createdByUserId: string;
   ownerUserId: string;
+  ownerName: string;
 };
 
 export type ContactCreateInput = {
@@ -58,7 +59,10 @@ const contactSelect = {
   updatedAt: true,
   createdByUserId: true,
   ownerUserId: true,
+  owner: { select: { name: true } },
 } as const;
+
+type ContactRow = Prisma.ContactGetPayload<{ select: typeof contactSelect }>;
 
 type ContactDb = PrismaClient | Prisma.TransactionClient;
 
@@ -90,11 +94,12 @@ class ContactQueries implements ContactOperations {
     protected readonly tenantId: TenantId,
   ) {}
 
-  findById(id: string): Promise<ContactRecord | null> {
-    return this.db.contact.findFirst({
+  async findById(id: string): Promise<ContactRecord | null> {
+    const row = await this.db.contact.findFirst({
       where: { id, tenantId: this.tenantId },
       select: contactSelect,
     });
+    return row === null ? null : toContactRecord(row);
   }
 
   findSummaries(ids: readonly string[]): Promise<Array<{ id: string; name: string }>> {
@@ -104,13 +109,14 @@ class ContactQueries implements ContactOperations {
     });
   }
 
-  list(query: ContactListQuery): Promise<ContactRecord[]> {
-    return this.db.contact.findMany({
+  async list(query: ContactListQuery): Promise<ContactRecord[]> {
+    const rows = await this.db.contact.findMany({
       where: { tenantId: this.tenantId, ...contactListFilter(query) },
       orderBy: contactListOrder(query.sort),
       take: query.limit + 1,
       select: contactSelect,
     });
+    return rows.map(toContactRecord);
   }
 
   countActive(): Promise<number> {
@@ -153,8 +159,8 @@ class ContactQueries implements ContactOperations {
     return updated.count;
   }
 
-  create(input: ContactCreateInput): Promise<ContactRecord> {
-    return this.db.contact.create({
+  async create(input: ContactCreateInput): Promise<ContactRecord> {
+    const row = await this.db.contact.create({
       data: {
         tenantId: this.tenantId,
         name: input.name,
@@ -166,6 +172,7 @@ class ContactQueries implements ContactOperations {
       },
       select: contactSelect,
     });
+    return toContactRecord(row);
   }
 }
 
@@ -197,6 +204,23 @@ export class ContactRepository {
     const tenantId = scopedTenantId(context);
     return new TenantContactScope(this.prisma, tenantId);
   }
+}
+
+function toContactRecord(row: ContactRow): ContactRecord {
+  return {
+    id: row.id,
+    tenantId: row.tenantId,
+    name: row.name,
+    type: row.type,
+    email: row.email,
+    phone: row.phone,
+    archivedAt: row.archivedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    createdByUserId: row.createdByUserId,
+    ownerUserId: row.ownerUserId,
+    ownerName: row.owner.name,
+  };
 }
 
 function duplicateMatch(probe: ContactDuplicateProbe): Prisma.ContactWhereInput[] {

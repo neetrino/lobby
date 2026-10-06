@@ -43,5 +43,6 @@ function contact(id: string, name: string, phone: string | null): Contact {
     updatedAt: '2026-10-02T00:00:00.000Z',
     createdByUserId: 'user',
     ownerUserId: 'user',
+    ownerName: 'Anna S.',
   };
 }

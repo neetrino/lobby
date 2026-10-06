@@ -16,6 +16,12 @@ export function contactListFilter(query: ContactListQuery): Prisma.ContactWhereI
       ],
     });
   }
+  if (query.type === 'person' || query.type === 'organization') {
+    filters.push({ type: query.type === 'person' ? 'PERSON' : 'ORGANIZATION' });
+  }
+  if (query.owner !== undefined) {
+    filters.push({ ownerUserId: query.owner });
+  }
   if (query.cursor !== undefined) {
     filters.push(cursorFilter(query.cursor.name, query.cursor.id, query.sort));
   }

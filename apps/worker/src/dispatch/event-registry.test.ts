@@ -34,13 +34,18 @@ describe('event registry', () => {
 
     expect(
       registry.list().map((entry) => eventRegistryKey(entry.eventType, entry.eventVersion)),
-    ).toEqual(['contact.created@1', 'tenant.created@1', 'tenant.created@2']);
+    ).toEqual(['contact.created@1', 'tenant.created@1', 'tenant.created@2', 'pipeline.changed@1']);
     expect(
       registry.list().map((entry) => entry.handlers.map((handler) => handler.retryClassification)),
-    ).toEqual([['transient'], ['transient'], ['transient']]);
+    ).toEqual([['transient'], ['transient'], ['transient'], ['transient']]);
     expect(
       registry.list().map((entry) => entry.handlers.map((handler) => handler.handler.name)),
-    ).toEqual([['ContactCreatedHandler'], ['TenantCreatedHandler'], ['TenantCreatedHandler']]);
+    ).toEqual([
+      ['ContactCreatedHandler'],
+      ['TenantCreatedHandler'],
+      ['TenantCreatedHandler'],
+      ['PipelineChangedHandler'],
+    ]);
     for (const entry of registry.list()) {
       for (const handler of entry.handlers) {
         expect(handler.hasExternalSideEffect).toBe(false);

@@ -76,6 +76,8 @@ async function collectContacts(filters: ContactListFilters): Promise<Contact[]> 
       archived: filters.archived,
       sort: filters.sort,
       limit: EXPORT_PAGE_SIZE,
+      type: filters.type,
+      owner: filters.owner,
       ...(cursor === undefined ? {} : { cursor }),
     };
     const result = await listContacts(contactsQueryString(pageFilters));

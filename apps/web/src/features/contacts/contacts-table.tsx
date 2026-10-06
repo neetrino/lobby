@@ -1,15 +1,14 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import type { ReactElement } from 'react';
+import { useEffect, useRef, type ReactElement } from 'react';
 
-import { ContactAvatar, OwnerMark, TypeBadge } from './contact-avatar';
-import type { Contact, SessionPrincipal } from './contact';
-import { ContactRowActions } from './contact-row-actions';
-import { formatArchivedMark, formatContactStamp, shortId } from './contact-format';
+import type { Contact, ContactListFilters, SessionPrincipal } from './contact';
+import { useContactsListUi } from './contacts-list-ui';
 import { SelectionBar } from './contacts-selection-bar';
+import { ContactPager } from './contacts-table-pager';
+import { ContactRow } from './contacts-table-row';
 import styles from './contacts.module.css';
-import tableStyles from './contacts-table.module.css';
 import { usePageSelection } from './use-page-selection';
 
 export function ContactsTable({
@@ -20,11 +19,15 @@ export function ContactsTable({
   pending,
   nextCursor,
   hasPrevious,
+  filters,
+  activeCount,
+  pageIndex,
   onOpen,
   onEdit,
   onAskLifecycle,
   onNext,
   onPrevious,
+  onLimit,
 }: {
   rows: readonly Contact[];
   selectedId: string | null;
@@ -33,11 +36,15 @@ export function ContactsTable({
   pending: boolean;
   nextCursor: string | null;
   hasPrevious: boolean;
+  filters: ContactListFilters;
+  activeCount: number | null;
+  pageIndex: number;
   onOpen: (contact: Contact) => void;
   onEdit: (contact: Contact) => void;
   onAskLifecycle: (contacts: readonly Contact[], action: 'archive' | 'restore') => void;
   onNext: () => void;
   onPrevious: () => void;
+  onLimit: (limit: ContactListFilters['limit']) => void;
 }) {
   const t = useTranslations('contacts');
   const locale = useLocale();
@@ -53,92 +60,124 @@ export function ContactsTable({
         onAsk={onAskLifecycle}
         onClear={selection.clear}
       />
-      <table className={styles.table}>
-        <caption className={styles.srOnly}>{t('title')}</caption>
-        <thead>
-          <tr>
-            <th className={tableStyles.check}>
-              <PageCheckbox
-                checked={selection.allPicked}
-                indeterminate={selection.somePicked}
-                label={t('selectAll')}
-                onChange={selection.togglePage}
-              />
-            </th>
-            <th>{t('columns.name')}</th>
-            <th>{t('columns.details')}</th>
-            <th>{t('columns.owner')}</th>
-            <th>{t('columns.status')}</th>
-            <th>{t('columns.registered')}</th>
-            <th>{t('columns.actions')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((contact) => (
-            <ContactRow
-              key={contact.id}
-              contact={contact}
-              locale={locale}
-              picked={selection.isPicked(contact.id)}
-              open={contact.id === selectedId}
-              session={session}
-              onToggle={() => selection.toggle(contact.id)}
-              onOpen={onOpen}
-              onEdit={onEdit}
-              onArchive={() => onAskLifecycle([contact], 'archive')}
-              onRestore={() => onAskLifecycle([contact], 'restore')}
-            />
-          ))}
-        </tbody>
-      </table>
+      <ContactGrid
+        rows={rows}
+        locale={locale}
+        selectedId={selectedId}
+        session={session}
+        allPicked={selection.allPicked}
+        somePicked={selection.somePicked}
+        isPicked={selection.isPicked}
+        onTogglePage={selection.togglePage}
+        onToggle={selection.toggle}
+        onOpen={onOpen}
+        onEdit={onEdit}
+        onAskLifecycle={onAskLifecycle}
+      />
       {status === 'ready' && rows.length === 0 ? <p className={styles.note}>{t('empty')}</p> : null}
-      <footer className={styles.pager}>
-        <span>{footerText(status, t, rows.length)}</span>
-        <div>
-          <button type="button" disabled={!hasPrevious} onClick={onPrevious}>
-            {t('previousPage')}
-          </button>
-          <button type="button" disabled={nextCursor === null} onClick={onNext}>
-            {t('nextPage')}
-          </button>
-        </div>
-      </footer>
+      <ContactPager
+        status={status}
+        count={rows.length}
+        pageIndex={pageIndex}
+        filters={filters}
+        activeCount={activeCount}
+        limit={filters.limit}
+        hasPrevious={hasPrevious}
+        hasNext={nextCursor !== null}
+        onLimit={onLimit}
+        onPrevious={onPrevious}
+        onNext={onNext}
+      />
     </section>
   );
 }
 
-function rowClass(selected: boolean, archived: boolean): string | undefined {
-  const names = [
-    archived ? tableStyles.archivedRow : '',
-    selected ? styles.selectedRow : '',
-  ].filter((name) => name !== '');
-  return names.length === 0 ? undefined : names.join(' ');
-}
-
-function RowSubtitle({ contact }: { contact: Contact }): ReactElement {
+function ContactGrid({
+  rows,
+  locale,
+  selectedId,
+  session,
+  allPicked,
+  somePicked,
+  isPicked,
+  onTogglePage,
+  onToggle,
+  onOpen,
+  onEdit,
+  onAskLifecycle,
+}: {
+  rows: readonly Contact[];
+  locale: string;
+  selectedId: string | null;
+  session: SessionPrincipal | null;
+  allPicked: boolean;
+  somePicked: boolean;
+  isPicked: (id: string) => boolean;
+  onTogglePage: () => void;
+  onToggle: (id: string) => void;
+  onOpen: (contact: Contact) => void;
+  onEdit: (contact: Contact) => void;
+  onAskLifecycle: (contacts: readonly Contact[], action: 'archive' | 'restore') => void;
+}): ReactElement {
   const t = useTranslations('contacts');
-  if (contact.archivedAt === null) {
-    return <small title={contact.id}>ID: {contact.id.slice(0, 18)}</small>;
-  }
+  const ui = useContactsListUi();
+  const tableClass = ui.density === 'comfortable' ? `${styles.table} ${styles.comfortable}` : styles.table;
   return (
-    <small className={tableStyles.archivedMark}>
-      {t('archivedAt', { stamp: formatArchivedMark(contact.archivedAt) })}
-    </small>
+    <table className={tableClass}>
+      <caption className={styles.srOnly}>{t('title')}</caption>
+      <ContactHead allPicked={allPicked} somePicked={somePicked} onTogglePage={onTogglePage} />
+      <tbody>
+        {rows.map((contact) => (
+          <ContactRow
+            key={contact.id}
+            contact={contact}
+            locale={locale}
+            picked={isPicked(contact.id)}
+            open={contact.id === selectedId}
+            session={session}
+            onToggle={() => onToggle(contact.id)}
+            onOpen={onOpen}
+            onEdit={onEdit}
+            onArchive={() => onAskLifecycle([contact], 'archive')}
+            onRestore={() => onAskLifecycle([contact], 'restore')}
+          />
+        ))}
+      </tbody>
+    </table>
   );
 }
 
-function footerText(
-  status: 'loading' | 'ready' | 'error',
-  t: ReturnType<typeof useTranslations<'contacts'>>,
-  count: number,
-): string {
-  if (status === 'loading') {
-    return t('loading');
-  }
-  if (status === 'ready') {
-    return t('shown', { count });
-  }
-  return '';
+function ContactHead({
+  allPicked,
+  somePicked,
+  onTogglePage,
+}: {
+  allPicked: boolean;
+  somePicked: boolean;
+  onTogglePage: () => void;
+}): ReactElement {
+  const t = useTranslations('contacts');
+  const ui = useContactsListUi();
+  return (
+    <thead>
+      <tr>
+        <th className={styles.checkCol}>
+          <PageCheckbox
+            checked={allPicked}
+            indeterminate={somePicked}
+            label={t('selectAll')}
+            onChange={onTogglePage}
+          />
+        </th>
+        <th className={styles.nameCol}>{t('columns.name')}</th>
+        {ui.columns.details ? <th>{t('columns.details')}</th> : null}
+        {ui.columns.owner ? <th>{t('columns.owner')}</th> : null}
+        {ui.columns.status ? <th>{t('columns.status')}</th> : null}
+        {ui.columns.created ? <th>{t('columns.registered')}</th> : null}
+        <th>{t('columns.actions')}</th>
+      </tr>
+    </thead>
+  );
 }
 
 function PageCheckbox({
@@ -152,104 +191,21 @@ function PageCheckbox({
   label: string;
   onChange: () => void;
 }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const mixed = indeterminate && !checked;
+  useEffect(() => {
+    if (ref.current !== null) {
+      ref.current.indeterminate = mixed;
+    }
+  }, [mixed]);
   return (
     <input
-      ref={(node) => {
-        if (node !== null) {
-          node.indeterminate = indeterminate;
-        }
-      }}
+      ref={ref}
       type="checkbox"
       checked={checked}
+      aria-checked={mixed ? 'mixed' : checked}
       aria-label={label}
       onChange={onChange}
     />
-  );
-}
-
-function ContactRow({
-  contact,
-  locale,
-  picked,
-  open,
-  session,
-  onToggle,
-  onOpen,
-  onEdit,
-  onArchive,
-  onRestore,
-}: {
-  contact: Contact;
-  locale: string;
-  picked: boolean;
-  open: boolean;
-  session: SessionPrincipal | null;
-  onToggle: () => void;
-  onOpen: (contact: Contact) => void;
-  onEdit: (contact: Contact) => void;
-  onArchive: () => void;
-  onRestore: () => void;
-}) {
-  const t = useTranslations('contacts');
-  const archived = contact.archivedAt !== null;
-  const stamp = formatContactStamp(contact.createdAt, locale);
-
-  return (
-    <tr className={rowClass(picked || open, archived)}>
-      <td className={tableStyles.check}>
-        <input
-          type="checkbox"
-          checked={picked}
-          aria-label={t('selectRow', { name: contact.name })}
-          onChange={onToggle}
-        />
-      </td>
-      <td>
-        <div className={tableStyles.identity}>
-          <ContactAvatar name={contact.name} type={contact.type} id={contact.id} />
-          <div>
-            <button
-              type="button"
-              className={
-                archived ? `${styles.nameButton} ${tableStyles.archivedName}` : styles.nameButton
-              }
-              onClick={() => onOpen(contact)}
-            >
-              <strong>{contact.name}</strong>
-              <TypeBadge type={contact.type} />
-            </button>
-            <RowSubtitle contact={contact} />
-          </div>
-        </div>
-      </td>
-      <td>
-        <div>{contact.email ?? '—'}</div>
-        <small>{contact.phone ?? '—'}</small>
-      </td>
-      <td>
-        <span className={tableStyles.owner} title={contact.ownerUserId}>
-          <OwnerMark />
-          <span>{shortId(contact.ownerUserId)}</span>
-        </span>
-      </td>
-      <td>
-        <span className={archived ? tableStyles.statusArchived : tableStyles.statusActive}>
-          {archived ? t('status.archived') : t('status.active')}
-        </span>
-      </td>
-      <td>
-        <div>{stamp.date}</div>
-        <small>{stamp.time}</small>
-      </td>
-      <td>
-        <ContactRowActions
-          contact={contact}
-          session={session}
-          onEdit={onEdit}
-          onArchive={onArchive}
-          onRestore={onRestore}
-        />
-      </td>
-    </tr>
   );
 }

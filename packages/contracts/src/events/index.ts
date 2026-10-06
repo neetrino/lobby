@@ -14,6 +14,11 @@ export {
 } from './contact-archived-event.js';
 export type { ContactArchivedEvent } from './contact-archived-event.js';
 export {
+  PIPELINE_CHANGED_EVENT_VERSION,
+  pipelineChangedEventSchema,
+} from './pipeline-changed-event.js';
+export type { PipelineChangedEvent } from './pipeline-changed-event.js';
+export {
   CONTACT_CREATED_EVENT_VERSION,
   contactCreatedEventSchema,
 } from './contact-created-event.js';

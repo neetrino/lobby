@@ -5,6 +5,7 @@ import { ApiExceptionFilter } from './common/http/api-exception.filter';
 import { ALLOWED_ORIGINS, readAllowedOrigins } from './common/security/allowed-origins';
 import { OriginGuard } from './common/security/origin.guard';
 import { ContactsModule } from './modules/contacts';
+import { DashboardModule } from './modules/dashboard';
 import { DealsModule } from './modules/deals';
 import { HealthModule } from './modules/health';
 import { IdentityModule, SessionGuard } from './modules/identity';
@@ -20,6 +21,7 @@ import { ReservationsModule } from './modules/reservations';
     MembersModule,
     OrganizationsModule,
     ContactsModule,
+    DashboardModule,
     DealsModule,
     MessengerModule,
     ReservationsModule,

@@ -28,6 +28,15 @@ export function mapHttpException(exception: unknown, requestId: string): MappedH
   if (isContactEmailTaken(exception)) {
     return mapped(409, exception.code, exception.message, requestId);
   }
+  if (isPipelineColumnNotEmpty(exception)) {
+    return mapped(409, exception.code, exception.message, requestId);
+  }
+  if (isPipelineConflict(exception)) {
+    return mapped(409, exception.code, exception.message, requestId);
+  }
+  if (isLeadsDisabled(exception)) {
+    return mapped(403, exception.code, exception.message, requestId);
+  }
   if (exception instanceof AuthorizationError) {
     return mapped(403, exception.code, exception.message, requestId);
   }
@@ -64,6 +73,39 @@ function mapNestException(exception: HttpException, requestId: string): MappedHt
     httpErrorCodes.REQUEST_REJECTED,
     httpErrorMessages.REQUEST_REJECTED,
     requestId,
+  );
+}
+
+function isPipelineConflict(
+  exception: unknown,
+): exception is { code: 'PIPELINE_CONFLICT'; message: string } {
+  return (
+    exception instanceof Error &&
+    exception.name === 'PipelineConflictError' &&
+    'code' in exception &&
+    exception.code === 'PIPELINE_CONFLICT'
+  );
+}
+
+function isPipelineColumnNotEmpty(
+  exception: unknown,
+): exception is { code: 'PIPELINE_COLUMN_NOT_EMPTY'; message: string } {
+  return (
+    exception instanceof Error &&
+    exception.name === 'PipelineColumnNotEmptyError' &&
+    'code' in exception &&
+    exception.code === 'PIPELINE_COLUMN_NOT_EMPTY'
+  );
+}
+
+function isLeadsDisabled(
+  exception: unknown,
+): exception is { code: 'LEADS_DISABLED'; message: string } {
+  return (
+    exception instanceof Error &&
+    exception.name === 'LeadsDisabledError' &&
+    'code' in exception &&
+    exception.code === 'LEADS_DISABLED'
   );
 }
 

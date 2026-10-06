@@ -8,6 +8,7 @@ import { DatabaseModule } from '../../common/database/database.module';
 import { OutboxModule } from '../../common/outbox';
 import { IdentityModule } from '../identity';
 import { AcceptInvitationService } from './application/accept-invitation.service';
+import { MembersDashboardProjection } from './application/members-dashboard.projection';
 import { INVITATION_TOKEN_KEY, InviteMemberService } from './application/invite-member.service';
 import { ListTeamService } from './application/list-team.service';
 import { ResendInvitationService } from './application/resend-invitation.service';
@@ -29,6 +30,8 @@ import { MemberInvitationsController } from './presentation/member-invitations.c
     RevokeInvitationService,
     AcceptInvitationService,
     ListTeamService,
+    MembersDashboardProjection,
   ],
+  exports: [MembersDashboardProjection],
 })
 export class MembersModule {}

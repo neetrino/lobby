@@ -7,7 +7,13 @@ import { useState } from 'react';
 import { logoutAccount } from './auth-api';
 import styles from './auth.module.css';
 
-export function SignOutButton({ className }: { className?: string }) {
+export function SignOutButton({
+  className,
+  groupClassName,
+}: {
+  className?: string;
+  groupClassName?: string;
+}) {
   const t = useTranslations('auth');
   const locale = useLocale();
   const router = useRouter();
@@ -27,7 +33,7 @@ export function SignOutButton({ className }: { className?: string }) {
   }
 
   return (
-    <span className={styles.signOutGroup}>
+    <span className={groupClassName === undefined ? styles.signOutGroup : `${styles.signOutGroup} ${groupClassName}`}>
       <button type="button" className={className} disabled={pending} onClick={() => void signOut()}>
         {t('signOut')}
       </button>

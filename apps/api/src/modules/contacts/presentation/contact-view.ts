@@ -14,6 +14,7 @@ export type ContactView = {
   updatedAt: string;
   createdByUserId: string;
   ownerUserId: string;
+  ownerName: string;
 };
 
 export type ContactResponse = {
@@ -33,6 +34,7 @@ export function toContactView(contact: ContactRecord): ContactView {
     updatedAt: contact.updatedAt.toISOString(),
     createdByUserId: contact.createdByUserId,
     ownerUserId: contact.ownerUserId,
+    ownerName: contact.ownerName,
   };
 }
 

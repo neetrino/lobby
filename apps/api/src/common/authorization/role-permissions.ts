@@ -7,25 +7,47 @@ export const permissions = [
   'contacts:create',
   'contacts:read',
   'contacts:update',
+  'leads:create',
+  'leads:read',
+  'leads:update',
+  'leads:delete',
+  'deals:create',
+  'deals:read',
+  'deals:update',
+  'deals:delete',
+  'pipelines:configure',
+  'reservations:read',
+  'dashboard:read',
   'members:invite',
 ] as const;
 
 export type Permission = (typeof permissions)[number];
 
-const contactAccess = [
+const workspaceAccess = [
   'contacts:create',
   'contacts:read',
   'contacts:update',
+  'leads:create',
+  'leads:read',
+  'leads:update',
+  'leads:delete',
+  'deals:create',
+  'deals:read',
+  'deals:update',
+  'deals:delete',
+  'reservations:read',
+  'dashboard:read',
 ] as const satisfies readonly Permission[];
 
 /**
  * Role to permission map.
- * Every role may create, read, and update contacts in its tenant.
- * Owner and Admin may also revoke another user's sessions, read audit history, and invite members.
+ * Every role may use contacts, lead cards, and deal cards, read the reservation summary, and open the dashboard.
+ * Owner and Admin may also configure a board, revoke another user's sessions, read audit history, and invite members.
  * Revoking your own sessions is not a permission.
+ * A dashboard widget still checks its own module entitlement and permission.
  */
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
-  OWNER: ['sessions:revoke', 'audit:read', 'members:invite', ...contactAccess],
-  ADMIN: ['sessions:revoke', 'audit:read', 'members:invite', ...contactAccess],
-  MEMBER: [...contactAccess],
+  OWNER: ['sessions:revoke', 'audit:read', 'members:invite', 'pipelines:configure', ...workspaceAccess],
+  ADMIN: ['sessions:revoke', 'audit:read', 'members:invite', 'pipelines:configure', ...workspaceAccess],
+  MEMBER: [...workspaceAccess],
 };

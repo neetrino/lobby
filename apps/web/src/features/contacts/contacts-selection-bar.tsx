@@ -3,7 +3,6 @@
 import { useLocale, useTranslations } from 'next-intl';
 
 import { ContactAvatar, TypeBadge } from './contact-avatar';
-import { TrashIcon } from './contact-row-actions';
 import { canManageLifecycle, type Contact, type SessionPrincipal } from './contact';
 import { formatContactStamp } from './contact-format';
 import type { LifecycleAction } from './use-lifecycle-prompt';
@@ -68,7 +67,6 @@ function SelectedDetails({ contact, locale }: { contact: Contact; locale: string
           <strong>{contact.name}</strong>
           <TypeBadge type={contact.type} />
         </span>
-        <small title={contact.id}>ID: {contact.id.slice(0, 18)}</small>
       </div>
       <div className={styles.lines}>
         <span>{contact.email ?? '—'}</span>
@@ -126,7 +124,7 @@ function LifecycleButton({
       disabled={!allowed || pending}
       onClick={() => onAsk(selected, archived ? 'restore' : 'archive')}
     >
-      {archived ? <ArchiveIcon /> : <TrashIcon />}
+      {archived ? <RestoreIcon /> : <ArchiveIcon />}
       {archived ? t('restore') : t('archive')}
     </button>
   );
@@ -137,8 +135,18 @@ function ArchiveIcon() {
     <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
       <path d="M4 5h16v4H4z" />
       <path d="M6 9v9h12V9" />
-      <path d="M12 11v5" />
-      <path d="M9.5 14.5L12 17l2.5-2.5" />
+      <path d="M10 13h4" />
+    </svg>
+  );
+}
+
+function RestoreIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+      <path d="M4 5h16v4H4z" />
+      <path d="M6 9v9h12V9" />
+      <path d="M12 17V11" />
+      <path d="M9.5 13.5L12 11l2.5 2.5" />
     </svg>
   );
 }

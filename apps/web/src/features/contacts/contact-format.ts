@@ -35,8 +35,8 @@ export function formatContactStamp(iso: string, locale: string): { date: string;
     return { date: iso, time: '' };
   }
   const dateText = new Intl.DateTimeFormat(locale, {
-    day: '2-digit',
-    month: '2-digit',
+    month: 'short',
+    day: 'numeric',
     year: 'numeric',
     timeZone: 'UTC',
   }).format(date);

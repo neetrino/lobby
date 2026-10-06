@@ -6,6 +6,19 @@ import { hasPermission, requirePermission } from './require-permission';
 import { ROLE_PERMISSIONS } from './role-permissions';
 
 const contactPermissions = ['contacts:create', 'contacts:read', 'contacts:update'] as const;
+const workspacePermissions = [
+  ...contactPermissions,
+  'leads:create',
+  'leads:read',
+  'leads:update',
+  'leads:delete',
+  'deals:create',
+  'deals:read',
+  'deals:update',
+  'deals:delete',
+  'reservations:read',
+  'dashboard:read',
+] as const;
 
 describe('role permissions', () => {
   it('grants sessions:revoke and audit:read to owner and admin and withholds both from member', () => {
@@ -31,12 +44,16 @@ describe('role permissions', () => {
     expect(hasPermission('MEMBER', 'members:invite')).toBe(false);
     expect(hasPermission('OWNER', 'members:invite')).toBe(true);
     expect(hasPermission('ADMIN', 'members:invite')).toBe(true);
-    expect(ROLE_PERMISSIONS.MEMBER).toEqual([...contactPermissions]);
+    expect(ROLE_PERMISSIONS.MEMBER).toEqual([...workspacePermissions]);
+    expect(hasPermission('MEMBER', 'pipelines:configure')).toBe(false);
+    expect(hasPermission('OWNER', 'pipelines:configure')).toBe(true);
+    expect(hasPermission('ADMIN', 'pipelines:configure')).toBe(true);
     expect(ROLE_PERMISSIONS.ADMIN).toEqual([
       'sessions:revoke',
       'audit:read',
       'members:invite',
-      ...contactPermissions,
+      'pipelines:configure',
+      ...workspacePermissions,
     ]);
     expect(ROLE_PERMISSIONS.OWNER).toEqual(ROLE_PERMISSIONS.ADMIN);
   });

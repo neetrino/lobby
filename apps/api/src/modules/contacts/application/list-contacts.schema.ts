@@ -41,6 +41,8 @@ const contactListQueryFields = z.strictObject({
     .enum(['true', 'false'])
     .default('false')
     .transform((value) => value === 'true'),
+  type: z.enum(['person', 'organization']).optional(),
+  owner: z.uuid().optional(),
 });
 
 /**
@@ -56,7 +58,7 @@ export const contactListQuerySchema = contactListQueryFields.superRefine((query,
 
 export type ContactListQuery = z.output<typeof contactListQuerySchema>;
 
-/** Opaque contact cursor. The fingerprint covers search and archived, and omits `limit`. */
+/** Opaque contact cursor. The fingerprint covers search, archive, type, and owner, and omits `limit`. */
 export function encodeContactCursor(
   position: { name: string; id: string },
   query: ContactListQuery,
@@ -77,5 +79,7 @@ function contactFilterFingerprint(query: ContactListQuery): string {
   return filterFingerprint({
     search: query.search ?? null,
     archived: query.archived,
+    type: query.type ?? null,
+    owner: query.owner ?? null,
   });
 }

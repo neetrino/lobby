@@ -18,6 +18,8 @@ export type {
 } from './audit-actions.js';
 export { contactLifecycleAuditSchema } from './contact-lifecycle-audit.js';
 export type { ContactLifecycleAudit } from './contact-lifecycle-audit.js';
+export { pipelineAuditSchema } from './pipeline-audit.js';
+export type { PipelineAudit } from './pipeline-audit.js';
 export { invitationAuditSchema } from './invitation-audit.js';
 export type { InvitationAudit } from './invitation-audit.js';
 export { passwordResetAuditSchema } from './password-reset-audit.js';

@@ -41,7 +41,7 @@ export function AcceptInvitationForm({
     const ready =
       token.length === 0
         ? Promise.resolve()
-        : exchangeInvitation(invitationId, token).finally(() => {
+        : exchangeInvitation(invitationId, token).then(() => {
             const url = `/${locale}/invitations/accept?id=${encodeURIComponent(invitationId)}`;
             window.history.replaceState(window.history.state, '', url);
           });

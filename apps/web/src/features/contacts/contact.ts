@@ -11,6 +11,7 @@ export type Contact = {
   updatedAt: string;
   createdByUserId: string;
   ownerUserId: string;
+  ownerName: string;
 };
 
 export type ContactDraft = {
@@ -26,7 +27,7 @@ export type ContactWarning = {
 };
 
 export type SessionPrincipal = {
-  user: { id: string; role: 'OWNER' | 'ADMIN' | 'MEMBER' };
+  user: { id: string; name: string; role: 'OWNER' | 'ADMIN' | 'MEMBER'; leadsEnabled: boolean };
   tenant: { id: string };
 };
 
@@ -35,6 +36,8 @@ export type ContactListFilters = {
   archived: boolean;
   sort: 'asc' | 'desc';
   limit: 25 | 50 | 100;
+  type: 'all' | 'person' | 'organization';
+  owner: string;
   cursor?: string;
 };
 
