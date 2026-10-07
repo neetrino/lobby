@@ -1,4 +1,4 @@
-.bar {
+header.bar {
   position: sticky;
   top: 0;
   z-index: 30;
@@ -8,6 +8,9 @@
   height: 64px;
   padding: 0 24px;
   border-bottom: 1px solid rgb(255 255 255 / 55%);
+  background: rgb(255 255 255 / 42%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
 }
 
 .headerSearch {

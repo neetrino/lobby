@@ -33,6 +33,7 @@ const pipelineCardSchema = z.strictObject({
   statusId: z.uuid().nullable().default(null),
   createdAt: z.iso.datetime().nullable().default(null),
   createdByName: z.string().max(120).nullable().default(null),
+  messageCount: z.number().int().min(0).default(0),
 });
 
 const pipelineColumnSchema = z.strictObject({

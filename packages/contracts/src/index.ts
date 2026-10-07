@@ -45,6 +45,12 @@ export {
   pipelineKinds,
 } from './pipelines/index.js';
 export type { PipelineBoard, PipelineKindName } from './pipelines/index.js';
+export {
+  pipelineMessageResponseSchema,
+  pipelineMessageSchema,
+  pipelineMessagesResponseSchema,
+} from './pipelines/index.js';
+export type { PipelineMessage } from './pipelines/index.js';
 export { moduleKeySchema, moduleKeys } from './enums/index.js';
 export type { ModuleKey } from './enums/index.js';
 export {

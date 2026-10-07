@@ -385,7 +385,18 @@
     "statusName": "Status name",
     "statusColor": "Status color",
     "addStatus": "Add status",
-    "deleteStatus": "Delete status"
+    "deleteStatus": "Delete status",
+    "chat": "Internal chat",
+    "openChat": "Open card chat",
+    "closeChat": "Close chat",
+    "chatTitle": "Chat for {title}",
+    "chatLoading": "Loading messages...",
+    "chatEmpty": "No messages yet. Start the conversation.",
+    "chatMessage": "Message",
+    "chatPlaceholder": "Write a message to your team...",
+    "chatSend": "Send",
+    "chatSending": "Sending...",
+    "chatFailed": "The message could not be loaded or sent."
   },
   "platform": {
     "title": "Organizations",

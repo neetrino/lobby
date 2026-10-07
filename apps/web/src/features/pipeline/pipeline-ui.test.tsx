@@ -212,6 +212,7 @@ function sampleCard(): PipelineCard {
     statusId: null,
     createdAt: '2026-10-06T09:30:00.000Z',
     createdByName: 'Ada',
+    messageCount: 0,
   };
 }
 

@@ -244,6 +244,38 @@ describe('Pipeline HTTP', () => {
     expect(renamed.body.error.code).toBe('FORBIDDEN');
   }, 30_000);
 
+  it('keeps a card chat inside its tenant and reports the message count', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-chat', 'ada@example.com');
+    const board = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const created = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(board.body), title: 'Discuss me' });
+    const cardId = created.body.data.columns[0].cards[0].id as string;
+    const posted = await request(http)
+      .post(`/api/v1/pipelines/lead/cards/${cardId}/messages`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ body: '  First internal note  ' });
+    const messages = await request(http)
+      .get(`/api/v1/pipelines/lead/cards/${cardId}/messages`)
+      .set('Cookie', owner);
+    const refreshed = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const other = await login(http, 'pipe-chat-other', 'bea@example.com');
+    const hidden = await request(http)
+      .get(`/api/v1/pipelines/lead/cards/${cardId}/messages`)
+      .set('Cookie', other);
+
+    expect(posted.status).toBe(201);
+    expect(posted.body.data).toMatchObject({ cardId, body: 'First internal note', authorName: 'Ada' });
+    expect(messages.status).toBe(200);
+    expect(messages.body.data).toHaveLength(1);
+    expect(refreshed.body.data.columns[0].cards[0].messageCount).toBe(1);
+    expect(hidden.status).toBe(404);
+  }, 30_000);
+
   it('rejects the board when the deals module is disabled', async () => {
     const http = app.getHttpServer();
     const owner = await login(http, 'pipe-off', 'ada@example.com');

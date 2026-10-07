@@ -9,6 +9,7 @@ import type { PipelineKindName } from '../application/pipeline-defaults';
 import { PipelineService, type PipelineBoard } from '../application/pipeline.service';
 import {
   cardCreateSchema,
+  cardMessageCreateSchema,
   cardPatchSchema,
   columnCreateSchema,
   columnPatchSchema,
@@ -17,6 +18,7 @@ import {
   statusCreateSchema,
   statusPatchSchema,
   type CardCreate,
+  type CardMessageCreate,
   type CardPatch,
   type ColumnCreate,
   type ColumnPatch,
@@ -24,6 +26,7 @@ import {
   type StatusCreate,
   type StatusPatch,
 } from '../application/pipeline.schema';
+import type { PipelineMessage } from '@lobby/contracts';
 
 const idSchema = z.uuid();
 
@@ -183,6 +186,46 @@ export class PipelinesController {
     @ZodParam('cardId', idSchema) cardId: string,
   ): Promise<{ data: PipelineBoard }> {
     return this.removeCard(context, 'deal', cardId);
+  }
+
+  @Get('lead/cards/:cardId/messages')
+  @Authorize('leads:read')
+  async listLeadMessages(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+  ): Promise<{ data: PipelineMessage[] }> {
+    return { data: await this.pipelines.listMessages(context, 'lead', cardId) };
+  }
+
+  @Post('lead/cards/:cardId/messages')
+  @Authorize('leads:update')
+  @HttpCode(201)
+  async addLeadMessage(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+    @ZodBody(cardMessageCreateSchema) body: CardMessageCreate,
+  ): Promise<{ data: PipelineMessage }> {
+    return { data: await this.pipelines.addMessage(context, 'lead', cardId, body) };
+  }
+
+  @Get('deal/cards/:cardId/messages')
+  @Authorize('deals:read')
+  async listDealMessages(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+  ): Promise<{ data: PipelineMessage[] }> {
+    return { data: await this.pipelines.listMessages(context, 'deal', cardId) };
+  }
+
+  @Post('deal/cards/:cardId/messages')
+  @Authorize('deals:update')
+  @HttpCode(201)
+  async addDealMessage(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+    @ZodBody(cardMessageCreateSchema) body: CardMessageCreate,
+  ): Promise<{ data: PipelineMessage }> {
+    return { data: await this.pipelines.addMessage(context, 'deal', cardId, body) };
   }
 
   private async read(context: RequestContext, kind: PipelineKindName): Promise<{ data: PipelineBoard }> {

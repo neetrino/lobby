@@ -1,4 +1,11 @@
-import { pipelineBoardResponseSchema, type PipelineBoard, type PipelineKindName } from '@lobby/contracts';
+import {
+  pipelineBoardResponseSchema,
+  pipelineMessageResponseSchema,
+  pipelineMessagesResponseSchema,
+  type PipelineBoard,
+  type PipelineKindName,
+  type PipelineMessage,
+} from '@lobby/contracts';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -6,6 +13,7 @@ export type { PipelineBoard, PipelineKindName };
 export type PipelineStatus = PipelineBoard['statuses'][number];
 export type PipelineColumn = PipelineBoard['columns'][number];
 export type PipelineCard = PipelineColumn['cards'][number];
+export type { PipelineMessage };
 
 export class PipelineRequestError extends Error {
   readonly status: number;
@@ -122,6 +130,40 @@ export function moveCard(kind: PipelineKindName, cardId: string, columnId: strin
 
 export function deleteCard(kind: PipelineKindName, cardId: string): Promise<PipelineBoard> {
   return request(`/api/v1/pipelines/${kind}/cards/${cardId}`, { method: 'DELETE' });
+}
+
+export async function readCardMessages(
+  kind: PipelineKindName,
+  cardId: string,
+  signal?: AbortSignal,
+): Promise<PipelineMessage[]> {
+  const response = await fetch(`${API_ORIGIN}/api/v1/pipelines/${kind}/cards/${cardId}/messages`, {
+    method: 'GET',
+    signal,
+    credentials: 'include',
+    headers: { accept: 'application/json' },
+  });
+  if (!response.ok) throw await readError(response);
+  const parsed = pipelineMessagesResponseSchema.safeParse(await response.json());
+  if (!parsed.success) throw new PipelineRequestError(500, 'REQUEST_FAILED');
+  return parsed.data.data;
+}
+
+export async function addCardMessage(
+  kind: PipelineKindName,
+  cardId: string,
+  body: string,
+): Promise<PipelineMessage> {
+  const response = await fetch(`${API_ORIGIN}/api/v1/pipelines/${kind}/cards/${cardId}/messages`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ body }),
+  });
+  if (!response.ok) throw await readError(response);
+  const parsed = pipelineMessageResponseSchema.safeParse(await response.json());
+  if (!parsed.success) throw new PipelineRequestError(500, 'REQUEST_FAILED');
+  return parsed.data.data;
 }
 
 async function request(path: string, init: RequestInit, signal?: AbortSignal): Promise<PipelineBoard> {

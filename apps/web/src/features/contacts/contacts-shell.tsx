@@ -32,6 +32,7 @@ export function ContactsShell({
 }) {
   const t = useTranslations('contacts');
   const locale = useLocale();
+  const router = useRouter();
   const sessionLeads = session?.user.leadsEnabled ?? true;
   const [leadChoice, setLeadChoice] = useState<{ source: boolean; value: boolean } | null>(null);
   const leadsOn = leadChoice?.source === sessionLeads ? leadChoice.value : sessionLeads;
@@ -40,7 +41,7 @@ export function ContactsShell({
     if (session?.platform === true) {
       router.replace(`/${locale}/platform`);
     }
-  }, [locale, session]);
+  }, [locale, router, session]);
 
   return (
     <aside className={styles.sidebar}>

@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { scopedTenantId } from '../../../common/auth/authorization';
@@ -28,6 +28,7 @@ import {
 import { pipelineTrace } from './pipeline-record';
 import { createStatus, deleteStatus, updateStatus } from './pipeline-status';
 import type {
+  CardMessageCreate,
   CardCreate,
   CardPatch,
   ColumnCreate,
@@ -36,6 +37,7 @@ import type {
   StatusCreate,
   StatusPatch,
 } from './pipeline.schema';
+import type { PipelineMessage } from '@lobby/contracts';
 
 export type { PipelineBoard };
 
@@ -164,6 +166,65 @@ export class PipelineService {
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
     await deleteStatus(this.prisma, tenantId, statusId);
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
+  }
+
+  async listMessages(
+    context: RequestContext,
+    kind: PipelineKindName,
+    cardId: string,
+  ): Promise<PipelineMessage[]> {
+    await this.gate(context, cardPermission(kind, 'read'));
+    const tenantId = scopedTenantId(context);
+    const pipeline = await existingPipeline(this.prisma, tenantId, kind);
+    await this.requireCard(tenantId, pipeline.id, cardId);
+    const messages = await this.prisma.pipelineCardMessage.findMany({
+      where: { tenantId, cardId },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      take: 200,
+      include: { author: { select: { name: true } } },
+    });
+    return messages.map((message) => ({
+      id: message.id,
+      cardId: message.cardId,
+      authorUserId: message.authorUserId,
+      authorName: message.author.name,
+      body: message.body,
+      createdAt: message.createdAt.toISOString(),
+    }));
+  }
+
+  async addMessage(
+    context: RequestContext,
+    kind: PipelineKindName,
+    cardId: string,
+    input: CardMessageCreate,
+  ): Promise<PipelineMessage> {
+    await this.gate(context, cardPermission(kind, 'update'));
+    const tenantId = scopedTenantId(context);
+    const pipeline = await existingPipeline(this.prisma, tenantId, kind);
+    await this.requireCard(tenantId, pipeline.id, cardId);
+    const message = await this.prisma.pipelineCardMessage.create({
+      data: { tenantId, cardId, authorUserId: context.userId, body: input.body },
+      include: { author: { select: { name: true } } },
+    });
+    return {
+      id: message.id,
+      cardId: message.cardId,
+      authorUserId: message.authorUserId,
+      authorName: message.author.name,
+      body: message.body,
+      createdAt: message.createdAt.toISOString(),
+    };
+  }
+
+  private async requireCard(tenantId: ReturnType<typeof scopedTenantId>, pipelineId: string, cardId: string): Promise<void> {
+    const card = await this.prisma.pipelineCard.findFirst({
+      where: { id: cardId, tenantId, pipelineId },
+      select: { id: true },
+    });
+    if (card === null) {
+      throw new NotFoundException();
+    }
   }
 
   private async gate(context: RequestContext, permission: Permission): Promise<void> {
