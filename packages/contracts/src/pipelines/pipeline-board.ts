@@ -34,6 +34,7 @@ const pipelineCardSchema = z.strictObject({
   createdAt: z.iso.datetime().nullable().default(null),
   createdByName: z.string().max(120).nullable().default(null),
   messageCount: z.number().int().min(0).default(0),
+  noteCount: z.number().int().min(0).default(0),
 });
 
 const pipelineColumnSchema = z.strictObject({

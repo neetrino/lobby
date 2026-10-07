@@ -9,6 +9,7 @@ import glass from '../../ui/glass/glass.module.css';
 import type { CardUpdate, PipelineBoard, PipelineCard, PipelineKindName } from './pipeline-api';
 import styles from './pipeline.module.css';
 import { PipelineChat } from './pipeline-chat';
+import { PipelineNotes } from './pipeline-notes';
 
 const OUTCOMES = ['OPEN', 'WON', 'LOST', 'DISQUALIFIED', 'CONVERTED'] as const;
 
@@ -53,7 +54,6 @@ export function PipelineCardView({
       <div className={styles.cardTop}>
         <strong>{card.title}</strong>
         <span className={styles.cardTools}>
-          <PipelineChat cardId={card.id} cardTitle={card.title} kind={kind} initialCount={card.messageCount} />
           {card.createdByName === null ? null : (
             <span className={styles.avatar} title={card.createdByName} aria-label={card.createdByName}>
               {initials(card.createdByName)}
@@ -62,9 +62,15 @@ export function PipelineCardView({
           <button type="button" className={styles.iconButton} aria-label={t('editCard')} onClick={() => setEditing(true)}>
             ✎
           </button>
-          <button type="button" className={styles.iconButton} aria-label={t('deleteCard')} onClick={() => setConfirming(true)}>
-            ×
-          </button>
+          <span className={styles.cardEnd}>
+            <button type="button" className={styles.iconButton} aria-label={t('deleteCard')} onClick={() => setConfirming(true)}>
+              ×
+            </button>
+            <span className={styles.cardIcons}>
+          <PipelineNotes cardId={card.id} cardTitle={card.title} kind={kind} initialCount={card.noteCount} />
+          <PipelineChat cardId={card.id} cardTitle={card.title} kind={kind} initialCount={card.messageCount} />
+            </span>
+          </span>
         </span>
       </div>
       <b>

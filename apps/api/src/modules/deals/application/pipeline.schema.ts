@@ -82,6 +82,10 @@ export const cardMessageCreateSchema = z.strictObject({
   body: z.string().trim().min(1).max(2000),
 });
 
+export const cardNoteCreateSchema = z.strictObject({
+  body: z.string().trim().min(1).max(4000),
+});
+
 export type PipelinePatch = z.infer<typeof pipelinePatchSchema>;
 export type ColumnCreate = z.infer<typeof columnCreateSchema>;
 export type ColumnPatch = z.infer<typeof columnPatchSchema>;
@@ -90,3 +94,4 @@ export type CardPatch = z.infer<typeof cardPatchSchema>;
 export type StatusCreate = z.infer<typeof statusCreateSchema>;
 export type StatusPatch = z.infer<typeof statusPatchSchema>;
 export type CardMessageCreate = z.infer<typeof cardMessageCreateSchema>;
+export type CardNoteCreate = z.infer<typeof cardNoteCreateSchema>;

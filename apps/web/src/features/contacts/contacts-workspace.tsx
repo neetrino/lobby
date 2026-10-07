@@ -299,7 +299,7 @@ function DuplicateNotice({
         !
       </span>
       <div className={styles.warningCopy}>
-        <span className={styles.warningCode}>POSSIBLE_DUPLICATE {t('duplicateNotice')}</span>
+        <strong className={styles.warningTitle}>{t('duplicateTitle')}</strong>
         <p>{t('duplicateBody', { count: notices.length })}</p>
       </div>
       <button

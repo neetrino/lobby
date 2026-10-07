@@ -39,6 +39,7 @@ type BoardCard = {
   createdAt: string;
   createdByName: string | null;
   messageCount: number;
+  noteCount: number;
 };
 
 type BoardStatus = {
@@ -97,7 +98,7 @@ export async function loadBoard(
         include: {
           cards: {
             orderBy: { position: 'asc' },
-            include: { createdBy: { select: { name: true } }, _count: { select: { messages: true } } },
+            include: { createdBy: { select: { name: true } }, _count: { select: { messages: true, notes: true } } },
           },
         },
       },

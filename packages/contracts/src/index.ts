@@ -51,6 +51,12 @@ export {
   pipelineMessagesResponseSchema,
 } from './pipelines/index.js';
 export type { PipelineMessage } from './pipelines/index.js';
+export {
+  pipelineNoteResponseSchema,
+  pipelineNoteSchema,
+  pipelineNotesResponseSchema,
+} from './pipelines/index.js';
+export type { PipelineNote } from './pipelines/index.js';
 export { moduleKeySchema, moduleKeys } from './enums/index.js';
 export type { ModuleKey } from './enums/index.js';
 export {

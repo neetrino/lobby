@@ -29,6 +29,7 @@ import { pipelineTrace } from './pipeline-record';
 import { createStatus, deleteStatus, updateStatus } from './pipeline-status';
 import type {
   CardMessageCreate,
+  CardNoteCreate,
   CardCreate,
   CardPatch,
   ColumnCreate,
@@ -37,7 +38,7 @@ import type {
   StatusCreate,
   StatusPatch,
 } from './pipeline.schema';
-import type { PipelineMessage } from '@lobby/contracts';
+import type { PipelineMessage, PipelineNote } from '@lobby/contracts';
 
 export type { PipelineBoard };
 
@@ -214,6 +215,79 @@ export class PipelineService {
       authorName: message.author.name,
       body: message.body,
       createdAt: message.createdAt.toISOString(),
+    };
+  }
+
+  async listNotes(context: RequestContext, kind: PipelineKindName, cardId: string): Promise<PipelineNote[]> {
+    await this.gate(context, cardPermission(kind, 'read'));
+    const tenantId = scopedTenantId(context);
+    const pipeline = await existingPipeline(this.prisma, tenantId, kind);
+    await this.requireCard(tenantId, pipeline.id, cardId);
+    const notes = await this.prisma.pipelineCardNote.findMany({
+      where: { tenantId, cardId },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 100,
+      include: { author: { select: { name: true } } },
+    });
+    return notes.map((note) => ({
+      id: note.id,
+      cardId: note.cardId,
+      authorUserId: note.authorUserId,
+      authorName: note.author.name,
+      body: note.body,
+      createdAt: note.createdAt.toISOString(),
+    }));
+  }
+
+  async addNote(
+    context: RequestContext,
+    kind: PipelineKindName,
+    cardId: string,
+    input: CardNoteCreate,
+  ): Promise<PipelineNote> {
+    await this.gate(context, cardPermission(kind, 'update'));
+    const tenantId = scopedTenantId(context);
+    const pipeline = await existingPipeline(this.prisma, tenantId, kind);
+    await this.requireCard(tenantId, pipeline.id, cardId);
+    const note = await this.prisma.pipelineCardNote.create({
+      data: { tenantId, cardId, authorUserId: context.userId, body: input.body },
+      include: { author: { select: { name: true } } },
+    });
+    return {
+      id: note.id,
+      cardId: note.cardId,
+      authorUserId: note.authorUserId,
+      authorName: note.author.name,
+      body: note.body,
+      createdAt: note.createdAt.toISOString(),
+    };
+  }
+
+  async updateNote(
+    context: RequestContext,
+    kind: PipelineKindName,
+    cardId: string,
+    noteId: string,
+    input: CardNoteCreate,
+  ): Promise<PipelineNote> {
+    await this.gate(context, cardPermission(kind, 'update'));
+    const tenantId = scopedTenantId(context);
+    const pipeline = await existingPipeline(this.prisma, tenantId, kind);
+    await this.requireCard(tenantId, pipeline.id, cardId);
+    const existing = await this.prisma.pipelineCardNote.findFirst({ where: { id: noteId, cardId, tenantId } });
+    if (existing === null) throw new NotFoundException();
+    const note = await this.prisma.pipelineCardNote.update({
+      where: { id: noteId },
+      data: { body: input.body, authorUserId: context.userId },
+      include: { author: { select: { name: true } } },
+    });
+    return {
+      id: note.id,
+      cardId: note.cardId,
+      authorUserId: note.authorUserId,
+      authorName: note.author.name,
+      body: note.body,
+      createdAt: note.createdAt.toISOString(),
     };
   }
 

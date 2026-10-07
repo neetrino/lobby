@@ -252,6 +252,19 @@
 .cardTools {
   display: inline-flex;
   flex: none;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.cardEnd {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.cardIcons {
+  display: flex;
   align-items: center;
   gap: 4px;
 }
@@ -294,7 +307,7 @@
 .stages { display: flex; gap: 4px; }
 .stage { width: 18px; height: 4px; border-radius: 999px; }
 
-.cardTop { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cardTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
 .cardTop strong { flex: 1; min-width: 0; }
 
 .cardActions { display: flex; gap: 4px; }
@@ -381,8 +394,7 @@
 .chatButton { position: relative; display: grid; width: 36px; height: 36px; padding: 3px; place-items: center; border: 1px solid rgba(37, 99, 235, .2); border-radius: 12px; background: rgba(239, 246, 255, .86); cursor: pointer; }
 .chatIcon { width: 28px; height: 28px; object-fit: contain; border-radius: 8px; }
 .chatBadge { position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; border: 2px solid #fff; border-radius: 999px; background: #0ea5e9; color: #fff; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; }
-.chatBackdrop { position: fixed; z-index: 90; inset: 0; display: flex; justify-content: flex-end; background: rgba(15, 23, 42, .28); backdrop-filter: blur(3px); }
-.chatPanel { display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; width: min(440px, 100vw); height: 100%; background: rgba(248, 251, 255, .97); border-left: 1px solid rgba(255, 255, 255, .8); box-shadow: -18px 0 50px rgba(15, 23, 42, .16); }
+.chatPanel { position: fixed; z-index: 90; right: 16px; bottom: 16px; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; width: min(380px, calc(100vw - 32px)); height: min(560px, calc(100vh - 32px)); overflow: hidden; border: 1px solid rgba(255, 255, 255, .8); border-radius: 22px; background: rgba(248, 251, 255, .97); box-shadow: 0 22px 50px rgba(15, 23, 42, .2); }
 .chatHeader { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 18px 20px; border-bottom: 1px solid #dbe4f0; background: linear-gradient(135deg, rgba(219, 234, 254, .92), rgba(236, 253, 245, .9)); }
 .chatHeader strong, .chatHeader small { display: block; }
 .chatHeader small { margin-top: 3px; overflow: hidden; color: #64748b; text-overflow: ellipsis; white-space: nowrap; }
@@ -398,4 +410,32 @@
 .chatComposer button { align-self: end; min-height: 46px; padding: 0 18px; border: 0; border-radius: 12px; background: #2563eb; color: #fff; font-weight: 700; cursor: pointer; }
 .chatComposer button:disabled { cursor: wait; opacity: .6; }
 
-@media (max-width: 560px) { .chatPanel { width: 100vw; } }
+.noteButton { position: relative; display: grid; width: 36px; height: 36px; padding: 3px; place-items: center; border: 1px solid rgba(245, 158, 11, .25); border-radius: 12px; background: rgba(255, 251, 235, .9); cursor: pointer; }
+.noteIcon { width: 28px; height: 28px; object-fit: contain; }
+.noteBadge { position: absolute; top: -7px; right: -7px; min-width: 20px; height: 20px; padding: 0 5px; border: 2px solid #fff; border-radius: 999px; background: #f59e0b; color: #fff; font-size: 11px; font-weight: 800; line-height: 16px; text-align: center; }
+.noteHeaderIcon { border-radius: 9px; object-fit: contain; }
+.noteCard { max-width: 100%; margin-bottom: 12px; padding: 12px 14px; border: 1px solid #f4d88a; border-radius: 6px 16px 16px; background: #fffbea; box-shadow: 0 5px 18px rgba(120, 83, 13, .07); }
+.noteCard div { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
+.noteCard time { color: #78633c; font-size: 11px; }
+.noteCard p { margin: 7px 0 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+
+.stickyNotePanel { position: fixed; z-index: 95; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; width: min(370px, calc(100vw - 16px)); height: min(450px, calc(100vh - 24px)); overflow: hidden; border: 1px solid rgba(180, 133, 0, .28); border-radius: 8px 8px 34px 8px; background: linear-gradient(145deg, #fffbd1 0%, #fff49a 72%, #f5dc59 100%); box-shadow: 0 22px 55px rgba(38, 30, 8, .26), 10px 13px 0 rgba(184, 145, 25, .12); transform: rotate(-.35deg); }
+.stickyNotePanel::after { position: absolute; right: 0; bottom: 0; width: 58px; height: 58px; content: ''; pointer-events: none; background: linear-gradient(135deg, rgba(185, 139, 13, .3) 0 49%, #fff9c0 51% 100%); border-radius: 12px 0 0; box-shadow: -7px -7px 16px rgba(120, 83, 13, .08); }
+.stickyNotePanel .chatHeader { background: rgba(255, 247, 168, .72); border-bottom-color: rgba(177, 132, 0, .2); }
+.stickyCanvas { min-height: 0; padding: 14px 18px 24px; background-image: repeating-linear-gradient(transparent 0 31px, rgba(91, 119, 148, .14) 32px); }
+.stickyCanvas textarea { width: 100%; height: 100%; min-height: 100%; padding: 0; resize: none; border: 0; outline: 0; background: transparent; color: #493b12; font: 500 16px/2 inherit; }
+.stickyCanvas textarea::placeholder { color: rgba(73, 59, 18, .56); }
+.stickySaving { position: absolute; right: 24px; bottom: 16px; z-index: 2; margin: 0; color: #8a6500; font-size: 12px; font-weight: 700; }
+.stickyComposer { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: end; padding: 10px 14px 16px; background: rgba(255, 248, 178, .72); }
+.stickyComposer textarea { min-height: 68px; max-height: 116px; padding: 9px 4px; resize: vertical; border: 0; border-bottom: 2px solid rgba(142, 104, 0, .3); outline: 0; background: transparent; color: #493b12; font: 500 15px/1.55 inherit; }
+.stickyComposer textarea:focus { border-bottom-color: #b77900; }
+.stickyComposer button { min-height: 38px; padding: 0 13px; border: 0; border-radius: 12px; background: #d88d00; color: #fff; font-weight: 750; cursor: pointer; }
+.stickyComposer button:disabled { cursor: wait; opacity: .62; }
+.stickyDragHandle { cursor: grab; touch-action: none; user-select: none; }
+.stickyDragHandle:active { cursor: grabbing; }
+
+@media (max-width: 560px) { .stickyNotePanel { width: min(370px, calc(100vw - 16px)); height: min(450px, calc(100vh - 16px)); transform: none; } }
+
+@media (max-width: 560px) {
+  .chatPanel { right: 8px; bottom: 8px; width: calc(100vw - 16px); height: min(70vh, 560px); }
+}

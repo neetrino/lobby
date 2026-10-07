@@ -2,9 +2,12 @@ import {
   pipelineBoardResponseSchema,
   pipelineMessageResponseSchema,
   pipelineMessagesResponseSchema,
+  pipelineNoteResponseSchema,
+  pipelineNotesResponseSchema,
   type PipelineBoard,
   type PipelineKindName,
   type PipelineMessage,
+  type PipelineNote,
 } from '@lobby/contracts';
 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
@@ -14,6 +17,7 @@ export type PipelineStatus = PipelineBoard['statuses'][number];
 export type PipelineColumn = PipelineBoard['columns'][number];
 export type PipelineCard = PipelineColumn['cards'][number];
 export type { PipelineMessage };
+export type { PipelineNote };
 
 export class PipelineRequestError extends Error {
   readonly status: number;
@@ -162,6 +166,51 @@ export async function addCardMessage(
   });
   if (!response.ok) throw await readError(response);
   const parsed = pipelineMessageResponseSchema.safeParse(await response.json());
+  if (!parsed.success) throw new PipelineRequestError(500, 'REQUEST_FAILED');
+  return parsed.data.data;
+}
+
+export async function readCardNotes(
+  kind: PipelineKindName,
+  cardId: string,
+  signal?: AbortSignal,
+): Promise<PipelineNote[]> {
+  const response = await fetch(`${API_ORIGIN}/api/v1/pipelines/${kind}/cards/${cardId}/notes`, {
+    method: 'GET', signal, credentials: 'include', headers: { accept: 'application/json' },
+  });
+  if (!response.ok) throw await readError(response);
+  const parsed = pipelineNotesResponseSchema.safeParse(await response.json());
+  if (!parsed.success) throw new PipelineRequestError(500, 'REQUEST_FAILED');
+  return parsed.data.data;
+}
+
+export async function addCardNote(kind: PipelineKindName, cardId: string, body: string): Promise<PipelineNote> {
+  const response = await fetch(`${API_ORIGIN}/api/v1/pipelines/${kind}/cards/${cardId}/notes`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ body }),
+  });
+  if (!response.ok) throw await readError(response);
+  const parsed = pipelineNoteResponseSchema.safeParse(await response.json());
+  if (!parsed.success) throw new PipelineRequestError(500, 'REQUEST_FAILED');
+  return parsed.data.data;
+}
+
+export async function updateCardNote(
+  kind: PipelineKindName,
+  cardId: string,
+  noteId: string,
+  body: string,
+): Promise<PipelineNote> {
+  const response = await fetch(`${API_ORIGIN}/api/v1/pipelines/${kind}/cards/${cardId}/notes/${noteId}`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: { accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({ body }),
+  });
+  if (!response.ok) throw await readError(response);
+  const parsed = pipelineNoteResponseSchema.safeParse(await response.json());
   if (!parsed.success) throw new PipelineRequestError(500, 'REQUEST_FAILED');
   return parsed.data.data;
 }

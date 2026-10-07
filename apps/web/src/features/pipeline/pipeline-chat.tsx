@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 
 import { addCardMessage, readCardMessages, type PipelineKindName, type PipelineMessage } from './pipeline-api';
 import styles from './pipeline.module.css';
@@ -50,6 +51,15 @@ export function PipelineChat({
     if (open) end.current?.scrollIntoView({ block: 'end' });
   }, [messages, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [open]);
+
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     const form = event.currentTarget;
@@ -82,14 +92,12 @@ export function PipelineChat({
         <Image src="/pipeline-chat.avif" alt="" width={28} height={28} className={styles.chatIcon} />
         {count === 0 ? null : <span className={styles.chatBadge}>{count > 99 ? '99+' : count}</span>}
       </button>
-      {open ? (
-        <div className={styles.chatBackdrop} role="presentation" onClick={() => setOpen(false)}>
+      {open
+        ? createPortal(
           <section
             className={styles.chatPanel}
             role="dialog"
-            aria-modal="true"
             aria-label={t('chatTitle', { title: cardTitle })}
-            onClick={(event) => event.stopPropagation()}
           >
             <header className={styles.chatHeader}>
               <span><Image src="/pipeline-chat.avif" alt="" width={38} height={38} /></span>
@@ -109,12 +117,13 @@ export function PipelineChat({
             </div>
             {error ? <p className={styles.chatError}>{t('chatFailed')}</p> : null}
             <form className={styles.chatComposer} onSubmit={(event) => void submit(event)}>
-              <textarea name="body" maxLength={2000} required aria-label={t('chatMessage')} placeholder={t('chatPlaceholder')} />
+              <textarea autoFocus name="body" maxLength={2000} required aria-label={t('chatMessage')} placeholder={t('chatPlaceholder')} />
               <button type="submit" disabled={sending}>{sending ? t('chatSending') : t('chatSend')}</button>
             </form>
-          </section>
-        </div>
-      ) : null}
+          </section>,
+          document.body,
+        )
+        : null}
     </>
   );
 }

@@ -10,6 +10,7 @@ import { PipelineService, type PipelineBoard } from '../application/pipeline.ser
 import {
   cardCreateSchema,
   cardMessageCreateSchema,
+  cardNoteCreateSchema,
   cardPatchSchema,
   columnCreateSchema,
   columnPatchSchema,
@@ -19,6 +20,7 @@ import {
   statusPatchSchema,
   type CardCreate,
   type CardMessageCreate,
+  type CardNoteCreate,
   type CardPatch,
   type ColumnCreate,
   type ColumnPatch,
@@ -26,7 +28,7 @@ import {
   type StatusCreate,
   type StatusPatch,
 } from '../application/pipeline.schema';
-import type { PipelineMessage } from '@lobby/contracts';
+import type { PipelineMessage, PipelineNote } from '@lobby/contracts';
 
 const idSchema = z.uuid();
 
@@ -226,6 +228,68 @@ export class PipelinesController {
     @ZodBody(cardMessageCreateSchema) body: CardMessageCreate,
   ): Promise<{ data: PipelineMessage }> {
     return { data: await this.pipelines.addMessage(context, 'deal', cardId, body) };
+  }
+
+  @Get('lead/cards/:cardId/notes')
+  @Authorize('leads:read')
+  async listLeadNotes(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+  ): Promise<{ data: PipelineNote[] }> {
+    return { data: await this.pipelines.listNotes(context, 'lead', cardId) };
+  }
+
+  @Post('lead/cards/:cardId/notes')
+  @Authorize('leads:update')
+  @HttpCode(201)
+  async addLeadNote(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+    @ZodBody(cardNoteCreateSchema) body: CardNoteCreate,
+  ): Promise<{ data: PipelineNote }> {
+    return { data: await this.pipelines.addNote(context, 'lead', cardId, body) };
+  }
+
+  @Get('deal/cards/:cardId/notes')
+  @Authorize('deals:read')
+  async listDealNotes(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+  ): Promise<{ data: PipelineNote[] }> {
+    return { data: await this.pipelines.listNotes(context, 'deal', cardId) };
+  }
+
+  @Post('deal/cards/:cardId/notes')
+  @Authorize('deals:update')
+  @HttpCode(201)
+  async addDealNote(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+    @ZodBody(cardNoteCreateSchema) body: CardNoteCreate,
+  ): Promise<{ data: PipelineNote }> {
+    return { data: await this.pipelines.addNote(context, 'deal', cardId, body) };
+  }
+
+  @Patch('lead/cards/:cardId/notes/:noteId')
+  @Authorize('leads:update')
+  async updateLeadNote(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+    @ZodParam('noteId', idSchema) noteId: string,
+    @ZodBody(cardNoteCreateSchema) body: CardNoteCreate,
+  ): Promise<{ data: PipelineNote }> {
+    return { data: await this.pipelines.updateNote(context, 'lead', cardId, noteId, body) };
+  }
+
+  @Patch('deal/cards/:cardId/notes/:noteId')
+  @Authorize('deals:update')
+  async updateDealNote(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('cardId', idSchema) cardId: string,
+    @ZodParam('noteId', idSchema) noteId: string,
+    @ZodBody(cardNoteCreateSchema) body: CardNoteCreate,
+  ): Promise<{ data: PipelineNote }> {
+    return { data: await this.pipelines.updateNote(context, 'deal', cardId, noteId, body) };
   }
 
   private async read(context: RequestContext, kind: PipelineKindName): Promise<{ data: PipelineBoard }> {

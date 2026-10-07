@@ -19,6 +19,9 @@
   --warn-bg: #ffddb8;
   --danger: #ba1a1a;
   --danger-bg: #ffdad6;
+  color: var(--ink);
+  font-family: var(--font-inter), var(--font-armenian), system-ui, sans-serif;
+  font-synthesis: none;
   display: grid;
   grid-template-columns: 256px minmax(0, 1fr);
   min-height: 100vh;
@@ -27,7 +30,6 @@
     radial-gradient(760px 460px at 100% 8%, rgb(221 214 254 / 70%), transparent 58%),
     radial-gradient(680px 420px at 50% 100%, rgb(167 243 208 / 55%), transparent 55%),
     #eef3fb;
-  color: var(--ink);
 }
 
 .sidebar {
@@ -385,7 +387,7 @@ button:disabled {
   color: var(--muted);
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   padding: 0 10px;
 }
@@ -468,6 +470,8 @@ button:disabled {
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   background: #fff;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .filterField {
@@ -483,19 +487,20 @@ button:disabled {
 
 .filterField span {
   color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 500;
   white-space: nowrap;
 }
 
 .filterField select {
   width: auto;
   height: 34px;
-  padding: 0 22px 0 0;
+  padding: 0 22px 0 8px;
   border: 0;
+  border-left: 1px solid #e2e8f0;
   background-color: transparent;
   color: #0b1c30;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -519,7 +524,7 @@ button:disabled {
   background-position: right 10px center;
   background-size: 12px;
   color: #0b1c30;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   appearance: none;
   cursor: pointer;
@@ -528,11 +533,14 @@ button:disabled {
 .toolbar .filterField select {
   width: auto;
   height: 34px;
-  padding: 0 22px 0 0;
+  padding: 0 22px 0 8px;
   border: 0;
+  border-left: 1px solid #e2e8f0;
   border-radius: 0;
   background-color: transparent;
   background-position: right 0 center;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .clearFilters {
@@ -543,7 +551,7 @@ button:disabled {
   background: #fff;
   color: #475569;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
 }
@@ -590,16 +598,18 @@ button:focus-visible {
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   color: var(--muted);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.35;
+  text-transform: none;
   box-shadow: inset 0 -1px 0 #e7eaf0;
 }
 
 .table td {
-  padding: 12px 14px;
+  padding: 8px 14px;
   border-top: 1px solid #eef2f6;
-  line-height: 1.15;
+  line-height: 1.35;
   vertical-align: middle;
 }
 
@@ -628,9 +638,10 @@ button:focus-visible {
 
 .table th.nameCol,
 .table td.nameCol {
-  width: 1%;
+  width: 28%;
+  min-width: 180px;
   padding-left: 8px;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .table tbody tr:hover td {
@@ -644,16 +655,26 @@ button:focus-visible {
 
 .nameButton {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
-  align-items: center;
-  line-height: 1.15;
+  align-items: baseline;
+  max-width: 320px;
+  line-height: 1.35;
   padding: 0;
   border: 0;
   background: transparent;
-  color: var(--primary);
+  color: #12315c;
   cursor: pointer;
   font: inherit;
+  font-size: 16px;
   font-weight: 600;
+  text-align: left;
+}
+
+.nameButton strong {
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: break-word;
 }
 
 .badgeActive,
@@ -700,8 +721,8 @@ button:focus-visible {
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .pageSize select,
@@ -714,7 +735,7 @@ button:focus-visible {
   background: #fff;
   color: #0b1c30;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -740,7 +761,7 @@ button:focus-visible {
   background: #fff;
   color: #0b1c30;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
@@ -853,20 +874,20 @@ button:focus-visible {
   font-weight: 700;
 }
 
-.warningCode {
-  display: inline-flex;
-  padding: 2px 8px;
-  border-radius: 6px;
-  background: #5c3b12;
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
+.warningTitle {
+  display: block;
+  color: #5c3b12;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
 }
 
 .warning p {
-  margin: 6px 0 0;
+  margin: 2px 0 0;
   color: #5c3b12;
   font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 .warningView,

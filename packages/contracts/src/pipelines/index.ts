@@ -13,3 +13,9 @@ export {
   pipelineMessagesResponseSchema,
 } from './pipeline-message.js';
 export type { PipelineMessage } from './pipeline-message.js';
+export {
+  pipelineNoteResponseSchema,
+  pipelineNoteSchema,
+  pipelineNotesResponseSchema,
+} from './pipeline-note.js';
+export type { PipelineNote } from './pipeline-note.js';

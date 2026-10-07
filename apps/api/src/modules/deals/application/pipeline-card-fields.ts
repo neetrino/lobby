@@ -18,7 +18,7 @@ type StoredCard = {
   statusId: string | null;
   createdAt: Date;
   createdBy?: { name: string } | null;
-  _count?: { messages: number };
+  _count?: { messages: number; notes: number };
 };
 
 /** Serializes a stored card for the board response. Dates stay calendar days. */
@@ -41,6 +41,7 @@ export function presentCard(card: StoredCard) {
     createdAt: card.createdAt.toISOString(),
     createdByName: card.createdBy?.name ?? null,
     messageCount: card._count?.messages ?? 0,
+    noteCount: card._count?.notes ?? 0,
   };
 }
 

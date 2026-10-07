@@ -244,7 +244,7 @@ describe('Pipeline HTTP', () => {
     expect(renamed.body.error.code).toBe('FORBIDDEN');
   }, 30_000);
 
-  it('keeps a card chat inside its tenant and reports the message count', async () => {
+  it('keeps card chat and notes inside the tenant and reports their counts', async () => {
     const http = app.getHttpServer();
     const owner = await login(http, 'pipe-chat', 'ada@example.com');
     const board = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
@@ -262,18 +262,41 @@ describe('Pipeline HTTP', () => {
     const messages = await request(http)
       .get(`/api/v1/pipelines/lead/cards/${cardId}/messages`)
       .set('Cookie', owner);
+    const postedNote = await request(http)
+      .post(`/api/v1/pipelines/lead/cards/${cardId}/notes`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ body: '  Remember the contract  ' });
+    const notes = await request(http)
+      .get(`/api/v1/pipelines/lead/cards/${cardId}/notes`)
+      .set('Cookie', owner);
+    const updatedNote = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${cardId}/notes/${postedNote.body.data.id as string}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ body: 'Updated sticky text' });
     const refreshed = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
     const other = await login(http, 'pipe-chat-other', 'bea@example.com');
     const hidden = await request(http)
       .get(`/api/v1/pipelines/lead/cards/${cardId}/messages`)
+      .set('Cookie', other);
+    const hiddenNotes = await request(http)
+      .get(`/api/v1/pipelines/lead/cards/${cardId}/notes`)
       .set('Cookie', other);
 
     expect(posted.status).toBe(201);
     expect(posted.body.data).toMatchObject({ cardId, body: 'First internal note', authorName: 'Ada' });
     expect(messages.status).toBe(200);
     expect(messages.body.data).toHaveLength(1);
+    expect(postedNote.status).toBe(201);
+    expect(postedNote.body.data).toMatchObject({ cardId, body: 'Remember the contract', authorName: 'Ada' });
+    expect(notes.body.data).toHaveLength(1);
+    expect(updatedNote.status).toBe(200);
+    expect(updatedNote.body.data.body).toBe('Updated sticky text');
     expect(refreshed.body.data.columns[0].cards[0].messageCount).toBe(1);
+    expect(refreshed.body.data.columns[0].cards[0].noteCount).toBe(1);
     expect(hidden.status).toBe(404);
+    expect(hiddenNotes.status).toBe(404);
   }, 30_000);
 
   it('rejects the board when the deals module is disabled', async () => {

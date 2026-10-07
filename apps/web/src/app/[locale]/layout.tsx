@@ -10,19 +10,17 @@ import { LocaleDocumentLang } from './locale-document-lang';
 
 const sans = Noto_Sans({
   subsets: ['latin', 'cyrillic'],
-  weight: ['400', '600', '700'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-sans',
 });
 
 const armenian = Noto_Sans_Armenian({
   subsets: ['armenian'],
-  weight: ['400', '600', '700'],
   variable: '--font-armenian',
 });
 
 const inter = Inter({
   subsets: ['latin', 'cyrillic'],
-  weight: ['400', '600', '700'],
   variable: '--font-inter',
 });
 

@@ -396,7 +396,18 @@
     "chatPlaceholder": "Write a message to your team...",
     "chatSend": "Send",
     "chatSending": "Sending...",
-    "chatFailed": "The message could not be loaded or sent."
+    "chatFailed": "The message could not be loaded or sent.",
+    "notes": "Internal notes",
+    "openNotes": "Open card notes",
+    "closeNotes": "Close notes",
+    "notesTitle": "Notes for {title}",
+    "notesLoading": "Loading notes...",
+    "notesEmpty": "No notes yet.",
+    "noteBody": "Note",
+    "notesPlaceholder": "Leave a note for your team...",
+    "notesAdd": "Add note",
+    "notesSaving": "Saving...",
+    "notesFailed": "The note could not be loaded or saved."
   },
   "platform": {
     "title": "Organizations",

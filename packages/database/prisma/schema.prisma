@@ -52,6 +52,7 @@ model Tenant {
   pipelineCards            PipelineCard[]
   pipelineStatuses         PipelineStatus[]
   pipelineCardMessages     PipelineCardMessage[]
+  pipelineCardNotes        PipelineCardNote[]
 
   @@map("tenants")
 }
@@ -84,6 +85,7 @@ model User {
   ownedPipelineCards       PipelineCard[]             @relation("PipelineCardOwner")
   createdPipelineCards     PipelineCard[]             @relation("PipelineCardCreator")
   pipelineCardMessages     PipelineCardMessage[]
+  pipelineCardNotes        PipelineCardNote[]
 
   @@unique([tenantId, email])
   @@unique([id, tenantId])
@@ -560,6 +562,7 @@ model PipelineCard {
   createdBy User?           @relation("PipelineCardCreator", fields: [createdByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
   status    PipelineStatus? @relation(fields: [statusId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
   messages  PipelineCardMessage[]
+  notes     PipelineCardNote[]
 
   @@unique([id, tenantId])
   @@unique([columnId, position])
@@ -583,4 +586,21 @@ model PipelineCardMessage {
 
   @@index([tenantId, cardId, createdAt, id])
   @@map("pipeline_card_messages")
+}
+
+/// Shared internal note attached to one lead or deal card.
+model PipelineCardNote {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  cardId       String   @map("card_id") @db.Uuid
+  authorUserId String   @map("author_user_id") @db.Uuid
+  body         String
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  card   PipelineCard @relation(fields: [cardId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  author User         @relation(fields: [authorUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tenantId, cardId, createdAt, id])
+  @@map("pipeline_card_notes")
 }

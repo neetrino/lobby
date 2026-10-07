@@ -63,6 +63,15 @@ describe('pipeline board controls', () => {
     }));
   });
 
+  it('opens the card chat on the page, outside the card', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json({ data: [] })));
+    Element.prototype.scrollIntoView = () => undefined;
+    renderCard({});
+    fireEvent.click(screen.getByRole('button', { name: 'Open card chat' }));
+    const dialog = await screen.findByRole('dialog', { name: 'Chat for Ada' });
+    expect(dialog.parentElement).toBe(document.body);
+  });
+
   it('converts a lead and reorders with the buttons and a drop', () => {
     const onConvert = vi.fn();
     const onSave = vi.fn();
@@ -213,6 +222,7 @@ function sampleCard(): PipelineCard {
     createdAt: '2026-10-06T09:30:00.000Z',
     createdByName: 'Ada',
     messageCount: 0,
+    noteCount: 0,
   };
 }
 
