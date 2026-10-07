@@ -36,6 +36,12 @@ export function ContactsShell({
   const [leadChoice, setLeadChoice] = useState<{ source: boolean; value: boolean } | null>(null);
   const leadsOn = leadChoice?.source === sessionLeads ? leadChoice.value : sessionLeads;
 
+  useEffect(() => {
+    if (session?.platform === true) {
+      router.replace(`/${locale}/platform`);
+    }
+  }, [locale, session]);
+
   return (
     <aside className={styles.sidebar}>
       <Link className={styles.brand} href={`/${locale}/dashboard`}>

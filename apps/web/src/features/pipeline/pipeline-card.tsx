@@ -5,7 +5,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { listContacts } from '../contacts/contacts-api';
 import type { Contact } from '../contacts/contact';
-import type { CardUpdate, PipelineCard, PipelineKindName } from './pipeline-api';
+import glass from '../../ui/glass/glass.module.css';
+import type { CardUpdate, PipelineBoard, PipelineCard, PipelineKindName } from './pipeline-api';
 import styles from './pipeline.module.css';
 
 const OUTCOMES = ['OPEN', 'WON', 'LOST', 'DISQUALIFIED', 'CONVERTED'] as const;
@@ -18,6 +19,9 @@ export function PipelineCardView({
   userId,
   amountLabel,
   locale,
+  statuses = [],
+  stageColors = [],
+  stageIndex = 0,
   onSave,
   onDelete,
   onConvert,
@@ -29,6 +33,9 @@ export function PipelineCardView({
   userId: string | null;
   amountLabel: string;
   locale: string;
+  statuses?: PipelineBoard['statuses'];
+  stageColors?: string[];
+  stageIndex?: number;
   onSave: (patch: CardUpdate) => void;
   onDelete: () => void;
   onConvert: () => void;
@@ -38,23 +45,31 @@ export function PipelineCardView({
   const [editing, setEditing] = useState(false);
   return (
     <article
-      className={styles.card}
+      className={`${styles.card} ${glass.panel} ${glass.soft}`}
       draggable={!editing}
       onDragStart={(event) => event.dataTransfer.setData('text/plain', card.id)}
     >
       <div className={styles.cardTop}>
         <strong>{card.title}</strong>
-        <button type="button" className={styles.iconButton} aria-label={t('editCard')} onClick={() => setEditing(true)}>
-          ✎
-        </button>
-        <button type="button" className={styles.iconButton} aria-label={t('deleteCard')} onClick={() => setConfirming(true)}>
-          ×
-        </button>
+        <span className={styles.cardTools}>
+          {card.createdByName === null ? null : (
+            <span className={styles.avatar} title={card.createdByName} aria-label={card.createdByName}>
+              {initials(card.createdByName)}
+            </span>
+          )}
+          <button type="button" className={styles.iconButton} aria-label={t('editCard')} onClick={() => setEditing(true)}>
+            ✎
+          </button>
+          <button type="button" className={styles.iconButton} aria-label={t('deleteCard')} onClick={() => setConfirming(true)}>
+            ×
+          </button>
+        </span>
       </div>
       <b>
         {new Intl.NumberFormat(locale).format(card.amount)} {amountLabel}
       </b>
       {card.company === '' ? null : <small>{card.company}</small>}
+      <CardMarks card={card} locale={locale} stageColors={stageColors} stageIndex={stageIndex} />
       <div className={styles.cardActions}>
         <button type="button" className={styles.add} disabled={index === 0} onClick={() => onSave({ position: index - 1 })}>
           {t('earlier')}
@@ -63,6 +78,7 @@ export function PipelineCardView({
           {t('later')}
         </button>
       </div>
+      <CardStatus card={card} statuses={statuses} onSave={onSave} />
       {confirming ? (
         <div className={styles.confirm}>
           <p>{t('confirmDelete')}</p>
@@ -75,6 +91,7 @@ export function PipelineCardView({
           card={card}
           kind={kind}
           userId={userId}
+          statuses={statuses}
           onSave={onSave}
           onConvert={onConvert}
           onClose={() => setEditing(false)}
@@ -84,10 +101,68 @@ export function PipelineCardView({
   );
 }
 
+function CardStatus({
+  card,
+  statuses,
+  onSave,
+}: {
+  card: PipelineCard;
+  statuses: PipelineBoard['statuses'];
+  onSave: (patch: CardUpdate) => void;
+}) {
+  const t = useTranslations('pipeline');
+  if (statuses.length === 0) {
+    return null;
+  }
+  const current = statuses.find((item) => item.id === card.statusId);
+  const color = current?.color;
+  return (
+    <div className={styles.statusCorner}>
+      <select
+        aria-label={t('status')}
+        value={card.statusId ?? ''}
+        style={color === undefined ? undefined : { background: color, color: textOn(color) }}
+        onChange={(event) => onSave({ statusId: event.currentTarget.value === '' ? null : event.currentTarget.value })}
+      >
+        <option value="">{t('noStatus')}</option>
+        {statuses.map((status) => (
+          <option key={status.id} value={status.id}>{status.name}</option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+function CardMarks({
+  card,
+  locale,
+  stageColors,
+  stageIndex,
+}: {
+  card: PipelineCard;
+  locale: string;
+  stageColors: string[];
+  stageIndex: number;
+}) {
+  return (
+    <>
+      {card.createdAt === null ? null : (
+        <time className={styles.when} dateTime={card.createdAt}>{formatWhen(card.createdAt, locale)}</time>
+      )}
+      <div className={styles.stages} aria-hidden="true">
+        {stageColors.map((color, index) => (
+          <span key={color + String(index)} className={styles.stage} style={{ background: index <= stageIndex ? color : '#e7eaf0' }} />
+        ))}
+      </div>
+    </>
+  );
+}
+
 function CardEditor({
   card,
   kind,
   userId,
+  statuses,
   onSave,
   onConvert,
   onClose,
@@ -95,6 +170,7 @@ function CardEditor({
   card: PipelineCard;
   kind: PipelineKindName;
   userId: string | null;
+  statuses: PipelineBoard['statuses'];
   onSave: (patch: CardUpdate) => void;
   onConvert: () => void;
   onClose: () => void;
@@ -125,6 +201,12 @@ function CardEditor({
           <option value="">{t('noContact')}</option>
           {contacts.map((contact) => (
             <option key={contact.id} value={contact.id}>{contact.name}</option>
+          ))}
+        </select>
+        <select name="statusId" aria-label={t('status')} defaultValue={card.statusId ?? ''}>
+          <option value="">{t('noStatus')}</option>
+          {statuses.map((status) => (
+            <option key={status.id} value={status.id}>{status.name}</option>
           ))}
         </select>
         <select name="ownerUserId" aria-label={t('owner')} defaultValue={card.ownerUserId ?? ''}>
@@ -163,6 +245,7 @@ function submitCard(event: FormEvent<HTMLFormElement>, onSave: (patch: CardUpdat
   const expected = String(data.get('expectedCloseOn') ?? '');
   const contactId = String(data.get('contactId') ?? '');
   const ownerUserId = String(data.get('ownerUserId') ?? '');
+  const statusId = String(data.get('statusId') ?? '');
   onSave({
     title,
     company: String(data.get('company') ?? '').trim(),
@@ -175,12 +258,37 @@ function submitCard(event: FormEvent<HTMLFormElement>, onSave: (patch: CardUpdat
     expectedCloseOn: expected === '' ? null : expected,
     contactId: contactId === '' ? null : contactId,
     ownerUserId: ownerUserId === '' ? null : ownerUserId,
+    statusId: statusId === '' ? null : statusId,
   });
   onClose();
 }
 
 function outcomeValue(value: string): PipelineCard['outcome'] {
   return OUTCOMES.find((outcome) => outcome === value) ?? 'OPEN';
+}
+
+function textOn(color: string): string {
+  const hex = color.replace('#', '');
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+  return luminance > 0.62 ? '#1f2937' : '#fff';
+}
+
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter((part) => part !== '');
+  return parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('');
+}
+
+function formatWhen(value: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(value));
 }
 
 function outcomeLabel(outcome: PipelineCard['outcome']): 'outcomeOpen' | 'outcomeWon' | 'outcomeLost' | 'outcomeDisqualified' | 'outcomeConverted' {

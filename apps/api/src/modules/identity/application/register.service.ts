@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 
+import { PLATFORM_SUBDOMAIN } from '../../../common/platform/platform-subdomain';
 import { CreateTenantService } from '../../organizations';
 import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
 import { PASSWORD_HASHER, type PasswordHasher } from '../domain/password-hasher';
@@ -61,6 +62,9 @@ export class RegisterService {
   async register(input: RegisterInput): Promise<RegisteredSession> {
     if (!this.registrationEnabled) {
       throw new IdentityError(identityErrorCodes.REGISTRATION_DISABLED);
+    }
+    if (input.tenant.subdomain === PLATFORM_SUBDOMAIN) {
+      throw new IdentityError(identityErrorCodes.TENANT_SUBDOMAIN_TAKEN);
     }
 
     await this.ensureSessionStore();

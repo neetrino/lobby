@@ -15,6 +15,9 @@ type StoredCard = {
   expectedCloseOn: Date | null;
   contactId: string | null;
   ownerUserId: string | null;
+  statusId: string | null;
+  createdAt: Date;
+  createdBy?: { name: string } | null;
 };
 
 /** Serializes a stored card for the board response. Dates stay calendar days. */
@@ -33,6 +36,9 @@ export function presentCard(card: StoredCard) {
     expectedCloseOn: card.expectedCloseOn === null ? null : card.expectedCloseOn.toISOString().slice(0, 10),
     contactId: card.contactId,
     ownerUserId: card.ownerUserId,
+    statusId: card.statusId,
+    createdAt: card.createdAt.toISOString(),
+    createdByName: card.createdBy?.name ?? null,
   };
 }
 
@@ -40,7 +46,13 @@ function closeDay(value: string | null): Date | null {
   return value === null ? null : new Date(`${value}T00:00:00.000Z`);
 }
 
-export function cardInsert(tenantId: TenantId, pipelineId: string, input: CardCreate, position: number) {
+export function cardInsert(
+  tenantId: TenantId,
+  pipelineId: string,
+  input: CardCreate,
+  position: number,
+  createdByUserId: string,
+) {
   return {
     tenantId,
     pipelineId,
@@ -57,6 +69,8 @@ export function cardInsert(tenantId: TenantId, pipelineId: string, input: CardCr
     expectedCloseOn: closeDay(input.expectedCloseOn),
     contactId: input.contactId,
     ownerUserId: input.ownerUserId,
+    statusId: input.statusId,
+    createdByUserId,
   };
 }
 
@@ -77,6 +91,7 @@ export function cardChanges(
     outcome: patch.outcome,
     contactId: patch.contactId,
     ownerUserId: patch.ownerUserId,
+    statusId: patch.statusId,
     ...(patch.expectedCloseOn !== undefined ? { expectedCloseOn: closeDay(patch.expectedCloseOn) } : {}),
     ...(moved ? { columnId, position } : {}),
   };
@@ -88,6 +103,7 @@ export function copiedDeal(
   columnId: string,
   position: number,
   source: StoredCard,
+  createdByUserId: string,
 ) {
   return {
     tenantId,
@@ -105,5 +121,7 @@ export function copiedDeal(
     expectedCloseOn: source.expectedCloseOn,
     contactId: source.contactId,
     ownerUserId: source.ownerUserId,
+    statusId: source.statusId,
+    createdByUserId,
   };
 }

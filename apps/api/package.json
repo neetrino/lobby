@@ -7,7 +7,8 @@
     "start": "node --env-file-if-exists=../../.env dist/main.js",
     "lint": "eslint src --max-warnings=0",
     "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "platform:bootstrap": "node --env-file-if-exists=../../.env dist/bootstrap-platform-admin.js"
   },
   "dependencies": {
     "@lobby/contracts": "workspace:*",

@@ -50,6 +50,7 @@ model Tenant {
   pipelines                Pipeline[]
   pipelineColumns          PipelineColumn[]
   pipelineCards            PipelineCard[]
+  pipelineStatuses         PipelineStatus[]
 
   @@map("tenants")
 }
@@ -80,6 +81,7 @@ model User {
   passwordResets           PasswordReset[]
   dashboardLayout          UserDashboardLayout?
   ownedPipelineCards       PipelineCard[]             @relation("PipelineCardOwner")
+  createdPipelineCards     PipelineCard[]             @relation("PipelineCardCreator")
 
   @@unique([tenantId, email])
   @@unique([id, tenantId])
@@ -506,6 +508,25 @@ enum PipelineCardOutcome {
   CONVERTED
 }
 
+/// Tenant-defined team label. Name and color are chosen by Owner and Admin.
+model PipelineStatus {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String
+  color     String
+  position  Int
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  cards  PipelineCard[]
+
+  @@unique([tenantId, name])
+  @@unique([tenantId, position])
+  @@unique([id, tenantId])
+  @@map("pipeline_statuses")
+}
+
 /// A lead or deal card. Amount is a PostgreSQL integer until a currency decimal is introduced.
 model PipelineCard {
   id               String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -524,17 +545,22 @@ model PipelineCard {
   expectedCloseOn  DateTime?           @map("expected_close_on") @db.Date
   contactId        String?             @map("contact_id") @db.Uuid
   ownerUserId      String?             @map("owner_user_id") @db.Uuid
+  createdByUserId  String?             @map("created_by_user_id") @db.Uuid
+  statusId         String?             @map("status_id") @db.Uuid
   createdAt        DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt        DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  pipeline Pipeline       @relation(fields: [pipelineId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
-  column   PipelineColumn @relation(fields: [columnId, pipelineId, tenantId], references: [id, pipelineId, tenantId], onDelete: Restrict, onUpdate: Cascade)
-  contact  Contact?       @relation(fields: [contactId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
-  owner    User?          @relation("PipelineCardOwner", fields: [ownerUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  pipeline  Pipeline        @relation(fields: [pipelineId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  column    PipelineColumn  @relation(fields: [columnId, pipelineId, tenantId], references: [id, pipelineId, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  contact   Contact?        @relation(fields: [contactId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  owner     User?           @relation("PipelineCardOwner", fields: [ownerUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  createdBy User?           @relation("PipelineCardCreator", fields: [createdByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  status    PipelineStatus? @relation(fields: [statusId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
 
   @@unique([id, tenantId])
   @@unique([columnId, position])
   @@index([tenantId, columnId, position])
+  @@index([tenantId, statusId])
   @@map("pipeline_cards")
 }

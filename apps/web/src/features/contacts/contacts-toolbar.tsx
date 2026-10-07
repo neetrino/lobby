@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import type { Contact, ContactListFilters, SessionPrincipal } from './contact';
 import { ColumnsMenu, DensitySwitch, ExportButton } from './contacts-toolbar-menus';
+import glass from '../../ui/glass/glass.module.css';
 import styles from './contacts.module.css';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -52,7 +53,7 @@ export function ContactsToolbar({
   onExport: () => Promise<void>;
 }) {
   return (
-    <div className={styles.toolbar}>
+    <div className={`${styles.toolbar} ${styles.glassTop} ${glass.panel} ${glass.soft}`}>
       <SearchField search={search} onSearch={onSearch} />
       <ListFilters filters={filters} rows={rows} session={session} onChange={onChange} />
       <div className={styles.toolbarControls}>

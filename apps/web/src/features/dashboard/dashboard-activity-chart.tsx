@@ -6,6 +6,7 @@ import { useState } from 'react';
 
 import type { DashboardBoard } from './dashboard-api';
 import styles from './dashboard-charts.module.css';
+import glass from '../../ui/glass/glass.module.css';
 import board from './dashboard.module.css';
 
 const SERIES = ['created', 'updated', 'archived', 'invited', 'accepted'] as const;
@@ -23,7 +24,7 @@ export function ActivityTrend({ board: data, locale }: { board: DashboardBoard; 
   }
   const max = Math.max(1, ...days.map((day) => dayTotal(day, series)));
   return (
-    <section className={`${board.card} ${board.span12}`}>
+    <section className={`${board.card} ${glass.panel} ${glass.soft} ${board.span12}`}>
       <div className={styles.head}>
         <h2>{t('charts.activityTitle')}</h2>
         <p className={styles.meta}>{t('range', { days: data.rangeDays })}</p>

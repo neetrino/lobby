@@ -5,6 +5,7 @@ import Link from 'next/link';
 
 import type { DashboardBoard } from './dashboard-api';
 import { formatWhen, kindLabel, widgetLabel } from './dashboard-layout';
+import glass from '../../ui/glass/glass.module.css';
 import styles from './dashboard.module.css';
 
 export function WorkPanel({
@@ -21,7 +22,7 @@ export function WorkPanel({
   const activity = board.activity;
   const quiet = groups.length === 0 && (activity === undefined || activity.items.length === 0);
   return (
-    <section className={`${styles.card} ${wide ? styles.span12 : styles.work}`}>
+    <section className={`${styles.card} ${glass.panel} ${glass.soft} ${wide ? styles.span12 : styles.work}`}>
       <h2>{t('work')}</h2>
       {quiet ? <CaughtUp locale={locale} /> : null}
       {groups.map((group) => (
@@ -109,7 +110,7 @@ export function Snapshot({ board }: { board: DashboardBoard }) {
   const growth = board.analytics?.contactGrowth ?? null;
   const occupancy = board.analytics?.occupancy ?? null;
   return (
-    <aside className={`${styles.card} ${styles.snapshot}`}>
+    <aside className={`${styles.card} ${glass.panel} ${glass.soft} ${styles.snapshot}`}>
       <h2>{t('analytics')}</h2>
       {growth === null ? null : <Growth growth={growth} />}
       {occupancy === null ? null : (
@@ -171,7 +172,7 @@ export function ReservationRow({ board }: { board: DashboardBoard }) {
 
 function Mini({ label, value, detail }: { label: string; value: number; detail?: string }) {
   return (
-    <article className={styles.card}>
+    <article className={`${styles.card} ${glass.panel} ${glass.soft}`}>
       <span className={styles.label}>{label}</span>
       <strong className={styles.valueSmall}>{value}</strong>
       {detail === undefined ? null : <small className={styles.quietLine}>{detail}</small>}

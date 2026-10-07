@@ -18,6 +18,7 @@ import {
   storedKind,
 } from './pipeline-positions';
 import { cardChanges, cardInsert, copiedDeal, presentCard } from './pipeline-card-fields';
+import { listStatuses, requireStatus } from './pipeline-status';
 import type { CardCreate, CardPatch, ColumnPatch, PipelinePatch } from './pipeline.schema';
 
 type BoardCard = {
@@ -34,6 +35,16 @@ type BoardCard = {
   expectedCloseOn: string | null;
   contactId: string | null;
   ownerUserId: string | null;
+  statusId: string | null;
+  createdAt: string;
+  createdByName: string | null;
+};
+
+type BoardStatus = {
+  id: string;
+  name: string;
+  color: string;
+  position: number;
 };
 
 type BoardColumn = {
@@ -52,6 +63,7 @@ export type PipelineBoard = {
   name: string;
   amountLabel: string;
   columns: BoardColumn[];
+  statuses: BoardStatus[];
 };
 
 type StoredPipeline = { id: string };
@@ -79,12 +91,21 @@ export async function loadBoard(
   const pipeline = await prisma.pipeline.findFirst({
     where: { id: pipelineId, tenantId },
     include: {
-      columns: { orderBy: { position: 'asc' }, include: { cards: { orderBy: { position: 'asc' } } } },
+      columns: {
+        orderBy: { position: 'asc' },
+        include: {
+          cards: {
+            orderBy: { position: 'asc' },
+            include: { createdBy: { select: { name: true } } },
+          },
+        },
+      },
     },
   });
   if (pipeline === null) {
     throw new NotFoundException();
   }
+  const statuses = await listStatuses(prisma, tenantId);
   return {
     id: pipeline.id,
     kind,
@@ -97,6 +118,7 @@ export async function loadBoard(
       widthPx: column.widthPx,
       cards: column.cards.map(presentCard),
     })),
+    statuses,
   };
 }
 
@@ -174,12 +196,16 @@ export async function appendCard(
   tenantId: TenantId,
   pipelineId: string,
   input: CardCreate,
+  createdByUserId: string,
   after?: AfterWrite,
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await requireParty(tx, tenantId, input.contactId, input.ownerUserId);
+    await requireStatus(tx, tenantId, input.statusId);
     const position = await placeCard(tx, tenantId, pipelineId, input.columnId);
-    await tx.pipelineCard.create({ data: cardInsert(tenantId, pipelineId, input, position) }).catch(rethrowWrite);
+    await tx.pipelineCard.create({
+      data: cardInsert(tenantId, pipelineId, input, position, createdByUserId),
+    }).catch(rethrowWrite);
     await after?.(tx);
   });
 }
@@ -197,6 +223,7 @@ export async function patchCard(
     await lockCard(tx, cardId);
     const card = await requireCard(tx, tenantId, pipelineId, cardId);
     await requireParty(tx, tenantId, patch.contactId, patch.ownerUserId);
+    await requireStatus(tx, tenantId, patch.statusId);
     const destination = patch.columnId;
     const moved = destination !== undefined && destination !== card.columnId;
     const position = moved ? await placeCard(tx, tenantId, pipelineId, destination) : undefined;
@@ -234,6 +261,7 @@ export async function convertLead(
   prisma: PrismaClient,
   tenantId: TenantId,
   cardId: string,
+  createdByUserId: string,
   after?: AfterWrite,
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
@@ -254,7 +282,7 @@ export async function convertLead(
     const source = await tx.pipelineCard.findFirstOrThrow({ where: { id: cardId, tenantId } });
     const position = await placeCard(tx, tenantId, deal.id, column.id);
     await tx.pipelineCard.create({
-      data: copiedDeal(tenantId, deal.id, column.id, position, source),
+      data: copiedDeal(tenantId, deal.id, column.id, position, source, createdByUserId),
     }).catch(rethrowWrite);
     await tx.pipelineCard.update({ where: { id: cardId }, data: { outcome: 'CONVERTED' } });
     await after?.(tx);

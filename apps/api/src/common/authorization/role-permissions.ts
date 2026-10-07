@@ -19,6 +19,7 @@ export const permissions = [
   'reservations:read',
   'dashboard:read',
   'members:invite',
+  'platform:provision',
 ] as const;
 
 export type Permission = (typeof permissions)[number];
@@ -43,11 +44,19 @@ const workspaceAccess = [
  * Role to permission map.
  * Every role may use contacts, lead cards, and deal cards, read the reservation summary, and open the dashboard.
  * Owner and Admin may also configure a board, revoke another user's sessions, read audit history, and invite members.
+ * Only Owner has `platform:provision`. A customer Owner still fails the platform-tenant guard.
  * Revoking your own sessions is not a permission.
  * A dashboard widget still checks its own module entitlement and permission.
  */
 export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
-  OWNER: ['sessions:revoke', 'audit:read', 'members:invite', 'pipelines:configure', ...workspaceAccess],
+  OWNER: [
+    'platform:provision',
+    'sessions:revoke',
+    'audit:read',
+    'members:invite',
+    'pipelines:configure',
+    ...workspaceAccess,
+  ],
   ADMIN: ['sessions:revoke', 'audit:read', 'members:invite', 'pipelines:configure', ...workspaceAccess],
   MEMBER: [...workspaceAccess],
 };

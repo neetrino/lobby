@@ -303,7 +303,8 @@ function isSession(value: Record<string, unknown>): value is SessionPrincipal {
     typeof value.user.name === 'string' &&
     (role === 'OWNER' || role === 'ADMIN' || role === 'MEMBER') &&
     typeof value.user.leadsEnabled === 'boolean' &&
-    typeof value.tenant.id === 'string'
+    typeof value.tenant.id === 'string' &&
+    (value.platform === undefined || typeof value.platform === 'boolean')
   );
 }
 

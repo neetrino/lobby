@@ -375,6 +375,31 @@
     "outcomeWon": "Выиграна",
     "outcomeLost": "Проиграна",
     "outcomeDisqualified": "Дисквалифицирована",
-    "outcomeConverted": "Преобразована"
+    "outcomeConverted": "Преобразована",
+    "search": "Найти карточку",
+    "status": "Статус",
+    "allStatuses": "Все статусы",
+    "clearFilters": "Сбросить",
+    "noStatus": "Без статуса",
+    "statuses": "Статусы",
+    "statusName": "Название статуса",
+    "statusColor": "Цвет статуса",
+    "addStatus": "Добавить",
+    "deleteStatus": "Удалить статус"
+  },
+  "platform": {
+    "title": "Организации",
+    "intro": "Откройте workspace компании и учётную запись её первого владельца. Вы не становитесь участником этой компании.",
+    "companyName": "Название компании",
+    "workspace": "Workspace",
+    "ownerName": "Имя владельца",
+    "email": "Почта владельца",
+    "password": "Временный пароль",
+    "submit": "Открыть организацию",
+    "created": "Открыто. Вход: workspace {workspace}, почта {email}.",
+    "taken": "Этот workspace уже занят.",
+    "invalid": "Проверьте workspace, почту и пароль. Пароль должен быть не короче 12 символов.",
+    "failed": "Не удалось открыть организацию.",
+    "empty": "Организаций пока нет."
   }
 }

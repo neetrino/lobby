@@ -18,6 +18,7 @@ import { ContactsToolbar, useContactSearch } from './contacts-toolbar';
 import { ContactsTop } from './contacts-top';
 import { LifecycleConfirm } from './lifecycle-confirm';
 import { EditorOverlay } from './overlay-portal';
+import glass from '../../ui/glass/glass.module.css';
 import styles from './contacts.module.css';
 import { useContactEditor } from './use-contact-editor';
 import { useContactFilters } from './use-contact-filters';
@@ -143,7 +144,7 @@ export function ContactsWorkspace() {
     <div className={styles.app}>
       <ActionToastView toast={toast} onDone={dismissToast} />
       <ContactsShell session={session} />
-      <main className={styles.main}>
+      <main className={`${styles.main} ${glass.canvas}`}>
         <ContactsTop
           session={session}
           activeCount={activeCount}

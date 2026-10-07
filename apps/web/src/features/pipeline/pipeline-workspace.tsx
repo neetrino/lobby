@@ -9,6 +9,7 @@ import type { SessionPrincipal } from '../contacts/contact';
 import { ContactsShell } from '../contacts/contacts-shell';
 import shell from '../contacts/contacts.module.css';
 import { AddColumn, PipelineColumnView } from './pipeline-column';
+import { shownCards } from './pipeline-filter';
 import { createBoardQueue } from './pipeline-queue';
 import {
   convertLead,
@@ -21,10 +22,16 @@ import {
   patchPipeline,
   PipelineRequestError,
   readPipeline,
+  createStatus,
+  deleteStatus,
   updateCard,
+  updateStatus,
   type PipelineBoard,
   type PipelineKindName,
 } from './pipeline-api';
+import glass from '../../ui/glass/glass.module.css';
+import { stageColors } from './pipeline-stage-color';
+import { PipelineToolbar } from './pipeline-toolbar';
 import styles from './pipeline.module.css';
 
 export function PipelineWorkspace({ kind }: { kind: PipelineKindName }) {
@@ -95,6 +102,7 @@ export function PipelineWorkspace({ kind }: { kind: PipelineKindName }) {
             error={error}
             locale={locale}
             userId={session?.user.id ?? null}
+            canConfigure={session?.user.role === 'OWNER' || session?.user.role === 'ADMIN'}
             onChange={change}
           />
         )}
@@ -118,13 +126,13 @@ function PipelineMetrics({
   const empty = board.columns.filter((column) => column.cards.length === 0).length;
   return (
     <section className={styles.metrics} aria-label={t('summary')}>
-      <article className={styles.metric}><span>{t('metricCards')}</span><strong>{cards}</strong></article>
-      <article className={styles.metric}>
+      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}><span>{t('metricCards')}</span><strong>{cards}</strong></article>
+      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}>
         <span>{t('metricAmount')}</span>
         <strong>{new Intl.NumberFormat(locale).format(total)} {board.amountLabel}</strong>
       </article>
-      <article className={styles.metric}><span>{t('metricColumns')}</span><strong>{board.columns.length}</strong></article>
-      <article className={styles.metric}><span>{t('metricEmpty')}</span><strong>{empty}</strong></article>
+      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}><span>{t('metricColumns')}</span><strong>{board.columns.length}</strong></article>
+      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}><span>{t('metricEmpty')}</span><strong>{empty}</strong></article>
     </section>
   );
 }
@@ -134,16 +142,21 @@ function PipelineView({
   error,
   locale,
   userId,
+  canConfigure,
   onChange,
 }: {
   board: PipelineBoard;
   error: string | null;
   locale: string;
   userId: string | null;
+  canConfigure: boolean;
   onChange: (action: () => Promise<PipelineBoard>) => Promise<void>;
 }) {
   const t = useTranslations('pipeline');
-  const cards = board.columns.flatMap((column) => column.cards);
+  const [query, setQuery] = useState('');
+  const [statusId, setStatusId] = useState('');
+  const colors = stageColors(board.columns.length);
+  const cards = board.columns.flatMap((column) => shownCards(column.cards, query, statusId));
   const total = cards.reduce((sum, card) => sum + card.amount, 0);
   return (
     <div className={styles.page}>
@@ -180,13 +193,33 @@ function PipelineView({
       </header>
       {error === null ? null : <p className={styles.banner}>{error}</p>}
       <PipelineMetrics board={board} locale={locale} cards={cards.length} total={total} />
+      <PipelineToolbar
+        query={query}
+        statusId={statusId}
+        statuses={board.statuses}
+        canConfigure={canConfigure}
+        onQuery={setQuery}
+        onStatus={setStatusId}
+        onClear={() => {
+          setQuery('');
+          setStatusId('');
+        }}
+        onCreate={(draft) => void onChange(() => createStatus(board.kind, draft))}
+        onRename={(id, name) => void onChange(() => updateStatus(board.kind, id, { name }))}
+        onRecolor={(id, color) => void onChange(() => updateStatus(board.kind, id, { color }))}
+        onDelete={(id) => void onChange(() => deleteStatus(board.kind, id))}
+      />
       <div className={styles.board}>
-        {board.columns.map((column) => (
+        {board.columns.map((column, stageIndex) => (
           <PipelineColumnView
             key={column.id}
-            column={column}
+            column={{ ...column, cards: shownCards(column.cards, query, statusId) }}
             kind={board.kind}
             userId={userId}
+            statuses={board.statuses}
+            stageColors={colors}
+            stageIndex={stageIndex}
+            sourceCount={column.cards.length}
             amountLabel={board.amountLabel}
             locale={locale}
             onRename={(name) => void onChange(() => patchColumn(board.kind, column.id, { name }))}

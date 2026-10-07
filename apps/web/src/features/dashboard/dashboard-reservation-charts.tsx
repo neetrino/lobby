@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 import type { DashboardBoard } from './dashboard-api';
 import styles from './dashboard-charts.module.css';
+import glass from '../../ui/glass/glass.module.css';
 import board from './dashboard.module.css';
 
 type Load = NonNullable<DashboardBoard['reservationLoad']>;
@@ -33,7 +34,7 @@ function LoadChart({ load, generatedAt }: { load: Load; generatedAt: string }) {
   const scale = Math.max(1, capacity ?? 0, ...points.map((point) => point.guests));
   const date = view === 'week' ? t('charts.week') : viewDate(generatedAt, view);
   return (
-    <section className={`${board.card} ${board.span6}`}>
+    <section className={`${board.card} ${glass.panel} ${glass.soft} ${board.span6}`}>
       <div className={styles.head}>
         <h2>{t('charts.loadTitle')}</h2>
         <p className={styles.meta}>{t(view === 'week' ? 'charts.loadWeekMetric' : 'charts.loadMetric')}</p>
@@ -138,7 +139,7 @@ function OccupancyChart({ load }: { load: Load }) {
   const t = useTranslations('dashboard');
   const capacity = positive(load.capacity);
   return (
-    <section className={`${board.card} ${board.span6}`}>
+    <section className={`${board.card} ${glass.panel} ${glass.soft} ${board.span6}`}>
       <div className={styles.head}>
         <h2>{t('charts.occupancyTitle')}</h2>
         <p className={styles.meta}>{t('charts.today')}</p>

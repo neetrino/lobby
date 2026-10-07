@@ -3,6 +3,7 @@ import { pipelineBoardResponseSchema, type PipelineBoard, type PipelineKindName 
 const API_ORIGIN = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export type { PipelineBoard, PipelineKindName };
+export type PipelineStatus = PipelineBoard['statuses'][number];
 export type PipelineColumn = PipelineBoard['columns'][number];
 export type PipelineCard = PipelineColumn['cards'][number];
 
@@ -70,9 +71,32 @@ export type CardUpdate = {
   expectedCloseOn?: string | null;
   contactId?: string | null;
   ownerUserId?: string | null;
+  statusId?: string | null;
   position?: number;
   columnId?: string;
 };
+
+export function createStatus(
+  kind: PipelineKindName,
+  body: { name: string; color: string },
+): Promise<PipelineBoard> {
+  return request(`/api/v1/pipelines/${kind}/statuses`, { method: 'POST', body: JSON.stringify(body) });
+}
+
+export function updateStatus(
+  kind: PipelineKindName,
+  statusId: string,
+  body: { name?: string; color?: string },
+): Promise<PipelineBoard> {
+  return request(`/api/v1/pipelines/${kind}/statuses/${statusId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteStatus(kind: PipelineKindName, statusId: string): Promise<PipelineBoard> {
+  return request(`/api/v1/pipelines/${kind}/statuses/${statusId}`, { method: 'DELETE' });
+}
 
 export function updateCard(
   kind: PipelineKindName,

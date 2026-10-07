@@ -14,11 +14,15 @@ import {
   columnPatchSchema,
   pipelineKindSchema,
   pipelinePatchSchema,
+  statusCreateSchema,
+  statusPatchSchema,
   type CardCreate,
   type CardPatch,
   type ColumnCreate,
   type ColumnPatch,
   type PipelinePatch,
+  type StatusCreate,
+  type StatusPatch,
 } from '../application/pipeline.schema';
 
 const idSchema = z.uuid();
@@ -79,6 +83,38 @@ export class PipelinesController {
     @ZodParam('columnId', idSchema) columnId: string,
   ): Promise<{ data: PipelineBoard }> {
     return { data: await this.pipelines.removeColumn(context, kind, columnId) };
+  }
+
+  @Post(':kind/statuses')
+  @Authorize('pipelines:configure')
+  @HttpCode(201)
+  async addStatus(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('kind', pipelineKindSchema) kind: PipelineKindName,
+    @ZodBody(statusCreateSchema) body: StatusCreate,
+  ): Promise<{ data: PipelineBoard }> {
+    return { data: await this.pipelines.addStatus(context, kind, body) };
+  }
+
+  @Patch(':kind/statuses/:statusId')
+  @Authorize('pipelines:configure')
+  async changeStatus(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('kind', pipelineKindSchema) kind: PipelineKindName,
+    @ZodParam('statusId', idSchema) statusId: string,
+    @ZodBody(statusPatchSchema) body: StatusPatch,
+  ): Promise<{ data: PipelineBoard }> {
+    return { data: await this.pipelines.changeStatus(context, kind, statusId, body) };
+  }
+
+  @Delete(':kind/statuses/:statusId')
+  @Authorize('pipelines:configure')
+  async removeStatus(
+    @CurrentRequest() context: RequestContext,
+    @ZodParam('kind', pipelineKindSchema) kind: PipelineKindName,
+    @ZodParam('statusId', idSchema) statusId: string,
+  ): Promise<{ data: PipelineBoard }> {
+    return { data: await this.pipelines.removeStatus(context, kind, statusId) };
   }
 
   @Post('lead/cards')

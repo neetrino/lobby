@@ -29,6 +29,7 @@ export type ContactWarning = {
 export type SessionPrincipal = {
   user: { id: string; name: string; role: 'OWNER' | 'ADMIN' | 'MEMBER'; leadsEnabled: boolean };
   tenant: { id: string };
+  platform?: boolean;
 };
 
 export type ContactListFilters = {

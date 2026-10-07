@@ -16,6 +16,7 @@ export async function clearTestTenantData(database: PrismaClient | undefined): P
   await database.diningArea.deleteMany();
   await database.venue.deleteMany();
   await database.pipelineCard.deleteMany();
+  await database.pipelineStatus.deleteMany();
   await database.pipelineColumn.deleteMany();
   await database.pipeline.deleteMany();
   await database.contact.deleteMany();

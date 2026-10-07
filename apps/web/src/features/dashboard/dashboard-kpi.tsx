@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 
 import type { DashboardCard } from './dashboard-api';
 import { widgetLabel } from './dashboard-layout';
+import glass from '../../ui/glass/glass.module.css';
 import styles from './dashboard.module.css';
 
 export function kpiSpan(count: number): string {
@@ -24,7 +25,7 @@ export function kpiSpan(count: number): string {
 export function KpiCard({ card, locale, span }: { card: DashboardCard; locale: string; span: string }) {
   const t = useTranslations('dashboard');
   return (
-    <article className={`${styles.card} ${span}`}>
+    <article className={`${styles.card} ${glass.panel} ${glass.soft} ${span}`}>
       <div className={styles.kpiTop}>
         <span className={styles.iconBox} aria-hidden="true">
           <KpiIcon name={card.key} />

@@ -12,6 +12,7 @@ import { IdentityModule, SessionGuard } from './modules/identity';
 import { MembersModule } from './modules/members';
 import { MessengerModule } from './modules/messenger';
 import { OrganizationsModule } from './modules/organizations';
+import { PlatformModule } from './modules/platform';
 import { ReservationsModule } from './modules/reservations';
 
 @Module({
@@ -20,6 +21,7 @@ import { ReservationsModule } from './modules/reservations';
     IdentityModule,
     MembersModule,
     OrganizationsModule,
+    PlatformModule,
     ContactsModule,
     DashboardModule,
     DealsModule,

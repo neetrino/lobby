@@ -15,7 +15,6 @@
   min-height: 100%;
   margin-inline: auto;
   padding: 32px;
-  background: var(--background);
   color: var(--text-primary);
   font-family: var(--font-inter), var(--font-armenian), var(--font-sans), sans-serif;
   font-size: 14px;
@@ -48,10 +47,6 @@
   gap: 10px;
   min-width: 0;
   padding: 20px;
-  border: 1px solid #e7eaf0;
-  border-radius: 16px;
-  background: var(--surface);
-  box-shadow: 0 1px 2px rgb(16 24 40 / 3%);
 }
 
 .kpiTop {

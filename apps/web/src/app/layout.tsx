@@ -6,6 +6,9 @@ import './globals.css';
 export const metadata: Metadata = {
   title: 'Lobby',
   description: 'Multi-tenant CRM and task management',
+  icons: {
+    icon: '/jigsaw-puzzle.webp',
+  },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {

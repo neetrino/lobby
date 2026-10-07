@@ -9,6 +9,13 @@ export const pipelineKindSchema = z.enum(pipelineKinds);
 
 export const pipelineCardOutcomes = ['OPEN', 'WON', 'LOST', 'DISQUALIFIED', 'CONVERTED'] as const;
 
+const pipelineStatusSchema = z.strictObject({
+  id: z.uuid(),
+  name: z.string().min(1).max(40),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  position: z.number().int().min(0),
+});
+
 const pipelineCardSchema = z.strictObject({
   id: z.uuid(),
   title: z.string().min(1).max(120),
@@ -23,6 +30,9 @@ const pipelineCardSchema = z.strictObject({
   expectedCloseOn: z.iso.date().nullable().default(null),
   contactId: z.uuid().nullable().default(null),
   ownerUserId: z.uuid().nullable().default(null),
+  statusId: z.uuid().nullable().default(null),
+  createdAt: z.iso.datetime().nullable().default(null),
+  createdByName: z.string().max(120).nullable().default(null),
 });
 
 const pipelineColumnSchema = z.strictObject({
@@ -40,6 +50,7 @@ export const pipelineBoardSchema = z.strictObject({
   name: z.string().min(1).max(80),
   amountLabel: z.string().max(8),
   columns: z.array(pipelineColumnSchema),
+  statuses: z.array(pipelineStatusSchema).default([]),
 });
 
 export const pipelineBoardResponseSchema = z.strictObject({

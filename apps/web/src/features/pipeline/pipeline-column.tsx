@@ -3,9 +3,10 @@
 import { useTranslations } from 'next-intl';
 import { useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
 
+import glass from '../../ui/glass/glass.module.css';
 import { PipelineCardView } from './pipeline-card';
 import { clampColumnWidth } from './pipeline-width';
-import type { CardUpdate, PipelineColumn, PipelineKindName } from './pipeline-api';
+import type { CardUpdate, PipelineBoard, PipelineColumn, PipelineKindName } from './pipeline-api';
 import styles from './pipeline.module.css';
 
 export function PipelineColumnView({
@@ -17,6 +18,10 @@ export function PipelineColumnView({
   onDelete,
   kind,
   userId,
+  statuses = [],
+  stageColors = [],
+  stageIndex = 0,
+  sourceCount,
   onCreateCard,
   onMoveCard,
   onDeleteCard,
@@ -26,6 +31,10 @@ export function PipelineColumnView({
   column: PipelineColumn;
   kind: PipelineKindName;
   userId: string | null;
+  statuses?: PipelineBoard['statuses'];
+  stageColors?: string[];
+  stageIndex?: number;
+  sourceCount?: number;
   amountLabel: string;
   locale: string;
   onRename: (name: string) => void;
@@ -42,14 +51,16 @@ export function PipelineColumnView({
   const [confirming, setConfirming] = useState(false);
   const width = draft ?? column.widthPx;
   const sum = column.cards.reduce((total, card) => total + card.amount, 0);
+  const cardTotal = sourceCount ?? column.cards.length;
+  const headerColor = stageColors[stageIndex];
   return (
     <section
-      className={styles.column}
+      className={`${styles.column} ${glass.panel} ${glass.medium}`}
       style={{ width }}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => dropCard(event, onMoveCard)}
     >
-      <header className={styles.columnHead}>
+      <header className={styles.columnHead} style={headerColor === undefined ? undefined : { background: headerColor }}>
         <input
           className={styles.columnName}
           aria-label={t('columnName')}
@@ -73,23 +84,28 @@ export function PipelineColumnView({
         {formatAmount(sum, locale)} {amountLabel}
       </p>
       <div className={styles.cards}>
-        {column.cards.map((card, index) => (
+        {column.cards.map((card) => (
           <PipelineCardView
             key={card.id}
             card={card}
-            index={index}
-            total={column.cards.length}
+            index={card.position}
+            total={cardTotal}
             kind={kind}
             userId={userId}
             amountLabel={amountLabel}
             locale={locale}
+            statuses={statuses}
+            stageColors={stageColors}
+            stageIndex={stageIndex}
             onSave={(patch) => onSaveCard(card.id, patch)}
             onDelete={() => onDeleteCard(card.id)}
             onConvert={() => onConvertCard(card.id)}
           />
         ))}
       </div>
-      <AddCard onCreate={onCreateCard} />
+      <footer className={styles.columnFoot}>
+        <AddCard onCreate={onCreateCard} />
+      </footer>
       <span
         className={styles.handle}
         role="separator"

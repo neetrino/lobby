@@ -29,6 +29,7 @@ export const columnPatchSchema = z
   .refine((value) => value.name !== undefined || value.widthPx !== undefined);
 
 const outcomeSchema = z.enum(['OPEN', 'WON', 'LOST', 'DISQUALIFIED', 'CONVERTED']);
+const statusColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/).transform((value) => value.toLowerCase());
 
 export const cardCreateSchema = z.strictObject({
   columnId: columnIdSchema,
@@ -43,7 +44,20 @@ export const cardCreateSchema = z.strictObject({
   expectedCloseOn: z.iso.date().nullable().default(null),
   contactId: z.uuid().nullable().default(null),
   ownerUserId: z.uuid().nullable().default(null),
+  statusId: z.uuid().nullable().default(null),
 });
+
+export const statusCreateSchema = z.strictObject({
+  name: z.string().trim().min(1).max(40),
+  color: statusColorSchema,
+});
+
+export const statusPatchSchema = z
+  .strictObject({
+    name: z.string().trim().min(1).max(40).optional(),
+    color: statusColorSchema.optional(),
+  })
+  .refine((value) => value.name !== undefined || value.color !== undefined);
 
 export const cardPatchSchema = z
   .strictObject({
@@ -59,6 +73,7 @@ export const cardPatchSchema = z
     expectedCloseOn: z.iso.date().nullable().optional(),
     contactId: z.uuid().nullable().optional(),
     ownerUserId: z.uuid().nullable().optional(),
+    statusId: z.uuid().nullable().optional(),
     position: z.number().int().min(0).optional(),
   })
   .refine((value) => Object.values(value).some((item) => item !== undefined));
@@ -68,3 +83,5 @@ export type ColumnCreate = z.infer<typeof columnCreateSchema>;
 export type ColumnPatch = z.infer<typeof columnPatchSchema>;
 export type CardCreate = z.infer<typeof cardCreateSchema>;
 export type CardPatch = z.infer<typeof cardPatchSchema>;
+export type StatusCreate = z.infer<typeof statusCreateSchema>;
+export type StatusPatch = z.infer<typeof statusPatchSchema>;

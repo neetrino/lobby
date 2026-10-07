@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { Prisma, PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
+import { PLATFORM_SUBDOMAIN } from '../../../common/platform/platform-subdomain';
 import { tenantRoles, type TenantRole } from '../../../common/tenant/authenticated-tenant-context';
 
 export type SessionUserSecurity = {
@@ -30,11 +31,19 @@ export class PrismaSessionUserStore {
   async findAccount(
     userId: string,
     tenantId: string,
-  ): Promise<{ name: string; leadsEnabled: boolean } | null> {
-    return this.prisma.user.findUnique({
+  ): Promise<{ name: string; leadsEnabled: boolean; platform: boolean } | null> {
+    const account = await this.prisma.user.findUnique({
       where: { id_tenantId: { id: userId, tenantId } },
-      select: { name: true, leadsEnabled: true },
+      select: { name: true, leadsEnabled: true, tenant: { select: { subdomain: true } } },
     });
+    if (account === null) {
+      return null;
+    }
+    return {
+      name: account.name,
+      leadsEnabled: account.leadsEnabled,
+      platform: account.tenant.subdomain === PLATFORM_SUBDOMAIN,
+    };
   }
 
   /** Turns Leads on or off for this account. Deal access is unchanged. */

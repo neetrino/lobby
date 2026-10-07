@@ -22,6 +22,7 @@ const leadsPreferenceSchema = z.strictObject({ enabled: z.boolean() });
 export type SessionView = {
   user: { id: string; name: string; role: AuthenticatedSession['role']; leadsEnabled: boolean };
   tenant: { id: string };
+  platform: boolean;
 };
 
 @Controller('auth')
@@ -46,6 +47,7 @@ export class SessionController {
           leadsEnabled: account?.leadsEnabled ?? true,
         },
         tenant: { id: current.tenantId },
+        platform: account?.platform ?? false,
       },
     };
   }

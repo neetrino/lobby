@@ -68,6 +68,7 @@ describe('session endpoints', () => {
       data: {
         user: { id: owner.userId, name: 'OWNER', role: 'OWNER', leadsEnabled: true },
         tenant: { id: owner.tenantId },
+        platform: false,
       },
     });
     expect(JSON.stringify(body)).not.toContain(opened.rawSessionId);

@@ -8,6 +8,7 @@ import { useContactsListUi } from './contacts-list-ui';
 import { SelectionBar } from './contacts-selection-bar';
 import { ContactPager } from './contacts-table-pager';
 import { ContactRow } from './contacts-table-row';
+import glass from '../../ui/glass/glass.module.css';
 import styles from './contacts.module.css';
 import { usePageSelection } from './use-page-selection';
 
@@ -51,7 +52,7 @@ export function ContactsTable({
   const selection = usePageSelection(rows);
 
   return (
-    <section className={styles.tableCard} aria-busy={pending}>
+    <section className={`${styles.tableCard} ${glass.panel} ${glass.soft}`} aria-busy={pending}>
       <SelectionBar
         selected={selection.picked}
         pageCount={rows.length}

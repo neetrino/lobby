@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import {
   AuthRequestError,
   hasSession,
+  homeAfterSignIn,
   loginAccount,
   type RegistrationStatus,
 } from './auth-api';
@@ -46,9 +47,13 @@ export function LoginForm({
   useEffect(() => {
     let active = true;
     hasSession()
-      .then((signedIn) => {
-        if (active && signedIn) {
-          router.replace(`/${locale}/dashboard`);
+      .then(async (signedIn) => {
+        if (!active || !signedIn) {
+          return;
+        }
+        const home = await homeAfterSignIn();
+        if (active) {
+          router.replace(`/${locale}/${home}`);
         }
       })
       .catch(() => undefined);
@@ -72,7 +77,8 @@ export function LoginForm({
     setTone('error');
     try {
       await loginAccount(draft);
-      router.push(`/${locale}/dashboard`);
+      const home = await homeAfterSignIn();
+      router.push(`/${locale}/${home}`);
     } catch (caught) {
       const code = caught instanceof AuthRequestError ? caught.code : 'REQUEST_FAILED';
       setBanner(authErrorText(t, code));

@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { SessionPrincipal } from '../contacts/contact';
 import { ContactsShell } from '../contacts/contacts-shell';
 import shell from '../contacts/contacts.module.css';
+import glass from '../../ui/glass/glass.module.css';
 import {
   DashboardRequestError,
   readDashboard,
@@ -108,7 +109,7 @@ export function DashboardWorkspace() {
   return (
     <div className={shell.app}>
       <ContactsShell session={session} current="dashboard" />
-      <main className={shell.main}>
+      <main className={`${shell.main} ${glass.canvas}`}>
         {error !== null ? <p className={styles.banner}>{t('failed')}</p> : null}
         {board === null && error === null ? <p className={styles.page}>{t('loading')}</p> : null}
         {board === null ? null : (

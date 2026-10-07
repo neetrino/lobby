@@ -375,6 +375,31 @@
     "outcomeWon": "Հաղթած",
     "outcomeLost": "Կորած",
     "outcomeDisqualified": "Որակազրկված",
-    "outcomeConverted": "Փոխարկված"
+    "outcomeConverted": "Փոխարկված",
+    "search": "Փնտրել քարտ",
+    "status": "Ստատուս",
+    "allStatuses": "Բոլոր ստատուսները",
+    "clearFilters": "Մաքրել",
+    "noStatus": "Առանց ստատուսի",
+    "statuses": "Ստատուսներ",
+    "statusName": "Ստատուսի անուն",
+    "statusColor": "Ստատուսի գույն",
+    "addStatus": "Ավելացնել",
+    "deleteStatus": "Ջնջել ստատուսը"
+  },
+  "platform": {
+    "title": "Կազմակերպություններ",
+    "intro": "Բացիր կազմակերպության workspace-ը և նրա առաջին սեփականատիրոջ հաշիվը։ Դու այդ կազմակերպության անդամ չես դառնում։",
+    "companyName": "Կազմակերպության անուն",
+    "workspace": "Workspace",
+    "ownerName": "Սեփականատիրոջ անուն",
+    "email": "Սեփականատիրոջ էլ. փոստ",
+    "password": "Ժամանակավոր գաղտնաբառ",
+    "submit": "Բացել կազմակերպությունը",
+    "created": "Բացված է։ Մուտքը՝ workspace {workspace}, էլ. փոստ {email}։",
+    "taken": "Այս workspace-ն արդեն զբաղված է։",
+    "invalid": "Ստուգիր workspace-ը, էլ. փոստը և գաղտնաբառը։ Գաղտնաբառը առնվազն 12 նիշ է։",
+    "failed": "Կազմակերպությունը չբացվեց։",
+    "empty": "Դեռ կազմակերպություն չկա։"
   }
 }

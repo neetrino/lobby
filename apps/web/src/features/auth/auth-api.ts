@@ -110,6 +110,21 @@ export async function hasSession(): Promise<boolean> {
   return response.ok;
 }
 
+/** Where a signed-in account should land. A customer session stays on the dashboard. */
+export async function homeAfterSignIn(): Promise<'platform' | 'dashboard'> {
+  const response = await fetch(`${API_ORIGIN}/api/v1/auth/session`, {
+    method: 'GET',
+    credentials: 'include',
+    headers: { accept: 'application/json' },
+  });
+  if (!response.ok) {
+    return 'dashboard';
+  }
+  const body: unknown = await response.json().catch(() => null);
+  const data = isRecord(body) ? body.data : undefined;
+  return isRecord(data) && data.platform === true ? 'platform' : 'dashboard';
+}
+
 async function send(path: string, body: unknown, empty = false): Promise<void> {
   const response = await fetch(`${API_ORIGIN}${path}`, {
     method: 'POST',

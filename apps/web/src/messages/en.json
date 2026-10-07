@@ -375,6 +375,31 @@
     "outcomeWon": "Won",
     "outcomeLost": "Lost",
     "outcomeDisqualified": "Disqualified",
-    "outcomeConverted": "Converted"
+    "outcomeConverted": "Converted",
+    "search": "Search tasks",
+    "status": "Status",
+    "allStatuses": "All statuses",
+    "clearFilters": "Clear filters",
+    "noStatus": "No status",
+    "statuses": "Statuses",
+    "statusName": "Status name",
+    "statusColor": "Status color",
+    "addStatus": "Add status",
+    "deleteStatus": "Delete status"
+  },
+  "platform": {
+    "title": "Organizations",
+    "intro": "Open a workspace for a company and create its first owner. You do not become a member of that company.",
+    "companyName": "Company name",
+    "workspace": "Workspace",
+    "ownerName": "Owner name",
+    "email": "Owner email",
+    "password": "Temporary password",
+    "submit": "Open organization",
+    "created": "Opened. They sign in with workspace {workspace} and email {email}.",
+    "taken": "That workspace is already taken.",
+    "invalid": "Check the workspace, email, and password. The password must be at least 12 characters.",
+    "failed": "The organization could not be opened.",
+    "empty": "No organizations yet."
   }
 }

@@ -36,6 +36,7 @@ describe('route authorization', () => {
       'MemberInvitationsController',
       'PasswordResetController',
       'PipelinesController',
+      'PlatformOrganizationsController',
       'SessionController',
     ]);
     expect(gaps).toEqual([]);

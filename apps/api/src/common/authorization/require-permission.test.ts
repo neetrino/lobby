@@ -55,7 +55,10 @@ describe('role permissions', () => {
       'pipelines:configure',
       ...workspacePermissions,
     ]);
-    expect(ROLE_PERMISSIONS.OWNER).toEqual(ROLE_PERMISSIONS.ADMIN);
+    expect(hasPermission('OWNER', 'platform:provision')).toBe(true);
+    expect(hasPermission('ADMIN', 'platform:provision')).toBe(false);
+    expect(hasPermission('MEMBER', 'platform:provision')).toBe(false);
+    expect(ROLE_PERMISSIONS.OWNER).toEqual(['platform:provision', ...ROLE_PERMISSIONS.ADMIN]);
   });
 
   it('rejects a missing permission without HTTP and allows a role that has it', () => {
