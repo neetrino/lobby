@@ -13,6 +13,7 @@ export {
   contactLifecycleAuditSchema,
   invitationAuditSchema,
   pipelineAuditSchema,
+  reservationCreatedAuditSchema,
   passwordResetAuditSchema,
   userSessionsTerminatedAuditSchema,
 } from './audit/index.js';
@@ -25,6 +26,7 @@ export type {
   ContactLifecycleAudit,
   InvitationAudit,
   PipelineAudit,
+  ReservationCreatedAudit,
   PasswordResetAudit,
   UserSessionsTerminatedAudit,
 } from './audit/index.js';
@@ -119,12 +121,15 @@ export type { Locale } from './locales.js';
 export {
   RESERVATION_CREATED_EVENT_VERSION,
   createReservationSchema,
+  reservationSources,
   reservationCreatedEventSchema,
   reservationStatusSchema,
   reservationStatuses,
 } from './reservations/index.js';
 export type {
+  CreateReservationCommand,
   CreateReservationInput,
   ReservationCreatedEvent,
+  ReservationSource,
   ReservationStatus,
 } from './reservations/index.js';

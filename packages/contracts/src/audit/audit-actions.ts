@@ -22,6 +22,7 @@ export const auditActions = {
   PIPELINE_CONFIGURED: 'pipeline.configured',
   PIPELINE_CARD_DELETED: 'pipeline.card.deleted',
   PIPELINE_CARD_UPDATED: 'pipeline.card.updated',
+  RESERVATION_CREATED: 'reservation.created',
   RESERVATION_STATUS_CHANGED: 'reservation.status.changed',
 } as const;
 
@@ -43,6 +44,7 @@ export const auditActionValues = [
   auditActions.PIPELINE_CONFIGURED,
   auditActions.PIPELINE_CARD_DELETED,
   auditActions.PIPELINE_CARD_UPDATED,
+  auditActions.RESERVATION_CREATED,
   auditActions.RESERVATION_STATUS_CHANGED,
 ] as const;
 

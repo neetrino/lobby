@@ -16,6 +16,7 @@ const workspacePermissions = [
   'deals:read',
   'deals:update',
   'deals:delete',
+  'reservations:create',
   'reservations:read',
   'dashboard:read',
   'pipelines:resize',

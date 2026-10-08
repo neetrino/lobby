@@ -25,6 +25,9 @@ export function mapHttpException(exception: unknown, requestId: string): MappedH
   if (exception instanceof ModuleDisabledError) {
     return mapped(403, exception.code, exception.message, requestId);
   }
+  if (isReservationFailure(exception)) {
+    return mapped(exception.statusCode, exception.code, exception.message, requestId);
+  }
   if (isContactEmailTaken(exception)) {
     return mapped(409, exception.code, exception.message, requestId);
   }
@@ -106,6 +109,35 @@ function isLeadsDisabled(
     exception.name === 'LeadsDisabledError' &&
     'code' in exception &&
     exception.code === 'LEADS_DISABLED'
+  );
+}
+
+const reservationErrorCodes = new Set([
+  'RESERVATION_LOCATION_NOT_FOUND',
+  'RESERVATION_TABLE_NOT_FOUND',
+  'RESERVATION_TABLE_CAPACITY_EXCEEDED',
+  'RESERVATION_OUTSIDE_WORKING_HOURS',
+  'RESERVATION_TIME_CONFLICT',
+  'RESERVATION_SOURCE_CONFLICT',
+  'RESERVATION_CONTACT_NOT_FOUND',
+  'RESERVATION_ASSIGNEE_NOT_FOUND',
+  'RESERVATION_MODULE_DISABLED',
+  'RESERVATION_START_NOT_IN_FUTURE',
+]);
+
+function isReservationFailure(
+  exception: unknown,
+): exception is { code: string; message: string; statusCode: number } {
+  if (!(exception instanceof Error) || exception.name !== 'ReservationFailure') {
+    return false;
+  }
+  if (!('code' in exception) || !('statusCode' in exception)) {
+    return false;
+  }
+  return (
+    typeof exception.code === 'string' &&
+    reservationErrorCodes.has(exception.code) &&
+    typeof exception.statusCode === 'number'
   );
 }
 

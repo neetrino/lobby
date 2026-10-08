@@ -1,5 +1,5 @@
-export { createReservationSchema } from './create-reservation.js';
-export type { CreateReservationInput } from './create-reservation.js';
+export { createReservationSchema, reservationSources } from './create-reservation.js';
+export type { CreateReservationCommand, CreateReservationInput, ReservationSource } from './create-reservation.js';
 export {
   RESERVATION_CREATED_EVENT_VERSION,
   reservationCreatedEventSchema,

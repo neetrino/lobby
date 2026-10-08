@@ -4,6 +4,7 @@ import type {
   InvitationCreatedEvent,
   PasswordResetRequestedEvent,
   PipelineChangedEvent,
+  ReservationCreatedEvent,
   TenantCreatedEvent,
 } from '@lobby/contracts';
 import type { Prisma } from '@lobby/database' with { 'resolution-mode': 'import' };
@@ -13,7 +14,8 @@ type OutboxEnqueueEvent =
   | TenantCreatedEvent
   | InvitationCreatedEvent
   | PasswordResetRequestedEvent
-  | PipelineChangedEvent;
+  | PipelineChangedEvent
+  | ReservationCreatedEvent;
 
 @Injectable()
 export class OutboxService {
