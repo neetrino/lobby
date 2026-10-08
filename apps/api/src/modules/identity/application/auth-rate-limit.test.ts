@@ -52,6 +52,8 @@ const tight: AuthRateLimitConfig = {
   passwordResetIp: { limit: 20, windowMs: 60_000 },
   passwordResetAccount: { limit: 20, windowMs: 60_000 },
   passwordResetConfirmIp: { limit: 20, windowMs: 60_000 },
+  teamMessageIp: { limit: 20, windowMs: 60_000 },
+  teamMessageUser: { limit: 2, windowMs: 60_000 },
 };
 
 let prisma: PrismaClient;
@@ -87,6 +89,25 @@ describe('auth rate limits', () => {
     expect(
       [...redis.counters.keys()].filter((key) => key.startsWith('rate_limit:login:account:')),
     ).toHaveLength(1);
+  });
+
+  it('limits direct messages per user without storing the raw id or address', async () => {
+    const redis = new MemoryRateLimitRedis();
+    const limits = new AuthRateLimitService(redis, tight);
+    const tenantId = '22222222-2222-4222-8222-222222222222';
+    const userId = '11111111-1111-4111-8111-111111111111';
+    await limits.consumeTeamMessage(ip, tenantId, userId);
+    await limits.consumeTeamMessage(ip, tenantId, userId);
+
+    await expect(limits.consumeTeamMessage(ip, tenantId, userId)).rejects.toMatchObject({
+      code: apiErrorCodes.RATE_LIMITED,
+    });
+    for (const key of redis.counters.keys()) {
+      expect(key.startsWith('rate_limit:team_message:')).toBe(true);
+      expect(key.includes(userId)).toBe(false);
+      expect(key.includes(tenantId)).toBe(false);
+      expect(key.includes(ip)).toBe(false);
+    }
   });
 
   it('returns the same result for an existing account and a missing account', async () => {

@@ -34,15 +34,15 @@ model Tenant {
   createdAt                DateTime                   @default(now()) @map("created_at") @db.Timestamptz(3)
   users                    User[]
   tenantModules            TenantModule[]
-  contacts                 Contact[]
-  outboxEvents             OutboxEvent[]
-  venues                   Venue[]
-  diningAreas              DiningArea[]
-  tables                   RestaurantTable[]
-  servicePeriods           ServicePeriod[]
-  reservations             Reservation[]
-  reservationTables        ReservationTable[]
-  reservationStatusHistory ReservationStatusHistory[]
+  contacts                      Contact[]
+  outboxEvents                  OutboxEvent[]
+  reservationLocations          ReservationLocation[]
+  reservationTables             ReservationTable[]
+  reservationWorkingHours       ReservationWorkingHours[]
+  reservationScheduleExceptions ReservationScheduleException[]
+  reservations                  Reservation[]
+  reservationSourceRequests     ReservationSourceRequest[]
+  reservationStatusHistory      ReservationStatusHistory[]
   auditEvents              AuditEvent[]
   memberInvitations        MemberInvitation[]
   passwordResets           PasswordReset[]
@@ -53,6 +53,8 @@ model Tenant {
   pipelineStatuses         PipelineStatus[]
   pipelineCardMessages     PipelineCardMessage[]
   pipelineCardNotes        PipelineCardNote[]
+  directConversations      DirectConversation[]
+  directMessages           DirectMessage[]
 
   @@map("tenants")
 }
@@ -70,12 +72,14 @@ model User {
   authenticationVersion Int        @default(1) @map("authentication_version")
   passwordChangedAt     DateTime?  @map("password_changed_at") @db.Timestamptz(3)
   leadsEnabled          Boolean    @default(true) @map("leads_enabled")
+  jobTitle              String?    @map("job_title")
   createdAt             DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt             DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   tenant                   Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  createdReservations      Reservation[]              @relation("ReservationCreatedBy")
-  reservationStatusChanges ReservationStatusHistory[] @relation("ReservationStatusChangedBy")
+  assignedReservations     Reservation[]              @relation("ReservationAssignedUser")
+  createdReservations      Reservation[]              @relation("ReservationCreatedByUser")
+  reservationStatusChanges ReservationStatusHistory[]
   auditEvents              AuditEvent[]
   createdContacts          Contact[]                  @relation("ContactCreatedBy")
   ownedContacts            Contact[]                  @relation("ContactOwner")
@@ -86,6 +90,9 @@ model User {
   createdPipelineCards     PipelineCard[]             @relation("PipelineCardCreator")
   pipelineCardMessages     PipelineCardMessage[]
   pipelineCardNotes        PipelineCardNote[]
+  directMessages           DirectMessage[]
+  directConversationsLow   DirectConversation[] @relation("DirectConversationLow")
+  directConversationsHigh  DirectConversation[] @relation("DirectConversationHigh")
 
   @@unique([tenantId, email])
   @@unique([id, tenantId])
@@ -284,8 +291,17 @@ model ProcessedEvent {
   @@map("processed_events")
 }
 
+enum ReservationLocationStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum ReservationTableStatus {
+  ACTIVE
+  INACTIVE
+}
+
 enum ReservationStatus {
-  HOLD
   PENDING
   CONFIRMED
   ARRIVED
@@ -295,151 +311,165 @@ enum ReservationStatus {
   NO_SHOW
 }
 
-model Venue {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
+enum ReservationSource {
+  STAFF
+  WEBSITE
+  INSTAGRAM
+  WHATSAPP
+  TELEGRAM
+  PHONE
+  WALK_IN
+}
+
+/// Branch of a restaurant or cafe. `timezone` is an IANA name, such as Asia/Yerevan.
+model ReservationLocation {
+  id        String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String                    @map("tenant_id") @db.Uuid
   name      String
   timezone  String
   address   String?
-  phone     String?
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  status    ReservationLocationStatus @default(ACTIVE)
+  createdAt DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime                  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  tenant         Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  diningAreas    DiningArea[]
-  tables         RestaurantTable[]
-  servicePeriods ServicePeriod[]
-  reservations   Reservation[]
-
-  @@unique([id, tenantId])
-  @@index([tenantId, isActive])
-  @@map("venues")
-}
-
-model DiningArea {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @map("tenant_id") @db.Uuid
-  venueId   String   @map("venue_id") @db.Uuid
-  name      String
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  tenant Tenant            @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  venue  Venue             @relation(fields: [venueId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
-  tables RestaurantTable[]
+  tenant       Tenant                         @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tables       ReservationTable[]
+  workingHours ReservationWorkingHours[]
+  exceptions   ReservationScheduleException[]
+  reservations Reservation[]
 
   @@unique([id, tenantId])
-  @@unique([id, tenantId, venueId])
-  @@unique([venueId, name])
-  @@index([tenantId, venueId, isActive])
-  @@map("dining_areas")
+  @@unique([tenantId, name])
+  @@map("reservation_locations")
 }
 
-model RestaurantTable {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId        String   @map("tenant_id") @db.Uuid
-  venueId         String   @map("venue_id") @db.Uuid
-  diningAreaId    String   @map("dining_area_id") @db.Uuid
-  label           String
-  minimumCapacity Int      @map("minimum_capacity")
-  maximumCapacity Int      @map("maximum_capacity")
-  isActive        Boolean  @default(true) @map("is_active")
-  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  venue        Venue              @relation(fields: [venueId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
-  diningArea   DiningArea         @relation(fields: [diningAreaId, tenantId, venueId], references: [id, tenantId, venueId], onDelete: Restrict, onUpdate: Cascade)
-  reservations ReservationTable[]
-
-  @@unique([id, tenantId])
-  @@unique([id, tenantId, venueId])
-  @@unique([venueId, label])
-  @@index([tenantId, venueId, diningAreaId, isActive])
-  @@map("restaurant_tables")
-}
-
-model ServicePeriod {
-  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId                  String   @map("tenant_id") @db.Uuid
-  venueId                   String   @map("venue_id") @db.Uuid
-  name                      String
-  dayOfWeek                 Int      @map("day_of_week")
-  opensAtMinute             Int      @map("opens_at_minute")
-  closesAtMinute            Int      @map("closes_at_minute")
-  defaultReservationMinutes Int      @map("default_reservation_minutes")
-  slotIntervalMinutes       Int      @map("slot_interval_minutes")
-  isActive                  Boolean  @default(true) @map("is_active")
-  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt                 DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  venue  Venue  @relation(fields: [venueId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
-
-  @@index([tenantId, venueId, dayOfWeek, isActive])
-  @@map("service_periods")
-}
-
-model Reservation {
-  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId           String            @map("tenant_id") @db.Uuid
-  venueId            String            @map("venue_id") @db.Uuid
-  contactId          String?           @map("contact_id") @db.Uuid
-  createdByUserId    String?           @map("created_by_user_id") @db.Uuid
-  startsAt           DateTime          @map("starts_at") @db.Timestamptz(3)
-  endsAt             DateTime          @map("ends_at") @db.Timestamptz(3)
-  partySize          Int               @map("party_size")
-  status             ReservationStatus @default(PENDING)
-  customerName       String            @map("customer_name")
-  customerPhone      String?           @map("customer_phone")
-  customerEmail      String?           @map("customer_email")
-  specialRequests    String?           @map("special_requests")
-  internalNotes      String?           @map("internal_notes")
-  confirmedAt        DateTime?         @map("confirmed_at") @db.Timestamptz(3)
-  seatedAt           DateTime?         @map("seated_at") @db.Timestamptz(3)
-  completedAt        DateTime?         @map("completed_at") @db.Timestamptz(3)
-  cancelledAt        DateTime?         @map("cancelled_at") @db.Timestamptz(3)
-  cancellationReason String?           @map("cancellation_reason")
-  createdAt          DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
-
-  tenant        Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  venue         Venue                      @relation(fields: [venueId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
-  contact       Contact?                   @relation(fields: [contactId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
-  createdBy     User?                      @relation("ReservationCreatedBy", fields: [createdByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
-  tables        ReservationTable[]
-  statusHistory ReservationStatusHistory[]
-
-  @@unique([id, tenantId])
-  @@unique([id, tenantId, venueId])
-  @@index([tenantId, venueId, startsAt])
-  @@index([tenantId, contactId, startsAt])
-  @@index([tenantId, status, startsAt])
-  @@map("reservations")
-}
-
+/// Physical table that can be booked. Capacity is 1–100 and at least `minCapacity`.
 model ReservationTable {
-  tenantId           String   @map("tenant_id") @db.Uuid
-  venueId            String   @map("venue_id") @db.Uuid
-  reservationId      String   @map("reservation_id") @db.Uuid
-  tableId            String   @map("table_id") @db.Uuid
-  startsAt           DateTime @map("starts_at") @db.Timestamptz(3)
-  endsAt             DateTime @map("ends_at") @db.Timestamptz(3)
-  blocksAvailability Boolean  @default(true) @map("blocks_availability")
-  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt          DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String                 @map("tenant_id") @db.Uuid
+  locationId  String                 @map("location_id") @db.Uuid
+  name        String
+  minCapacity Int                    @default(1) @map("min_capacity")
+  capacity    Int
+  status      ReservationTableStatus @default(ACTIVE)
+  archivedAt  DateTime?              @map("archived_at") @db.Timestamptz(3)
+  createdAt   DateTime               @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt   DateTime               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
 
-  tenant      Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  reservation Reservation     @relation(fields: [reservationId, tenantId, venueId], references: [id, tenantId, venueId], onDelete: Cascade, onUpdate: Cascade)
-  table       RestaurantTable @relation(fields: [tableId, tenantId, venueId], references: [id, tenantId, venueId], onDelete: Restrict, onUpdate: Cascade)
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  location     ReservationLocation @relation(fields: [locationId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  reservations Reservation[]
 
-  @@id([reservationId, tableId])
-  @@index([tenantId, tableId, startsAt])
+  @@unique([id, tenantId])
+  @@unique([id, tenantId, locationId])
+  @@unique([tenantId, locationId, name])
+  @@index([tenantId, locationId, status])
   @@map("reservation_tables")
 }
 
+/// Weekly hours in the location timezone. Weekday 0 is Sunday.
+/// When the location is open and `closesAt` is earlier than `opensAt`, service continues past midnight.
+model ReservationWorkingHours {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  locationId String   @map("location_id") @db.Uuid
+  weekday    Int
+  opensAt    DateTime @map("opens_at") @db.Time(0)
+  closesAt   DateTime @map("closes_at") @db.Time(0)
+  isClosed   Boolean  @default(false) @map("is_closed")
+
+  tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  location ReservationLocation @relation(fields: [locationId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([tenantId, locationId, weekday])
+  @@map("reservation_working_hours")
+}
+
+/// One local calendar day that replaces the weekly hours. Closed days store no times.
+/// An open exception uses the same overnight rule as weekly hours.
+model ReservationScheduleException {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String    @map("tenant_id") @db.Uuid
+  locationId String    @map("location_id") @db.Uuid
+  localDate  DateTime  @map("local_date") @db.Date
+  opensAt    DateTime? @map("opens_at") @db.Time(0)
+  closesAt   DateTime? @map("closes_at") @db.Time(0)
+  isClosed   Boolean   @default(false) @map("is_closed")
+  note       String?
+
+  tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  location ReservationLocation @relation(fields: [locationId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([tenantId, locationId, localDate])
+  @@map("reservation_schedule_exceptions")
+}
+
+/// One booking. `startsAt` and `endsAt` are UTC. A table, when set, belongs to this location.
+model Reservation {
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String            @map("tenant_id") @db.Uuid
+  locationId          String            @map("location_id") @db.Uuid
+  tableId             String?           @map("table_id") @db.Uuid
+  contactId           String?           @map("contact_id") @db.Uuid
+  assignedUserId      String?           @map("assigned_user_id") @db.Uuid
+  createdByUserId     String?           @map("created_by_user_id") @db.Uuid
+  status              ReservationStatus @default(PENDING)
+  source              ReservationSource
+  guestCount          Int               @map("guest_count")
+  startsAt            DateTime          @map("starts_at") @db.Timestamptz(3)
+  endsAt              DateTime          @map("ends_at") @db.Timestamptz(3)
+  customerName        String            @map("customer_name")
+  customerPhone       String?           @map("customer_phone")
+  customerEmail       String?           @map("customer_email")
+  customerNote        String?           @map("customer_note")
+  internalNote        String?           @map("internal_note")
+  sourceAccountId     String?           @map("source_account_id") @db.Uuid
+  sourceRequestId     String?           @map("source_request_id")
+  sourceConversationId String?          @map("source_conversation_id")
+  sourceMessageId     String?           @map("source_message_id")
+  confirmedAt         DateTime?         @map("confirmed_at") @db.Timestamptz(3)
+  arrivedAt           DateTime?         @map("arrived_at") @db.Timestamptz(3)
+  seatedAt            DateTime?         @map("seated_at") @db.Timestamptz(3)
+  completedAt         DateTime?         @map("completed_at") @db.Timestamptz(3)
+  cancelledAt         DateTime?         @map("cancelled_at") @db.Timestamptz(3)
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  tenant        Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  location      ReservationLocation        @relation(fields: [locationId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  table         ReservationTable?          @relation(fields: [tableId, tenantId, locationId], references: [id, tenantId, locationId], onDelete: Restrict, onUpdate: Cascade)
+  contact       Contact?                   @relation(fields: [contactId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  assignedUser  User?                      @relation("ReservationAssignedUser", fields: [assignedUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  createdByUser User?                      @relation("ReservationCreatedByUser", fields: [createdByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  sourceRequests ReservationSourceRequest[]
+  statusHistory  ReservationStatusHistory[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, locationId, startsAt])
+  @@index([tenantId, contactId, startsAt])
+  @@index([tenantId, assignedUserId, startsAt])
+  @@map("reservations")
+}
+
+/// Deduplicates a channel webhook. The same external request cannot create a second booking.
+model ReservationSourceRequest {
+  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId          String            @map("tenant_id") @db.Uuid
+  source            ReservationSource
+  sourceAccountId   String            @map("source_account_id")
+  externalRequestId String            @map("external_request_id")
+  reservationId     String            @map("reservation_id") @db.Uuid
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  reservation Reservation @relation(fields: [reservationId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+
+  @@unique([tenantId, source, sourceAccountId, externalRequestId])
+  @@index([tenantId, reservationId])
+  @@map("reservation_source_requests")
+}
+
+/// Business timeline of one booking. This is not the security audit log.
 model ReservationStatusHistory {
   id              String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId        String             @map("tenant_id") @db.Uuid
@@ -448,13 +478,13 @@ model ReservationStatusHistory {
   toStatus        ReservationStatus  @map("to_status")
   changedByUserId String?            @map("changed_by_user_id") @db.Uuid
   reason          String?
-  changedAt       DateTime           @default(now()) @map("changed_at") @db.Timestamptz(3)
+  createdAt       DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   reservation Reservation @relation(fields: [reservationId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
-  changedBy   User?       @relation("ReservationStatusChangedBy", fields: [changedByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  changedBy   User?       @relation(fields: [changedByUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
 
-  @@index([tenantId, reservationId, changedAt])
+  @@index([tenantId, reservationId, createdAt])
   @@map("reservation_status_history")
 }
 
@@ -609,4 +639,39 @@ model PipelineCardNote {
 
   @@index([tenantId, cardId, createdAt, id])
   @@map("pipeline_card_notes")
+}
+
+/// One private thread for two users of the same tenant. The pair is stored in id order.
+model DirectConversation {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userLowId  String   @map("user_low_id") @db.Uuid
+  userHighId String   @map("user_high_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  userLow  User            @relation("DirectConversationLow", fields: [userLowId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  userHigh User            @relation("DirectConversationHigh", fields: [userHighId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  messages DirectMessage[]
+
+  @@unique([id, tenantId])
+  @@unique([tenantId, userLowId, userHighId])
+  @@map("direct_conversations")
+}
+
+/// Message inside a two-person thread. Only those two users can read or write it.
+model DirectMessage {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  authorUserId   String   @map("author_user_id") @db.Uuid
+  body           String
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  conversation DirectConversation @relation(fields: [conversationId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
+  author       User               @relation(fields: [authorUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tenantId, conversationId, createdAt, id])
+  @@map("direct_messages")
 }

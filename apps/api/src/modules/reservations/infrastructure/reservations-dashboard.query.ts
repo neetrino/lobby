@@ -4,8 +4,9 @@ import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'i
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import type { TenantId } from '../../../common/tenant/tenant-id';
 
-const OPEN = ['HOLD', 'PENDING', 'CONFIRMED'] as const;
-const ATTENTION = ['HOLD', 'PENDING'] as const;
+const OPEN = ['PENDING', 'CONFIRMED'] as const;
+const ATTENTION = ['PENDING'] as const;
+const BLOCKING = ['PENDING', 'CONFIRMED', 'ARRIVED', 'SEATED'] as const;
 const CLOSED = ['CANCELLED', 'NO_SHOW'] as const;
 
 export type ReservationLabel = {
@@ -63,7 +64,7 @@ export class ReservationsDashboardQuery {
           where: { tenantId, status: { in: [...CLOSED] }, updatedAt: { gte: window.from, lt: window.to } },
         }),
         this.occupiedTables(tenantId, window.now),
-        this.prisma.restaurantTable.count({ where: { tenantId, isActive: true } }),
+        this.prisma.reservationTable.count({ where: { tenantId, status: 'ACTIVE', archivedAt: null } }),
         this.upcoming(tenantId, window.now),
         this.mine(tenantId, userId, window.now),
         this.activity(tenantId, window),
@@ -91,9 +92,9 @@ export class ReservationsDashboardQuery {
         status: { notIn: [...CLOSED] },
       },
       _count: { _all: true },
-      _sum: { partySize: true },
+      _sum: { guestCount: true },
     });
-    return { count: row._count._all, guests: row._sum.partySize ?? 0 };
+    return { count: row._count._all, guests: row._sum.guestCount ?? 0 };
   }
 
   private dayCount(tenantId: TenantId, from: Date, to: Date): Promise<number> {
@@ -111,8 +112,14 @@ export class ReservationsDashboardQuery {
   }
 
   private async occupiedTables(tenantId: TenantId, now: Date): Promise<number> {
-    const rows = await this.prisma.reservationTable.findMany({
-      where: { tenantId, blocksAvailability: true, startsAt: { lte: now }, endsAt: { gt: now } },
+    const rows = await this.prisma.reservation.findMany({
+      where: {
+        tenantId,
+        tableId: { not: null },
+        status: { in: [...BLOCKING] },
+        startsAt: { lte: now },
+        endsAt: { gt: now },
+      },
       select: { tableId: true },
       distinct: ['tableId'],
     });
@@ -132,18 +139,25 @@ export class ReservationsDashboardQuery {
     });
   }
 
-  private labeled(where: {
+  private async labeled(where: {
     tenantId: TenantId;
     createdByUserId?: string;
     startsAt: { gte: Date };
     status: { in: Array<(typeof OPEN)[number]> };
   }): Promise<ReservationLabel[]> {
-    return this.prisma.reservation.findMany({
+    const rows = await this.prisma.reservation.findMany({
       where,
       orderBy: { startsAt: 'asc' },
       take: 5,
-      select: { id: true, customerName: true, partySize: true, startsAt: true, status: true },
+      select: { id: true, customerName: true, guestCount: true, startsAt: true, status: true },
     });
+    return rows.map((row) => ({
+      id: row.id,
+      customerName: row.customerName,
+      partySize: row.guestCount,
+      startsAt: row.startsAt,
+      status: row.status,
+    }));
   }
 
   private activity(tenantId: TenantId, window: Window): Promise<ReservationActivityRow[]> {

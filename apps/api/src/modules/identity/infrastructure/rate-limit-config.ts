@@ -17,6 +17,8 @@ export type AuthRateLimitConfig = {
   passwordResetIp: RateLimitPolicy;
   passwordResetAccount: RateLimitPolicy;
   passwordResetConfirmIp: RateLimitPolicy;
+  teamMessageIp: RateLimitPolicy;
+  teamMessageUser: RateLimitPolicy;
 };
 
 /**
@@ -43,12 +45,17 @@ const DEFAULT_PASSWORD_RESET_ACCOUNT_LIMIT = 5;
 const DEFAULT_PASSWORD_RESET_ACCOUNT_WINDOW_MS = 15 * 60 * 1000;
 const DEFAULT_PASSWORD_RESET_CONFIRM_IP_LIMIT = 10;
 const DEFAULT_PASSWORD_RESET_CONFIRM_IP_WINDOW_MS = 15 * 60 * 1000;
+const DEFAULT_TEAM_MESSAGE_IP_LIMIT = 60;
+const DEFAULT_TEAM_MESSAGE_IP_WINDOW_MS = 60 * 1000;
+const DEFAULT_TEAM_MESSAGE_USER_LIMIT = 30;
+const DEFAULT_TEAM_MESSAGE_USER_WINDOW_MS = 60 * 1000;
 
 export function readAuthRateLimitConfig(env: NodeJS.ProcessEnv = process.env): AuthRateLimitConfig {
   return {
     ...credentialPolicies(env),
     ...invitationPolicies(env),
     ...passwordResetPolicies(env),
+    ...teamMessagePolicies(env),
   };
 }
 
@@ -69,6 +76,13 @@ function invitationPolicies(env: NodeJS.ProcessEnv): Pick<AuthRateLimitConfig, '
     inviteIp: policy(env, 'RATE_LIMIT_INVITE_IP_LIMIT', 'RATE_LIMIT_INVITE_IP_WINDOW_MS', DEFAULT_INVITE_IP_LIMIT, DEFAULT_INVITE_IP_WINDOW_MS),
     inviteUser: policy(env, 'RATE_LIMIT_INVITE_USER_LIMIT', 'RATE_LIMIT_INVITE_USER_WINDOW_MS', DEFAULT_INVITE_USER_LIMIT, DEFAULT_INVITE_USER_WINDOW_MS),
     acceptIp: policy(env, 'RATE_LIMIT_ACCEPT_IP_LIMIT', 'RATE_LIMIT_ACCEPT_IP_WINDOW_MS', DEFAULT_ACCEPT_IP_LIMIT, DEFAULT_ACCEPT_IP_WINDOW_MS),
+  };
+}
+
+function teamMessagePolicies(env: NodeJS.ProcessEnv): Pick<AuthRateLimitConfig, 'teamMessageIp' | 'teamMessageUser'> {
+  return {
+    teamMessageIp: policy(env, 'RATE_LIMIT_TEAM_MESSAGE_IP_LIMIT', 'RATE_LIMIT_TEAM_MESSAGE_IP_WINDOW_MS', DEFAULT_TEAM_MESSAGE_IP_LIMIT, DEFAULT_TEAM_MESSAGE_IP_WINDOW_MS),
+    teamMessageUser: policy(env, 'RATE_LIMIT_TEAM_MESSAGE_USER_LIMIT', 'RATE_LIMIT_TEAM_MESSAGE_USER_WINDOW_MS', DEFAULT_TEAM_MESSAGE_USER_LIMIT, DEFAULT_TEAM_MESSAGE_USER_WINDOW_MS),
   };
 }
 
@@ -97,6 +111,8 @@ export function permissiveAuthRateLimits(): AuthRateLimitConfig {
     passwordResetIp: open,
     passwordResetAccount: open,
     passwordResetConfirmIp: open,
+    teamMessageIp: open,
+    teamMessageUser: open,
   };
 }
 

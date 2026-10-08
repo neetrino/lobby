@@ -14,6 +14,8 @@ import {
   passwordResetIpKey,
   inviteIpKey,
   inviteUserKey,
+  teamMessageIpKey,
+  teamMessageUserKey,
   loginAccountKey,
   loginIpKey,
   registerIpKey,
@@ -49,6 +51,12 @@ export class AuthRateLimitService {
   async consumeInvite(ip: string | null, tenantId: string, userId: string): Promise<void> {
     await this.hit(inviteIpKey(this.requireAddress(ip)), this.config.inviteIp);
     await this.hit(inviteUserKey(tenantId, userId), this.config.inviteUser);
+  }
+
+  /** Counts one direct-message send for the address and the signed-in user. */
+  async consumeTeamMessage(ip: string | null, tenantId: string, userId: string): Promise<void> {
+    await this.hit(teamMessageIpKey(this.requireAddress(ip)), this.config.teamMessageIp);
+    await this.hit(teamMessageUserKey(tenantId, userId), this.config.teamMessageUser);
   }
 
   async consumeAccept(ip: string | null): Promise<void> {

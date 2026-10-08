@@ -16,13 +16,14 @@ const NAV = [
   { id: 'deals', href: 'deals' },
   { id: 'messenger' },
   { id: 'contacts', href: 'contacts' },
+  { id: 'team', href: 'team' },
   { id: 'reservations' },
   { id: 'audit' },
   { id: 'settings', href: 'settings' },
 ] as const;
 
 type NavId = (typeof NAV)[number]['id'];
-type ShellPage = 'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings';
+type ShellPage = 'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings' | 'team';
 
 export function ContactsShell({
   session,
@@ -251,6 +252,14 @@ function iconPath(name: NavId): ReactNode {
         <>
           <circle cx="12" cy="9" r="3" />
           <path d="M6 19c1.4-2.6 3.5-4 6-4s4.6 1.4 6 4" />
+        </>
+      );
+    case 'team':
+      return (
+        <>
+          <circle cx="8" cy="9" r="2.4" />
+          <circle cx="16" cy="9" r="2.4" />
+          <path d="M3.5 18c.8-2 2.2-3 4.5-3s3.7 1 4.5 3M11.5 18c.8-2 2.2-3 4.5-3s3.7 1 4.5 3" />
         </>
       );
     case 'reservations':

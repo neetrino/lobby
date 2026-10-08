@@ -19,6 +19,8 @@ const workspacePermissions = [
   'reservations:read',
   'dashboard:read',
   'pipelines:resize',
+  'team:read',
+  'team:message',
 ] as const;
 
 describe('role permissions', () => {
@@ -55,6 +57,7 @@ describe('role permissions', () => {
       'audit:read',
       'members:invite',
       'pipelines:configure',
+      'team:manage',
       ...workspacePermissions,
     ]);
     expect(hasPermission('OWNER', 'platform:provision')).toBe(true);

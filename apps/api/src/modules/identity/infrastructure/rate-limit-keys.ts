@@ -46,3 +46,11 @@ export function passwordResetAccountKey(subdomain: string, email: string): strin
 export function passwordResetConfirmIpKey(ip: string): string {
   return `rate_limit:password_reset:confirm:ip:${hashRateLimitSubject(ip)}`;
 }
+
+export function teamMessageIpKey(ip: string): string {
+  return `rate_limit:team_message:ip:${hashRateLimitSubject(ip)}`;
+}
+
+export function teamMessageUserKey(tenantId: string, userId: string): string {
+  return `rate_limit:team_message:user:${hashRateLimitSubject(`${tenantId}\0${userId}`)}`;
+}

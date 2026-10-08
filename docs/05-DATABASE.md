@@ -92,6 +92,7 @@ An approved physical ERD will replace or extend this view when models are design
 - The same normalized email may identify separate User records in different tenants.
 - Authentication therefore requires tenant context plus email.
 - The first user created with a tenant is always its Owner (`users.role = OWNER`, `users.status = ACTIVE`).
+- `users.job_title` is an optional profession of 1–80 characters. `direct_conversations` stores one thread per unordered pair of users in the same tenant. `direct_messages` belong to that thread.
 - Tenant, Owner, the plan's default `tenant_modules` rows, and the `tenant.created` outbox event are committed atomically. A failure in any of those writes rolls the transaction back.
 - `tenant_modules` is keyed by `(tenant_id, module_key)` with status `ENABLED` or `DISABLED`. A missing row is disabled. Identity and health are not rows in this table.
 - Password hashing belongs to Auth; Organizations receives only an Argon2id `passwordHash`.
@@ -225,7 +226,7 @@ The repository currently contains twelve ordered migrations covering tenant/user
 | Contacts                | `contacts`                                                                                                                           | Implemented            | Tenant-owned contacts. Soft archive uses `archived_at`. Email is unique per tenant, including archived rows. `(tenant_id, name, id)` serves the list order. Create writes outbox `contact.created` in the same transaction. Update and archive do not write outbox events until a consumer exists. Archive appends audit `contact.archived`, and restore appends audit `contact.restored`, with no email or phone. |
 | Tasks                   | TBD                                                                                                                                  | Planned                | Version 1 high priority; relationship model requires approval.                                                                                                                                                                                                                                                                                                                                                     |
 | Deals and pipelines     | TBD                                                                                                                                  | Planned                | Version 1 high priority.                                                                                                                                                                                                                                                                                                                                                                                           |
-| Restaurant reservations | `venues`, `dining_areas`, `restaurant_tables`, `service_periods`, `reservations`, `reservation_tables`, `reservation_status_history` | Foundation implemented | Tenant-safe relations and database-enforced overlap prevention; API operations are not implemented.                                                                                                                                                                                                                                                                                                                |
+| Restaurant reservations | `reservation_locations`, `reservation_tables`, `reservation_working_hours`, `reservation_schedule_exceptions`, `reservations`, `reservation_source_requests`, `reservation_status_history` | Foundation implemented | Tenant-safe composite keys, source idempotency, and a PostgreSQL exclusion constraint against overlapping active table bookings. API operations are not implemented.                                                                                                                                                                                                                                            |
 | Orders and delivery     | TBD                                                                                                                                  | Conditional            | Add only if included in Version 1.                                                                                                                                                                                                                                                                                                                                                                                 |
 | Audit and outbox        | `audit_events`, `outbox_events`, `processed_events`                                                                                  | Implemented            | `audit_events` is append-only application history, separate from operational logs. List pages use the `(tenant_id, occurred_at, id)` index. No retention job is defined, so rows are not deleted. Pending outbox rows are claimed with `FOR UPDATE SKIP LOCKED`. `processed_events` reserves an external side effect before it starts. Unique key: `(handler_name, event_type, event_version, event_id)`.          |
 
@@ -237,12 +238,13 @@ Audit history remains append-only. Role creation/update/disable, permission chan
 
 ### Reservation data rules
 
-- Store instants in UTC; each venue stores an IANA timezone for calendar display and local opening-hour interpretation.
-- A reservation belongs to one tenant and one venue. Optional contact and creator references belong to that same tenant.
-- Every assigned table belongs to the reservation's venue and tenant; one party may use several tables.
-- Capacity and service-period checks belong to the reservation application transaction; the overlap exclusion constraint is the final concurrency guard.
-- Same-day service windows are supported initially. Represent overnight service as split periods until a dedicated rule is approved.
-- The reservation migration requires PostgreSQL `btree_gist`; production deployment follows the controlled migration process.
+- Store instants in UTC. Each location stores an IANA timezone, such as `Asia/Yerevan`, not a numeric offset.
+- A reservation belongs to one tenant and one location. Contact, assignee, and creator references belong to that same tenant. A chosen table belongs to that same location.
+- Weekday `0` is Sunday. When a location is open and `closes_at` is earlier than `opens_at`, service continues past local midnight. Equal open and close times are rejected. A closed exception stores no times.
+- Walk-in bookings may omit both phone and email. Every other source needs at least one of them.
+- `reservation_source_requests` rejects a repeated external request for the same tenant, source, and account.
+- Guest count, name length, and capacity are database checks. The `btree_gist` exclusion constraint is the concurrency guard for active table bookings. Application availability checks do not replace it.
+- `20261008160000_booking_foundation` drops the earlier venue, dining-area, and table-assignment tables. Existing reservation rows are not copied.
 
 Replace `TBD` entries with links to approved model/ERD sections when schema design begins.
 

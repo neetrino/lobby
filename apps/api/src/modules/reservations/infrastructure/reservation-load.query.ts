@@ -21,10 +21,10 @@ export class ReservationLoadQuery {
   async read(tenantId: TenantId, todayStart: Date): Promise<ReservationLoadFacts> {
     const weekEnd = new Date(todayStart.getTime() + 7 * DAY_MS);
     const [tables, rows] = await Promise.all([
-      this.prisma.restaurantTable.aggregate({
-        where: { tenantId, isActive: true },
+      this.prisma.reservationTable.aggregate({
+        where: { tenantId, status: 'ACTIVE', archivedAt: null },
         _count: { _all: true },
-        _sum: { maximumCapacity: true },
+        _sum: { capacity: true },
       }),
       this.prisma.reservation.findMany({
         where: {
@@ -32,12 +32,12 @@ export class ReservationLoadQuery {
           startsAt: { gte: todayStart, lt: weekEnd },
           status: { notIn: [...CLOSED] },
         },
-        select: { startsAt: true, partySize: true },
+        select: { startsAt: true, guestCount: true },
       }),
     ]);
     return {
-      capacity: tables._count._all === 0 ? null : (tables._sum.maximumCapacity ?? 0),
-      rows,
+      capacity: tables._count._all === 0 ? null : (tables._sum.capacity ?? 0),
+      rows: rows.map((row) => ({ startsAt: row.startsAt, partySize: row.guestCount })),
     };
   }
 }

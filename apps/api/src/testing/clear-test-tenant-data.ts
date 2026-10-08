@@ -9,12 +9,12 @@ export async function clearTestTenantData(database: PrismaClient | undefined): P
     return;
   }
   await database.reservationStatusHistory.deleteMany();
-  await database.reservationTable.deleteMany();
+  await database.reservationSourceRequest.deleteMany();
   await database.reservation.deleteMany();
-  await database.servicePeriod.deleteMany();
-  await database.restaurantTable.deleteMany();
-  await database.diningArea.deleteMany();
-  await database.venue.deleteMany();
+  await database.reservationScheduleException.deleteMany();
+  await database.reservationWorkingHours.deleteMany();
+  await database.reservationTable.deleteMany();
+  await database.reservationLocation.deleteMany();
   await database.pipelineCard.deleteMany();
   await database.pipelineStatus.deleteMany();
   await database.pipelineColumn.deleteMany();
@@ -24,6 +24,8 @@ export async function clearTestTenantData(database: PrismaClient | undefined): P
   await database.auditEvent.deleteMany();
   await database.memberInvitation.deleteMany();
   await database.passwordReset.deleteMany();
+  await database.directMessage.deleteMany();
+  await database.directConversation.deleteMany();
   await database.userDashboardLayout.deleteMany();
   await database.tenantModule.deleteMany();
   await database.user.deleteMany();

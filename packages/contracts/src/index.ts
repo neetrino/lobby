@@ -102,6 +102,18 @@ export {
   sortDirectionSchema,
 } from './pagination/index.js';
 export type { CursorPage, SortDirection } from './pagination/index.js';
+export {
+  directMessagePageSchema,
+  directMessageResponseSchema,
+  directMessageSchema,
+  teamDirectoryResponseSchema,
+  teamDirectorySchema,
+  teamMemberResponseSchema,
+  teamMemberSchema,
+  teamRoleSchema,
+  teamRoles,
+} from './team/index.js';
+export type { DirectMessage, DirectMessagePage, TeamDirectory, TeamMember, TeamRole } from './team/index.js';
 export { defaultLocale, localeSchema, supportedLocales } from './locales.js';
 export type { Locale } from './locales.js';
 export {

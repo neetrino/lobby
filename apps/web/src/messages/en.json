@@ -229,6 +229,7 @@
     "dismiss": "Dismiss",
     "nav": {
       "contacts": "Contacts",
+      "team": "Team",
       "dashboard": "Dashboard",
       "leads": "Leads",
       "deals": "Deals",
@@ -431,5 +432,35 @@
     "invalid": "Check the workspace, email, and password. The password must be at least 12 characters.",
     "failed": "The organization could not be opened.",
     "empty": "No organizations yet."
+  },
+  "team": {
+    "title": "Team",
+    "search": "Search by team",
+    "addMember": "Add Member",
+    "inviteEmail": "Email address",
+    "inviteSent": "Invitation sent.",
+    "inviteFailed": "The invitation could not be sent.",
+    "empty": "No one matches this search.",
+    "you": "You",
+    "profession": "Profession",
+    "saveProfession": "Save",
+    "professionFailed": "The profession could not be saved.",
+    "more": "More actions",
+    "emailAction": "Email",
+    "message": "Message {name}",
+    "failed": "The team could not be loaded.",
+    "pages": "Pages",
+    "prev": "Prev",
+    "next": "Next",
+    "chat": "Team Chat",
+    "chatTitle": "Team Chat with {name}",
+    "chatPick": "Choose a teammate. The conversation stays between the two of you.",
+    "loadEarlier": "Load earlier messages",
+    "chatLoading": "Loading messages...",
+    "chatEmpty": "No messages yet.",
+    "chatMessage": "Message",
+    "chatPlaceholder": "Write a message...",
+    "chatSend": "Send",
+    "chatFailed": "The message could not be loaded or sent."
   }
 }
