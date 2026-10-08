@@ -4,8 +4,6 @@ import {
   type CreateReservationCommand,
   type CreateReservationInput,
 } from '@lobby/contracts';
-import { z } from 'zod';
-
 import { scopedTenantId } from '../../../common/auth/authorization';
 import { AuditEventStore, type AuditWrite } from '../../../common/audit/audit-event.store';
 import {
@@ -35,6 +33,7 @@ import {
   assertBookable,
   reservationPeriod,
   sameBooking,
+  storedSourceAccountId,
   type ReservationPeriod,
 } from './reservation-rules';
 
@@ -59,11 +58,11 @@ export class CreateReservationService {
     assertActorSource(actor, command);
     const scope = this.reservations.forTenant(actor);
     const period = reservationPeriod(command);
-    await assertBookable(scope, command, period, new Date());
     const replay = await this.replayExisting(scope, command, period);
     if (replay !== null) {
       return replay;
     }
+    await assertBookable(scope, command, period, new Date());
     try {
       return await this.commit(actor, scope, command, period);
     } catch (error) {
@@ -186,7 +185,7 @@ function reservationInsert(
     customerPhone: command.customer.phone ?? null,
     customerEmail: command.customer.email ?? null,
     customerNote: command.customerNote ?? null,
-    sourceAccountId: uuidOrNull(command.source.accountId),
+    sourceAccountId: storedSourceAccountId(command.source.accountId),
     sourceRequestId: command.source.externalRequestId ?? null,
     sourceConversationId: command.source.conversationId ?? null,
     sourceMessageId: command.source.messageId ?? null,
@@ -222,9 +221,3 @@ function createdAudit(context: RequestContext, reservationId: string): AuditWrit
   };
 }
 
-function uuidOrNull(value: string | undefined): string | null {
-  if (value === undefined || !z.uuid().safeParse(value).success) {
-    return null;
-  }
-  return value;
-}

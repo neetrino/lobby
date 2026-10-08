@@ -98,6 +98,47 @@ describe('CreateReservationService', () => {
     expect(await prisma.reservation.count()).toBe(1);
   });
 
+  it('replays a matching source request after the booking is no longer available', async () => {
+    const seeded = await seed('replay-late');
+    const contact = await prisma.contact.create({
+      data: {
+        tenantId: seeded.tenant.id,
+        name: 'Anna',
+        type: 'PERSON',
+        createdByUserId: seeded.user.id,
+        ownerUserId: seeded.user.id,
+      },
+    });
+    const body = command(seeded, {
+      assignedUserId: seeded.user.id,
+      customer: { name: 'Anna', phone: '+37400000000', contactId: contact.id },
+      customerNote: 'window',
+      source: {
+        type: 'STAFF',
+        accountId: seeded.user.id,
+        externalRequestId: 'req-1',
+        conversationId: 'chat-1',
+        messageId: 'msg-1',
+      },
+    });
+    const first = await build().create(user(seeded), body);
+    const pastStart = new Date('2020-01-01T18:00:00.000Z');
+    await prisma.reservation.update({
+      where: { id: first.reservation.id },
+      data: { startsAt: pastStart, endsAt: new Date('2020-01-01T19:00:00.000Z') },
+    });
+    await prisma.reservationLocation.update({ where: { id: seeded.location.id }, data: { status: 'INACTIVE' } });
+    await prisma.contact.update({ where: { id: contact.id }, data: { archivedAt: new Date() } });
+    const retry = { ...body, startsAt: pastStart.toISOString() };
+    const replayed = await build().create(user(seeded), retry);
+
+    expect(replayed.replayed).toBe(true);
+    expect(replayed.reservation.id).toBe(first.reservation.id);
+    await expect(build().create(user(seeded), { ...retry, customer: { ...retry.customer, phone: '+37400000009' } })).rejects.toMatchObject({ code: 'RESERVATION_SOURCE_CONFLICT' });
+    await expect(build().create(user(seeded), { ...retry, source: { ...retry.source, messageId: 'msg-2' } })).rejects.toMatchObject({ code: 'RESERVATION_SOURCE_CONFLICT' });
+    expect(await prisma.reservation.count()).toBe(1);
+  });
+
   it('keeps one reservation when the same source request arrives concurrently', async () => {
     const seeded = await seed('race-source');
     const body = command(seeded, { source: { type: 'WHATSAPP', accountId: 'channel-1', externalRequestId: 'req-1' } });

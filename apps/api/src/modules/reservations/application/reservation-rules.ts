@@ -1,4 +1,5 @@
 import type { CreateReservationCommand } from '@lobby/contracts';
+import { z } from 'zod';
 
 import { AuthorizationError } from '../../../common/auth/authorization';
 import { ValidationError } from '../../../common/http/validation-error';
@@ -44,6 +45,14 @@ export async function assertBookable(
   await requireAssignee(scope, command.assignedUserId);
 }
 
+/** Account id stored on the reservation. Non-UUID channel ids stay on the source-request row. */
+export function storedSourceAccountId(value: string | undefined): string | null {
+  if (value === undefined || !z.uuid().safeParse(value).success) {
+    return null;
+  }
+  return value;
+}
+
 export function sameBooking(
   existing: ReservationRecord,
   command: CreateReservationCommand,
@@ -52,8 +61,18 @@ export function sameBooking(
   return (
     existing.locationId === command.locationId &&
     existing.tableId === command.requestedTableId &&
+    existing.contactId === (command.customer.contactId ?? null) &&
+    existing.assignedUserId === (command.assignedUserId ?? null) &&
+    existing.source === command.source.type &&
     existing.guestCount === command.guestCount &&
     existing.customerName === command.customer.name &&
+    existing.customerPhone === (command.customer.phone ?? null) &&
+    existing.customerEmail === (command.customer.email ?? null) &&
+    existing.customerNote === (command.customerNote ?? null) &&
+    existing.sourceAccountId === storedSourceAccountId(command.source.accountId) &&
+    existing.sourceRequestId === (command.source.externalRequestId ?? null) &&
+    existing.sourceConversationId === (command.source.conversationId ?? null) &&
+    existing.sourceMessageId === (command.source.messageId ?? null) &&
     existing.startsAt.getTime() === period.startsAt.getTime() &&
     existing.endsAt.getTime() === period.endsAt.getTime()
   );

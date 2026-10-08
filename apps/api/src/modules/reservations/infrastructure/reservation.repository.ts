@@ -26,10 +26,19 @@ export type ReservationRecord = {
   locationId: string;
   tableId: string | null;
   contactId: string | null;
+  assignedUserId: string | null;
+  source: ReservationSource;
   guestCount: number;
   startsAt: Date;
   endsAt: Date;
   customerName: string;
+  customerPhone: string | null;
+  customerEmail: string | null;
+  customerNote: string | null;
+  sourceAccountId: string | null;
+  sourceRequestId: string | null;
+  sourceConversationId: string | null;
+  sourceMessageId: string | null;
   status: string;
 };
 
@@ -247,24 +256,23 @@ const reservationSelect = {
   locationId: true,
   tableId: true,
   contactId: true,
+  assignedUserId: true,
+  source: true,
   guestCount: true,
   startsAt: true,
   endsAt: true,
   customerName: true,
+  customerPhone: true,
+  customerEmail: true,
+  customerNote: true,
+  sourceAccountId: true,
+  sourceRequestId: true,
+  sourceConversationId: true,
+  sourceMessageId: true,
   status: true,
 } as const;
 
-function toReservation(row: {
-  id: string;
-  locationId: string;
-  tableId: string | null;
-  contactId: string | null;
-  guestCount: number;
-  startsAt: Date;
-  endsAt: Date;
-  customerName: string;
-  status: string;
-}): ReservationRecord {
+function toReservation(row: ReservationRecord): ReservationRecord {
   return row;
 }
 
