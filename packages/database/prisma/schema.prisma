@@ -512,6 +512,11 @@ enum PipelineCardOutcome {
   CONVERTED
 }
 
+enum PipelineCardPriority {
+  NORMAL
+  URGENT
+}
+
 /// Tenant-defined team label. Name and color are chosen by Owner and Admin.
 model PipelineStatus {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
@@ -546,6 +551,7 @@ model PipelineCard {
   nextAction       String              @default("") @map("next_action")
   lostReason       String              @default("") @map("lost_reason")
   outcome          PipelineCardOutcome @default(OPEN)
+  priority         PipelineCardPriority @default(NORMAL)
   expectedCloseOn  DateTime?           @map("expected_close_on") @db.Date
   contactId        String?             @map("contact_id") @db.Uuid
   ownerUserId      String?             @map("owner_user_id") @db.Uuid

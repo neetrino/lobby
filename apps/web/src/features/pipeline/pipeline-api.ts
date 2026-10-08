@@ -80,6 +80,7 @@ export type CardUpdate = {
   nextAction?: string;
   lostReason?: string;
   outcome?: PipelineCard['outcome'];
+  priority?: PipelineCard['priority'];
   expectedCloseOn?: string | null;
   contactId?: string | null;
   ownerUserId?: string | null;

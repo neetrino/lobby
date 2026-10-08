@@ -63,6 +63,47 @@ describe('pipeline board controls', () => {
     }));
   });
 
+  it('toggles a card between urgent and normal', () => {
+    const onSave = vi.fn();
+    const view = render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <PipelineCardView
+          card={sampleCard()}
+          index={0}
+          total={2}
+          kind="lead"
+          userId={userId}
+          amountLabel="AMD"
+          locale="en"
+          onSave={onSave}
+          onDelete={vi.fn()}
+          onConvert={vi.fn()}
+        />
+      </NextIntlClientProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Mark as urgent' }));
+    expect(onSave).toHaveBeenLastCalledWith({ priority: 'URGENT' });
+
+    view.rerender(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <PipelineCardView
+          card={{ ...sampleCard(), priority: 'URGENT' }}
+          index={0}
+          total={2}
+          kind="lead"
+          userId={userId}
+          amountLabel="AMD"
+          locale="en"
+          onSave={onSave}
+          onDelete={vi.fn()}
+          onConvert={vi.fn()}
+        />
+      </NextIntlClientProvider>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Clear urgent' }));
+    expect(onSave).toHaveBeenLastCalledWith({ priority: 'NORMAL' });
+  });
+
   it('opens the card chat on the page, outside the card', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => json({ data: [] })));
     Element.prototype.scrollIntoView = () => undefined;
@@ -215,6 +256,7 @@ function sampleCard(): PipelineCard {
     nextAction: '',
     lostReason: '',
     outcome: 'OPEN',
+    priority: 'NORMAL',
     expectedCloseOn: null,
     contactId: null,
     ownerUserId: null,

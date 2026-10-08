@@ -18,17 +18,18 @@ const NAV = [
   { id: 'contacts', href: 'contacts' },
   { id: 'reservations' },
   { id: 'audit' },
-  { id: 'settings' },
+  { id: 'settings', href: 'settings' },
 ] as const;
 
 type NavId = (typeof NAV)[number]['id'];
+type ShellPage = 'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings';
 
 export function ContactsShell({
   session,
   current = 'contacts',
 }: {
   session: SessionPrincipal | null;
-  current?: 'contacts' | 'dashboard' | 'leads' | 'deals';
+  current?: ShellPage;
 }) {
   const t = useTranslations('contacts');
   const locale = useLocale();
@@ -77,7 +78,7 @@ function NavItem({
   label,
 }: {
   item: (typeof NAV)[number];
-  current: 'contacts' | 'dashboard' | 'leads' | 'deals';
+  current: ShellPage;
   locale: string;
   label: string;
 }) {
@@ -116,7 +117,7 @@ function Account({
   session: SessionPrincipal;
   role: string;
   leadsOn: boolean;
-  current: 'contacts' | 'dashboard' | 'leads' | 'deals';
+  current: ShellPage;
   onLeads: (enabled: boolean) => void;
 }) {
   const t = useTranslations('auth');
@@ -168,7 +169,7 @@ function Account({
 
 async function switchLeads(
   enabled: boolean,
-  current: 'contacts' | 'dashboard' | 'leads' | 'deals',
+  current: ShellPage,
   locale: string,
   router: { replace: (href: string) => void },
   onLeads: (enabled: boolean) => void,

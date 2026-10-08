@@ -80,7 +80,7 @@ export class PipelineService {
     columnId: string,
     patch: ColumnPatch,
   ): Promise<PipelineBoard> {
-    await this.gate(context, 'pipelines:configure');
+    await this.gate(context, patch.name === undefined ? 'pipelines:resize' : 'pipelines:configure');
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
     await patchColumn(this.prisma, tenantId, pipeline.id, columnId, patch, this.configured(context, kind, pipeline.id));
@@ -401,7 +401,8 @@ function tracksCardFields(patch: CardPatch): boolean {
     patch.outcome !== undefined ||
     patch.contactId !== undefined ||
     patch.ownerUserId !== undefined ||
-    patch.statusId !== undefined
+    patch.statusId !== undefined ||
+    patch.priority !== undefined
   );
 }
 

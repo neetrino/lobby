@@ -9,6 +9,8 @@ export const pipelineKindSchema = z.enum(pipelineKinds);
 
 export const pipelineCardOutcomes = ['OPEN', 'WON', 'LOST', 'DISQUALIFIED', 'CONVERTED'] as const;
 
+export const pipelineCardPriorities = ['NORMAL', 'URGENT'] as const;
+
 const pipelineStatusSchema = z.strictObject({
   id: z.uuid(),
   name: z.string().min(1).max(40),
@@ -27,6 +29,7 @@ const pipelineCardSchema = z.strictObject({
   nextAction: z.string().max(200).default(''),
   lostReason: z.string().max(200).default(''),
   outcome: z.enum(pipelineCardOutcomes).default('OPEN'),
+  priority: z.enum(pipelineCardPriorities).default('NORMAL'),
   expectedCloseOn: z.iso.date().nullable().default(null),
   contactId: z.uuid().nullable().default(null),
   ownerUserId: z.uuid().nullable().default(null),

@@ -70,7 +70,7 @@ export class PipelinesController {
   }
 
   @Patch(':kind/columns/:columnId')
-  @Authorize('pipelines:configure')
+  @Authorize('pipelines:resize')
   async updateColumn(
     @CurrentRequest() context: RequestContext,
     @ZodParam('kind', pipelineKindSchema) kind: PipelineKindName,

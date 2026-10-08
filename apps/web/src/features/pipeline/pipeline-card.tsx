@@ -54,22 +54,31 @@ export function PipelineCardView({
       <div className={styles.cardTop}>
         <strong>{card.title}</strong>
         <span className={styles.cardTools}>
-          {card.createdByName === null ? null : (
-            <span className={styles.avatar} title={card.createdByName} aria-label={card.createdByName}>
-              {initials(card.createdByName)}
-            </span>
-          )}
-          <button type="button" className={styles.iconButton} aria-label={t('editCard')} onClick={() => setEditing(true)}>
-            ✎
-          </button>
-          <span className={styles.cardEnd}>
+          <span className={styles.cardToolRow}>
+            {card.createdByName === null ? null : (
+              <span className={styles.avatar} title={card.createdByName} aria-label={card.createdByName}>
+                {initials(card.createdByName)}
+              </span>
+            )}
+            <button
+              type="button"
+              className={card.priority === 'URGENT' ? `${styles.flagButton} ${styles.flagOn}` : styles.flagButton}
+              aria-pressed={card.priority === 'URGENT'}
+              aria-label={card.priority === 'URGENT' ? t('clearUrgent') : t('markUrgent')}
+              onClick={() => onSave({ priority: card.priority === 'URGENT' ? 'NORMAL' : 'URGENT' })}
+            >
+              <FlagIcon />
+            </button>
+            <button type="button" className={styles.iconButton} aria-label={t('editCard')} onClick={() => setEditing(true)}>
+              ✎
+            </button>
             <button type="button" className={styles.iconButton} aria-label={t('deleteCard')} onClick={() => setConfirming(true)}>
               ×
             </button>
-            <span className={styles.cardIcons}>
-          <PipelineNotes cardId={card.id} cardTitle={card.title} kind={kind} initialCount={card.noteCount} />
-          <PipelineChat cardId={card.id} cardTitle={card.title} kind={kind} initialCount={card.messageCount} />
-            </span>
+          </span>
+          <span className={styles.cardIcons}>
+            <PipelineNotes cardId={card.id} cardTitle={card.title} kind={kind} initialCount={card.noteCount} />
+            <PipelineChat cardId={card.id} cardTitle={card.title} kind={kind} initialCount={card.messageCount} />
           </span>
         </span>
       </div>
@@ -282,6 +291,14 @@ function textOn(color: string): string {
   const blue = Number.parseInt(hex.slice(4, 6), 16);
   const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
   return luminance > 0.62 ? '#1f2937' : '#fff';
+}
+
+function FlagIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M6 3v18M6 4h11l-2.2 4L17 12H6" />
+    </svg>
+  );
 }
 
 function initials(name: string): string {

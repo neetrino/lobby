@@ -32,6 +32,7 @@ type BoardCard = {
   nextAction: string;
   lostReason: string;
   outcome: 'OPEN' | 'WON' | 'LOST' | 'DISQUALIFIED' | 'CONVERTED';
+  priority: 'NORMAL' | 'URGENT';
   expectedCloseOn: string | null;
   contactId: string | null;
   ownerUserId: string | null;

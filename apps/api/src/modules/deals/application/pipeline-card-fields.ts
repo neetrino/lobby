@@ -12,6 +12,7 @@ type StoredCard = {
   nextAction: string;
   lostReason: string;
   outcome: 'OPEN' | 'WON' | 'LOST' | 'DISQUALIFIED' | 'CONVERTED';
+  priority: 'NORMAL' | 'URGENT';
   expectedCloseOn: Date | null;
   contactId: string | null;
   ownerUserId: string | null;
@@ -34,6 +35,7 @@ export function presentCard(card: StoredCard) {
     nextAction: card.nextAction,
     lostReason: card.lostReason,
     outcome: card.outcome,
+    priority: card.priority,
     expectedCloseOn: card.expectedCloseOn === null ? null : card.expectedCloseOn.toISOString().slice(0, 10),
     contactId: card.contactId,
     ownerUserId: card.ownerUserId,
@@ -92,6 +94,7 @@ export function cardChanges(
     nextAction: patch.nextAction,
     lostReason: patch.lostReason,
     outcome: patch.outcome,
+    priority: patch.priority,
     contactId: patch.contactId,
     ownerUserId: patch.ownerUserId,
     statusId: patch.statusId,
@@ -121,6 +124,7 @@ export function copiedDeal(
     nextAction: source.nextAction,
     lostReason: '',
     outcome: 'OPEN' as const,
+    priority: source.priority,
     expectedCloseOn: source.expectedCloseOn,
     contactId: source.contactId,
     ownerUserId: source.ownerUserId,

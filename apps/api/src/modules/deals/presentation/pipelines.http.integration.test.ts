@@ -299,6 +299,53 @@ describe('Pipeline HTTP', () => {
     expect(hiddenNotes.status).toBe(404);
   }, 30_000);
 
+  it('saves card priority, blocks another tenant, and audits the change', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-priority', 'ada@example.com');
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const created = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(lead.body), title: 'Ada' });
+    const cardId = created.body.data.columns[0].cards[0].id as string;
+    const urgent = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ priority: 'URGENT' });
+    const normal = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ priority: 'NORMAL' });
+    const other = await login(http, 'pipe-priority-b', 'bea@example.com');
+    const hidden = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', other)
+      .send({ priority: 'URGENT' });
+    const still = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const audits = await prisma.auditEvent.count({
+      where: { action: 'pipeline.card.updated', resourceId: cardId },
+    });
+    const events = await prisma.outboxEvent.findMany({
+      where: { eventType: 'pipeline.changed', aggregateId: cardId },
+    });
+
+    expect(created.status).toBe(201);
+    expect(created.body.data.columns[0].cards[0].priority).toBe('NORMAL');
+    expect(urgent.status).toBe(200);
+    expect(urgent.body.data.columns[0].cards[0].priority).toBe('URGENT');
+    expect(normal.status).toBe(200);
+    expect(normal.body.data.columns[0].cards[0].priority).toBe('NORMAL');
+    expect(hidden.status).toBe(404);
+    expect(still.body.data.columns[0].cards[0].priority).toBe('NORMAL');
+    expect(audits).toBe(2);
+    expect(events).toHaveLength(2);
+    expect(events[0]?.payload).toMatchObject({ kind: 'lead', change: 'updated' });
+  }, 30_000);
+
   it('rejects the board when the deals module is disabled', async () => {
     const http = app.getHttpServer();
     const owner = await login(http, 'pipe-off', 'ada@example.com');

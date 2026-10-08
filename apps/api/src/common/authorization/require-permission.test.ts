@@ -18,6 +18,7 @@ const workspacePermissions = [
   'deals:delete',
   'reservations:read',
   'dashboard:read',
+  'pipelines:resize',
 ] as const;
 
 describe('role permissions', () => {
@@ -45,6 +46,7 @@ describe('role permissions', () => {
     expect(hasPermission('OWNER', 'members:invite')).toBe(true);
     expect(hasPermission('ADMIN', 'members:invite')).toBe(true);
     expect(ROLE_PERMISSIONS.MEMBER).toEqual([...workspacePermissions]);
+    expect(hasPermission('MEMBER', 'pipelines:resize')).toBe(true);
     expect(hasPermission('MEMBER', 'pipelines:configure')).toBe(false);
     expect(hasPermission('OWNER', 'pipelines:configure')).toBe(true);
     expect(hasPermission('ADMIN', 'pipelines:configure')).toBe(true);
