@@ -23,7 +23,8 @@
     "db:generate": "cross-env DATABASE_URL=postgresql://user:password@localhost:5432/lobby prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
-    "db:seed": "node src/seed-local.mjs"
+    "db:seed": "node src/seed-local.mjs",
+    "db:seed:reservations": "node --env-file=../../.env src/seed-local.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.10.0",

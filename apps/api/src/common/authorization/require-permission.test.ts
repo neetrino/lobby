@@ -30,6 +30,9 @@ describe('role permissions', () => {
   it('grants sessions:revoke and audit:read to owner and admin and withholds both from member', () => {
     expect(hasPermission('MEMBER', 'sessions:revoke')).toBe(false);
     expect(hasPermission('MEMBER', 'audit:read')).toBe(false);
+    expect(hasPermission('MEMBER', 'audit:export')).toBe(false);
+    expect(hasPermission('OWNER', 'audit:export')).toBe(true);
+    expect(hasPermission('ADMIN', 'audit:export')).toBe(true);
     expect(hasPermission('OWNER', 'sessions:revoke')).toBe(true);
     expect(hasPermission('OWNER', 'audit:read')).toBe(true);
     expect(hasPermission('ADMIN', 'sessions:revoke')).toBe(true);
@@ -59,6 +62,7 @@ describe('role permissions', () => {
     expect(ROLE_PERMISSIONS.ADMIN).toEqual([
       'sessions:revoke',
       'audit:read',
+      'audit:export',
       'members:invite',
       'pipelines:configure',
       'team:manage',

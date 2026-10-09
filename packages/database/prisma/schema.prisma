@@ -136,6 +136,8 @@ model AuditEvent {
   tenantId      String         @map("tenant_id") @db.Uuid
   occurredAt    DateTime       @default(now()) @map("occurred_at") @db.Timestamptz(3)
   actorUserId   String?        @map("actor_user_id") @db.Uuid
+  /// Name at write time. A later rename does not rewrite this history.
+  actorName     String?        @map("actor_name")
   actorRole     TenantRole?    @map("actor_role")
   actorType     AuditActorType @map("actor_type")
   action        String
@@ -153,8 +155,9 @@ model AuditEvent {
   actor  User?  @relation(fields: [actorUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([tenantId, occurredAt, id])
+  @@index([tenantId, action, occurredAt, id])
   @@index([tenantId, resourceType, resourceId])
-  @@index([tenantId, actorUserId])
+  @@index([tenantId, actorUserId, occurredAt, id])
   @@map("audit_events")
 }
 

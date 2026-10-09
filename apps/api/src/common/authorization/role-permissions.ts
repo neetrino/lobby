@@ -4,6 +4,7 @@ import type { UserRole } from '../tenant/request-context';
 export const permissions = [
   'sessions:revoke',
   'audit:read',
+  'audit:export',
   'contacts:create',
   'contacts:read',
   'contacts:update',
@@ -56,7 +57,8 @@ const workspaceAccess = [
 /**
  * Role to permission map.
  * Every role may use contacts, lead cards, deal cards, and reservations, and open the dashboard.
- * Every role may add a column, resize a column, read the team directory, and message a coworker. Owner and Admin may also configure a board, revoke another user's sessions, read audit history, invite members, and set a profession.
+ * Every role may add a column, resize a column, read the team directory, and message a coworker. Owner and Admin may also configure a board, revoke another user's sessions, read audit history, export audit history, invite members, and set a profession.
+ * `audit:export` is reserved for a later export route. No handler uses it yet.
  * Only Owner has `platform:provision`. A customer Owner still fails the platform-tenant guard.
  * Revoking your own sessions is not a permission.
  * A dashboard widget still checks its own module entitlement and permission.
@@ -66,11 +68,12 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     'platform:provision',
     'sessions:revoke',
     'audit:read',
+    'audit:export',
     'members:invite',
     'pipelines:configure',
     'team:manage',
     ...workspaceAccess,
   ],
-  ADMIN: ['sessions:revoke', 'audit:read', 'members:invite', 'pipelines:configure', 'team:manage', ...workspaceAccess],
+  ADMIN: ['sessions:revoke', 'audit:read', 'audit:export', 'members:invite', 'pipelines:configure', 'team:manage', ...workspaceAccess],
   MEMBER: [...workspaceAccess],
 };

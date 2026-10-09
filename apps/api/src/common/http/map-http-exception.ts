@@ -40,6 +40,9 @@ export function mapHttpException(exception: unknown, requestId: string): MappedH
   if (isLeadsDisabled(exception)) {
     return mapped(403, exception.code, exception.message, requestId);
   }
+  if (isAuditEventMissing(exception)) {
+    return mapped(404, exception.code, exception.message, requestId);
+  }
   if (exception instanceof AuthorizationError) {
     return mapped(403, exception.code, exception.message, requestId);
   }
@@ -141,6 +144,17 @@ function isReservationFailure(
     typeof exception.code === 'string' &&
     reservationErrorCodes.has(exception.code) &&
     typeof exception.statusCode === 'number'
+  );
+}
+
+function isAuditEventMissing(
+  exception: unknown,
+): exception is { code: 'AUDIT_EVENT_NOT_FOUND'; message: string } {
+  return (
+    exception instanceof Error &&
+    exception.name === 'AuditEventNotFoundError' &&
+    'code' in exception &&
+    exception.code === 'AUDIT_EVENT_NOT_FOUND'
   );
 }
 

@@ -119,6 +119,20 @@ describe('GET /api/v1/audit-events', () => {
     expect(rejected.body.error.code).toBe('VALIDATION_ERROR');
     expect(rejected.body.error.fields).toEqual([{ path: 'orderBy' }]);
     expect(anonymous.status).toBe(401);
+
+    const detail = await request(http)
+      .get('/api/v1/audit-events/20000000-0000-4000-8000-000000000022')
+      .set('Cookie', owner.cookie);
+    const hidden = await request(http)
+      .get('/api/v1/audit-events/30000000-0000-4000-8000-000000000023')
+      .set('Cookie', owner.cookie);
+    expect(detail.status).toBe(200);
+    expect(detail.body.requestId).toBe('44444444-4444-4444-8444-444444444444');
+    expect(detail.body.actor.name).toBe('Ada');
+    expect(detail.body).not.toHaveProperty('tenantId');
+    expect(detail.body).not.toHaveProperty('ipHash');
+    expect(hidden.status).toBe(404);
+    expect(hidden.body.error.code).toBe('AUDIT_EVENT_NOT_FOUND');
   }, 30_000);
 });
 

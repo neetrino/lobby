@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 
 import { OverlayPortal } from '../contacts/overlay-portal';
@@ -9,6 +9,7 @@ import {
   canCancelReservation,
   canEditReservation,
   formatTime,
+  formatWhen,
   type ReservationDetail,
   type ReservationTransitionAction,
   type StatusHistoryItem,
@@ -25,6 +26,7 @@ export function ReservationDrawer({
   contactName,
   canUpdate,
   pending,
+  error,
   onClose,
   onEdit,
   onCancel,
@@ -38,6 +40,7 @@ export function ReservationDrawer({
   contactName: string;
   canUpdate: boolean;
   pending: boolean;
+  error: string | null;
   onClose: () => void;
   onEdit: () => void;
   onCancel: (reason: string) => void;
@@ -55,20 +58,31 @@ export function ReservationDrawer({
         </div>
         <button type="button" className={styles.textButton} onClick={onClose}>{t('close')}</button>
       </header>
-      <dl className={styles.facts}>
-        <div><dt>{t('time')}</dt><dd>{formatTime(detail.startsAt, locale)}</dd></div>
-        <div><dt>{t('duration')}</dt><dd>{t('minutes', { count: detail.durationMinutes })}</dd></div>
-        <div><dt>{t('party')}</dt><dd>{detail.guestCount}</dd></div>
-        <div><dt>{t('location')}</dt><dd>{venueName}</dd></div>
-        <div><dt>{t('table')}</dt><dd>{tableName}</dd></div>
-        <div><dt>{t('phone')}</dt><dd>{detail.customerPhone ?? '—'}</dd></div>
-        <div><dt>{t('email')}</dt><dd>{detail.customerEmail ?? '—'}</dd></div>
-        <div><dt>{t('contact')}</dt><dd>{contactName}</dd></div>
-        <div><dt>{t('assignee')}</dt><dd>{assigneeName}</dd></div>
-        <div><dt>{t('source')}</dt><dd>{sourceLabel(t, detail.source)}</dd></div>
-        <div><dt>{t('note')}</dt><dd>{detail.customerNote ?? '—'}</dd></div>
-      </dl>
-      <section>
+      <FactSection title={t('sections.guest')}>
+        <Fact label={t('name')} value={detail.customerName} />
+        <Fact label={t('phone')} value={detail.customerPhone ?? '—'} />
+        <Fact label={t('email')} value={detail.customerEmail ?? '—'} />
+        <Fact label={t('note')} value={detail.customerNote ?? '—'} />
+      </FactSection>
+      <FactSection title={t('sections.when')}>
+        <Fact label={t('starts')} value={formatWhen(detail.startsAt, locale)} />
+        <Fact label={t('ends')} value={formatWhen(detail.endsAt, locale)} />
+        <Fact label={t('duration')} value={t('minutes', { count: detail.durationMinutes })} />
+      </FactSection>
+      <FactSection title={t('sections.seating')}>
+        <Fact label={t('location')} value={venueName} />
+        <Fact label={t('table')} value={tableName} />
+        <Fact label={t('party')} value={String(detail.guestCount)} />
+      </FactSection>
+      <FactSection title={t('sections.people')}>
+        <Fact label={t('contact')} value={contactName} />
+        <Fact label={t('assignee')} value={assigneeName} />
+      </FactSection>
+      <section className={styles.section}>
+        <h3>{t('source')}</h3>
+        <p className={styles.source}>{sourceLabel(t, detail.source)}</p>
+      </section>
+      <section className={styles.section}>
         <h3>{t('history')}</h3>
         {history.length === 0 ? <p className={styles.muted}>{t('historyEmpty')}</p> : (
           <ol className={styles.history}>
@@ -83,6 +97,7 @@ export function ReservationDrawer({
           </ol>
         )}
       </section>
+      {error === null ? null : <p className={styles.error} role="alert">{error}</p>}
       <ReservationActions
         status={detail.status}
         canUpdate={canUpdate}
@@ -171,6 +186,19 @@ function CancelDialog({
       </form>
     </OverlayPortal>
   );
+}
+
+function FactSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className={styles.section}>
+      <h3>{title}</h3>
+      <dl className={styles.facts}>{children}</dl>
+    </section>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return <div><dt>{label}</dt><dd>{value}</dd></div>;
 }
 
 function sourceLabel(t: ReturnType<typeof useTranslations<'reservations'>>, source: string): string {

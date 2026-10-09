@@ -18,12 +18,13 @@ const NAV = [
   { id: 'contacts', href: 'contacts' },
   { id: 'team', href: 'team' },
   { id: 'reservations', href: 'reservations' },
-  { id: 'audit' },
+  { id: 'audit', href: 'audit' },
   { id: 'settings', href: 'settings' },
 ] as const;
 
 type NavId = (typeof NAV)[number]['id'];
-type ShellPage = 'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings' | 'team' | 'reservations';
+type ShellPage =
+  'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings' | 'team' | 'reservations' | 'audit';
 
 export function ContactsShell({
   session,
@@ -56,7 +57,13 @@ export function ContactsShell({
       </Link>
       <nav className={styles.nav} aria-label={t('workspaceName')}>
         {NAV.filter((item) => item.id !== 'leads' || leadsOn).map((item) => (
-          <NavItem key={item.id} item={item} current={current} locale={locale} label={t(`nav.${item.id}`)} />
+          <NavItem
+            key={item.id}
+            item={item}
+            current={current}
+            locale={locale}
+            label={t(`nav.${item.id}`)}
+          />
         ))}
       </nav>
       {session === null ? null : (
@@ -145,7 +152,10 @@ function Account({
           >
             {leads('showLeads')}
           </button>
-          <SignOutButton className={styles.accountAction} groupClassName={styles.accountMenuGroup} />
+          <SignOutButton
+            className={styles.accountAction}
+            groupClassName={styles.accountMenuGroup}
+          />
         </div>
       ) : null}
       <button
@@ -182,7 +192,11 @@ async function switchLeads(
   }
 }
 
-function useDismiss(open: boolean, rootRef: RefObject<HTMLDivElement | null>, close: () => void): void {
+function useDismiss(
+  open: boolean,
+  rootRef: RefObject<HTMLDivElement | null>,
+  close: () => void,
+): void {
   useEffect(() => {
     if (!open) {
       return;

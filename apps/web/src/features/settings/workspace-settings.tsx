@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { SignOutButton } from '../auth/sign-out-button';
 import type { SessionPrincipal } from '../contacts/contact';
 import { ContactsRequestError, updateLeadsEnabled } from '../contacts/contacts-api';
 import { ContactsShell } from '../contacts/contacts-shell';
@@ -50,7 +51,18 @@ export function WorkspaceSettings() {
       <main className={`${shell.main} ${glass.canvas}`}>
         <section className={styles.page}>
           <h1>{t('settingsTitle')}</h1>
-          <LeadsBoardSwitch enabled={enabled} pending={pending || principal === null} onToggle={() => void toggle()} />
+          <LeadsBoardSwitch
+            enabled={enabled}
+            pending={pending || principal === null}
+            onToggle={() => void toggle()}
+          />
+          <article className={`${styles.card} ${glass.panel} ${glass.soft}`}>
+            <div>
+              <h2>{t('settingsAccountTitle')}</h2>
+              <p>{t('settingsAccountBody')}</p>
+            </div>
+            <SignOutButton className={styles.signOut} groupClassName={styles.signOutGroup} />
+          </article>
           {failed ? <p className={styles.failed}>{t('settingsFailed')}</p> : null}
         </section>
       </main>
@@ -90,5 +102,9 @@ function LeadsBoardSwitch({
 }
 
 function isSignedOut(error: ContactsRequestError | null): boolean {
-  return error?.code === 'UNAUTHENTICATED' || error?.code === 'SESSION_EXPIRED' || error?.code === 'SESSION_REVOKED';
+  return (
+    error?.code === 'UNAUTHENTICATED' ||
+    error?.code === 'SESSION_EXPIRED' ||
+    error?.code === 'SESSION_REVOKED'
+  );
 }

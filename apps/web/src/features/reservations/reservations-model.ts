@@ -130,6 +130,15 @@ export function formatTime(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(new Date(iso));
 }
 
+export function formatWhen(iso: string, locale: string): string {
+  return new Intl.DateTimeFormat(locale, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(new Date(iso));
+}
+
 export function hourOf(iso: string): number {
   return new Date(iso).getHours();
 }

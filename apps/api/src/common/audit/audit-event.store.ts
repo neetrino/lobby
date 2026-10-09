@@ -20,7 +20,10 @@ import type { Prisma, PrismaClient } from '@lobby/database' with { 'resolution-m
 
 import { PRISMA_CLIENT } from '../database/database.tokens';
 import type { TenantId } from '../tenant/tenant-id';
+import { toAuditDetail, type AuditEventDetail } from './audit-event-view';
+import { resourceKey, resourceLabels } from './audit-resource-label';
 import {
+  auditEventDetailSelect,
   auditEventListSelect,
   auditEventListWhere,
   auditEventOrderBy,
@@ -59,6 +62,7 @@ export class AuditEventStore {
         resourceType: record.resourceType,
         resourceId: record.resourceId,
         outcome: record.outcome,
+        actorName: await actorSnapshot(tx, record.tenantId, record.actorUserId),
         changes: record.changes ?? undefined,
         reason: record.reason,
         requestId: record.requestId,
@@ -80,7 +84,20 @@ export class AuditEventStore {
       take: query.limit + 1,
       select: auditEventListSelect,
     });
-    return toAuditEventPage(rows, query);
+    const labels = await resourceLabels(this.prisma, tenantId, rows);
+    return toAuditEventPage(rows, query, labels);
+  }
+
+  async findOne(tenantId: TenantId, id: string): Promise<AuditEventDetail | null> {
+    const row = await this.prisma.auditEvent.findFirst({
+      where: { id, tenantId },
+      select: auditEventDetailSelect,
+    });
+    if (row === null) {
+      return null;
+    }
+    const labels = await resourceLabels(this.prisma, tenantId, [row]);
+    return toAuditDetail(row, labels.get(resourceKey(row.resourceType, row.resourceId)) ?? null);
   }
 }
 
@@ -121,4 +138,19 @@ function parseAuditWrite(
     return reservationLifecycleAuditSchema.parse(record);
   }
   return userSessionsTerminatedAuditSchema.parse(record);
+}
+
+async function actorSnapshot(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  actorUserId: string | null,
+): Promise<string | null> {
+  if (actorUserId === null) {
+    return null;
+  }
+  const actor = await tx.user.findFirst({
+    where: { id: actorUserId, tenantId },
+    select: { name: true },
+  });
+  return actor?.name ?? null;
 }

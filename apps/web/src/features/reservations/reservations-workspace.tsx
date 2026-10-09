@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
+import { readContact } from '../contacts/contacts-api';
 import { ContactsShell } from '../contacts/contacts-shell';
 import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
@@ -67,12 +68,10 @@ export function ReservationsWorkspace() {
             day={board.fromDay}
             locationId={board.locationId}
             venues={board.venues}
-            view={board.view}
             canCreate={canCreate}
             onDay={(day) => board.setRange(day, day)}
             onShift={board.shift}
             onLocation={board.setLocationId}
-            onView={board.setView}
             onCreate={() => board.setEditing('create')}
           />
           <Filters
@@ -88,6 +87,7 @@ export function ReservationsWorkspace() {
             onAssignee={board.setAssigneeId}
             onSearch={board.setSearch}
           />
+          <ViewSwitch view={board.view} onView={board.setView} />
           {board.failed === null ? null : <p className={styles.error} role="alert">{messageFor(t, board.failed)}</p>}
           {board.loading ? <p>{t('loading')}</p> : null}
           {!board.loading && board.rows.length === 0 ? <p className={styles.muted}>{t('empty')}</p> : null}
@@ -110,9 +110,10 @@ export function ReservationsWorkspace() {
             venueName={nameOf(board.venues, detail.detail.locationId)}
             tableName={tableOf(board.tables, detail.detail.tableId)}
             assigneeName={memberOf(board.members, detail.detail.assignedUserId)}
-            contactName={detail.detail.contactId ?? t('noContact')}
+            contactName={detail.contactName ?? t('noContact')}
             canUpdate={canUpdate}
             pending={board.pending}
+            error={board.actionError === null || board.editing !== null ? null : messageFor(t, board.actionError)}
             onClose={() => board.setSelectedId(null)}
             onEdit={() => board.setEditing('edit')}
             onCancel={(reason) => void board.run(() => cancelReservation(detail.detail!.id, reason))}
@@ -244,9 +245,14 @@ function useBoard() {
   };
 }
 
-function useDetail(id: string | null, revision: number): { detail: ReservationDetail | null; history: StatusHistoryItem[] } {
+function useDetail(id: string | null, revision: number): {
+  detail: ReservationDetail | null;
+  history: StatusHistoryItem[];
+  contactName: string | null;
+} {
   const [detail, setDetail] = useState<ReservationDetail | null>(null);
   const [history, setHistory] = useState<StatusHistoryItem[]>([]);
+  const [contactName, setContactName] = useState<string | null>(null);
   useEffect(() => {
     if (id === null) {
       setDetail(null);
@@ -258,19 +264,28 @@ function useDetail(id: string | null, revision: number): { detail: ReservationDe
     void readHistory(id, controller.signal).then(setHistory).catch(() => setHistory([]));
     return () => controller.abort();
   }, [id, revision]);
-  return { detail, history };
+  useEffect(() => {
+    if (detail?.contactId == null) {
+      setContactName(null);
+      return undefined;
+    }
+    const controller = new AbortController();
+    void readContact(detail.contactId, controller.signal)
+      .then((contact) => setContactName(contact.name))
+      .catch(() => setContactName(null));
+    return () => controller.abort();
+  }, [detail?.contactId]);
+  return { detail, history, contactName };
 }
 
 function Header(props: {
   day: string;
   locationId: string;
   venues: Venue[];
-  view: ViewName;
   canCreate: boolean;
   onDay: (day: string) => void;
   onShift: (delta: number) => void;
   onLocation: (id: string) => void;
-  onView: (view: ViewName) => void;
   onCreate: () => void;
 }) {
   const t = useTranslations('reservations');
@@ -278,21 +293,32 @@ function Header(props: {
     <header className={styles.header}>
       <h1>{t('title')}</h1>
       <div className={styles.controls}>
-        <button type="button" aria-label={t('previousDay')} onClick={() => props.onShift(-1)}>‹</button>
-        <input aria-label={t('date')} type="date" value={props.day} onChange={(event) => props.onDay(event.target.value)} />
-        <button type="button" aria-label={t('nextDay')} onClick={() => props.onShift(1)}>›</button>
+        <div className={styles.dateControls}>
+          <button type="button" aria-label={t('previousDay')} onClick={() => props.onShift(-1)}>‹</button>
+          <input aria-label={t('date')} type="date" value={props.day} onChange={(event) => props.onDay(event.target.value)} />
+          <button type="button" aria-label={t('nextDay')} onClick={() => props.onShift(1)}>›</button>
+        </div>
         <select aria-label={t('location')} value={props.locationId} onChange={(event) => props.onLocation(event.target.value)}>
           <option value="">{t('allLocations')}</option>
           {props.venues.map((venue) => <option key={venue.id} value={venue.id}>{venue.name}</option>)}
         </select>
-        <div className={styles.views} role="group" aria-label={t('views')}>
-          {(['list', 'calendar', 'timeline'] as const).map((view) => (
-            <button key={view} type="button" aria-pressed={props.view === view} onClick={() => props.onView(view)}>{t(view)}</button>
-          ))}
-        </div>
-        {props.canCreate ? <button type="button" className={glass.button + ' ' + glass.primary} onClick={props.onCreate}>{t('new')}</button> : null}
+        {props.canCreate ? (
+          <button type="button" className={`${styles.create} ${glass.button} ${glass.primary}`} onClick={props.onCreate}>{t('new')}</button>
+        ) : null}
       </div>
     </header>
+  );
+}
+
+function ViewSwitch({ view, onView }: { view: ViewName; onView: (view: ViewName) => void }) {
+  const t = useTranslations('reservations');
+  const views = ['calendar', 'timeline', 'list'] as const;
+  return (
+    <div className={styles.views} role="group" aria-label={t('views')}>
+      {views.map((name) => (
+        <button key={name} type="button" aria-pressed={view === name} onClick={() => onView(name)}>{t(name)}</button>
+      ))}
+    </div>
   );
 }
 
@@ -319,16 +345,16 @@ function Filters(props: {
   }, [draft]);
   return (
     <div className={styles.filters}>
+      <select aria-label={t('status')} value={props.status} onChange={(event) => props.onStatus(event.target.value)}>
+        <option value="">{t('allStatuses')}</option>
+        {RESERVATION_STATUSES.map((status) => <option key={status} value={status}>{t(`statuses.${status}`)}</option>)}
+      </select>
       <label>{t('from')}
         <input aria-label={t('from')} type="date" value={props.fromDay} onChange={(event) => props.onFrom(event.target.value)} />
       </label>
       <label>{t('to')}
         <input aria-label={t('to')} type="date" value={props.toDay} onChange={(event) => props.onTo(event.target.value)} />
       </label>
-      <select aria-label={t('status')} value={props.status} onChange={(event) => props.onStatus(event.target.value)}>
-        <option value="">{t('allStatuses')}</option>
-        {RESERVATION_STATUSES.map((status) => <option key={status} value={status}>{t(`statuses.${status}`)}</option>)}
-      </select>
       <select aria-label={t('assignee')} value={props.assigneeId} onChange={(event) => props.onAssignee(event.target.value)}>
         <option value="">{t('allAssignees')}</option>
         {props.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}

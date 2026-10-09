@@ -235,7 +235,7 @@ function parseAuditEvent(value: unknown): ContactAuditEvent {
     occurredAt: value.occurredAt,
     action: value.action,
     outcome: value.outcome,
-    actorRole: actorRole(value.actorRole),
+    actorRole: actorRole(isRecord(value.actor) ? value.actor.role : value.actorRole),
   };
 }
 

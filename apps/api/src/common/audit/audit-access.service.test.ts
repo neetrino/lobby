@@ -30,16 +30,23 @@ describe.sequential('AuditAccessService', () => {
   it('pages audit rows with an index that includes the id tie-breaker', async () => {
     const indexes = await prisma.$queryRaw<Array<{ indexname: string }>>`
       SELECT indexname FROM pg_indexes
-      WHERE schemaname = 'public'
+      WHERE schemaname = current_schema()
         AND tablename = 'audit_events'
         AND indexname IN (
           'audit_events_tenant_id_occurred_at_id_idx',
-          'audit_events_tenant_id_occurred_at_idx'
+          'audit_events_tenant_id_occurred_at_idx',
+          'audit_events_tenant_id_action_occurred_at_id_idx',
+          'audit_events_tenant_id_actor_user_id_occurred_at_id_idx',
+          'audit_events_tenant_id_actor_user_id_idx',
+          'audit_events_tenant_id_resource_type_resource_id_idx'
         )
     `;
 
     expect(indexes.map((row) => row.indexname).sort()).toEqual([
+      'audit_events_tenant_id_action_occurred_at_id_idx',
+      'audit_events_tenant_id_actor_user_id_occurred_at_id_idx',
       'audit_events_tenant_id_occurred_at_id_idx',
+      'audit_events_tenant_id_resource_type_resource_id_idx',
     ]);
   });
 
@@ -50,7 +57,10 @@ describe.sequential('AuditAccessService', () => {
     await events.appendNow(denied(owner));
     const access = new AuditAccessService(events);
 
-    expect((await access.list(contextFor(owner), pageQuery())).data).toHaveLength(1);
+    const page = await access.list(contextFor(owner), pageQuery());
+    expect(page.data).toHaveLength(1);
+    expect(page.data[0]?.actor.name).toBe('acme');
+    expect(page.data[0]).not.toHaveProperty('tenantId');
     expect((await access.list(contextFor(outsider, 'ADMIN'), pageQuery())).data).toHaveLength(0);
     expect(() => access.list(contextFor(owner, 'MEMBER'), pageQuery())).toThrow(AuthorizationError);
   });
@@ -80,7 +90,7 @@ describe.sequential('AuditAccessService', () => {
     ]);
     expect(second.data.map((row) => row.id)).toEqual(['10000000-0000-4000-8000-000000000001']);
     expect(second.page.nextCursor).toBeNull();
-    expect(first.data.every((row) => row.tenantId === owner.tenantId)).toBe(true);
+    expect(first.data.every((row) => row.actor.id === owner.userId)).toBe(true);
   });
 
   it('filters the allowlisted fields inside the tenant', async () => {
@@ -121,6 +131,59 @@ describe.sequential('AuditAccessService', () => {
 
     expect(filtered.data.map((row) => row.id)).toEqual(['20000000-0000-4000-8000-000000000012']);
     expect(filtered.page.nextCursor).toBeNull();
+  });
+
+  it('reads one event inside the tenant and strips sensitive change keys', async () => {
+    const owner = await createUser('acme', 'OWNER');
+    const outsider = await createUser('beta', 'OWNER');
+    const access = new AuditAccessService(new AuditEventStore(prisma));
+    await insertEvent(owner, '10000000-0000-4000-8000-000000000021', '2026-01-01T00:00:00.000Z');
+    await prisma.auditEvent.update({
+      where: { id: '10000000-0000-4000-8000-000000000021' },
+      data: {
+        changes: {
+          authenticationVersion: { from: 1, to: 2 },
+          password: 'secret',
+          token: 'invite-token',
+          sessionId: 'session-1',
+        },
+        reason: 'locked out',
+      },
+    });
+
+    const detail = await access.read(contextFor(owner), '10000000-0000-4000-8000-000000000021');
+    expect(detail.actor).toMatchObject({ id: owner.userId, name: 'acme', type: 'USER' });
+    expect(detail.resource).toEqual({ type: 'user', id: owner.userId, label: 'acme' });
+    expect(detail.module).toBe('identity');
+    expect(detail.requestId).toBe('44444444-4444-4444-8444-444444444444');
+    expect(detail.reason).toBe('locked out');
+    expect(detail.changes).toEqual({ authenticationVersion: { from: 1, to: 2 } });
+    expect(detail).not.toHaveProperty('ipHash');
+    await expect(
+      access.read(contextFor(outsider), '10000000-0000-4000-8000-000000000021'),
+    ).rejects.toMatchObject({ code: 'AUDIT_EVENT_NOT_FOUND' });
+    await expect(access.read(contextFor(owner, 'MEMBER'), detail.id)).rejects.toBeInstanceOf(
+      AuthorizationError,
+    );
+  });
+
+  it('searches actor name and action without leaving the tenant', async () => {
+    const owner = await createUser('acme', 'OWNER');
+    const other = await createUser('beta', 'OWNER');
+    const access = new AuditAccessService(new AuditEventStore(prisma));
+    await insertEvent(owner, '10000000-0000-4000-8000-000000000031', '2026-01-01T00:00:00.000Z');
+    await insertEvent(other, '20000000-0000-4000-8000-000000000032', '2026-01-01T00:00:00.000Z');
+
+    const byName = await access.list(contextFor(owner), pageQuery({ search: 'acme', actorType: 'USER' }));
+    const byAction = await access.list(
+      contextFor(owner),
+      pageQuery({ search: 'sessions.terminated' }),
+    );
+    const missed = await access.list(contextFor(owner), pageQuery({ search: 'beta' }));
+
+    expect(byName.data.map((row) => row.id)).toEqual(['10000000-0000-4000-8000-000000000031']);
+    expect(byAction.data).toHaveLength(1);
+    expect(missed.data).toHaveLength(0);
   });
 });
 

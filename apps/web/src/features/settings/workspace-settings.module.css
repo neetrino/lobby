@@ -25,6 +25,41 @@
   backdrop-filter: blur(18px);
 }
 
+.page .card + .card {
+  margin-top: 14px;
+}
+
+.signOutGroup {
+  flex: none;
+}
+
+.signOut {
+  min-width: 112px;
+  height: 42px;
+  padding: 0 18px;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  background: #fff5f5;
+  color: #b42318;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.signOut:hover {
+  background: #fee2e2;
+}
+
+.signOut:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 3px;
+}
+
+.signOut:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .card h2 {
   margin: 0;
   font-size: 16px;
@@ -79,7 +114,9 @@
   letter-spacing: 0.04em;
   line-height: 1;
   text-align: center;
-  text-shadow: 0 1px 0 rgb(255 255 255 / 35%), 0 2px 2px rgb(0 0 0 / 28%);
+  text-shadow:
+    0 1px 0 rgb(255 255 255 / 35%),
+    0 2px 2px rgb(0 0 0 / 28%);
   text-transform: uppercase;
 }
 

@@ -82,66 +82,82 @@ export function ReservationForm({
     <OverlayPortal onDismiss={onClose}>
       <form
         className={styles.form}
+        onClick={(event) => event.stopPropagation()}
         onSubmit={(event) => {
           event.preventDefault();
           onSubmit(draft);
         }}
       >
         <h2>{detail === null ? t('createTitle') : t('editTitle')}</h2>
-        <label>{t('location')}
-          <select value={draft.locationId} onChange={(event) => setDraft({ ...draft, locationId: event.target.value, tableId: '' })}>
-            {venues.map((venue) => <option key={venue.id} value={venue.id}>{venue.name}</option>)}
-          </select>
-        </label>
-        <label>{t('starts')}
-          <input type="datetime-local" required value={draft.startsAt} onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })} />
-        </label>
-        <label>{t('duration')}
-          <input type="number" min={1} max={1440} required value={draft.durationMinutes} onChange={(event) => setDraft({ ...draft, durationMinutes: Number(event.target.value) })} />
-        </label>
-        <label>{t('guests')}
-          <input type="number" min={1} max={100} required value={draft.guestCount} onChange={(event) => setDraft({ ...draft, guestCount: Number(event.target.value) })} />
-        </label>
-        <label>{t('table')}
-          <select required value={draft.tableId} onChange={(event) => setDraft({ ...draft, tableId: event.target.value })}>
-            <option value="">{t('chooseTable')}</option>
-            {tables.map((table) => (
-              <option key={table.id} value={table.id}>{table.name} · {table.minCapacity}–{table.capacity}</option>
-            ))}
-          </select>
-        </label>
-        {tablesNote === null ? null : <p className={styles.muted}>{tablesNote}</p>}
-        <label>{t('name')}
-          <input required maxLength={200} value={draft.customerName} onChange={(event) => setDraft({ ...draft, customerName: event.target.value })} />
-        </label>
-        <label>{t('phone')}
-          <input value={draft.phone} maxLength={32} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} />
-        </label>
-        <label>{t('email')}
-          <input type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} />
-        </label>
-        <label>{t('contact')}
-          <select value={draft.contactId} onChange={(event) => setDraft({ ...draft, contactId: event.target.value })}>
-            <option value="">{t('noContact')}</option>
-            {contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}</option>)}
-          </select>
-        </label>
-        <label>{t('assignee')}
-          <select value={draft.assignedUserId} onChange={(event) => setDraft({ ...draft, assignedUserId: event.target.value })}>
-            <option value="">{t('allAssignees')}</option>
-            {members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
-          </select>
-        </label>
-        {detail === null ? (
-          <label>{t('source')}
-            <select value={draft.source} onChange={(event) => setDraft({ ...draft, source: event.target.value as StaffSource })}>
-              {STAFF_SOURCES.map((source) => <option key={source} value={source}>{t(`sources.${source}`)}</option>)}
+        <fieldset>
+          <legend>{t('sections.guest')}</legend>
+          <label>{t('name')}
+            <input required maxLength={200} value={draft.customerName} onChange={(event) => setDraft({ ...draft, customerName: event.target.value })} />
+          </label>
+          <label>{t('phone')}
+            <input value={draft.phone} maxLength={32} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} />
+          </label>
+          <label>{t('email')}
+            <input type="email" value={draft.email} onChange={(event) => setDraft({ ...draft, email: event.target.value })} />
+          </label>
+          <label>{t('note')}
+            <textarea maxLength={500} value={draft.customerNote} onChange={(event) => setDraft({ ...draft, customerNote: event.target.value })} />
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>{t('sections.when')}</legend>
+          <label>{t('starts')}
+            <input type="datetime-local" required value={draft.startsAt} onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })} />
+          </label>
+          <label>{t('duration')}
+            <input type="number" min={1} max={1440} required value={draft.durationMinutes} onChange={(event) => setDraft({ ...draft, durationMinutes: Number(event.target.value) })} />
+          </label>
+        </fieldset>
+        <fieldset>
+          <legend>{t('sections.seating')}</legend>
+          <label>{t('location')}
+            <select value={draft.locationId} onChange={(event) => setDraft({ ...draft, locationId: event.target.value, tableId: '' })}>
+              {venues.map((venue) => <option key={venue.id} value={venue.id}>{venue.name}</option>)}
             </select>
           </label>
+          <label>{t('guests')}
+            <input type="number" min={1} max={100} required value={draft.guestCount} onChange={(event) => setDraft({ ...draft, guestCount: Number(event.target.value) })} />
+          </label>
+          <label>{t('table')}
+            <select required value={draft.tableId} onChange={(event) => setDraft({ ...draft, tableId: event.target.value })}>
+              <option value="">{t('chooseTable')}</option>
+              {tables.map((table) => (
+                <option key={table.id} value={table.id}>{table.name} · {table.minCapacity}–{table.capacity}</option>
+              ))}
+            </select>
+          </label>
+          {tablesNote === null ? null : <p className={styles.muted}>{tablesNote}</p>}
+        </fieldset>
+        <fieldset>
+          <legend>{t('sections.people')}</legend>
+          <label>{t('contact')}
+            <select value={draft.contactId} onChange={(event) => setDraft({ ...draft, contactId: event.target.value })}>
+              <option value="">{t('noContact')}</option>
+              {contacts.map((contact) => <option key={contact.id} value={contact.id}>{contact.name}</option>)}
+            </select>
+          </label>
+          <label>{t('assignee')}
+            <select value={draft.assignedUserId} onChange={(event) => setDraft({ ...draft, assignedUserId: event.target.value })}>
+              <option value="">{t('allAssignees')}</option>
+              {members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+            </select>
+          </label>
+        </fieldset>
+        {detail === null ? (
+          <fieldset>
+            <legend>{t('source')}</legend>
+            <label>{t('source')}
+              <select value={draft.source} onChange={(event) => setDraft({ ...draft, source: event.target.value as StaffSource })}>
+                {STAFF_SOURCES.map((source) => <option key={source} value={source}>{t(`sources.${source}`)}</option>)}
+              </select>
+            </label>
+          </fieldset>
         ) : null}
-        <label>{t('note')}
-          <textarea maxLength={500} value={draft.customerNote} onChange={(event) => setDraft({ ...draft, customerNote: event.target.value })} />
-        </label>
         {error === null ? null : <p className={styles.error}>{error}</p>}
         <div className={styles.actions}>
           <button type="button" onClick={onClose}>{t('close')}</button>

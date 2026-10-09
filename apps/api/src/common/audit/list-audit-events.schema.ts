@@ -1,5 +1,6 @@
 import {
   auditActionSchema,
+  auditActorTypeSchema,
   auditOutcomeSchema,
   auditResourceTypeSchema,
   pageLimitSchema,
@@ -45,10 +46,12 @@ const auditEventListQueryFields = z.strictObject({
   action: auditActionSchema.optional(),
   outcome: auditOutcomeSchema.optional(),
   actorUserId: z.uuid().optional(),
+  actorType: auditActorTypeSchema.optional(),
   resourceType: auditResourceTypeSchema.optional(),
   resourceId: z.uuid().optional(),
   from: z.iso.datetime().optional(),
   to: z.iso.datetime().optional(),
+  search: z.string().trim().min(1).max(100).optional(),
 });
 
 /**
@@ -92,9 +95,11 @@ function auditFilterFingerprint(query: AuditEventListQuery): string {
     action: query.action ?? null,
     outcome: query.outcome ?? null,
     actorUserId: query.actorUserId ?? null,
+    actorType: query.actorType ?? null,
     resourceType: query.resourceType ?? null,
     resourceId: query.resourceId ?? null,
     from: query.from ?? null,
     to: query.to ?? null,
+    search: query.search ?? null,
   });
 }
