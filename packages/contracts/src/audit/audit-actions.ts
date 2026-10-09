@@ -56,7 +56,7 @@ export const auditOutcomes = ['SUCCESS', 'DENIED', 'FAILURE'] as const;
 export const auditOutcomeSchema = z.enum(auditOutcomes);
 export type AuditOutcome = z.infer<typeof auditOutcomeSchema>;
 
-export const auditActorTypes = ['USER'] as const;
+export const auditActorTypes = ['USER', 'INTEGRATION'] as const;
 export const auditActorTypeSchema = z.enum(auditActorTypes);
 export type AuditActorType = z.infer<typeof auditActorTypeSchema>;
 

@@ -5,8 +5,6 @@ export function canTransitionReservation(
   next: ReservationStatus,
 ): boolean {
   switch (current) {
-    case 'HOLD':
-      return next === 'PENDING' || next === 'CANCELLED';
     case 'PENDING':
       return next === 'CONFIRMED' || next === 'CANCELLED';
     case 'CONFIRMED':

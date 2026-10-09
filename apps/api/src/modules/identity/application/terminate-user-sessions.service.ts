@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { auditActions } from '@lobby/contracts';
+import { auditActions, type AuthenticationVersionChange } from '@lobby/contracts';
 
 import { AuthorizationError } from '../../../common/auth/authorization';
 import { AuditEventStore, type AuditWrite } from '../../../common/audit/audit-event.store';
@@ -106,7 +106,7 @@ function baseRecord(
   targetUserId: string,
   client: AuditClient,
   outcome: 'SUCCESS' | 'DENIED',
-  changes: AuditWrite['changes'],
+  changes: AuthenticationVersionChange | null,
 ): AuditWrite {
   return {
     tenantId: context.tenantId,

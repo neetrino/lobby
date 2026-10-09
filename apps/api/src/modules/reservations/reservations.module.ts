@@ -5,6 +5,7 @@ import { AuthorizationModule } from '../../common/authorization/authorization.mo
 import { DatabaseModule } from '../../common/database/database.module';
 import { OutboxModule } from '../../common/outbox';
 import { CreateReservationService } from './application/create-reservation.service';
+import { ReservationAccessService } from './application/reservation-access.service';
 import { ReservationHistoryWriter } from './application/reservation-history';
 import { ReservationsDashboardProjection } from './application/reservations-dashboard.projection';
 import { ReservationLoadQuery } from './infrastructure/reservation-load.query';
@@ -15,6 +16,7 @@ import { ReservationsController } from './presentation/reservations.controller';
 /**
  * Reservation capability boundary.
  * `POST /reservations` creates one tenant-scoped booking.
+ * `GET /reservations` and `GET /reservations/:id` expose tenant-scoped reads.
  * The dashboard reads through `ReservationsDashboardProjection`.
  */
 @Module({
@@ -24,6 +26,7 @@ import { ReservationsController } from './presentation/reservations.controller';
     ReservationRepository,
     ReservationHistoryWriter,
     CreateReservationService,
+    ReservationAccessService,
     ReservationsDashboardQuery,
     ReservationLoadQuery,
     ReservationsDashboardProjection,

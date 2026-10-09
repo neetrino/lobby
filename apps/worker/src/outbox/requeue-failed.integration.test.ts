@@ -3,6 +3,7 @@ import { createTestPrismaClient, disposeTestPrismaClient } from '@lobby/database
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
+import { ReservationCreatedHandler } from '../handlers/reservation-created.handler.js';
 import { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import { PermanentDispatchError } from '../dispatch/retry-classification.js';
 import { OutboxProcessor } from './outbox-processor.js';
@@ -110,7 +111,13 @@ function createProcessor(
   repository: OutboxRepository,
   contactHandler: ContactCreatedHandler,
 ): OutboxProcessor {
-  return new OutboxProcessor(repository, contactHandler, new TenantCreatedHandler(), config);
+  return new OutboxProcessor(
+    repository,
+    contactHandler,
+    new TenantCreatedHandler(),
+    new ReservationCreatedHandler(),
+    config,
+  );
 }
 
 async function createTenant() {

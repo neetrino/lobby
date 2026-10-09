@@ -10,6 +10,7 @@ import { requestContextFromSession } from '../../../common/tenant/request-contex
 import { clearTestTenantData } from '../../../testing/clear-test-tenant-data';
 import { ReservationRepository } from '../infrastructure/reservation.repository';
 import { CreateReservationService } from './create-reservation.service';
+import { whatsappActor } from '../../../../test/whatsapp-reservation-actor';
 import { ReservationFailure } from './reservation-errors';
 import { ReservationHistoryWriter } from './reservation-history';
 
@@ -151,7 +152,7 @@ describe('CreateReservationService', () => {
     const channelBody = command(seeded, {
       source: { type: 'WHATSAPP', accountId: 'channel-1', externalRequestId: 'req-1' },
     });
-    const integration = channel(seeded);
+    const integration = await whatsappActor(prisma, seeded.tenant.id, randomUUID());
 
     await expect(build().create(user(seeded), channelBody)).rejects.toBeInstanceOf(AuthorizationError);
     await expect(build().create(integration, command(seeded, { source: { type: 'STAFF' } }))).rejects.toBeInstanceOf(
@@ -169,7 +170,8 @@ describe('CreateReservationService', () => {
   it('keeps one reservation when the same source request arrives concurrently', async () => {
     const seeded = await seed('race-source');
     const body = command(seeded, { source: { type: 'WHATSAPP', accountId: 'channel-1', externalRequestId: 'req-1' } });
-    const actor = channel(seeded);
+    const requestId = randomUUID();
+    const actor = await whatsappActor(prisma, seeded.tenant.id, requestId);
     const results = await Promise.allSettled([build().create(actor, body), build().create(actor, body)]);
     const fulfilled = results.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
 
@@ -177,6 +179,20 @@ describe('CreateReservationService', () => {
     expect(fulfilled.map((result) => result.replayed).sort()).toEqual([false, true]);
     expect(fulfilled[0]?.reservation.id).toBe(fulfilled[1]?.reservation.id);
     expect(await prisma.reservation.count()).toBe(1);
+    expect((await prisma.reservation.findFirstOrThrow()).sourceAccountId).toBe('channel-1');
+    expect((await prisma.reservationSourceRequest.findFirstOrThrow()).sourceAccountId).toBe('channel-1');
+    const audit = await prisma.auditEvent.findFirstOrThrow();
+    expect(audit).toMatchObject({
+      actorType: 'INTEGRATION',
+      actorUserId: null,
+      actorRole: null,
+      tenantId: seeded.tenant.id,
+      resourceId: fulfilled[0]?.reservation.id,
+      requestId,
+      changes: { provider: 'WHATSAPP', sourceAccountId: 'channel-1' },
+    });
+    expect(JSON.stringify(audit)).not.toMatch(/phone|email|note|token|secret/i);
+    expect(await prisma.auditEvent.count()).toBe(1);
   });
 
   it('lets only one overlapping booking win and allows the next half-open slot', async () => {
@@ -236,15 +252,6 @@ function build(overrides: {
 
 function user(seeded: Awaited<ReturnType<typeof seed>>) {
   return { type: 'USER' as const, context: seeded.context };
-}
-
-function channel(seeded: Awaited<ReturnType<typeof seed>>) {
-  return {
-    type: 'INTEGRATION' as const,
-    tenantId: seeded.context.tenantId,
-    channelAccountId: 'channel-1',
-    provider: 'WHATSAPP' as const,
-  };
 }
 
 function command(seeded: Awaited<ReturnType<typeof seed>>, overrides: Record<string, unknown> = {}) {

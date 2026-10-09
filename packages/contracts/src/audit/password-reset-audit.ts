@@ -1,10 +1,6 @@
 import { z } from 'zod';
 
-import {
-  auditActions,
-  auditActorTypeSchema,
-  auditSchemaVersion,
-} from './audit-actions.js';
+import { auditActions, auditSchemaVersion } from './audit-actions.js';
 import { authenticationVersionChangeSchema } from './audit-record.js';
 
 const tenantRoleSchema = z.enum(['OWNER', 'ADMIN', 'MEMBER']);
@@ -18,7 +14,7 @@ export const passwordResetAuditSchema = z.strictObject({
   tenantId: z.uuid(),
   actorUserId: z.uuid(),
   actorRole: tenantRoleSchema,
-  actorType: auditActorTypeSchema,
+  actorType: z.literal('USER'),
   action: z.literal(auditActions.USER_PASSWORD_RESET),
   resourceType: z.literal('user'),
   resourceId: z.uuid(),

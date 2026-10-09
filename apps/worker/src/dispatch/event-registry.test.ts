@@ -6,6 +6,7 @@ import {
 import { describe, expect, it } from 'vitest';
 
 import { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
+import { ReservationCreatedHandler } from '../handlers/reservation-created.handler.js';
 import { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import {
   assertHandlerIdempotency,
@@ -34,10 +35,16 @@ describe('event registry', () => {
 
     expect(
       registry.list().map((entry) => eventRegistryKey(entry.eventType, entry.eventVersion)),
-    ).toEqual(['contact.created@1', 'tenant.created@1', 'tenant.created@2', 'pipeline.changed@1']);
+    ).toEqual([
+      'contact.created@1',
+      'tenant.created@1',
+      'tenant.created@2',
+      'pipeline.changed@1',
+      'reservation.created@1',
+    ]);
     expect(
       registry.list().map((entry) => entry.handlers.map((handler) => handler.retryClassification)),
-    ).toEqual([['transient'], ['transient'], ['transient'], ['transient']]);
+    ).toEqual([['transient'], ['transient'], ['transient'], ['transient'], ['transient']]);
     expect(
       registry.list().map((entry) => entry.handlers.map((handler) => handler.handler.name)),
     ).toEqual([
@@ -45,6 +52,7 @@ describe('event registry', () => {
       ['TenantCreatedHandler'],
       ['TenantCreatedHandler'],
       ['PipelineChangedHandler'],
+      ['ReservationCreatedHandler'],
     ]);
     for (const entry of registry.list()) {
       for (const handler of entry.handlers) {
@@ -148,5 +156,6 @@ function createRegistry() {
   return createWorkerEventRegistry({
     contactCreated: new ContactCreatedHandler(),
     tenantCreated: new TenantCreatedHandler(),
+    reservationCreated: new ReservationCreatedHandler(),
   });
 }

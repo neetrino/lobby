@@ -9,6 +9,7 @@ export async function clearTestTenantData(database: PrismaClient | undefined): P
     return;
   }
   await database.reservationStatusHistory.deleteMany();
+  await database.reservationChannel.deleteMany();
   await database.reservationSourceRequest.deleteMany();
   await database.reservation.deleteMany();
   await database.reservationScheduleException.deleteMany();

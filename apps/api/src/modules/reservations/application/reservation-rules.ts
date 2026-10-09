@@ -1,5 +1,4 @@
 import type { CreateReservationCommand, ReservationSource } from '@lobby/contracts';
-import { z } from 'zod';
 
 import { AuthorizationError } from '../../../common/auth/authorization';
 import { ValidationError } from '../../../common/http/validation-error';
@@ -55,14 +54,6 @@ function assertSourceAllowed(source: ReservationSource, allowed: ReadonlySet<Res
   if (!allowed.has(source)) {
     throw new AuthorizationError();
   }
-}
-
-/** Account id stored on the reservation. Non-UUID channel ids stay on the source-request row. */
-export function storedSourceAccountId(value: string | undefined): string | null {
-  if (value === undefined || !z.uuid().safeParse(value).success) {
-    return null;
-  }
-  return value;
 }
 
 async function requireLocation(scope: TenantReservations, locationId: string) {

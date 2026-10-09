@@ -4,6 +4,7 @@ import { createTestPrismaClient, disposeTestPrismaClient } from '@lobby/database
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
+import { ReservationCreatedHandler } from '../handlers/reservation-created.handler.js';
 import { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import { OutboxProcessor } from './outbox-processor.js';
 import { OutboxRepository } from './outbox-repository.js';
@@ -179,6 +180,7 @@ describe('outbox delivery', () => {
       repository,
       new ContactCreatedHandler(),
       tenantHandler,
+      new ReservationCreatedHandler(),
       config,
     );
     const [claimed] = await repository.claimBatch();
@@ -218,6 +220,7 @@ describe('outbox delivery', () => {
       repository,
       new ContactCreatedHandler(),
       tenantHandler,
+      new ReservationCreatedHandler(),
       config,
     );
     const [claimed] = await repository.claimBatch();
@@ -253,7 +256,13 @@ describe('outbox delivery', () => {
 });
 
 function createProcessor(repository: OutboxRepository, contactHandler: ContactCreatedHandler) {
-  return new OutboxProcessor(repository, contactHandler, new TenantCreatedHandler(), config);
+  return new OutboxProcessor(
+    repository,
+    contactHandler,
+    new TenantCreatedHandler(),
+    new ReservationCreatedHandler(),
+    config,
+  );
 }
 
 function failingHandler(): ContactCreatedHandler {

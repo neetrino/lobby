@@ -3,6 +3,7 @@ import { createTestPrismaClient, disposeTestPrismaClient } from '@lobby/database
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
+import { ReservationCreatedHandler } from '../handlers/reservation-created.handler.js';
 import { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import { OutboxProcessor } from '../outbox/outbox-processor.js';
 import { OutboxRepository } from '../outbox/outbox-repository.js';
@@ -94,6 +95,40 @@ describe('dispatch registry failures', () => {
     expect(logs.join('')).not.toContain(secretPayload);
   });
 
+  it('publishes reservation.created@1 instead of failing it as unknown', async () => {
+    const tenant = await createTenant();
+    const reservationId = crypto.randomUUID();
+    const event = await prisma.outboxEvent.create({
+      data: {
+        tenantId: tenant.id,
+        eventType: 'reservation.created',
+        eventVersion: 1,
+        aggregateType: 'reservation',
+        aggregateId: reservationId,
+        payload: {
+          reservationId,
+          locationId: crypto.randomUUID(),
+          contactId: null,
+          source: 'STAFF',
+          status: 'PENDING',
+          startsAt: '2026-10-09T18:00:00.000Z',
+        },
+        occurredAt: new Date('2026-10-09T09:00:00.000Z'),
+        availableAt: new Date(0),
+      },
+    });
+    const reservationHandler = new ReservationCreatedHandler();
+    const { processor } = createProcessor(new ContactCreatedHandler(), new TenantCreatedHandler(), reservationHandler);
+    const claimed = await claimOne();
+
+    await processor.process(claimed);
+
+    expect(reservationHandler.deliveryCount()).toBe(1);
+    const stored = await prisma.outboxEvent.findUniqueOrThrow({ where: { id: event.id } });
+    expect(stored.status).toBe('PUBLISHED');
+    expect(stored.lastError).toBeNull();
+  });
+
   it('marks a permanent handler error as failed before the attempt limit', async () => {
     const tenant = await createTenant();
     const event = await seedEvent(tenant.id, {
@@ -121,6 +156,7 @@ describe('dispatch registry failures', () => {
 function createProcessor(
   contactHandler: ContactCreatedHandler,
   tenantHandler: TenantCreatedHandler,
+  reservationHandler: ReservationCreatedHandler = new ReservationCreatedHandler(),
 ) {
   const logs: string[] = [];
   const repository = new OutboxRepository(prisma, config);
@@ -128,6 +164,7 @@ function createProcessor(
     repository,
     contactHandler,
     tenantHandler,
+    reservationHandler,
     config,
     () => new Date(),
     createDispatchLogger((line) => {

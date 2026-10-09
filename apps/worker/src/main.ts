@@ -14,6 +14,7 @@ import {
 import { ContactCreatedHandler } from './handlers/contact-created.handler.js';
 import { MemberInvitationEmailHandler } from './handlers/member-invitation-email.handler.js';
 import { PasswordResetEmailHandler } from './handlers/password-reset-email.handler.js';
+import { ReservationCreatedHandler } from './handlers/reservation-created.handler.js';
 import { TenantCreatedHandler } from './handlers/tenant-created.handler.js';
 import { OutboxProcessor } from './outbox/outbox-processor.js';
 import { OutboxRelay } from './outbox/outbox-relay.js';
@@ -32,6 +33,7 @@ export async function startOutboxRelay(signal: AbortSignal): Promise<void> {
     repository,
     new ContactCreatedHandler(),
     new TenantCreatedHandler(),
+    new ReservationCreatedHandler(),
     config,
     () => new Date(),
     createDispatchLogger(),

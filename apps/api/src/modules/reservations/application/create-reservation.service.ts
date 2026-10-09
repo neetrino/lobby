@@ -12,7 +12,6 @@ import {
 } from '../../../common/authorization/module-entitlement';
 import { requirePermission } from '../../../common/authorization/require-permission';
 import { OutboxService } from '../../../common/outbox/outbox.service';
-import type { RequestContext } from '../../../common/tenant/request-context';
 import {
   isReservationOverlap,
   isSourceRequestConflict,
@@ -32,7 +31,6 @@ import {
   assertActorSource,
   assertBookable,
   reservationPeriod,
-  storedSourceAccountId,
   type ReservationPeriod,
 } from './reservation-rules';
 import { requestFingerprint } from './reservation-fingerprint';
@@ -127,9 +125,7 @@ export class CreateReservationService {
       if (source !== null) {
         await writes.insertSourceRequest(source, created.id, fingerprint);
       }
-      if (actor.type === 'USER') {
-        await this.audit.append(tx, createdAudit(actor.context, created.id));
-      }
+      await this.audit.append(tx, createdAudit(actor, created.id));
       await this.outbox.enqueue(tx, reservationCreatedEvent(eventInput(tenantId, created, command)));
       return { reservation: created, replayed: false };
     });
@@ -195,7 +191,7 @@ function reservationInsert(
     customerPhone: command.customer.phone ?? null,
     customerEmail: command.customer.email ?? null,
     customerNote: command.customerNote ?? null,
-    sourceAccountId: storedSourceAccountId(command.source.accountId),
+    sourceAccountId: command.source.accountId ?? null,
     sourceRequestId: command.source.externalRequestId ?? null,
     sourceConversationId: command.source.conversationId ?? null,
     sourceMessageId: command.source.messageId ?? null,
@@ -213,19 +209,36 @@ function eventInput(tenantId: string, reservation: ReservationRecord, command: C
   };
 }
 
-function createdAudit(context: RequestContext, reservationId: string): AuditWrite {
+function createdAudit(actor: ReservationActor, reservationId: string): AuditWrite {
+  if (actor.type === 'USER') {
+    return {
+      tenantId: actor.context.tenantId,
+      actorUserId: actor.context.userId,
+      actorRole: actor.context.role,
+      actorType: 'USER',
+      action: 'reservation.created',
+      resourceType: 'reservation',
+      resourceId: reservationId,
+      outcome: 'SUCCESS',
+      changes: null,
+      reason: null,
+      requestId: actor.context.requestId,
+      ipHash: null,
+      userAgent: null,
+    };
+  }
   return {
-    tenantId: context.tenantId,
-    actorUserId: context.userId,
-    actorRole: context.role,
-    actorType: 'USER',
+    tenantId: actor.tenantId,
+    actorUserId: null,
+    actorRole: null,
+    actorType: 'INTEGRATION',
     action: 'reservation.created',
     resourceType: 'reservation',
     resourceId: reservationId,
     outcome: 'SUCCESS',
-    changes: null,
+    changes: { provider: actor.provider, sourceAccountId: actor.channelAccountId },
     reason: null,
-    requestId: context.requestId,
+    requestId: actor.requestId,
     ipHash: null,
     userAgent: null,
   };

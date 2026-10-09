@@ -1,11 +1,6 @@
 import { z } from 'zod';
 
-import {
-  auditActions,
-  auditActorTypeSchema,
-  auditOutcomeSchema,
-  auditSchemaVersion,
-} from './audit-actions.js';
+import { auditActions, auditOutcomeSchema, auditSchemaVersion } from './audit-actions.js';
 
 const tenantRoleSchema = z.enum(['OWNER', 'ADMIN', 'MEMBER']);
 
@@ -29,7 +24,7 @@ export const userSessionsTerminatedAuditSchema = z
     tenantId: z.uuid(),
     actorUserId: z.uuid(),
     actorRole: tenantRoleSchema,
-    actorType: auditActorTypeSchema,
+    actorType: z.literal('USER'),
     action: z.literal(auditActions.USER_SESSIONS_TERMINATED),
     resourceType: z.literal('user'),
     resourceId: z.uuid(),

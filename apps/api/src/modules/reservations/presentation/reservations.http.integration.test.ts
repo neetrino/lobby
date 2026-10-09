@@ -128,6 +128,43 @@ describe('Reservations HTTP', () => {
         requestedTableId: table.id,
         source: { type: 'STAFF' },
       });
+    const reservationId = created.body.data.id as string;
+    const secondStarts = new Date(starts.getTime() + 2 * 60 * 60 * 1000);
+    const secondCreated = await request(http)
+      .post('/api/v1/reservations')
+      .set('Origin', origin)
+      .set('Cookie', owner.cookie)
+      .send({
+        locationId: location.id,
+        startsAt: secondStarts.toISOString(),
+        durationMinutes: 60,
+        guestCount: 2,
+        customer: { name: 'Mariam', phone: '+37400000002' },
+        requestedTableId: table.id,
+        source: { type: 'PHONE' },
+      });
+    const read = await request(http)
+      .get(`/api/v1/reservations/${reservationId}`)
+      .set('Cookie', owner.cookie);
+    const listed = await request(http)
+      .get('/api/v1/reservations')
+      .query({ locationId: location.id, status: 'PENDING', limit: 1 })
+      .set('Cookie', owner.cookie);
+    const nextPage = await request(http)
+      .get('/api/v1/reservations')
+      .query({
+        locationId: location.id,
+        status: 'PENDING',
+        limit: 1,
+        cursor: listed.body.page.nextCursor as string,
+      })
+      .set('Cookie', owner.cookie);
+    const hiddenRead = await request(http)
+      .get(`/api/v1/reservations/${reservationId}`)
+      .set('Cookie', other.cookie);
+    const otherList = await request(http)
+      .get('/api/v1/reservations')
+      .set('Cookie', other.cookie);
 
     expect(created.status).toBe(201);
     expect(created.body.data).toMatchObject({
@@ -139,6 +176,19 @@ describe('Reservations HTTP', () => {
     });
     expect(created.body.meta).toEqual({ replayed: false });
     expect(JSON.stringify(created.body)).not.toContain('+37400000000');
+    expect(read.status).toBe(200);
+    expect(read.body.data).toEqual(created.body.data);
+    expect(secondCreated.status).toBe(201);
+    expect(listed.status).toBe(200);
+    expect(listed.body.data).toEqual([created.body.data]);
+    expect(listed.body.page.nextCursor).toEqual(expect.any(String));
+    expect(nextPage.body).toEqual({
+      data: [secondCreated.body.data],
+      page: { nextCursor: null },
+    });
+    expect(JSON.stringify(listed.body)).not.toContain('+37400000000');
+    expect(hiddenRead.status).toBe(404);
+    expect(otherList.body).toEqual({ data: [], page: { nextCursor: null } });
     expect(hidden.status).toBe(404);
     expect(hidden.body.error.code).toBe('RESERVATION_LOCATION_NOT_FOUND');
   }, 30_000);

@@ -1,11 +1,6 @@
 import { z } from 'zod';
 
-import {
-  auditActions,
-  auditActorTypeSchema,
-  auditOutcomeSchema,
-  auditSchemaVersion,
-} from './audit-actions.js';
+import { auditActions, auditOutcomeSchema, auditSchemaVersion } from './audit-actions.js';
 
 const tenantRoleSchema = z.enum(['OWNER', 'ADMIN', 'MEMBER']);
 const sha256Hex = z.string().regex(/^[0-9a-f]{64}$/);
@@ -18,7 +13,7 @@ export const invitationAuditSchema = z.strictObject({
   tenantId: z.uuid(),
   actorUserId: z.uuid(),
   actorRole: tenantRoleSchema,
-  actorType: auditActorTypeSchema,
+  actorType: z.literal('USER'),
   action: z.enum([
     auditActions.INVITATION_CREATED,
     auditActions.INVITATION_RESENT,

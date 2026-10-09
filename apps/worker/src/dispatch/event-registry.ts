@@ -3,11 +3,14 @@ import {
   invitationCreatedEventSchema,
   passwordResetRequestedEventSchema,
   pipelineChangedEventSchema,
+  reservationCreatedEventSchema,
   tenantCreatedEventSchema,
+  type ReservationCreatedEvent,
   tenantCreatedEventV1Schema,
 } from '@lobby/contracts';
 
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
+import type { ReservationCreatedHandler } from '../handlers/reservation-created.handler.js';
 import type { MemberInvitationEmailHandler } from '../handlers/member-invitation-email.handler.js';
 import type { PasswordResetEmailHandler } from '../handlers/password-reset-email.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
@@ -82,6 +85,7 @@ export type ExternalHandlerInput = {
 type WorkerHandlers = {
   contactCreated: ContactCreatedHandler;
   tenantCreated: TenantCreatedHandler;
+  reservationCreated: ReservationCreatedHandler;
 };
 
 /** Composite registry key. Versions of one event type do not share an entry. */
@@ -179,13 +183,18 @@ export function passwordResetEmailRegistryEntry(
   });
 }
 
-function workerRegistryEntries(
-  handlers: WorkerHandlers,
-): readonly [EventRegistryEntry<1>, EventRegistryEntry<1>, EventRegistryEntry<2>, EventRegistryEntry<1>] {
+function workerRegistryEntries(handlers: WorkerHandlers): readonly [
+  EventRegistryEntry<1>,
+  EventRegistryEntry<1>,
+  EventRegistryEntry<2>,
+  EventRegistryEntry<1>,
+  EventRegistryEntry<1>,
+] {
   const contactSchema = asEventSchema(contactCreatedEventSchema);
   const tenantV1Schema = asEventSchema(tenantCreatedEventV1Schema);
   const tenantSchema = asEventSchema(tenantCreatedEventSchema);
   const pipelineSchema = asEventSchema(pipelineChangedEventSchema);
+  const reservationSchema = asEventSchema(reservationCreatedEventSchema);
   return [
     defineEventRegistryEntry({
       eventType: 'contact.created',
@@ -217,15 +226,32 @@ function workerRegistryEntries(
         ),
       ],
     }),
-    defineEventRegistryEntry({
-      eventType: 'pipeline.changed',
-      eventVersion: 1,
-      schema: pipelineSchema,
-      handlers: [
-        bindSideEffectFree('PipelineChangedHandler', pipelineSchema, 'transient', async () => undefined),
-      ],
-    }),
+    pipelineChangedEntry(pipelineSchema),
+    reservationCreatedEntry(reservationSchema, handlers.reservationCreated),
   ];
+}
+
+function pipelineChangedEntry(schema: EventSchema): EventRegistryEntry<1> {
+  return defineEventRegistryEntry({
+    eventType: 'pipeline.changed',
+    eventVersion: 1,
+    schema,
+    handlers: [bindSideEffectFree('PipelineChangedHandler', schema, 'transient', async () => undefined)],
+  });
+}
+
+function reservationCreatedEntry(
+  schema: EventSchema<ReservationCreatedEvent>,
+  handler: ReservationCreatedHandler,
+): EventRegistryEntry<1> {
+  return defineEventRegistryEntry({
+    eventType: 'reservation.created',
+    eventVersion: 1,
+    schema,
+    handlers: [
+      bindSideEffectFree('ReservationCreatedHandler', schema, 'transient', (event) => handler.handle(event)),
+    ],
+  });
 }
 
 /**

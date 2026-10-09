@@ -21,6 +21,7 @@ import type { ProcessedEventStore } from '../dispatch/processed-event-store.js';
 import type { ContactCreatedHandler } from '../handlers/contact-created.handler.js';
 import type { MemberInvitationEmailHandler } from '../handlers/member-invitation-email.handler.js';
 import type { PasswordResetEmailHandler } from '../handlers/password-reset-email.handler.js';
+import type { ReservationCreatedHandler } from '../handlers/reservation-created.handler.js';
 import type { TenantCreatedHandler } from '../handlers/tenant-created.handler.js';
 import type { OutboxRepository } from './outbox-repository.js';
 import { sanitizeOutboxError } from './sanitize-outbox-error.js';
@@ -34,13 +35,14 @@ export class OutboxProcessor {
     private readonly repository: OutboxRepository,
     contactCreated: ContactCreatedHandler,
     tenantCreated: TenantCreatedHandler,
+    reservationCreated: ReservationCreatedHandler,
     private readonly config: OutboxWorkerConfig,
     private readonly now: () => Date = () => new Date(),
     private readonly logger: DispatchLogger = createDispatchLogger(),
     invitation?: { handler: MemberInvitationEmailHandler; store: ProcessedEventStore },
     passwordReset?: { handler: PasswordResetEmailHandler; store: ProcessedEventStore },
   ) {
-    const registry = createWorkerEventRegistry({ contactCreated, tenantCreated });
+    const registry = createWorkerEventRegistry({ contactCreated, tenantCreated, reservationCreated });
     const extras: EventRegistryEntry[] = [];
     if (invitation !== undefined) {
       extras.push(invitationEmailRegistryEntry(invitation.handler, invitation.store));

@@ -7,6 +7,8 @@ import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import type { TenantId } from '../../../common/tenant/tenant-id';
 import { clockMinutes } from '../domain/reservation-hours';
 import type { ReservationActor } from '../application/reservation-actor';
+import { reservationListFilter, reservationListOrder } from '../application/list-reservations.query';
+import type { ReservationListQuery } from '../application/list-reservations.schema';
 import {
   findStoredSourceRequest,
   insertStoredSourceRequest,
@@ -92,6 +94,8 @@ type ReservationDb = PrismaClient | Prisma.TransactionClient;
 
 /** Reads and writes that cannot open their own transaction. */
 export type ReservationOperations = {
+  findById(id: string): Promise<ReservationRecord | null>;
+  list(query: ReservationListQuery): Promise<ReservationRecord[]>;
   findLocation(id: string): Promise<LocationRecord | null>;
   findTable(id: string): Promise<TableRecord | null>;
   findAvailableTable(input: AvailabilityInput): Promise<TableRecord | null>;
@@ -115,6 +119,24 @@ class ReservationQueries implements ReservationOperations {
     private readonly db: ReservationDb,
     protected readonly tenantId: TenantId,
   ) {}
+
+  async findById(id: string): Promise<ReservationRecord | null> {
+    const row = await this.db.reservation.findFirst({
+      where: { id, tenantId: this.tenantId },
+      select: reservationSelect,
+    });
+    return row === null ? null : toReservation(row);
+  }
+
+  async list(query: ReservationListQuery): Promise<ReservationRecord[]> {
+    const rows = await this.db.reservation.findMany({
+      where: { tenantId: this.tenantId, ...reservationListFilter(query) },
+      orderBy: reservationListOrder(query.sort),
+      take: query.limit + 1,
+      select: reservationSelect,
+    });
+    return rows.map(toReservation);
+  }
 
   async findLocation(id: string): Promise<LocationRecord | null> {
     return this.db.reservationLocation.findFirst({

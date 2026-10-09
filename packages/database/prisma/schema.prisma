@@ -42,6 +42,7 @@ model Tenant {
   reservationScheduleExceptions ReservationScheduleException[]
   reservations                  Reservation[]
   reservationSourceRequests     ReservationSourceRequest[]
+  reservationChannels           ReservationChannel[]
   reservationStatusHistory      ReservationStatusHistory[]
   auditEvents              AuditEvent[]
   memberInvitations        MemberInvitation[]
@@ -126,6 +127,7 @@ enum AuditOutcome {
 
 enum AuditActorType {
   USER
+  INTEGRATION
 }
 
 /// Append-only security and business history. Application code inserts and reads.
@@ -133,8 +135,8 @@ model AuditEvent {
   id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId      String         @map("tenant_id") @db.Uuid
   occurredAt    DateTime       @default(now()) @map("occurred_at") @db.Timestamptz(3)
-  actorUserId   String         @map("actor_user_id") @db.Uuid
-  actorRole     TenantRole     @map("actor_role")
+  actorUserId   String?        @map("actor_user_id") @db.Uuid
+  actorRole     TenantRole?    @map("actor_role")
   actorType     AuditActorType @map("actor_type")
   action        String
   resourceType  String         @map("resource_type")
@@ -148,7 +150,7 @@ model AuditEvent {
   schemaVersion Int            @default(1) @map("schema_version")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
-  actor  User   @relation(fields: [actorUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
+  actor  User?  @relation(fields: [actorUserId, tenantId], references: [id, tenantId], onDelete: Restrict, onUpdate: Cascade)
 
   @@index([tenantId, occurredAt, id])
   @@index([tenantId, resourceType, resourceId])
@@ -423,7 +425,8 @@ model Reservation {
   customerEmail       String?           @map("customer_email")
   customerNote        String?           @map("customer_note")
   internalNote        String?           @map("internal_note")
-  sourceAccountId     String?           @map("source_account_id") @db.Uuid
+  /// External account id, such as a WhatsApp or Telegram account. Same text as the source-request row.
+  sourceAccountId     String?           @map("source_account_id")
   sourceRequestId     String?           @map("source_request_id")
   sourceConversationId String?          @map("source_conversation_id")
   sourceMessageId     String?           @map("source_message_id")
@@ -449,6 +452,22 @@ model Reservation {
   @@index([tenantId, contactId, startsAt])
   @@index([tenantId, assignedUserId, startsAt])
   @@map("reservations")
+}
+
+/// Webhook identity for one channel account. The raw secret is not stored.
+/// Authentication hashes the presented credential and reads tenant, provider, and account from this row.
+model ReservationChannel {
+  id               String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId         String            @map("tenant_id") @db.Uuid
+  provider         ReservationSource
+  channelAccountId String            @map("channel_account_id")
+  credentialHash   String            @unique @map("credential_hash")
+  createdAt        DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@unique([tenantId, provider, channelAccountId], map: "reservation_channels_account_key")
+  @@map("reservation_channels")
 }
 
 /// Deduplicates a channel webhook. The same external request cannot create a second booking.

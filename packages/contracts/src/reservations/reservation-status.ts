@@ -1,7 +1,6 @@
 import { z } from 'zod';
 
 export const reservationStatuses = [
-  'HOLD',
   'PENDING',
   'CONFIRMED',
   'ARRIVED',
