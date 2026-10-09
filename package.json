@@ -1,22 +1,24 @@
 {
-  "name": "lobby-db",
-  "version": "0.0.0",
+  "name": "lobby",
   "private": true,
-  "description": "Database schema and migrations (infra-only scaffold, no application code yet)",
+  "packageManager": "pnpm@10.18.0",
+  "engines": {
+    "node": ">=24"
+  },
   "scripts": {
-    "postinstall": "prisma generate",
-    "db:up": "docker compose up -d",
-    "db:down": "docker compose down",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:studio": "prisma studio"
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "node scripts/validate-module-boundaries.mjs && turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:generate": "pnpm --filter @lobby/database db:generate",
+    "db:migrate": "pnpm --filter @lobby/database db:migrate"
   },
   "devDependencies": {
-    "prisma": "7.10.0",
-    "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "@prisma/client": "7.10.0"
+    "prettier": "^3.6.2",
+    "turbo": "^2.5.8",
+    "typescript": "^5.9.2"
   }
 }

@@ -1,0 +1,423 @@
+import 'reflect-metadata';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { Test } from '@nestjs/testing';
+import request from 'supertest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+
+import { AppModule } from '../../../app.module';
+import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
+import { configureHttpApp } from '../../../common/http/configure-http-app';
+import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
+import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../../identity/infrastructure/rate-limit-config';
+import { RATE_LIMIT_REDIS } from '../../identity/infrastructure/rate-limit-redis';
+import { MemoryRateLimitRedis } from '../../identity/infrastructure/memory-rate-limit-redis';
+import { REGISTRATION_ENABLED } from '../../identity/infrastructure/registration-config';
+import { SESSION_REDIS } from '../../identity/infrastructure/session-redis';
+import { clearTenantRows, IndexedSessionRedis } from '../../identity/presentation/session-guard.fixtures';
+
+const origin = 'http://localhost:3000';
+const password = 'correct-horse-battery';
+
+let app: NestExpressApplication;
+let prisma: PrismaClient;
+const sessions = new IndexedSessionRedis();
+const rateLimit = new MemoryRateLimitRedis();
+
+beforeAll(async () => {
+  prisma = await createTestPrismaClient();
+  const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
+    .overrideProvider(PRISMA_CLIENT)
+    .useValue(prisma)
+    .overrideProvider(SESSION_REDIS)
+    .useValue(sessions)
+    .overrideProvider(RATE_LIMIT_REDIS)
+    .useValue(rateLimit)
+    .overrideProvider(REGISTRATION_ENABLED)
+    .useValue(true)
+    .overrideProvider(ALLOWED_ORIGINS)
+    .useValue([origin])
+    .overrideProvider(AUTH_RATE_LIMITS)
+    .useValue(permissiveAuthRateLimits())
+    .compile();
+  app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });
+  configureHttpApp(app, { allowedOrigins: [origin], trustProxy: false }, { logger: false });
+  await app.init();
+}, 60_000);
+
+afterAll(async () => {
+  await app?.close();
+  await clearTenantRows(prisma);
+  await disposeTestPrismaClient(prisma);
+});
+
+beforeEach(async () => {
+  sessions.strings.clear();
+  sessions.sets.clear();
+  rateLimit.counters.clear();
+  await clearTenantRows(prisma);
+});
+
+describe('Pipeline HTTP', () => {
+  it('requires a session', async () => {
+    const missing = await request(app.getHttpServer()).get('/api/v1/pipelines/lead');
+
+    expect(missing.status).toBe(401);
+    expect(missing.body.error.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('keeps a lead card off the deal board and out of another tenant', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-a', 'ada@example.com');
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const deal = await request(http).get('/api/v1/pipelines/deal').set('Cookie', owner);
+    const leadColumn = firstColumnId(lead.body);
+    const created = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: leadColumn, title: 'Ada lead', amount: 10 });
+    const dealCard = await request(http)
+      .post('/api/v1/pipelines/deal/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(deal.body), title: 'Ada deal', amount: 20 });
+    const cardId = created.body.data.columns[0].cards[0].id as string;
+    const dealCardId = dealCard.body.data.columns[0].cards[0].id as string;
+    const other = await login(http, 'pipe-b', 'bea@example.com');
+    const hidden = await request(http)
+      .patch(`/api/v1/pipelines/deal/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', other)
+      .send({ title: 'Stolen' });
+    const crossed = await request(http)
+      .patch(`/api/v1/pipelines/deal/cards/${dealCardId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: leadColumn });
+    const stillLead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const stillDeal = await request(http).get('/api/v1/pipelines/deal').set('Cookie', owner);
+
+    expect(created.status).toBe(201);
+    expect(dealCard.status).toBe(201);
+    expect(created.body.data.columns[0].cards[0]).toMatchObject({ title: 'Ada lead', amount: 10, position: 0 });
+    expect(hidden.status).toBe(404);
+    expect(crossed.status).toBe(404);
+    expect(stillLead.body.data.columns[0].cards).toEqual([
+      expect.objectContaining({ id: cardId, title: 'Ada lead' }),
+    ]);
+    expect(stillDeal.body.data.columns[0].cards).toEqual([
+      expect.objectContaining({ id: dealCardId, title: 'Ada deal' }),
+    ]);
+  }, 30_000);
+
+  it('rejects an amount the integer column cannot store and an unknown field', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-amount', 'ada@example.com');
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const huge = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(lead.body), title: 'Huge', amount: 1_000_000_000_000 });
+    const extra = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(lead.body), title: 'Ada', tenantId: 'other' });
+
+    expect(huge.status).toBe(400);
+    expect(huge.body.error.code).toBe('VALIDATION_ERROR');
+    expect(extra.status).toBe(400);
+    expect(extra.body.error.code).toBe('VALIDATION_ERROR');
+    expect(await prisma.pipelineCard.count()).toBe(0);
+  }, 30_000);
+
+  it('refuses to delete a column that still has a card', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-column', 'ada@example.com');
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const columnId = firstColumnId(lead.body);
+    await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId, title: 'Ada' });
+    const blocked = await request(http)
+      .delete(`/api/v1/pipelines/lead/columns/${columnId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner);
+    const cardId = blocked.status === 409
+      ? (await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner)).body.data.columns[0].cards[0].id as string
+      : '';
+    await request(http)
+      .delete(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner);
+    const removed = await request(http)
+      .delete(`/api/v1/pipelines/lead/columns/${columnId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner);
+
+    expect(blocked.status).toBe(409);
+    expect(blocked.body.error.code).toBe('PIPELINE_COLUMN_NOT_EMPTY');
+    expect(removed.status).toBe(200);
+    expect(removed.body.data.columns.some((column: { id: string }) => column.id === columnId)).toBe(false);
+  }, 30_000);
+
+  it('puts a moved card at the end of the destination column', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-move', 'ada@example.com');
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const sourceId = firstColumnId(lead.body);
+    const destinationId = lead.body.data.columns[1]?.id as string;
+    await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: destinationId, title: 'Already there' });
+    const created = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: sourceId, title: 'Moving' });
+    const cardId = created.body.data.columns[0].cards[0].id as string;
+    const moved = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: destinationId });
+    const destination = moved.body.data.columns.find((column: { id: string }) => column.id === destinationId);
+
+    expect(moved.status).toBe(200);
+    expect(destination.cards.map((card: { title: string; position: number }) => [card.title, card.position])).toEqual([
+      ['Already there', 0],
+      ['Moving', 1],
+    ]);
+  }, 30_000);
+
+  it('reads a board that registration already created and maps a repeated delete to not found', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-read', 'ada@example.com');
+    const created = await prisma.pipeline.count();
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const columnId = firstColumnId(lead.body);
+    const card = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId, title: 'Ada' });
+    const cardId = card.body.data.columns[0].cards[0].id as string;
+    const removed = await request(http)
+      .delete(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner);
+    const again = await request(http)
+      .delete(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner);
+
+    expect(created).toBe(2);
+    expect(await prisma.pipeline.count()).toBe(created);
+    expect(lead.status).toBe(200);
+    expect(lead.body.data.name).toBe('Leads');
+    expect(removed.status).toBe(200);
+    expect(again.status).toBe(404);
+    expect(again.body.error.code).toBe('NOT_FOUND');
+  }, 30_000);
+
+  it('lets a member add lead and deal cards without configuring the board', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-member', 'ada@example.com');
+    await prisma.user.updateMany({ data: { role: 'MEMBER' } });
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const deal = await request(http).get('/api/v1/pipelines/deal').set('Cookie', owner);
+    const renamed = await request(http)
+      .patch('/api/v1/pipelines/lead')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ name: 'Mine' });
+    const leadCard = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(lead.body), title: 'Member lead' });
+    const dealCard = await request(http)
+      .post('/api/v1/pipelines/deal/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(deal.body), title: 'Member deal' });
+    const column = await request(http)
+      .post('/api/v1/pipelines/lead/columns')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ name: 'Member column' });
+
+    expect(renamed.status).toBe(403);
+    expect(renamed.body.error.code).toBe('FORBIDDEN');
+    expect(leadCard.status).toBe(201);
+    expect(leadCard.body.data.columns[0].cards[0].title).toBe('Member lead');
+    expect(dealCard.status).toBe(201);
+    expect(dealCard.body.data.columns[0].cards[0].title).toBe('Member deal');
+    expect(column.status).toBe(201);
+    expect(column.body.data.columns.some((item: { name: string }) => item.name === 'Member column')).toBe(true);
+  }, 30_000);
+
+  it('keeps card chat and notes inside the tenant and reports their counts', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-chat', 'ada@example.com');
+    const board = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const created = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(board.body), title: 'Discuss me' });
+    const cardId = created.body.data.columns[0].cards[0].id as string;
+    const posted = await request(http)
+      .post(`/api/v1/pipelines/lead/cards/${cardId}/messages`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ body: '  First internal note  ' });
+    const messages = await request(http)
+      .get(`/api/v1/pipelines/lead/cards/${cardId}/messages`)
+      .set('Cookie', owner);
+    const postedNote = await request(http)
+      .post(`/api/v1/pipelines/lead/cards/${cardId}/notes`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ body: '  Remember the contract  ' });
+    const notes = await request(http)
+      .get(`/api/v1/pipelines/lead/cards/${cardId}/notes`)
+      .set('Cookie', owner);
+    const updatedNote = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${cardId}/notes/${postedNote.body.data.id as string}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ body: 'Updated sticky text' });
+    const refreshed = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const other = await login(http, 'pipe-chat-other', 'bea@example.com');
+    const hidden = await request(http)
+      .get(`/api/v1/pipelines/lead/cards/${cardId}/messages`)
+      .set('Cookie', other);
+    const hiddenNotes = await request(http)
+      .get(`/api/v1/pipelines/lead/cards/${cardId}/notes`)
+      .set('Cookie', other);
+
+    expect(posted.status).toBe(201);
+    expect(posted.body.data).toMatchObject({ cardId, body: 'First internal note', authorName: 'Ada' });
+    expect(messages.status).toBe(200);
+    expect(messages.body.data).toHaveLength(1);
+    expect(postedNote.status).toBe(201);
+    expect(postedNote.body.data).toMatchObject({ cardId, body: 'Remember the contract', authorName: 'Ada' });
+    expect(notes.body.data).toHaveLength(1);
+    expect(updatedNote.status).toBe(200);
+    expect(updatedNote.body.data.body).toBe('Updated sticky text');
+    expect(refreshed.body.data.columns[0].cards[0].messageCount).toBe(1);
+    expect(refreshed.body.data.columns[0].cards[0].noteCount).toBe(1);
+    expect(hidden.status).toBe(404);
+    expect(hiddenNotes.status).toBe(404);
+  }, 30_000);
+
+  it('saves card priority, blocks another tenant, and audits the change', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-priority', 'ada@example.com');
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const created = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(lead.body), title: 'Ada' });
+    const cardId = created.body.data.columns[0].cards[0].id as string;
+    const urgent = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ priority: 'URGENT' });
+    const normal = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ priority: 'NORMAL' });
+    const other = await login(http, 'pipe-priority-b', 'bea@example.com');
+    const hidden = await request(http)
+      .patch(`/api/v1/pipelines/lead/cards/${cardId}`)
+      .set('Origin', origin)
+      .set('Cookie', other)
+      .send({ priority: 'URGENT' });
+    const still = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const audits = await prisma.auditEvent.count({
+      where: { action: 'pipeline.card.updated', resourceId: cardId },
+    });
+    const events = await prisma.outboxEvent.findMany({
+      where: { eventType: 'pipeline.changed', aggregateId: cardId },
+    });
+
+    expect(created.status).toBe(201);
+    expect(created.body.data.columns[0].cards[0].priority).toBe('NORMAL');
+    expect(urgent.status).toBe(200);
+    expect(urgent.body.data.columns[0].cards[0].priority).toBe('URGENT');
+    expect(normal.status).toBe(200);
+    expect(normal.body.data.columns[0].cards[0].priority).toBe('NORMAL');
+    expect(hidden.status).toBe(404);
+    expect(still.body.data.columns[0].cards[0].priority).toBe('NORMAL');
+    expect(audits).toBe(2);
+    expect(events).toHaveLength(2);
+    expect(events[0]?.payload).toMatchObject({ kind: 'lead', change: 'updated' });
+  }, 30_000);
+
+  it('rejects the board when the deals module is disabled', async () => {
+    const http = app.getHttpServer();
+    const owner = await login(http, 'pipe-off', 'ada@example.com');
+    const tenant = await prisma.tenant.findUniqueOrThrow({ where: { subdomain: 'pipe-off' } });
+    await prisma.tenantModule.update({
+      where: { tenantId_moduleKey: { tenantId: tenant.id, moduleKey: 'deals' } },
+      data: { status: 'DISABLED' },
+    });
+    const blocked = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+
+    expect(blocked.status).toBe(403);
+    expect(blocked.body.error.code).toBe('MODULE_DISABLED');
+  }, 30_000);
+});
+
+function firstColumnId(body: { data: { columns: Array<{ id: string }> } }): string {
+  const id = body.data.columns[0]?.id;
+  if (id === undefined) {
+    throw new Error('Board column was not created.');
+  }
+  return id;
+}
+
+async function login(
+  http: Parameters<typeof request>[0],
+  subdomain: string,
+  email: string,
+): Promise<string> {
+  const registered = await request(http)
+    .post('/api/v1/auth/register')
+    .set('Origin', origin)
+    .send({
+      tenant: { name: subdomain, subdomain, plan: 'starter' },
+      owner: { name: 'Ada', email, password },
+    });
+  expect(registered.status).toBe(201);
+  const loggedIn = await request(http)
+    .post('/api/v1/auth/login')
+    .set('Origin', origin)
+    .send({ subdomain, email, password });
+  expect(loggedIn.status).toBe(200);
+  return sessionCookie(loggedIn.headers['set-cookie']);
+}
+
+function sessionCookie(header: string | string[] | undefined): string {
+  const value = Array.isArray(header) ? header.find((item) => item.startsWith('session=')) : header;
+  const pair = value?.split(';')[0];
+  if (pair === undefined || pair.length === 0) {
+    throw new Error('Session cookie was not set.');
+  }
+  return pair;
+}

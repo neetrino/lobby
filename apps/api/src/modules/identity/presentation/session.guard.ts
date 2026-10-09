@@ -1,0 +1,92 @@
+import type { ExecutionContext } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+
+import { IS_PUBLIC_KEY } from '../../../common/auth/public';
+import {
+  type AuthenticatedHttpRequest,
+  type SessionGuardContract,
+} from '../../../common/auth/session-guard.contract';
+import { ApiError } from '../../../common/http/api-error';
+import { readClientAddress } from '../../../common/security/client-address';
+import { AuthRateLimitService } from '../application/auth-rate-limit.service';
+import { SessionAccessService } from '../application/session-access.service';
+import { IdentityError, identityErrorCodes } from '../domain/identity.errors';
+import { SessionCookie, type SessionCookieWriter } from '../infrastructure/session-cookie';
+import { SessionStoreUnavailableError } from '../infrastructure/session-store-error';
+
+export type SessionRequest = AuthenticatedHttpRequest;
+
+@Injectable()
+export class SessionGuard implements SessionGuardContract {
+  constructor(
+    private readonly access: SessionAccessService,
+    private readonly cookies: SessionCookie,
+    private readonly rates: AuthRateLimitService,
+    private readonly reflector: Reflector,
+  ) {}
+
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    if (this.isPublic(context)) {
+      return true;
+    }
+    const request = context.switchToHttp().getRequest<AuthenticatedHttpRequest>();
+    const response = context.switchToHttp().getResponse<SessionCookieWriter>();
+    const rawSessionId = this.cookies.read(request.headers.cookie);
+    const presented = hasSessionCookie(request.headers.cookie);
+
+    try {
+      if (rawSessionId === null) {
+        throw new IdentityError(identityErrorCodes.UNAUTHENTICATED);
+      }
+      const established = await this.access.establish(rawSessionId, new Date());
+      request.auth = established.session;
+      if (established.refreshed && established.maxAgeMs > 0) {
+        this.cookies.set(response, rawSessionId, established.maxAgeMs);
+      }
+      return true;
+    } catch (error) {
+      if (error instanceof SessionStoreUnavailableError) {
+        throw new IdentityError(identityErrorCodes.UNAUTHENTICATED);
+      }
+      return this.reject(response, presented ? readClientAddress(request) : null, error);
+    }
+  }
+
+  private isPublic(context: ExecutionContext): boolean {
+    return (
+      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ]) === true
+    );
+  }
+
+  private async reject(
+    response: SessionCookieWriter,
+    address: string | null,
+    error: unknown,
+  ): Promise<boolean> {
+    if (error instanceof ApiError) {
+      this.cookies.clear(response);
+      throw error;
+    }
+    if (!(error instanceof IdentityError)) {
+      throw error;
+    }
+
+    this.cookies.clear(response);
+    if (address !== null) {
+      await this.rates.recordInvalidSession(address);
+    }
+    throw error;
+  }
+}
+
+function hasSessionCookie(cookieHeader: string | readonly string[] | undefined): boolean {
+  const header = typeof cookieHeader === 'string' ? cookieHeader : cookieHeader?.join('; ');
+  if (header === undefined) {
+    return false;
+  }
+  return header.split(';').some((part) => part.trim().startsWith('session='));
+}

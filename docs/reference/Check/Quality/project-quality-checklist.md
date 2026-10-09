@@ -360,6 +360,7 @@
 - [ ] Գաղտնիքների hardcode չկա
 - [ ] Input validation
 - [ ] Մուտքի իրավունքները ստուգված են
+- [ ] Service-ը tenant id-ն վերցնում է `scopedTenantId(context)`-ով. ուղիղ `context.tenantId` review-ի finding է
 
 ### Արտադրողականություն
 - [ ] N+1 query-ներ չկան
@@ -498,6 +499,7 @@
 - [ ] Нет vulnerabilities
 - [ ] Input validation
 - [ ] Authorization
+- [ ] Service берёт tenant id через `scopedTenantId(context)`. Прямое `context.tenantId` — замечание на review
 
 ## Производительность
 - [ ] Нет N+1

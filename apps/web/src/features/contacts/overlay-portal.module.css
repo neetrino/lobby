@@ -1,0 +1,39 @@
+.backdrop,
+.backdropRaised {
+  --primary: #004ac6;
+  --primary-container: #2563eb;
+  --on-primary: #ffffff;
+  --surface: #f8f9ff;
+  --card: #ffffff;
+  --low: #eff4ff;
+  --high: #dce9ff;
+  --ink: #0b1c30;
+  --muted: #434655;
+  --outline: #737686;
+  --ok: #006c49;
+  --ok-bg: #d8ffef;
+  --warn: #784b00;
+  --warn-bg: #ffddb8;
+  --danger: #ba1a1a;
+  --danger-bg: #ffdad6;
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(11 28 48 / 28%);
+}
+
+.backdropRaised {
+  z-index: 50;
+}
+
+.editorFrame {
+  width: min(880px, 100%);
+  max-height: min(92vh, 900px);
+  overflow: auto;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 16px 40px rgb(11 28 48 / 18%);
+}

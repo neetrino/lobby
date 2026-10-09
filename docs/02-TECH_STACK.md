@@ -1,256 +1,150 @@
 # Technology Stack: Lobby
 
-> Lobby is planned as a TypeScript monorepo with a Next.js web application and a NestJS modular-monolith API. This document records the proposed technology families and their responsibilities; it does not replace approval in `TECH_CARD.md`.
+> This document describes the technology that is actually present in the repository. Architecture and invariants belong in [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md); open approvals belong in [`TECH_CARD.md`](./TECH_CARD.md).
 
-**Project size:** C (proposed)  
-**Current target:** Stage 1 / MVP  
-**Last updated:** 2026-09-24  
-**Version:** 0.1-draft  
-**Status:** DRAFT — reconcile with the completed [`BRIEF.md`](./BRIEF.md) and approved [`TECH_CARD.md`](./TECH_CARD.md).  
-**Document boundary:** Architecture and invariants belong in [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md); this file owns technology families, version policy, runtime roles, and provider choices.
+- **Project size:** C
+- **Current target:** Version 1 / Stage 1
+- **Last updated:** 2026-10-01
+- **Version:** 1.0
+- **Status:** ACTIVE — implemented stack with explicitly listed open production choices.
 
----
+## Implemented stack
 
-## Status legend
+| Layer                    | Technology                                   | Repository baseline                                                                | Responsibility                                               |
+| ------------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Workspace                | pnpm workspaces + Turborepo                  | pnpm 10; Turbo resolved by the lockfile                                            | Workspace dependency graph, caching, build ordering          |
+| Runtime/language         | Node.js + TypeScript                         | Node.js 24; TypeScript 5.9                                                         | Strict shared runtime baseline                               |
+| Web                      | Next.js App Router + React                   | Next.js 16; React 19                                                               | Locale-aware web application                                 |
+| Localization             | `next-intl`                                  | `hy`, `ru`, `en`; fallback `en`                                                    | Routing and translated UI content                            |
+| API                      | NestJS on Express                            | NestJS 11                                                                          | Versioned REST, auth, tenant context, authorization, modules |
+| Validation/contracts     | Zod                                          | Zod 4                                                                              | Runtime validation at external and cross-process boundaries  |
+| Database                 | PostgreSQL                                   | PostgreSQL 17 for local/CI; managed provider configuration is environment-specific | Authoritative business, audit, and outbox data               |
+| ORM/migrations           | Prisma                                       | Prisma 7                                                                           | Typed access, generated client, versioned SQL migrations     |
+| Session/rate-limit store | Upstash-compatible Redis REST                | HTTP client with bounded timeout                                                   | Revocable sessions and shared rate-limit counters            |
+| Background processing    | Custom TypeScript worker + PostgreSQL outbox | Independently runnable `apps/worker`                                               | Event relay, retries, dispatch, requeue                      |
+| Password hashing         | Argon2id                                     | `argon2`                                                                           | Password verification and hash creation in Identity          |
+| Security headers         | Helmet                                       | Helmet 8                                                                           | HTTP response hardening                                      |
+| Tests                    | Vitest, Nest testing utilities, Supertest    | Real PostgreSQL integration tests where persistence matters                        | Unit, contract, HTTP, DB, and worker verification            |
+| Build/package output     | Nest build, Next build, `tsc`, tsup          | CJS/ESM contracts; ESM database package                                            | Runnable apps and typed cross-app packages                   |
 
-| Status | Meaning |
-|---|---|
-| Proposed | Recommended for the current architecture but not approved until TECH_CARD sign-off. |
-| Conditional | Add only when an approved MVP capability requires it. |
-| TBD | A decision or compatibility check is still required. |
-| Required practice | Technology-independent constraint that applies to any approved implementation. |
+Exact installed versions are authoritative in `pnpm-lock.yaml`. Package manifests use compatible version ranges; dependency changes must update and review the lockfile.
 
----
+## Workspace roles
 
-## Stack summary
+| Path                 | Runtime role                                                                                            |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| `apps/web`           | Next.js frontend. It may import public contracts, never database/runtime internals.                     |
+| `apps/api`           | NestJS modular-monolith HTTP process and business-module composition root.                              |
+| `apps/worker`        | Transactional-outbox relay and event-dispatch process.                                                  |
+| `packages/contracts` | Framework-light Zod schemas, inferred types, event versions, locales, and common pagination primitives. |
+| `packages/database`  | Prisma schema, migrations, generated client, database configuration, and test DB helper.                |
 
-| Layer | Proposed technology | Target family | Status | Responsibility |
-|---|---|---|---|---|
-| Monorepo | pnpm workspaces + Turborepo | Exact compatible versions TBD | Proposed | Dependency management, workspace boundaries, and cached task orchestration. |
-| Language/runtime | TypeScript + Node.js LTS | TypeScript 5.9 family; Node.js 24 LTS target | Proposed | One strict language/runtime baseline across web, API, workers, and shared packages. |
-| Web | Next.js App Router + React | Next.js 16 family; React 19 family | Proposed | Server-first web UI, routing, rendering, metadata, and browser interaction boundaries. |
-| API | NestJS | NestJS 11 family | Proposed | REST API, authentication boundary, tenant context, authorization, validation, and module orchestration. |
-| Database | PostgreSQL | PostgreSQL 17 family | Proposed | Authoritative tenant, business, audit, and transactional-outbox data. |
-| Database toolkit | Prisma ORM and migrations | Prisma 7 family | Proposed; compatibility check required | Typed database access and versioned schema migrations. |
-| Ephemeral state | Redis | Redis 7 or compatible managed service | Proposed | Revocable sessions, bounded caching, rate limits, and queue state. |
-| Background work | BullMQ | Exact compatible version TBD | Conditional | Durable jobs, retries, and idempotent consumers when async MVP use cases are approved. |
-| API contract | OpenAPI via NestJS Swagger tooling | Compatible with selected NestJS version | Proposed | Machine-readable REST contract and generated/reference documentation. |
-| Validation | NestJS DTO validation; shared runtime schemas where contracts cross apps | Library choice/version TBD | Proposed | Validate every external boundary without treating TypeScript types as runtime validation. |
-| Styling | Tailwind CSS | Tailwind CSS 4 family | Proposed | Token-driven application styling. |
-| UI components | Existing/custom primitives, optionally shadcn/ui | TBD before UI implementation | Conditional | Accessible reusable components without coupling business modules to a vendor kit. |
-| Testing | Vitest, Supertest, React Testing Library, Playwright | Exact compatible versions TBD | Proposed by test layer | Unit, integration, API, component, and browser-level verification selected by risk. |
-| Logging | Pino-compatible structured logger | Exact version TBD | Proposed | JSON production logs, correlation IDs, and redaction. |
+## API foundation
 
-Exact package versions are pinned in the lockfile when the applications are initialized. Before pinning, verify the supported Node.js, React, TypeScript, Prisma, and NestJS compatibility ranges from primary documentation; do not assume every target-family combination is compatible.
+The API currently provides:
 
----
+- global `/api/v1` routing with unversioned `GET /health`;
+- global session authentication with explicit `@Public()` exceptions;
+- Zod request validation and a stable error envelope;
+- server-generated request IDs and request-aware logging;
+- credentialed CORS allowlisting and mutation Origin/Referer checks;
+- Helmet headers and validated trust-proxy configuration;
+- startup environment validation and Prisma shutdown hooks.
 
-## Foundation and repository tooling
-
-| Concern | Decision | Status | Notes |
-|---|---|---|---|
-| Repository model | Monorepo with `apps/*` and `packages/*` | Proposed | Matches the proposed Size C architecture; do not create empty packages without a real owner. |
-| Package manager | pnpm | Proposed | Use one lockfile and frozen/locked installs in CI. |
-| Task orchestration | Turborepo | Proposed | Cache deterministic lint, typecheck, test, and build tasks; secrets and environment-specific output are not cached. |
-| TypeScript | `strict: true` | Required practice | No unjustified `any`; shared contracts must remain runtime-validatable at external boundaries. |
-| Formatting | Prettier | Proposed | Existing repository configuration remains authoritative. |
-| Linting | ESLint | Proposed | Use framework-supported flat/config format compatible with the selected versions. |
-| Commits | Conventional Commits + commitlint | Proposed | Existing repository configuration remains authoritative. |
-| Git workflow | TBD in TECH_CARD | TBD | Choose trunk-based or short-lived feature branches before implementation. |
-
-### Proposed workspace ownership
-
-```text
-apps/web/          Next.js web application
-apps/api/          NestJS REST API and functional modules
-apps/worker/       Conditional outbox relay and queue consumers
-apps/scheduler/    Conditional scheduled-job registration
-packages/contracts/  Versioned cross-application API/event contracts
-packages/database/   Prisma schema, migrations, and database tooling
-```
-
----
-
-## Frontend — Next.js
-
-| Concern | Proposed choice | Status | Rationale / boundary |
-|---|---|---|---|
-| Framework | Next.js App Router | Proposed | Fits the separate web application while supporting server-first rendering and route-level loading/error behavior. |
-| Rendering | React Server Components by default | Required practice | Add client components only at the smallest interactive boundary. |
-| Styling | Tailwind CSS with project tokens | Proposed | Keeps styling consistent; token definitions and component standards require design approval. |
-| UI primitives | Custom/existing primitives; shadcn/ui only if selected | TBD | Decide before broad UI implementation; accessibility and reuse matter more than library choice. |
-| Server data | Server-side fetches to the NestJS API where appropriate | Proposed | The browser must never connect directly to PostgreSQL or Redis. |
-| Client server-state | Add TanStack Query only for interaction-heavy client caching | Conditional | Do not install it when server rendering and route refresh are sufficient. |
-| Local/shared UI state | React state/context first; Zustand only for justified cross-tree client state | Conditional | Avoid duplicating authoritative API state in a global client store. |
-| Forms | React Hook Form plus approved runtime schema library, or Server Actions where architecture permits | TBD | Choose per form complexity and API boundary; the NestJS API remains authoritative for validation. |
-| Images | `next/image` | Proposed | Remote-host allowlists and storage/CDN behavior require provider configuration. |
-| Internationalization | `next-intl` or an approved equivalent | Required capability; library proposed | Multilingual UI is an MVP foundation. Confirm launch locales, fallback behavior, locale routing, formatting, and RTL requirements before implementation. |
-| SEO/metadata | Next.js Metadata API and JSON-LD where public discovery matters | Conditional | Internal authenticated CRM screens do not need public SEO work. |
-| Realtime client | WebSocket/SSE client selected with gateway design | Conditional | Realtime messages are UI hints, not the durable business-event path. |
-
-The Next.js application is a presentation and interaction boundary. It does not own authorization decisions, database access, migration execution, queue consumption, or server secrets.
-
----
-
-## Backend — NestJS
-
-| Concern | Proposed choice | Status | Rationale / boundary |
-|---|---|---|---|
-| Framework | NestJS modular application | Proposed | Maps functional modules to explicit backend boundaries while retaining one Stage 1 deployment. |
-| API style | Versioned REST | Proposed | Matches the architecture; endpoint and webhook contracts belong in `04-API.md`. |
-| HTTP adapter | Express or Fastify | TBD | Select after checking middleware, upload, observability, and deployment compatibility. |
-| Validation | DTO pipes with `class-validator`/`class-transformer`, or one approved schema-based alternative | TBD | Adopt one consistent strategy; all external input receives runtime validation. |
-| API documentation | `@nestjs/swagger` / OpenAPI | Proposed | Keep the generated contract aligned with controllers and DTOs. |
-| Configuration | `@nestjs/config` plus startup validation | Proposed | Fail startup when required configuration is missing or invalid. |
-| Authorization | Guards plus module/application policies | Proposed | Every tenant request checks membership, permissions, entitlement, and resource scope. |
-| Errors | Typed application errors mapped by exception filters | Proposed | Stable client-safe error shape; no stack traces or internal details in production responses. |
-| Rate limiting | NestJS throttling or an approved edge/API policy backed by shared state | Proposed | Limits must work across multiple API instances and support tenant-aware tiers. |
-| Health | NestJS Terminus or lightweight equivalent | Proposed | Separate liveness/readiness when deployment topology requires it. |
-
-Controllers remain thin. Business rules live inside their owning functional modules; cross-module calls use published application interfaces or versioned events rather than private-table access.
-
----
-
-## Data and persistence
-
-| Concern | Proposed choice | Status | Required constraints |
-|---|---|---|---|
-| Primary database | PostgreSQL | Proposed | One agreed tenant key, cross-tenant FK protection, transactional writes, measured indexes. |
-| ORM/migrations | Prisma | Proposed | Inspect generated SQL; all schema changes use committed migrations. |
-| Runtime credential | Least-privilege `DATABASE_URL` | Required practice | No schema-owner or production migration privilege in app runtimes. |
-| Migration credential | Privileged `DIRECT_URL` in migration job only | Proposed naming | Never expose it to web/API/worker runtime configuration. |
-| Connection pooling | Provider-compatible bounded pool | TBD | Size from provider limits and measured concurrency; avoid one pool per request. |
-| Database timeouts | Statement, lock, and idle-transaction limits | TBD | Select values from workload and provider behavior, not universal defaults. |
-| RLS | Defense in depth only after safe context design | Conditional | Application authorization and composite constraints remain mandatory. |
-| Backups/PITR | Managed backup plus tested restore process | Required capability | Provider, retention, RPO, and RTO remain TBD. |
-| Search | PostgreSQL search first; specialist engine only with evidence | Conditional | Do not add Meilisearch/Elasticsearch without approved requirements and measured need. |
-
-Production migrations run once per release through a designated job after build and before application promotion. They never run from developer laptops, `next build`, request handlers, or application startup.
-
----
+Startup validation is implemented, but some feature providers still reread `process.env`. Consolidating them behind one immutable DI configuration object is a planned foundation improvement.
 
 ## Authentication and authorization
 
-| Concern | Proposed choice | Status |
-|---|---|---|
-| Web sessions | Opaque, high-entropy server-side sessions | Proposed; security approval required |
-| Session storage | Redis-backed revocable state | Proposed |
-| Browser transport | `HttpOnly`, `Secure`, appropriately scoped cookie | Proposed |
-| CSRF protection | SameSite policy plus Origin/CSRF validation appropriate to the flow | Required practice |
-| Password hashing | Argon2id when password credentials are approved | Conditional |
-| External login | OAuth/OIDC provider integration | Conditional; providers TBD |
-| Authorization | Organization membership + permissions + module entitlement + resource scope | Required architecture constraint |
-| Audit | Persistent records for security-sensitive actions | Required capability |
+| Concern          | Implemented choice                                                                            |
+| ---------------- | --------------------------------------------------------------------------------------------- |
+| Login identifier | Tenant subdomain + email + password                                                           |
+| Password storage | Argon2id hash; plaintext never enters Organizations                                           |
+| Session          | Opaque Redis-backed session, `HttpOnly` cookie, idle and absolute expiry                      |
+| Revocation       | Logout, terminate-all, targeted admin revocation, authentication-version invalidation         |
+| Roles            | `OWNER`, `ADMIN`, `MEMBER`                                                                    |
+| Authorization    | Route and service permissions, tenant module entitlement, tenant/resource scope               |
+| Tenant RBAC      | Protected Owner role plus planned tenant-defined roles built from a closed permission catalog |
+| Audit            | Append-only PostgreSQL history for access changes and important business transitions          |
+| Tenant model     | One user row belongs to exactly one tenant; no membership table                               |
 
-The exact login methods, expiry/rotation policy, account linking, recovery, verification, and mobile authentication flow remain pending BRIEF and TECH_CARD approval.
+Email verification, OAuth/OIDC, and device management are not implemented and require product/provider decisions. Password recovery and member invitations send mail through the configured email provider.
 
----
+## Database and asynchronous delivery
 
-## Redis, queues, scheduling, and realtime
+- PostgreSQL is the source of truth. Redis is not authoritative business storage.
+- Prisma schema and migrations live in `packages/database/prisma`.
+- API business writes that require asynchronous publication write the outbox row in the same transaction.
+- The worker dispatches by exact `eventType@eventVersion`; unknown and invalid events fail closed.
+- External side-effect handlers must use the durable `processed_events` reservation.
+- BullMQ is not part of the current implementation. Add a queue only when delayed/scheduled/high-volume work requires it.
+- RLS is not enabled. Tenant isolation currently uses session-derived application scope and tenant-safe database relationships.
 
-| Capability | Proposed technology | Status | Boundary |
-|---|---|---|---|
-| Sessions | Redis | Proposed | Security-sensitive outage and revocation behavior must be defined before implementation. |
-| Cache | Redis | Conditional per use case | Non-authoritative, bounded by TTL/size, and invalidated explicitly. |
-| Rate limits | Redis-backed shared counters | Proposed | Must remain correct across multiple API instances. |
-| Queue | BullMQ on Redis | Conditional | Use only for approved async effects; consumers are idempotent with bounded retries. |
-| Outbox relay | PostgreSQL outbox + worker | Conditional but required for critical async events | Business write and event intent commit atomically. |
-| Scheduler | Platform scheduler or Nest schedule owner | TBD | One registration owner; scheduled work enters the queue rather than duplicating business logic. |
-| Realtime | WebSocket or SSE gateway | Conditional | Authenticate connections, revalidate revoked memberships, and treat messages as non-authoritative hints. |
+Production still needs provider-specific pool limits, database timeouts, least-privilege runtime/migration roles, backups/PITR, restore testing, and release migration ownership.
 
-Stage 1 may use one Redis deployment with isolated clients, key prefixes, quotas, and policies. Sessions, cache, queues, limits, and realtime fan-out remain separate logical workloads so they can be split later without changing module contracts.
+## Frontend baseline
 
----
+The web application builds and has locale routes/messages for Armenian, Russian, and English. The contacts screen at `/{locale}/contacts` lists, creates, updates, archives, and restores contacts through `/api/v1/contacts`. It keeps filters in the URL and does not invent totals, merge, tags, or cross-module counts. Broad feature UI work still needs explicit choices for:
 
-## Storage and external services
+- design tokens and component primitives;
+- API client and server-state/cache strategy;
+- form composition around shared Zod contracts;
+- session bootstrap and normalized API errors;
+- component and browser E2E testing.
 
-| Service area | Proposed direction | Status |
-|---|---|---|
-| Object storage | S3-compatible managed storage, with Cloudflare R2 as a candidate | Conditional |
-| CDN/image delivery | Next.js image optimization plus approved storage/CDN path | Conditional |
-| Email | Provider adapter selected from approved transactional requirements | Conditional; provider TBD |
-| SMS | Provider adapter only when explicitly required | Conditional; provider TBD |
-| Messaging channels | Per-provider adapters behind module-owned contracts | Conditional; providers TBD |
-| Billing/payments | Provider selected after business-flow and regional requirements are approved | Not approved |
-| Product analytics | Privacy-reviewed provider or no external analytics | TBD |
-| Error tracking | Managed tracker such as Sentry, subject to data/retention review | Proposed capability; provider TBD |
+Do not create `packages/ui` until a stable reusable UI boundary actually exists.
 
-Every external integration requires timeouts, bounded retries, idempotency where effects can duplicate, signature verification for supported webhooks, tenant-scoped credentials, safe logging, and documented data retention.
+## Testing and CI
 
----
+GitHub Actions currently runs:
 
-## Testing and quality
+1. `pnpm install --frozen-lockfile`
+2. `pnpm lint`
+3. `pnpm typecheck`
+4. `pnpm test`
+5. `pnpm build`
 
-| Layer | Proposed tools | Required coverage focus |
-|---|---|---|
-| Unit | Vitest or framework-compatible runner | Domain rules, permission policies, transformations, and failure paths. |
-| API integration | Nest testing utilities + Supertest | Validation, authentication, tenant isolation, transactions, and error contracts. |
-| Database integration | PostgreSQL test database | Constraints, concurrent writes, migrations, and important query behavior. |
-| React components | React Testing Library | Accessible interactions and state transitions where component tests add value. |
-| End-to-end | Playwright | Critical user journeys and cross-application behavior. |
-| Contract | OpenAPI/schema validation | Compatibility between web, API, workers, and external consumers. |
+The CI PostgreSQL service runs PostgreSQL 17. Turbo builds dependency packages before lint/typecheck/test consumers resolve their `dist` declarations.
 
-CI must run the relevant formatting, lint, typecheck, test, and build commands using locked dependencies. Coverage targets are risk-based and remain pending TECH_CARD approval; a percentage alone does not demonstrate behavioral coverage.
+Known gaps:
 
----
+- Database integration tests use isolated schemas, but still require the local/CI PostgreSQL service to be available.
+- The CI formatting gate intentionally excludes generated output, migrations, archived/reference docs, and local agent/tool folders.
+- The web and database packages currently use `--passWithNoTests` and contain no direct test files.
+- No Playwright flow or generated OpenAPI compatibility check is configured.
+- Dependabot updates GitHub Actions only; npm/pnpm dependency updates are not enabled.
 
 ## Observability and operations
 
-| Concern | Proposed choice | Status |
-|---|---|---|
-| Structured logging | Pino-compatible JSON logger | Proposed |
-| Correlation | Request/correlation ID propagated across web, API, workers, and external calls | Required practice |
-| Metrics | HTTP rate/errors/duration, DB pool, Redis, queue age/depth, worker failures | Required capability |
-| Tracing | OpenTelemetry-compatible instrumentation | Conditional; adopt when cross-process diagnosis justifies it |
-| Error tracking | Managed provider | Proposed capability; provider TBD |
-| Health | Lightweight liveness/readiness endpoints | Required for deployed runtimes |
-| Alerting | Symptoms tied to user impact and recovery ownership | Required before production |
+Implemented foundations are request IDs, safe API errors, Nest logging, audit history, and structured worker dispatch errors. Production operations still require metrics, alerting, error tracking, telemetry retention/redaction ownership, worker backlog/failure alerts, and recovery runbooks. Web and CDN access logs for `/:locale/invitations/accept` must omit or redact the query string, because the invitation email puts the raw token there for the first request.
 
-Logs and traces redact credentials, authorization headers, cookies, payment data, and unnecessary personal information. Audit records are durable business/security history and remain separate from operational telemetry.
+`GET /health` is currently liveness only. Add dependency readiness checks before deployment orchestration relies on it.
 
----
+## Deployment status
 
-## Deployment and CI/CD
+No production platform is approved in this document. Vercel remains a candidate for the web application; the API and worker require an approved Node/container runtime. The web origin and the API origin must be the same site so `SameSite=Lax` session and invitation cookies are sent. `app.example.com` with `api.example.com` fits. A web host and an API host on different sites do not. Development, staging, and production must use separate credentials and resources.
 
-| Component | Proposed deployment direction | Status |
-|---|---|---|
-| Next.js web | Vercel is the leading candidate | Proposed; provider approval required |
-| NestJS API | Managed container/runtime or approved VPS platform | TBD |
-| Worker/scheduler | Same provider family as API where practical, independently runnable | Conditional |
-| PostgreSQL | Managed PostgreSQL | Proposed; provider TBD |
-| Redis | Managed Redis compatible with sessions and BullMQ requirements | Proposed; provider TBD |
-| Object storage | Managed S3-compatible provider | Conditional |
-| CI/CD | GitHub Actions | Proposed |
-| Packaging | Docker for API/worker/scheduler when required by selected host | Conditional |
-| Edge/WAF | Platform controls or Cloudflare | TBD from threat model and hosting |
+Production migrations must run once through a designated release job. They must not run from application startup, request paths, builds, or routine developer laptops.
 
-Release order is: reviewed commit → locked install → checks/build → one production migration job → application promotion → post-deploy verification. Production deployment, migration execution, rollback authority, regions, domains, backup objectives, and disaster recovery remain outside this draft until approved.
+## Environment contract
 
----
+| Variable/category      | Consumer             | Rule                                                                       |
+| ---------------------- | -------------------- | -------------------------------------------------------------------------- |
+| `DATABASE_URL`         | API/worker           | Runtime connection; use least privilege in deployed environments           |
+| `DIRECT_URL`           | Prisma migration job | Direct migration connection; do not expose to ordinary runtimes            |
+| Upstash URL/token      | API                  | Session and rate-limit Redis REST access                                   |
+| `AUDIT_IP_HASH_KEY`    | API                  | Independent 32-byte key represented as 64 lowercase hexadecimal characters |
+| `ALLOWED_ORIGINS`      | API                  | Explicit origins; no credentialed wildcard                                 |
+| `TRUST_PROXY`          | API                  | Exact trusted proxy IP/CIDR or a safe fixed hop count                      |
+| `REGISTRATION_ENABLED` | API                  | Explicit registration switch                                               |
+| `NEXT_PUBLIC_*`        | Web                  | Only intentionally public, non-secret values                               |
 
-## Environment configuration
-
-| Variable/category | Owner | Notes |
-|---|---|---|
-| `DATABASE_URL` | API/worker runtime | Least-privilege runtime connection only. |
-| `DIRECT_URL` | Migration job | Privileged migration connection; never provided to normal runtimes. |
-| Redis connection | API/worker/scheduler as approved | Use separate credentials/policies when provider capabilities and risk justify them. |
-| Session secrets/keys | API | High entropy, rotatable, stored only in the deployment secret manager. |
-| External-service credentials | Owning server-side module | Tenant-scoped where applicable; never exposed through `NEXT_PUBLIC_*`. |
-| Public web configuration | Next.js web | Only intentionally public, non-secret values use `NEXT_PUBLIC_*`. |
-
-Each environment has separate credentials and resources. `.env.example` documents names and safe descriptions without real secrets; local development and preview environments never point to production databases by default.
-
----
+Real values remain in ignored local environment files or the deployment secret manager. `.env.example` contains names and safe examples only.
 
 ## Related documents
 
-- [`BRIEF.md`](./BRIEF.md) — product requirements and MVP scope.
-- [`TECH_CARD.md`](./TECH_CARD.md) — approval source for project technology decisions (planned).
-- [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) — system boundaries, invariants, and topology.
-- [`03-STRUCTURE.md`](./03-STRUCTURE.md) — authoritative repository layout (planned).
-- [`04-API.md`](./04-API.md) — REST, webhook, and error contracts (planned).
-- [`05-DATABASE.md`](./05-DATABASE.md) — schema, constraints, indexes, and migration design (planned).
-- [`DECISIONS.md`](./DECISIONS.md) — decision and ADR index (planned).
-
-**Approval rule:** this document may guide discussion, but code generation and infrastructure provisioning must follow the approved TECH_CARD and recorded decisions when they differ from this draft.
+- [`TECH_CARD.md`](./TECH_CARD.md) — implemented and open decisions.
+- [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) — boundaries, flows, security, and scaling.
+- [`03-STRUCTURE.md`](./03-STRUCTURE.md) — current repository ownership and target module shape.
+- [`04-API.md`](./04-API.md) — HTTP/auth/error contracts and endpoint inventory.
+- [`05-DATABASE.md`](./05-DATABASE.md) — schema, tenancy, migrations, outbox, and constraints.
+- [`DECISIONS.md`](./DECISIONS.md) — accepted ADR index.

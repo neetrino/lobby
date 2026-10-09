@@ -1,0 +1,181 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.toolbar h1 {
+  margin: 0;
+  color: #14213d;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.toolbarControls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid #e6eaf2;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.segmentOff,
+.segmentOn,
+.ghost,
+.save,
+.userTrigger,
+.menuAction {
+  border: 0;
+  background: transparent;
+  color: #667085;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.segmentOff,
+.segmentOn {
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 9px;
+}
+
+.segmentOn {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.ghost,
+.userTrigger,
+.save {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: #fff;
+  color: #14213d;
+  box-shadow: inset 0 0 0 1px #e6eaf2;
+}
+
+.save {
+  background: #2563eb;
+  color: #fff;
+  box-shadow: none;
+}
+
+.save:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.userMenu {
+  position: relative;
+}
+
+.userTrigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 6px;
+}
+
+.userTrigger svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.userMark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.userPanel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  min-width: 168px;
+  padding: 4px;
+  border: 1px solid #e6eaf2;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 16px rgb(16 24 40 / 8%);
+}
+
+.userPanel .menuGroup {
+  display: flex;
+  width: 100%;
+}
+
+.menuAction {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: #14213d;
+  text-align: left;
+}
+
+.menuAction:hover,
+.userTrigger:hover,
+.segmentOff:hover,
+.ghost:hover {
+  background: #f8fafc;
+}
+
+.segmentOff:focus-visible,
+.segmentOn:focus-visible,
+.userTrigger:focus-visible,
+.menuAction:focus-visible,
+.ghost:focus-visible,
+.save:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .toolbar h1 {
+    font-size: 26px;
+  }
+
+  .toolbarControls {
+    justify-content: flex-start;
+  }
+}

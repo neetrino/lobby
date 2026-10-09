@@ -1,0 +1,569 @@
+openapi: 3.0.3
+info:
+  title: Lobby Auth API
+  version: 0.2.0
+  description: >
+    Cookie session authentication. Mutating requests require an allowed Origin.
+    CORS is not CSRF protection. A cross-site frontend needs a CSRF token.
+    Every response sets X-Request-Id. The server ignores a client-supplied value.
+    Error JSON includes that same requestId. Successful data JSON does not.
+servers:
+  - url: http://localhost:3001
+tags:
+  - name: Auth
+paths:
+  /api/v1/auth/registration:
+    get:
+      tags: [Auth]
+      operationId: registrationStatus
+      summary: Report whether public owner registration is open
+      description: >
+        Public. No session. Returns the REGISTRATION_ENABLED switch and no
+        tenant, user, or secret.
+      responses:
+        '200':
+          description: Registration switch
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationStatusResponse'
+              example:
+                data:
+                  enabled: false
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      operationId: registerOwner
+      summary: Create a tenant, its owner, and a session
+      description: >
+        Enabled only when REGISTRATION_ENABLED is true. The response never
+        includes the password, passwordHash, or raw session id.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              tenant:
+                name: Acme
+                subdomain: acme
+                plan: starter
+              owner:
+                name: Ada
+                email: ada@example.com
+                password: correct-horse-battery
+      responses:
+        '201':
+          description: Tenant and owner created, session cookie set
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SessionCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400':
+          $ref: '#/components/responses/RequestRejected'
+        '403':
+          $ref: '#/components/responses/ForbiddenAuth'
+        '409':
+          description: Subdomain is already taken
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: TENANT_SUBDOMAIN_TAKEN
+                  message: This subdomain is already taken.
+                  requestId: request-id
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Tenant committed, but the session was not stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: ACCOUNT_CREATED_SIGN_IN_REQUIRED
+                  message: The account was created. Sign in to continue.
+                  requestId: request-id
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      operationId: login
+      summary: Open a new session
+      description: >
+        Always mints a new session id. Missing and existing accounts share the
+        same INVALID_CREDENTIALS response and the same account rate-limit bucket.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              subdomain: acme
+              email: ada@example.com
+              password: correct-horse-battery
+      responses:
+        '200':
+          description: New session cookie set
+          headers:
+            Set-Cookie:
+              $ref: '#/components/headers/SessionCookie'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountResponse'
+        '400':
+          $ref: '#/components/responses/RequestRejected'
+        '401':
+          description: Credentials were not accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: INVALID_CREDENTIALS
+                  message: Invalid credentials.
+                  requestId: request-id
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Session store timed out or could not be reached
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: SERVICE_UNAVAILABLE
+                  message: The session store is unavailable.
+                  requestId: request-id
+  /api/v1/auth/session:
+    get:
+      tags: [Auth]
+      operationId: readSession
+      summary: Return the signed-in user and tenant
+      parameters:
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Safe principal. No password hash or raw session id.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionView'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+  /api/v1/auth/sessions/terminate-all:
+    post:
+      tags: [Auth]
+      operationId: terminateOwnSessions
+      summary: Revoke every session of the caller
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '204':
+          description: Sessions deleted and the current cookie cleared
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/auth/users/{userId}/sessions/terminate:
+    post:
+      tags: [Auth]
+      operationId: terminateUserSessions
+      summary: Revoke one user's sessions in the caller's tenant
+      description: >
+        Owner and Admin may target another user. A user may target themselves.
+        The user id is resolved inside the caller's tenant, so another tenant is rejected.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: That user's sessions were deleted
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          description: Origin rejected, or the caller may not revoke that user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/v1/auth/password-resets:
+    post:
+      tags: [Auth]
+      operationId: requestPasswordReset
+      summary: Email a one-time password reset link
+      description: >
+        Public. The response is 204 whether or not an active account matches.
+        A missing INVITATION_TOKEN_KEY is 503 before any lookup. The raw token
+        is not stored or returned.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetRequest'
+      responses:
+        '204':
+          description: Request accepted
+        '400':
+          $ref: '#/components/responses/RequestRejected'
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '503':
+          description: Password recovery is not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: PASSWORD_RESET_UNAVAILABLE
+                  message: Password recovery is not configured.
+                  requestId: 4f0b1c2a-6d7e-4f11-9a22-1b3c4d5e6f70
+  /api/v1/auth/password-resets/confirm:
+    post:
+      tags: [Auth]
+      operationId: confirmPasswordReset
+      summary: Set a new password from a reset link
+      description: >
+        Public. A missing, used, or expired token is PASSWORD_RESET_INVALID.
+        Success increments authenticationVersion, writes user.password.reset,
+        and deletes that user's sessions. The response has no session cookie.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordResetConfirm'
+      responses:
+        '204':
+          description: Password updated
+        '400':
+          description: The reset link is not valid, or the body failed validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error:
+                  code: PASSWORD_RESET_INVALID
+                  message: This password reset link is not valid.
+                  requestId: 4f0b1c2a-6d7e-4f11-9a22-1b3c4d5e6f70
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logout
+      summary: Delete the current session and clear the cookie
+      description: A missing or already revoked session still returns 204.
+      parameters:
+        - $ref: '#/components/parameters/Origin'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '204':
+          description: Cookie cleared
+          headers:
+            Set-Cookie:
+              description: Expired session cookie
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/OriginRejected'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+components:
+  parameters:
+    Origin:
+      name: Origin
+      in: header
+      required: true
+      schema:
+        type: string
+        example: http://localhost:3000
+    SessionCookie:
+      name: session
+      in: cookie
+      required: false
+      schema:
+        type: string
+  headers:
+    SessionCookie:
+      description: >
+        HttpOnly SameSite=Lax cookie. Secure is set when NODE_ENV is production.
+        Max-Age is the idle lifetime (7 days). The value is an opaque id.
+      schema:
+        type: string
+  schemas:
+    RegisterRequest:
+      type: object
+      additionalProperties: false
+      required: [tenant, owner]
+      properties:
+        tenant:
+          $ref: '#/components/schemas/TenantInput'
+        owner:
+          $ref: '#/components/schemas/OwnerInput'
+    TenantInput:
+      type: object
+      additionalProperties: false
+      required: [name, subdomain, plan]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        subdomain:
+          type: string
+          description: Single DNS label, stored lowercase
+        plan:
+          type: string
+          enum: [starter]
+    OwnerInput:
+      type: object
+      additionalProperties: false
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 12
+          maxLength: 128
+    PasswordResetRequest:
+      type: object
+      additionalProperties: false
+      required: [subdomain, email, locale]
+      properties:
+        subdomain:
+          type: string
+        email:
+          type: string
+          format: email
+        locale:
+          type: string
+          enum: [hy, ru, en]
+    PasswordResetConfirm:
+      type: object
+      additionalProperties: false
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          minLength: 20
+          maxLength: 200
+        password:
+          type: string
+          minLength: 12
+          maxLength: 128
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [subdomain, email, password]
+      properties:
+        subdomain:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+    RegistrationStatusResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [enabled]
+          properties:
+            enabled:
+              type: boolean
+    AccountResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [tenant, user]
+          properties:
+            tenant:
+              type: object
+              required: [id, name, subdomain, plan]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                subdomain:
+                  type: string
+                plan:
+                  type: string
+                  enum: [starter]
+            user:
+              type: object
+              required: [id, name, email, role]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                role:
+                  type: string
+                  enum: [OWNER, ADMIN, MEMBER]
+    SessionView:
+      type: object
+      required: [data]
+      properties:
+        data:
+          type: object
+          required: [user, tenant]
+          properties:
+            user:
+              type: object
+              required: [id, role]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                role:
+                  type: string
+                  enum: [OWNER, ADMIN, MEMBER]
+            tenant:
+              type: object
+              required: [id]
+              properties:
+                id:
+                  type: string
+                  format: uuid
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            requestId:
+              type: string
+            fields:
+              type: array
+              description: Present on VALIDATION_ERROR. Paths only, never submitted values.
+              items:
+                type: object
+                required: [path]
+                properties:
+                  path:
+                    type: string
+  responses:
+    Unauthenticated:
+      description: The session cookie is missing, expired, or revoked
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: UNAUTHENTICATED
+              message: Authentication is required.
+              requestId: request-id
+    RequestRejected:
+      description: Validation failed. The body lists field paths and does not echo the input.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Validation failed.
+              requestId: request-id
+              fields:
+                - path: owner.password
+    OriginRejected:
+      description: Origin was missing or not allowed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: ORIGIN_REJECTED
+              message: The request origin is not allowed.
+              requestId: request-id
+    ForbiddenAuth:
+      description: Registration is disabled, or the origin was rejected
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: Session store timed out or could not be reached
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: SERVICE_UNAVAILABLE
+              message: The session store is unavailable.
+              requestId: request-id
+    RateLimited:
+      description: Auth rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error:
+              code: RATE_LIMITED
+              message: Too many requests.
+              requestId: request-id

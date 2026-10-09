@@ -4,8 +4,8 @@
 
 - **Style:** Versioned REST
 - **Owner:** NestJS API
-- **Version:** 0.1-draft
-- **Status:** DRAFT — no endpoints are approved or implemented yet
+- **Version:** 0.3
+- **Status:** ACTIVE — HTTP foundation, auth/session, contacts pilot, and audit listing are implemented; other business endpoints remain planned.
 
 ---
 
@@ -20,16 +20,16 @@
 
 ## Base contract
 
-| Concern | Proposed rule |
-|---|---|
-| Base path | `/api/v1` |
-| Format | JSON over HTTPS |
-| Authentication | Opaque server-side session; exact login endpoints remain TBD |
-| Tenant context | Every tenant-scoped request identifies an authorized organization using the approved routing/header strategy |
-| Validation | Validate path, query, headers, and body at runtime |
-| Dates | ISO 8601 UTC in API payloads unless a contract explicitly states otherwise |
-| Identifiers | Opaque stable IDs; exact format TBD |
-| Localization | API returns stable codes; clients translate user-facing messages where practical |
+| Concern        | Current rule                                                                                                         |
+| -------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Base path      | `/api/v1`, set once in HTTP bootstrap. Controllers do not repeat `v1`. `GET /health` has no version prefix.          |
+| Format         | JSON over HTTPS                                                                                                      |
+| Authentication | Opaque server-side session. `POST /api/v1/auth/login` sets the session cookie. `POST /api/v1/auth/logout` clears it. |
+| Tenant context | Copied from the validated session. A client tenant id is not a source of scope.                                      |
+| Validation     | `z.strictObject` on JSON bodies. An unknown field, including `tenantId`, is `400 VALIDATION_ERROR`.                  |
+| Dates          | ISO 8601 UTC in API payloads unless a contract explicitly states otherwise                                           |
+| Identifiers    | UUIDs in the current persistence/API contracts; clients treat them as opaque stable strings                          |
+| Localization   | API returns stable codes; clients translate user-facing messages where practical                                     |
 
 ---
 
@@ -37,15 +37,36 @@
 
 ```text
 Request
-→ authenticate session
-→ resolve organization
-→ verify membership, permission, entitlement, and resource scope
+→ OriginGuard rejects a mutating method unless Origin, or a Referer origin when Origin is absent, is in ALLOWED_ORIGINS
+→ SessionGuard requires a session cookie, unless the route is marked @Public()
+→ hash the raw session id and load the Redis record
+→ reject a missing, expired, revoked, disabled, or version-mismatched session
+→ copy RequestContext from that session plus the server-generated request id
+→ PermissionGuard, on a route marked @Authorize(...). The guard rejects the request when that permission is missing
 → validate input
-→ execute owning module operation
-→ return documented response or error
+→ the service runs the authorization chain, then the operation
+→ return the documented response or error
 ```
 
-The client must never rely on hidden UI state as proof of authorization.
+Handlers do not read a tenant id from the body, query, or headers. The client must never rely on hidden UI state as proof of authorization.
+
+A protected business operation runs this chain. A later step does not replace an earlier one.
+
+1. Authenticated. `SessionGuard` accepts an active session, unless the route is `@Public()`.
+2. Module enabled. Take the tenant with `scopedTenantId(context)`, then `moduleEntitlements.requireEnabled(tenantId, module)`, then `requirePermission`. A missing `tenant_modules` row and a `DISABLED` row are both `403 MODULE_DISABLED`. That code is not `FORBIDDEN`. A role that has the permission still cannot use a disabled module. Identity and health are not optional modules. User preference is not part of this decision.
+3. Action permission. The session role is `OWNER`, `ADMIN`, or `MEMBER`. Allow or deny reads `ROLE_PERMISSIONS`. `@Authorize(permission)` sets that permission and `PermissionGuard` together. The guard is not global. `route-authorization.test.ts` fails when a non-public business handler has no `@Authorize`. `GET /auth/session` and `POST /auth/sessions/terminate-all` are the caller's own session and are the only authenticated exceptions. The service repeats the check with `requirePermission`, because a worker can call the service without the guard. New modules use one key per action, such as `deals:create` and `deals:delete`. Do not collapse different risks into one `deals:manage` key.
+4. Tenant scope. The service takes the tenant from `scopedTenantId(context)`. That value is a `TenantId`. The only mint is inside `requestContextFromSession`. A plain string does not typecheck. Contact persistence uses `ContactRepository.forTenant(context)`. That object is bound to the same tenant, and its methods do not accept a tenant id. Every contact query includes that tenant.
+5. Resource scope. `canAccessResource(actor, 'tenant', resource)` allows every caller in the row's tenant. The actor is `Pick<RequestContext, 'userId' | 'tenantId'>`. Further scopes, such as assigned user or creator, are added only when that module has a real rule. Contact create copies the tenant id from the authenticated context, then `requireResourceScope` asserts that invariant. The client does not choose a tenant id. An extra tenant field is `400 VALIDATION_ERROR`.
+
+A query or write that omits `scopedTenantId(context)` is not tenant-safe. Revoking another user stays in the service even when the route already requires `sessions:revoke`. A caller may always revoke their own sessions. That self check is not a permission and is not the contacts tenant scope.
+
+Audit is separate from access enforcement. Session-termination success/denial records and the permissioned audit-list endpoint are implemented. Role changes, assignments, business status transitions, and general permission denials must add audit records when those operations are implemented. PostgreSQL row-level security is not part of this foundation; tenant isolation currently uses application query scope plus tenant-safe constraints.
+
+### Planned role and permission settings
+
+Tenant access-management endpoints will let an Owner, or an Admin with the explicit access-management permission, list/create/update/disable tenant roles, choose permissions from the server-owned permission catalog, and assign one approved role to a tenant user. The API will never accept arbitrary permission strings, tenant ids, platform permissions, or an `OWNER` role definition from the client. It must reject privilege escalation, cross-tenant targets, disabling an assigned role without an approved replacement, and removal of the final active Owner.
+
+Role definition changes, permission-set changes, assignments, and denied attempts are auditable. A successful assignment updates authorization state, increments the affected user's `authenticationVersion`, and inserts its audit event in one database transaction. Redis session removal follows the committed version change, so an old session cannot retain permissions if cache cleanup is interrupted.
 
 ---
 
@@ -65,22 +86,35 @@ Errors use a stable machine-readable code and do not expose stack traces or inte
 ```json
 {
   "error": {
-    "code": "RESOURCE_NOT_FOUND",
-    "message": "The requested resource was not found",
+    "code": "NOT_FOUND",
+    "message": "The requested resource was not found.",
     "requestId": "request-id"
   }
 }
 ```
 
-Exact envelopes remain proposed until the first API contract is approved.
+Validation failures add `fields`. Each entry is a schema path. Submitted values are not copied into the body.
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Validation failed.",
+    "requestId": "request-id",
+    "fields": [{ "path": "owner.password" }]
+  }
+}
+```
+
+Successful auth responses stay `{ "data": ... }` and do not add `requestId` to the JSON. Logout stays `204` with no body. Every response, including errors and `204`, sets `X-Request-Id`. The API generates that id and ignores a client-supplied `X-Request-Id`, so callers cannot forge log correlation.
 
 ---
 
 ## Common rules
 
 - Use resource-oriented paths and correct HTTP methods/status codes.
-- Paginate every potentially unbounded collection; cursor vs offset strategy remains TBD.
-- Cap page size and validate filtering/sorting fields against an allowlist.
+- Paginate unbounded collections with `{ data, page: { nextCursor } }`. `limit` defaults to 50 and cannot exceed 100. `sort` is only `asc` or `desc`. Each resource defines its own filters and cursor payload. Audit history binds its cursor to that resource's filters. Offset pagination stays for small, stable lists. A client cannot send a column name or a Prisma `orderBy`.
+- Cap page size and validate filtering/sorting fields against that resource's allowlist.
 - Support idempotency keys for operations where retries could create duplicate effects.
 - Apply explicit CORS, rate limits, timeouts, and request-size limits.
 - Webhooks require signature verification, replay protection, deduplication, and durable processing before success is acknowledged.
@@ -90,19 +124,204 @@ Exact envelopes remain proposed until the first API contract is approved.
 
 ## Endpoint index
 
-| Module | Base resource | Status | Contract location |
-|---|---|---|---|
-| Authentication and sessions | TBD | Planned | OpenAPI + module documentation |
-| Organizations and memberships | TBD | Planned | OpenAPI + module documentation |
-| Contacts | TBD | Planned | OpenAPI + module documentation |
-| Tasks | TBD | Planned | OpenAPI + module documentation |
-| Deals and pipelines | TBD | Planned | OpenAPI + module documentation |
-| Orders and delivery | TBD | Conditional | OpenAPI + module documentation |
-| Notifications | TBD | Conditional | OpenAPI + module documentation |
+| Module                        | Base resource                                                                                                                                                                                                       | Status          | Contract location                                                             |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------- |
+| Authentication and sessions   | `GET /api/v1/auth/registration`, `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `POST /api/v1/auth/password-resets`, `POST /api/v1/auth/password-resets/confirm`, `GET /api/v1/auth/session`, `POST /api/v1/auth/invitations/exchange`, `POST /api/v1/auth/invitations/preview`, `POST /api/v1/auth/invitations/accept`, `POST /api/v1/auth/sessions/terminate-all`, `POST /api/v1/auth/users/{userId}/sessions/terminate`  | Implemented     | [`api/auth.openapi.yaml`](./api/auth.openapi.yaml).                           |
+| Member invitations            | `GET /api/v1/members/invitations`, `POST /api/v1/members/invitations`, `POST /api/v1/members/invitations/{invitationId}/resend`, `POST /api/v1/members/invitations/{invitationId}/revoke` | Implemented | `members:invite`. Owner and Admin only. Email is queued through `invitation.created`. |
+| Team directory and messages  | `GET /api/v1/team`, `PATCH /api/v1/team/members/{userId}`, `GET /api/v1/team/members/{userId}/messages`, `POST /api/v1/team/members/{userId}/messages` | Implemented | `team:read` lists people and a thread. `team:message` sends. `team:manage` sets `jobTitle` and is Owner and Admin only. |
+| Audit history                 | `GET /api/v1/audit-events`                                                                                                                                                                                          | Implemented     | `audit:read`. Cursor page. No module entitlement.                             |
+| Tenant organization and users | `GET /api/v1/platform/organizations`, `POST /api/v1/platform/organizations`                                                                                                                                         | Implemented     | Platform operator only. Creates a customer tenant and its first Owner. The operator is not a member. |
+| Contacts                      | `POST /api/v1/contacts`, `GET /api/v1/contacts`, `GET /api/v1/contacts/summary`, `GET /api/v1/contacts/{contactId}`, `PATCH /api/v1/contacts/{contactId}`, `POST /api/v1/contacts/{contactId}/archive`, `POST /api/v1/contacts/{contactId}/restore` | Implemented     | Tenant-scoped list, active count, search, soft archive, and `ContactsReadService` |
+| Dashboard                     | `GET /api/v1/dashboard`, `PUT /api/v1/dashboard/layout`                                                                                                                                                              | Implemented     | Read-only aggregation. Each widget is omitted unless its module is enabled and the caller has that module's read permission. |
+| Tasks                         | TBD                                                                                                                                                                                                                 | Planned         | OpenAPI + module documentation                                                |
+| Deals and pipelines           | `GET /api/v1/pipelines/{kind}`, `PATCH /api/v1/pipelines/{kind}`, `POST /api/v1/pipelines/{kind}/columns`, `PATCH /api/v1/pipelines/{kind}/columns/{columnId}`, `DELETE /api/v1/pipelines/{kind}/columns/{columnId}`, `POST /api/v1/pipelines/{kind}/cards`, `PATCH /api/v1/pipelines/{kind}/cards/{cardId}`, `DELETE /api/v1/pipelines/{kind}/cards/{cardId}`, `GET/POST /api/v1/pipelines/{kind}/cards/{cardId}/messages`, `GET/POST /api/v1/pipelines/{kind}/cards/{cardId}/notes`, `POST /api/v1/pipelines/{kind}/statuses`, `PATCH /api/v1/pipelines/{kind}/statuses/{statusId}`, `DELETE /api/v1/pipelines/{kind}/statuses/{statusId}`, `POST /api/v1/pipelines/lead/cards/{cardId}/convert` | Implemented | `{kind}` is `lead` or `deal`. See the pipeline section below. |
+| Restaurant reservations       | `POST /api/v1/reservations`, `GET /api/v1/reservations`, `GET/PATCH /api/v1/reservations/{id}`, `GET /api/v1/reservations/{id}/history`, `POST /api/v1/reservations/{id}/cancel`, `POST /api/v1/reservations/{id}/transitions/{action}`, `GET /api/v1/reservation-locations`, `GET /api/v1/reservation-locations/{id}/tables`, `GET /api/v1/reservation-availability` | Implemented     | `{action}` is `confirm`, `arrive`, `seat`, `complete`, or `no-show`. See the reservation section. |
+| Orders and delivery           | TBD                                                                                                                                                                                                                 | Conditional     | OpenAPI + module documentation                                                |
+| Notifications                 | TBD                                                                                                                                                                                                                 | Conditional     | OpenAPI + module documentation                                                |
 
 Add exact methods, paths, permissions, request schemas, response schemas, and error codes only when the corresponding module contract is designed.
 
+Lead and deal boards are created when the `deals` module is granted, in the same transaction as the tenant. `GET /api/v1/pipelines/{kind}` only reads. `{kind}` is `lead` or `deal`. Lead cards use `leads:read`, `leads:create`, `leads:update`, and `leads:delete`. Deal cards use the matching `deals:*` permissions. Adding a column uses `pipelines:add-column`, which Owner, Admin, and Member have. Renaming a board, changing its amount label, and renaming or deleting a column require `pipelines:configure`, which Owner and Admin have. Member does not. Resizing a column uses `pipelines:resize`, which Owner, Admin, and Member all have. A patch that also renames the column still requires `pipelines:configure`. Both boards still require the `deals` module. `GET /api/v1/auth/session` includes `user.leadsEnabled`. `PATCH /api/v1/auth/session/leads` with `{ "enabled": boolean }` changes that flag for the caller only. When it is false, every `leads:*` route returns `403 LEADS_DISABLED`. Deal routes stay available. Body schemas are strict, and the board response is `pipelineBoardResponseSchema`. A card also carries `source`, `qualification`, `nextAction`, `lostReason`, `outcome` (`OPEN`, `WON`, `LOST`, `DISQUALIFIED`, `CONVERTED`), `priority` (`NORMAL` or `URGENT`, default `NORMAL`), `expectedCloseOn` (`YYYY-MM-DD` or null), `contactId`, `ownerUserId`, `statusId`, `createdAt`, and `createdByName`. Team statuses are shared by both boards. Owner and Admin create, rename, recolor, and delete them with `pipelines:configure`. A duplicate name returns `409 PIPELINE_CONFLICT`. Deleting a status clears it from cards. Members may set `statusId` on a card. `createdByName` is the person who created that card, or null when the card predates that record. `PATCH` accepts `position` to reorder inside the same column. `POST /api/v1/pipelines/lead/cards/{cardId}/convert` copies the lead onto the first deal column and marks the lead `CONVERTED`. A second conversion returns `409 PIPELINE_CONFLICT`. `amount` is a non-negative PostgreSQL integer, at most `2147483647`. A card's column must belong to the same pipeline, and card positions inside one column are unique. Column and card positions are allocated inside a transaction that locks the parent row. Updating or deleting a card also locks that card row. Deleting a column that still has cards returns `409 PIPELINE_COLUMN_NOT_EMPTY`. A conflicting position returns `409 PIPELINE_CONFLICT`. A missing card, column, contact, or owner returns `404`. A disabled `deals` module returns `403 MODULE_DISABLED`. Board configuration, card deletion, a move into a different column, lead conversion, and a change to amount, outcome, contact, owner, status, or priority write an audit row and a `pipeline.changed` outbox event in the same transaction. The priority audit action is `pipeline.card.updated`, and the outbox payload is `{ "kind", "change": "updated" }`. Deleting a card or moving it to another column compacts the source column so the remaining positions are `0, 1, 2, …`. The event payload is only `kind` and `change`. Currency is not part of this contract.
+
+Each Lead/Deal card owns an internal tenant discussion. `GET .../messages` requires the matching `leads:read` or `deals:read` permission; `POST .../messages` requires the matching update permission and accepts `{ "body": string }` with 1–2000 trimmed characters. Messages expose author name and timestamp but never tenant id. A card outside the session tenant or requested pipeline kind returns `404`. The board card includes `messageCount`. Deleting the card deletes its messages; messages are not copied when a Lead is converted into a Deal.
+
+Each card also owns shared internal notes, separate from the message timeline. `GET .../notes` uses the matching read permission; `POST .../notes` creates and `PATCH .../notes/{noteId}` updates with the matching update permission. A note body is 1–4000 trimmed characters. The card response includes `noteCount`; the same tenant/kind 404 boundary and card-delete cascade apply. Notes are not copied during Lead-to-Deal conversion.
+
+Registration, when implemented, belongs to Auth:
+
+```text
+POST /api/v1/auth/register
+→ validate input
+→ normalize subdomain and email
+→ hash the password in Auth
+→ Organizations.createWithOwner()
+→ create the Redis session
+→ set a secure HttpOnly cookie
+```
+
+- Each User belongs to exactly one Tenant.
+- The same normalized email may identify separate User records in different tenants.
+- Authentication therefore requires tenant context plus email: subdomain + email + password.
+- The first user created with a tenant is always its Owner.
+- Tenant, Owner, and `tenant.created` outbox event are committed atomically.
+- Password hashing belongs to Auth; Organizations receives only `passwordHash`.
+- If session creation fails after that transaction commits, the tenant remains and registration returns a controlled error so the owner can log in later.
+- Login is `POST /api/v1/auth/login` with subdomain, email, and password. It finds the user, rejects a non-ACTIVE status, and only then verifies the password hash. A missing tenant, missing user, or disabled user still verifies a fixed unusable Argon2id hash, and every failure returns the same `INVALID_CREDENTIALS` error. Each success creates a new session id.
+- Logout is `POST /api/v1/auth/logout`. It deletes `session:<hash>`, removes that hash from `user_sessions:<userId>`, and clears the cookie. A repeated logout, or a logout with a missing or invalid session, still returns `204`. The same cookie on the next protected request is `401`.
+- Password recovery is `POST /api/v1/auth/password-resets` with subdomain, email, and locale. A missing tenant, missing user, or disabled user returns the same `204` and sends no email. An active account stores a SHA-256 of a one-time token, seals the raw token for `password_reset.requested`, and the worker emails a link that expires in 30 minutes. `POST /api/v1/auth/password-resets/confirm` sets the new password, increments `authentication_version`, writes `user.password.reset`, and deletes that user's Redis sessions. A missing, used, or expired token is `400 PASSWORD_RESET_INVALID`. A missing `INVITATION_TOKEN_KEY` is `503 PASSWORD_RESET_UNAVAILABLE` before any lookup. The reset page query string must be omitted from web and CDN access logs, the same way as invitation links.
+- Mutating methods require an allowed `Origin`. A missing `Origin` falls back to the `Referer` origin. Missing both is rejected with `403 ORIGIN_REJECTED`. `SameSite=Lax` and CORS do not replace that check. CORS uses the explicit origin list with credentials and never `*`. If the frontend and API are different sites, a CSRF token is required.
+- Login is limited per hashed IP and per hashed subdomain + normalized email. Registration is limited per hashed IP. Repeated invalid session cookies are limited per hashed IP. Counters live in the `rate_limit:` Redis key space. Exceeding a limit returns `429 RATE_LIMITED`. The account limit uses the same response whether or not the account exists. A successful login clears only that account counter.
+- Terminating every session for a user increments `users.authentication_version` and inserts one `audit_events` row for `user.sessions.terminated` in the same transaction, then deletes that user's session keys and the `user_sessions:<userId>` index. If the audit insert fails, the version increment rolls back. A denial writes `DENIED` with no version change. The row stores an HMAC-SHA256 hex of the client address keyed with `AUDIT_IP_HASH_KEY`, never the raw IP, and never a password, hash, session id, or token. `audit:read` lets Owner and Admin list their own tenant's rows with `GET /api/v1/audit-events`. The outbox does not revoke sessions. `POST /api/v1/auth/sessions/terminate-all` does this for the caller and clears that cookie. `POST /api/v1/auth/users/{userId}/sessions/terminate` does it for a user in the same tenant. The application service allows a user to revoke their own sessions, and Owner or Admin to revoke another user in that tenant. A target in another tenant is `403 FORBIDDEN`. `GET /api/v1/auth/session` returns the live user id, role, and tenant id.
+
+`GET /api/v1/team` returns the caller's organization name and its active users: name, email, role, and optional `jobTitle`. Owner, Admin, and Member can read it. A user from another tenant is never included. Profile photos are not stored; the client shows initials. Owner and Admin set a profession with `PATCH /api/v1/team/members/{userId}` and `team:manage`. `jobTitle` is a string of 1–80 characters or null. A member, or a user outside the tenant, cannot change it (`403` or `404`).
+
+Direct messages use `GET /api/v1/team/members/{userId}/messages` with `team:read` and `POST` with `team:message`. The thread is the unordered pair of the caller and that coworker, so a third person in the same company cannot read it. Messaging yourself is `400`. Another tenant's user id is `404`. The body is 1–2000 characters. `GET` returns a cursor page: the newest `limit` messages (default 50, maximum 100), oldest first inside the page. `page.nextCursor` loads the next older page. The newest page also returns `page.syncCursor`, an opaque cursor for the newest message in that page. An older page sets `syncCursor` to null. `after` reads messages newer than a server cursor, oldest first. Each forward page returns its own `syncCursor`, and its `nextCursor` continues until there is no newer page. The client sends `after` equal to a cursor the server returned. It does not build cursors. A cursor from another person is `400`. `cursor` and `after` together are `400`. `POST` is limited to 30 messages per user and 60 per client address in 60 seconds (`RATE_LIMIT_TEAM_MESSAGE_USER_*` and `RATE_LIMIT_TEAM_MESSAGE_IP_*`). Exceeding either returns `429 RATE_LIMITED`. These routes do not write an audit row or an outbox event. An open thread polls every 3 seconds with `after=syncCursor` and follows every forward page. A failed first load retries on that same interval. It is not a push channel.
+
+Member invitations are part of identity, not a catalog module. Owner and Admin call `POST /api/v1/members/invitations` with `members:invite`. The tenant comes from the session. The only grantable role is `MEMBER`. The database stores a SHA-256 of the token. The outbox payload stores an AES-256-GCM seal under `INVITATION_TOKEN_KEY`, and the worker sends the email. The email link still carries the raw token once, in the query string, so mail gateways keep it. `POST /api/v1/auth/invitations/exchange` rotates that token and sets an HttpOnly `invitation_accept` cookie scoped to `/api/v1/auth/invitations`. The cookie value is the seal, not the raw token, and it expires with the invitation. Preview and accept read that cookie. A second use of the URL token is `INVITATION_INVALID`. Accepting creates an ACTIVE member and the audit row in one transaction, then opens a session and clears the invitation cookie. If the session cannot be stored, the member remains and the response is `ACCOUNT_CREATED_SIGN_IN_REQUIRED`. An invitation lasts 72 hours, works once, and a resend replaces the token only when the previous hash is still current.
+
+The exchange commits the new token before the browser stores the cookie. That is an accepted availability trade-off of the one-time exchange: a dropped response or a browser that discards the cookie leaves the email link invalid, and the new token exists only in that lost response. Recovery is an Owner or Admin resend. The URL token stays in the query so that a copy recorded by an access log dies after a successful exchange.
+
+`invitation_accept` uses `SameSite=Lax`, `HttpOnly`, and `Secure` in production. The web app and the API must be the same site, for example `app.example.com` and `api.example.com`. Local `localhost` ports are the same site. A cross-site pair, such as `lobby.vercel.app` and `lobby-api.example.net`, can finish exchange and then fail preview and accept with `INVITATION_INVALID`, because the browser will not send the cookie. `SameSite=None` is not used.
+
+The first document request still contains `token`. `Referrer-Policy: no-referrer` on `/:locale/invitations/accept` stops the browser from sending that URL to another origin. Web and CDN access logs for that path must omit or redact the query string. API error logs already strip the query. The worker does not log the invitation URL.
+
+### Authentication examples
+
+The executable contract is [`api/auth.openapi.yaml`](./api/auth.openapi.yaml). Registration stays closed unless `REGISTRATION_ENABLED` is exactly `true`. `GET /api/v1/auth/registration` returns `{ data: { enabled } }` with no session and no tenant data.
+
+The platform operator is the Owner of the reserved `platform` workspace. `GET /api/v1/auth/session` includes `platform: true` for that account and `platform: false` for every customer. Public registration cannot take the `platform` subdomain. `POST /api/v1/platform/organizations` creates another workspace and its first Owner. The operator is not inserted into that workspace. A customer Owner receives `403 FORBIDDEN`. The body is `{ tenant: { name, subdomain }, owner: { name, email, password } }`. The password stays in Identity and is stored only as a hash. The response is `{ data: { name, subdomain, ownerEmail } }` with no tenant id and no password. `GET` returns those customer workspaces, newest first, and omits the platform workspace.
+
+```http
+POST /api/v1/auth/register
+Origin: http://localhost:3000
+Content-Type: application/json
+
+{
+  "tenant": { "name": "Acme", "subdomain": "acme", "plan": "starter" },
+  "owner": { "name": "Ada", "email": "ada@example.com", "password": "correct-horse-battery" }
+}
+```
+
+`201` returns `{ "data": { "tenant": { "id", "name", "subdomain", "plan": "starter" }, "user": { "id", "name", "email", "role": "OWNER" } } }` and `Set-Cookie`. The body does not include the password, `passwordHash`, or the raw session id.
+
+```http
+POST /api/v1/auth/login
+Origin: http://localhost:3000
+Content-Type: application/json
+
+{ "subdomain": "acme", "email": "ada@example.com", "password": "correct-horse-battery" }
+```
+
+`200` has the same `data` shape and sets a new session cookie. A missing tenant, missing user, disabled user, or wrong password is `401 INVALID_CREDENTIALS`.
+
+`POST /api/v1/auth/logout` with the session cookie returns `204` and clears it. Repeating logout is still `204`. The same cookie on the next protected request is `401`.
+
+| Code                               | Status | When                                                                                                                      |
+| ---------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `INVALID_CREDENTIALS`              | 401    | Login could not authenticate the account                                                                                  |
+| `UNAUTHENTICATED`                  | 401    | No usable session cookie, or the session store timed out while checking it                                                |
+| `SESSION_EXPIRED`                  | 401    | Idle or absolute expiry                                                                                                   |
+| `SESSION_REVOKED`                  | 401    | Session deleted, version changed, or user disabled                                                                        |
+| `ORIGIN_REJECTED`                  | 403    | Mutating request without an allowed Origin or Referer                                                                     |
+| `FORBIDDEN`                        | 403    | Caller may not revoke that user's sessions                                                                                |
+| `MODULE_DISABLED`                  | 403    | The tenant does not have this module enabled. This is not a role denial                                                   |
+| `REGISTRATION_DISABLED`            | 403    | `REGISTRATION_ENABLED` is not `true`                                                                                      |
+| `VALIDATION_ERROR`                 | 400    | Schema validation failed. `fields` lists paths only                                                                       |
+| `REQUEST_REJECTED`                 | 4xx    | Another client error, such as malformed JSON. The body does not echo input                                                |
+| `NOT_FOUND`                        | 404    | The resource is missing from the caller's scope                                                                           |
+| `TENANT_SUBDOMAIN_TAKEN`           | 409    | Subdomain already exists                                                                                                  |
+| `RATE_LIMITED`                     | 429    | Login, register, invitation, password reset, team message, or invalid-session limit exceeded                              |
+| `ACCOUNT_CREATED_SIGN_IN_REQUIRED` | 503    | Tenant committed, but the session was not stored                                                                          |
+| `SERVICE_UNAVAILABLE`              | 503    | Session store timed out or could not be reached. Login, logout, and registration before the tenant is saved use this code |
+| `INTERNAL_ERROR`                   | 500    | Unexpected failure. The body has no internal text                                                                         |
+
+### Session cookie
+
+| Attribute  | Value                                                  |
+| ---------- | ------------------------------------------------------ |
+| Name       | `session`                                              |
+| Value      | Opaque random id. Redis stores only `session:<sha256>` |
+| `HttpOnly` | always                                                 |
+| `SameSite` | `Lax`. This does not replace the Origin check          |
+| `Secure`   | set when `NODE_ENV=production`                         |
+| `Path`     | `/`                                                    |
+| `Max-Age`  | idle lifetime, 7 days                                  |
+
+Logout sends a clearing `Set-Cookie` (`Expires` at the epoch, no `Max-Age`).
+
+### Auth environment
+
+| Variable                                                                          | Role                                                                                                                                                                     |
+| --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `REGISTRATION_ENABLED`                                                            | Public registration runs only when the value is `true`                                                                                                                   |
+| `ALLOWED_ORIGINS`                                                                 | Comma-separated browser origins. No `*`                                                                                                                                  |
+| `APP_URL`                                                                         | Origin used when `ALLOWED_ORIGINS` is unset                                                                                                                              |
+| `NODE_ENV`                                                                        | `production` marks the session cookie `Secure`                                                                                                                           |
+| `RATE_LIMIT_LOGIN_IP_LIMIT` / `RATE_LIMIT_LOGIN_IP_WINDOW_MS`                     | Default 20 attempts / 15 minutes                                                                                                                                         |
+| `RATE_LIMIT_LOGIN_ACCOUNT_LIMIT` / `RATE_LIMIT_LOGIN_ACCOUNT_WINDOW_MS`           | Default 10 attempts / 15 minutes                                                                                                                                         |
+| `RATE_LIMIT_REGISTER_IP_LIMIT` / `RATE_LIMIT_REGISTER_IP_WINDOW_MS`               | Default 5 attempts / 1 hour                                                                                                                                              |
+| `RATE_LIMIT_INVALID_SESSION_IP_LIMIT` / `RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS` | Default 30 attempts / 5 minutes                                                                                                                                          |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`                             | Session and rate-limit store. Production without both values refuses login. `LOBBY_LOCAL_SESSION=memory` outside production keeps that state in the API process.         |
+| `SESSION_REDIS_TIMEOUT_MS`                                                        | Upstash session and rate-limit command timeout. Default 3000, maximum 30000                                                                                              |
+| `DATABASE_URL`                                                                    | Tenant and user rows. Required at startup                                                                                                                                |
+| `PORT`                                                                            | API listen port. Default `3001`. An invalid value fails startup                                                                                                          |
+| `TRUST_PROXY`                                                                     | Off by default. Production should list proxy IPs or CIDRs. A hop count is only for a topology where every request crosses the same number of proxies. `true` is rejected |
+
+`POST /api/v1/reservations` creates one booking for the signed-in tenant. The caller needs the `reservations` module and `reservations:create`. Owner, Admin, and Member have that permission. The body is `createReservationSchema`: `locationId`, `startsAt`, `durationMinutes` (1–1440), `guestCount` (1–100), `customer` (`name`, and phone or email unless `source.type` is `WALK_IN`), `requestedTableId`, optional `assignedUserId` and `customerNote`, and `source`. A signed-in user may set `source.type` only to `STAFF`, `PHONE`, or `WALK_IN`. `WHATSAPP`, `INSTAGRAM`, `TELEGRAM`, and `WEBSITE` belong to an integration actor, and that actor's provider and account must match the command. Any other pairing is `403 FORBIDDEN`. No webhook route is wired yet. When one is added, it must pass the request's original raw bytes to `ChannelAuthenticator.authenticate` before a body parser rewrites them, then call `reservationActorFromChannel` with that result only. Tenant, provider, and channel account come from the `reservation_channels` row matched by the credential hash. They are not read from the body, and there is no factory that accepts those three fields directly. A client `tenantId` is rejected. A new row is `201` with `{ "data", "meta": { "replayed": false } }`. The same source account and external request id is resolved after actor checks and before availability checks. Replay compares a SHA-256 fingerprint of the original command, encoded as a fixed-order JSON array and stored on `reservation_source_requests`, so a later edit of the reservation row does not turn that retry into a conflict. A repeated key with a different command is `409 RESERVATION_SOURCE_CONFLICT`. A retry still returns `200` and `"replayed": true` when the visit time has passed or the location, table, hours, or contact are no longer bookable. `data` is `id`, `status`, `locationId`, `tableId`, `guestCount`, `startsAt`, `endsAt`, and `customerName`. Phone, email, and notes are not in the response, the `reservation.created` outbox payload, or the `reservation.created` audit row. A staff audit uses actor type `USER` and `changes: null`. An integration audit uses actor type `INTEGRATION`, no user and no role, and `changes` of only `provider` and `sourceAccountId`, plus the tenant, reservation, and request ids. It stores no token. The transaction also writes the initial status-history row. Missing or other-tenant location, table, contact, and assignee, and an inactive location or table, are `404` with `RESERVATION_LOCATION_NOT_FOUND`, `RESERVATION_TABLE_NOT_FOUND`, `RESERVATION_CONTACT_NOT_FOUND`, or `RESERVATION_ASSIGNEE_NOT_FOUND`. Capacity is `409 RESERVATION_TABLE_CAPACITY_EXCEEDED`. Hours are `409 RESERVATION_OUTSIDE_WORKING_HOURS`. An overlapping active booking is `409 RESERVATION_TIME_CONFLICT`. A start that is not in the future is `409 RESERVATION_START_NOT_IN_FUTURE`. A disabled module is `403 RESERVATION_MODULE_DISABLED`. Automatic table selection and channel webhooks are not part of this route.
+
+`GET /api/v1/reservations/{id}` and `GET /api/v1/reservations` require the `reservations` module and `reservations:read`. Both are scoped to the session tenant; another tenant's id is `404`. The list is cursor-paginated by `startsAt`, then `id`, with `limit` defaulting to 50 and capped at 100. `sort` is `asc` or `desc` and defaults to `asc`. Optional filters are `locationId`, `tableId`, `assignedUserId`, `status`, `search` (customer name or phone), `from` (inclusive), and `to` (exclusive). A cursor is bound to those filters and the sort direction. The list keeps the PII-minimized view used by create. The single-item read additionally returns editable customer fields, contact and assignee ids, source, duration, lifecycle timestamps, and created/updated timestamps. It never exposes `tenantId`, source account/request/conversation/message identifiers, or credentials.
+
+`GET /api/v1/reservation-locations` returns the tenant's active locations. `GET /api/v1/reservation-locations/{locationId}/tables` returns active, non-archived tables for that location. `GET /api/v1/reservation-availability` accepts `locationId`, `startsAt`, `durationMinutes`, `guestCount`, and optional `excludeReservationId`. It validates future time and opening hours, then returns the capacity-compatible tables without an overlapping active booking. `excludeReservationId` is intended for rescheduling and must identify a reservation in the same tenant. All three routes require `reservations:read`; cross-tenant identifiers are `404`.
+
+`GET /api/v1/reservations/{id}/history` requires `reservations:read` and returns the ordered status timeline with from/to status, reason, timestamp, and the changing user's id/name when the actor was a user. Missing and cross-tenant reservation ids are both `404 RESERVATION_NOT_FOUND`.
+
+`PATCH /api/v1/reservations/{id}` requires `reservations:update` and accepts at least one of `locationId`, `startsAt`, `durationMinutes`, `guestCount`, `requestedTableId`, `assignedUserId`, `contactId`, `customerName`, `customerPhone`, `customerEmail`, or `customerNote`. Nullable relationship/contact fields explicitly clear their value. Only `PENDING` and `CONFIRMED` reservations are editable. The service serializes changes for one reservation, recomputes the end time, and revalidates the location, table, capacity, working hours, contact, assignee, future time, and overlap constraint. A conflicting table slot is `409 RESERVATION_TIME_CONFLICT`; a terminal or otherwise non-editable booking is `409 RESERVATION_NOT_EDITABLE`. The update and its PII-free `reservation.updated` audit row commit together.
+
+`POST /api/v1/reservations/{id}/cancel` requires `reservations:update` and accepts optional `{ "reason": string }`. Cancellation follows the status policy, sets `cancelledAt`, and appends `PENDING|CONFIRMED|ARRIVED -> CANCELLED` status history plus a `reservation.status.changed` audit row in the same transaction. Repeating cancellation is idempotent and does not append duplicate history or audit rows. Missing and other-tenant reservation ids are both `404 RESERVATION_NOT_FOUND`.
+
+`POST /api/v1/reservations/{id}/transitions/{action}` requires `reservations:update`. `{action}` is `confirm`, `arrive`, `seat`, `complete`, or `no-show`, mapped to `CONFIRMED`, `ARRIVED`, `SEATED`, `COMPLETED`, or `NO_SHOW`. The body may be empty or `{ "reason": string }`. Allowed steps are `PENDING -> CONFIRMED`, `CONFIRMED -> ARRIVED`, `CONFIRMED -> NO_SHOW`, `ARRIVED -> SEATED`, and `SEATED -> COMPLETED`. Confirm, arrive, seat, and complete set `confirmedAt`, `arrivedAt`, `seatedAt`, or `completedAt`. A skipped or backward step is `409 RESERVATION_INVALID_TRANSITION`. Repeating the current status returns `200` and does not append another history or audit row. A real change appends status history and a `reservation.status.changed` audit row in the same transaction. An unknown action is `400 VALIDATION_ERROR`. Missing and other-tenant ids are `404 RESERVATION_NOT_FOUND`.
+
+### Contacts
+
+Tenant-scoped resource. `ContactsController` is covered by the global `SessionGuard` and reads `@CurrentRequest()`. Every role may create, read, and update contacts in its own tenant through `contacts:create`, `contacts:read`, and `contacts:update`. The route declares that with `@Authorize`. The service calls `requireEnabled` for `contacts` and then repeats `requirePermission`. Read and update use resource scope `tenant`: every caller in the tenant may read and update every contact in that tenant. Archive and restore stay on `contacts:update`, and are allowed only for `OWNER`, `ADMIN`, or the contact's `ownerUserId`. Create sets `createdByUserId` and `ownerUserId` from the session. A client `tenantId`, owner, or archive timestamp is rejected. A missing contact and a contact in another tenant are both `404 NOT_FOUND`.
+
+The list is cursor-paginated on `name`, then `id`. The default page hides archived rows. `search` matches name or phone and is capped at 100 characters. Email is not a search field. `GET /contacts/:id` still returns an archived contact. The same email cannot be stored twice in one tenant, including after archive; the `409` code is `CONTACT_EMAIL_TAKEN` and the body does not repeat the address. A matching name or phone on another active contact returns `warnings: [{ code: "POSSIBLE_DUPLICATE", contactId }]` and does not block the write.
+
+Other modules use `ContactsReadService` from `modules/contacts/index.ts`: `exists`, `getSummary`, and `getSummaries`. They do not query `prisma.contact`. That door checks the caller's tenant, the contacts entitlement, and `contacts:read` before it returns `{ id, name }`. The repository keeps the row inside the caller's tenant. An archived contact still exists. Create writes the outbox event `contact.created` in the same transaction as the row, because the worker consumes it. Update and archive do not write outbox events until a module consumes them. The payload schemas stay in `@lobby/contracts`. Archive appends audit action `contact.archived`, and restore appends audit action `contact.restored`, both with `changes: null` and in the same transaction as the row. Email and phone are not written to events, audit rows, or logs.
+
+| Method  | Path                           | Body                                      | Success                       |
+| ------- | ------------------------------ | ----------------------------------------- | ----------------------------- |
+| `POST`  | `/api/v1/contacts`             | `name`, optional `type`, `email`, `phone` | `201 { "data", "warnings?" }` |
+| `GET`   | `/api/v1/contacts`             | —                                         | `200 { "data", "page" }`      |
+| `GET`   | `/api/v1/contacts/:id`         | —                                         | `200 { "data" }`              |
+| `PATCH` | `/api/v1/contacts/:id`         | any of `name`, `type`, `email`, `phone`   | `200 { "data", "warnings?" }` |
+| `POST`  | `/api/v1/contacts/:id/archive` | —                                         | `200 { "data" }`              |
+| `POST`  | `/api/v1/contacts/:id/restore` | —                                         | `200 { "data" }`              |
+
+`type` is `person` or `organization`. `data` includes `id`, `name`, `type`, `email`, `phone`, `archivedAt`, `createdAt`, `updatedAt`, `createdByUserId`, and `ownerUserId`. It does not include `tenantId`. `id` is a UUID. Authentication is the session cookie. Mutations also require an allowed Origin. List query fields are `limit`, `cursor`, `sort` (`asc` or `desc`, default `asc`), `search`, and `archived` (`true` or `false`, default `false`).
+
 ---
+
+## Bootstrap conventions
+
+HTTP bootstrap lives in `configureHttpApp`. New controllers inherit it.
+
+- Mount the controller at the resource name, for example `@Controller('contacts')`. The public path is `/api/v1/contacts`. Do not write `v1` in the controller.
+- Bind input with `ZodBody`, `ZodQuery`, or `ZodParam`. Those decorators use one Zod pipe. A failure is `VALIDATION_ERROR`.
+- JSON object schemas use `z.strictObject`. An unknown field is `400 VALIDATION_ERROR`. Auth login/register and the contacts commands follow this rule. The HTTP foundation probe rejects an extra `leak` field the same way.
+- Return `{ data }` for a successful JSON body. Do not add `requestId` to that JSON.
+- Throw a module error with a stable `UPPER_SNAKE_CASE` code, or `NotFoundException` for a missing resource. The global filter writes `{ error: { code, message, requestId } }`. `AuthenticationError` and `IdentityError` accept only a catalog code. The client message and status come from that catalog, not from a caller-supplied message or status.
+- `SessionGuard` is a global `APP_GUARD`. `AppModule` registers `useExisting: SessionGuard`, so the instance and its required constructor dependencies come from `IdentityModule`. A missing dependency fails at startup. A new controller requires a session. Mark a handler with `@Public()` from `common/auth/public` only when it must run without one: `POST /auth/register`, `POST /auth/login`, `POST /auth/logout`, `POST /auth/password-resets`, `POST /auth/password-resets/confirm`, and `GET /health`. `@Public()` skips authentication. It does not skip `OriginGuard` or CORS. Declare a route permission with `@Authorize(...)` from `common/authorization/permission.guard`, and import `AuthorizationModule` in that controller's module. Do not register `PermissionGuard` in the feature module. Do not add `@UseGuards(SessionGuard)` or `IdentityExceptionFilter`. Read the caller with `@CurrentRequest()` from `common/auth/current-request`. The global filter maps `IdentityError`, including `401 UNAUTHENTICATED` and `403 FORBIDDEN`.
+- Global codes live in `apps/api/src/common/http/http-error-codes.ts` (`VALIDATION_ERROR`, `INTERNAL_ERROR`, `NOT_FOUND`, `REQUEST_REJECTED`). Thrown platform codes live in `api-error.ts` (`ORIGIN_REJECTED`, `RATE_LIMITED`). Module codes stay in that module, as Identity does in `identity.errors.ts`.
+- Unexpected failures become `INTERNAL_ERROR`. The server log records the time, request id, method, path, and exception name. It does not record the exception message or stack. The client does not receive the driver message or stack.
+- `GET /health` stays outside `/api/v1` for process probes. It is `@Public()`.
+- CORS uses the explicit `ALLOWED_ORIGINS` list with credentials. `OriginGuard` is global for mutating methods.
+- `helmet` sets the baseline security headers. `Cross-Origin-Resource-Policy` is `cross-origin` because the browser app and the API are different origins. The allowlist still decides who may read the response.
+- Startup calls `loadApiConfig()` before creating the Nest app. Invalid or missing required variables stop the process with a variable-name list and no secret values. Bootstrap uses the returned HTTP config. Some feature providers still reread the validated environment; consolidating all lookups behind one immutable DI config object is open foundation work.
+
+### Shutdown
+
+`enableShutdownHooks()` is on. `DatabaseModule.onModuleDestroy` calls Prisma `$disconnect()`. The session and rate-limit store is Upstash over HTTP, so there is no socket to close. A future TCP Redis client or queue worker must close itself from `onModuleDestroy`. The signal handler is not fired inside tests: after destroy, Nest re-sends the signal to the process.
 
 ## Endpoint documentation template
 
@@ -138,4 +357,4 @@ Rate limit:
 - [`01-ARCHITECTURE.md`](./01-ARCHITECTURE.md) — system and module boundaries.
 - [`02-TECH_STACK.md`](./02-TECH_STACK.md) — API technology choices.
 - [`05-DATABASE.md`](./05-DATABASE.md) — persistence rules and schema documentation.
-
+- [`api/auth.openapi.yaml`](./api/auth.openapi.yaml) — auth request, response, and error contract.

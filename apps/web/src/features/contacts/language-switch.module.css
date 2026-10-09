@@ -1,0 +1,115 @@
+.language {
+  position: relative;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #eef3fb;
+  color: #0b1c30;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.trigger svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.trigger svg:last-child {
+  width: 12px;
+  height: 12px;
+  color: #64748b;
+}
+
+.trigger:hover {
+  background: #e4ebf6;
+}
+
+.compact {
+  height: 40px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: inset 0 0 0 1px #e2e8f4;
+}
+
+.compact:hover {
+  background: #f8fafc;
+}
+
+.trigger:focus-visible,
+.option:focus-visible,
+.optionActive:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.bar {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 5;
+  min-width: 148px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(11 28 48 / 14%);
+}
+
+.option,
+.optionActive {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #0b1c30;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.option:hover,
+.optionActive {
+  background: #eff4ff;
+}
+
+.optionActive {
+  color: #004ac6;
+}
+
+.code {
+  color: #64748b;
+  font-weight: 600;
+}
+
+.optionActive .code {
+  color: #2563eb;
+}
