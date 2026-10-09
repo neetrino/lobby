@@ -82,7 +82,8 @@ function LeadsBoardSwitch({
         disabled={pending}
         onClick={onToggle}
       >
-        {enabled ? t('settingsOn') : t('settingsOff')}
+        <span className={styles.face}>{enabled ? t('settingsOn') : t('settingsOff')}</span>
+        <span className={styles.knob} />
       </button>
     </article>
   );

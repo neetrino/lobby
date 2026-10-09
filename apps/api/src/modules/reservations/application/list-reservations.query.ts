@@ -13,6 +13,16 @@ export function reservationListFilter(
   const filters: Prisma.ReservationWhereInput[] = [];
   if (query.locationId !== undefined) filters.push({ locationId: query.locationId });
   if (query.status !== undefined) filters.push({ status: query.status });
+  if (query.tableId !== undefined) filters.push({ tableId: query.tableId });
+  if (query.assignedUserId !== undefined) filters.push({ assignedUserId: query.assignedUserId });
+  if (query.search !== undefined && query.search.length > 0) {
+    filters.push({
+      OR: [
+        { customerName: { contains: query.search, mode: 'insensitive' } },
+        { customerPhone: { contains: query.search } },
+      ],
+    });
+  }
   if (query.from !== undefined) filters.push({ startsAt: { gte: new Date(query.from) } });
   if (query.to !== undefined) filters.push({ startsAt: { lt: new Date(query.to) } });
   if (query.cursor !== undefined) {

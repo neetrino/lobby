@@ -37,6 +37,9 @@ const reservationListQueryFields = z.strictObject({
     .optional(),
   locationId: z.uuid().optional(),
   status: reservationStatusSchema.optional(),
+  tableId: z.uuid().optional(),
+  assignedUserId: z.uuid().optional(),
+  search: z.string().trim().max(100).optional(),
   from: z.iso.datetime({ offset: true }).optional(),
   to: z.iso.datetime({ offset: true }).optional(),
 });
@@ -81,6 +84,9 @@ function reservationFilterFingerprint(query: ReservationListQuery): string {
   return filterFingerprint({
     locationId: query.locationId ?? null,
     status: query.status ?? null,
+    tableId: query.tableId ?? null,
+    assignedUserId: query.assignedUserId ?? null,
+    search: query.search ?? null,
     from: query.from ?? null,
     to: query.to ?? null,
   });

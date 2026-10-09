@@ -14,6 +14,7 @@ export {
   invitationAuditSchema,
   pipelineAuditSchema,
   reservationCreatedAuditSchema,
+  reservationLifecycleAuditSchema,
   passwordResetAuditSchema,
   userSessionsTerminatedAuditSchema,
 } from './audit/index.js';
@@ -27,6 +28,7 @@ export type {
   InvitationAudit,
   PipelineAudit,
   ReservationCreatedAudit,
+  ReservationLifecycleAudit,
   PasswordResetAudit,
   UserSessionsTerminatedAudit,
 } from './audit/index.js';
@@ -125,6 +127,12 @@ export {
   reservationCreatedEventSchema,
   reservationStatusSchema,
   reservationStatuses,
+  reservationTransitionActionSchema,
+  reservationTransitionActions,
+  reservationTransitionTarget,
+  cancelReservationSchema,
+  transitionReservationSchema,
+  updateReservationSchema,
 } from './reservations/index.js';
 export type {
   CreateReservationCommand,
@@ -132,4 +140,9 @@ export type {
   ReservationCreatedEvent,
   ReservationSource,
   ReservationStatus,
+  ReservationTransitionAction,
+  CancelReservationInput,
+  TransitionReservationInput,
+  UpdateReservationCommand,
+  UpdateReservationInput,
 } from './reservations/index.js';

@@ -230,18 +230,41 @@ describe('Pipeline HTTP', () => {
     expect(again.body.error.code).toBe('NOT_FOUND');
   }, 30_000);
 
-  it('refuses board configuration from a member', async () => {
+  it('lets a member add lead and deal cards without configuring the board', async () => {
     const http = app.getHttpServer();
     const owner = await login(http, 'pipe-member', 'ada@example.com');
     await prisma.user.updateMany({ data: { role: 'MEMBER' } });
+    const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
+    const deal = await request(http).get('/api/v1/pipelines/deal').set('Cookie', owner);
     const renamed = await request(http)
       .patch('/api/v1/pipelines/lead')
       .set('Origin', origin)
       .set('Cookie', owner)
       .send({ name: 'Mine' });
+    const leadCard = await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(lead.body), title: 'Member lead' });
+    const dealCard = await request(http)
+      .post('/api/v1/pipelines/deal/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId: firstColumnId(deal.body), title: 'Member deal' });
+    const column = await request(http)
+      .post('/api/v1/pipelines/lead/columns')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ name: 'Member column' });
 
     expect(renamed.status).toBe(403);
     expect(renamed.body.error.code).toBe('FORBIDDEN');
+    expect(leadCard.status).toBe(201);
+    expect(leadCard.body.data.columns[0].cards[0].title).toBe('Member lead');
+    expect(dealCard.status).toBe(201);
+    expect(dealCard.body.data.columns[0].cards[0].title).toBe('Member deal');
+    expect(column.status).toBe(201);
+    expect(column.body.data.columns.some((item: { name: string }) => item.name === 'Member column')).toBe(true);
   }, 30_000);
 
   it('keeps card chat and notes inside the tenant and reports their counts', async () => {

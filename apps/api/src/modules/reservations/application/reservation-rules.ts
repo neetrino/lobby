@@ -5,7 +5,7 @@ import { ValidationError } from '../../../common/http/validation-error';
 import { fitsOpenWindow, localMoment, previousLocalDate } from '../domain/reservation-hours';
 import { integrationProviders, type ReservationActor } from './reservation-actor';
 import { ReservationFailure } from './reservation-errors';
-import type { TenantReservations } from '../infrastructure/reservation.repository';
+import type { ReservationOperations } from '../infrastructure/reservation.repository';
 
 export type ReservationPeriod = { startsAt: Date; endsAt: Date };
 
@@ -35,19 +35,29 @@ export function assertActorSource(actor: ReservationActor, command: CreateReserv
 }
 
 export async function assertBookable(
-  scope: TenantReservations,
+  scope: ReservationOperations,
   command: CreateReservationCommand,
   period: ReservationPeriod,
   now: Date,
 ): Promise<void> {
-  const location = await requireLocation(scope, command.locationId);
+  await assertReservationWindow(scope, command.locationId, period, now);
+  await requireContact(scope, command.customer.contactId);
+  await requireTable(scope, command);
+  await requireAssignee(scope, command.assignedUserId);
+}
+
+/** Validates the location, future start, and opening hours without selecting a table. */
+export async function assertReservationWindow(
+  scope: ReservationOperations,
+  locationId: string,
+  period: ReservationPeriod,
+  now: Date,
+): Promise<void> {
+  const location = await requireLocation(scope, locationId);
   if (period.startsAt.getTime() <= now.getTime()) {
     throw new ReservationFailure('RESERVATION_START_NOT_IN_FUTURE');
   }
   await requireOpen(scope, location, period);
-  await requireContact(scope, command.customer.contactId);
-  await requireTable(scope, command);
-  await requireAssignee(scope, command.assignedUserId);
 }
 
 function assertSourceAllowed(source: ReservationSource, allowed: ReadonlySet<ReservationSource>): void {
@@ -56,7 +66,7 @@ function assertSourceAllowed(source: ReservationSource, allowed: ReadonlySet<Res
   }
 }
 
-async function requireLocation(scope: TenantReservations, locationId: string) {
+async function requireLocation(scope: ReservationOperations, locationId: string) {
   const location = await scope.findLocation(locationId);
   if (location === null || location.status !== 'ACTIVE') {
     throw new ReservationFailure('RESERVATION_LOCATION_NOT_FOUND');
@@ -65,7 +75,7 @@ async function requireLocation(scope: TenantReservations, locationId: string) {
 }
 
 async function requireOpen(
-  scope: TenantReservations,
+  scope: ReservationOperations,
   location: { id: string; timezone: string },
   period: ReservationPeriod,
 ): Promise<void> {
@@ -86,7 +96,7 @@ async function requireOpen(
   }
 }
 
-async function requireContact(scope: TenantReservations, contactId: string | undefined): Promise<void> {
+async function requireContact(scope: ReservationOperations, contactId: string | undefined): Promise<void> {
   if (contactId === undefined) {
     return;
   }
@@ -95,7 +105,7 @@ async function requireContact(scope: TenantReservations, contactId: string | und
   }
 }
 
-async function requireTable(scope: TenantReservations, command: CreateReservationCommand): Promise<void> {
+async function requireTable(scope: ReservationOperations, command: CreateReservationCommand): Promise<void> {
   const table = await scope.findTable(command.requestedTableId);
   const bookable =
     table !== null &&
@@ -110,7 +120,7 @@ async function requireTable(scope: TenantReservations, command: CreateReservatio
   }
 }
 
-async function requireAssignee(scope: TenantReservations, userId: string | undefined): Promise<void> {
+async function requireAssignee(scope: ReservationOperations, userId: string | undefined): Promise<void> {
   if (userId === undefined) {
     return;
   }

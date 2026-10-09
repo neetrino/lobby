@@ -6,8 +6,11 @@ describe('reservation status policy', () => {
   it('allows the normal restaurant service lifecycle', () => {
     expect(canTransitionReservation('PENDING', 'CONFIRMED')).toBe(true);
     expect(canTransitionReservation('CONFIRMED', 'ARRIVED')).toBe(true);
+    expect(canTransitionReservation('CONFIRMED', 'NO_SHOW')).toBe(true);
     expect(canTransitionReservation('ARRIVED', 'SEATED')).toBe(true);
     expect(canTransitionReservation('SEATED', 'COMPLETED')).toBe(true);
+    expect(canTransitionReservation('PENDING', 'SEATED')).toBe(false);
+    expect(canTransitionReservation('ARRIVED', 'NO_SHOW')).toBe(false);
   });
 
   it('keeps terminal states terminal', () => {

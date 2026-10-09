@@ -134,6 +134,13 @@ describe('pipeline board controls', () => {
     expect(onMove).toHaveBeenCalledWith(cardId);
   });
 
+  it('lets a member add a card without column configuration', () => {
+    renderColumn({ canConfigure: false });
+    expect(screen.getByRole('button', { name: 'Add card' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Delete column' })).toBeNull();
+    expect(screen.getByLabelText('Column name')).toHaveProperty('readOnly', true);
+  });
+
   it('asks before deleting a column', () => {
     const onDelete = vi.fn();
     renderColumn({ onDelete });
@@ -205,6 +212,7 @@ function renderColumn(handlers: {
   onConvertCard?: (cardId: string) => void;
   onSaveCard?: (cardId: string, patch: unknown) => void;
   onMoveCard?: (cardId: string) => void;
+  canConfigure?: boolean;
 }): void {
   const column: PipelineColumn = {
     id: '00000000-0000-4000-8000-000000000050',
@@ -228,6 +236,7 @@ function renderColumn(handlers: {
       onDeleteCard={vi.fn()}
       onSaveCard={handlers.onSaveCard ?? vi.fn()}
       onConvertCard={handlers.onConvertCard ?? vi.fn()}
+      canConfigure={handlers.canConfigure}
     />,
   );
 }

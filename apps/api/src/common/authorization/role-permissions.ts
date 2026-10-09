@@ -16,9 +16,11 @@ export const permissions = [
   'deals:update',
   'deals:delete',
   'pipelines:configure',
+  'pipelines:add-column',
   'pipelines:resize',
   'reservations:create',
   'reservations:read',
+  'reservations:update',
   'dashboard:read',
   'members:invite',
   'team:read',
@@ -43,7 +45,9 @@ const workspaceAccess = [
   'deals:delete',
   'reservations:create',
   'reservations:read',
+  'reservations:update',
   'dashboard:read',
+  'pipelines:add-column',
   'pipelines:resize',
   'team:read',
   'team:message',
@@ -52,7 +56,7 @@ const workspaceAccess = [
 /**
  * Role to permission map.
  * Every role may use contacts, lead cards, deal cards, and reservations, and open the dashboard.
- * Every role may resize a column, read the team directory, and message a coworker. Owner and Admin may also configure a board, revoke another user's sessions, read audit history, invite members, and set a profession.
+ * Every role may add a column, resize a column, read the team directory, and message a coworker. Owner and Admin may also configure a board, revoke another user's sessions, read audit history, invite members, and set a profession.
  * Only Owner has `platform:provision`. A customer Owner still fails the platform-tenant guard.
  * Revoking your own sessions is not a permission.
  * A dashboard widget still checks its own module entitlement and permission.

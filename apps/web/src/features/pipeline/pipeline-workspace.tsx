@@ -167,7 +167,11 @@ function PipelineView({
             aria-label={t('boardName')}
             defaultValue={board.name}
             key={board.name}
+            readOnly={!canConfigure}
             onBlur={(event) => {
+              if (!canConfigure) {
+                return;
+              }
               const name = event.currentTarget.value.trim();
               if (name !== '' && name !== board.name) {
                 void onChange(() => patchPipeline(board.kind, { name }));
@@ -183,7 +187,11 @@ function PipelineView({
           key={board.amountLabel}
           placeholder={t('amountLabel')}
           maxLength={8}
+          readOnly={!canConfigure}
           onBlur={(event) => {
+            if (!canConfigure) {
+              return;
+            }
             const amountLabel = event.currentTarget.value.trim();
             if (amountLabel !== board.amountLabel) {
               void onChange(() => patchPipeline(board.kind, { amountLabel }));
@@ -230,6 +238,7 @@ function PipelineView({
             onDeleteCard={(cardId) => void onChange(() => deleteCard(board.kind, cardId))}
             onSaveCard={(cardId, patch) => void onChange(() => updateCard(board.kind, cardId, patch))}
             onConvertCard={(cardId) => void onChange(() => convertLead(cardId))}
+            canConfigure={canConfigure}
           />
         ))}
         <AddColumn onCreate={(name) => void onChange(() => createColumn(board.kind, name))} />

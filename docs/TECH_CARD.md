@@ -101,7 +101,7 @@
 | Dashboard        | Read-only `GET /api/v1/dashboard` and per-user layout. Contacts, reservation, and accepted-invitation projections. Deals, messenger, and inventory stay hidden until those modules expose a projection |
 | Audit            | Append-only events, HMAC-hashed client IP metadata, permissioned cursor-paginated read API                                                                                  |
 | Tenant RBAC      | Current fixed roles; planned Owner/Admin-managed tenant roles from a closed permission catalog with anti-escalation rules                                                   |
-| Reservations     | Contracts, schema, cross-tenant constraints, overlap prevention, status policy, create/read/list endpoints, and a read-only dashboard projection. Update and lifecycle endpoints remain open |
+| Reservations     | Contracts, schema, cross-tenant constraints, overlap prevention, status policy, create/read/list/update/cancel endpoints, and a read-only dashboard projection. Remaining status transitions and channel webhooks remain open |
 | Deals            | Module boundary only; no business implementation                                                                                                                            |
 | Messenger        | Module boundary only; no business implementation                                                                                                                            |
 | Worker           | Versioned dispatch registry, retry classification, durable side-effect reservation, failed-event requeue                                                                    |

@@ -39,6 +39,18 @@ const reservationErrorSpecs = {
     statusCode: 409,
     message: 'The reservation must start in the future.',
   },
+  RESERVATION_NOT_FOUND: {
+    statusCode: 404,
+    message: 'The reservation was not found.',
+  },
+  RESERVATION_NOT_EDITABLE: {
+    statusCode: 409,
+    message: 'The reservation can no longer be changed.',
+  },
+  RESERVATION_INVALID_TRANSITION: {
+    statusCode: 409,
+    message: 'This status change is not allowed.',
+  },
 } as const;
 
 export type ReservationErrorCode = keyof typeof reservationErrorSpecs;

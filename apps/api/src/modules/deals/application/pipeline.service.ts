@@ -67,7 +67,7 @@ export class PipelineService {
   }
 
   async addColumn(context: RequestContext, kind: PipelineKindName, input: ColumnCreate): Promise<PipelineBoard> {
-    await this.gate(context, 'pipelines:configure');
+    await this.gate(context, 'pipelines:add-column');
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
     await appendColumn(this.prisma, tenantId, pipeline.id, input.name, this.configured(context, kind, pipeline.id));

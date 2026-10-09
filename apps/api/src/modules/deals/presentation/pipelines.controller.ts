@@ -59,7 +59,7 @@ export class PipelinesController {
   }
 
   @Post(':kind/columns')
-  @Authorize('pipelines:configure')
+  @Authorize('pipelines:add-column')
   @HttpCode(201)
   async addColumn(
     @CurrentRequest() context: RequestContext,

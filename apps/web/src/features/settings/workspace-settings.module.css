@@ -41,29 +41,86 @@
 }
 
 .switch {
+  position: relative;
+  display: inline-flex;
   flex: none;
-  min-width: 112px;
-  height: 36px;
-  padding: 0 14px;
-  border: 1px solid #e2e8f0;
+  align-items: center;
+  box-sizing: border-box;
+  min-width: 118px;
+  height: 56px;
+  padding: 4px;
+  border: 4px solid transparent;
   border-radius: 999px;
-  background: #fff;
-  color: #334155;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  background:
+    linear-gradient(180deg, #c5ccd3 0%, #8b939c 48%, #5c646c 100%) padding-box,
+    linear-gradient(180deg, #f7f8fa 0%, #d8dce1 28%, #a7adb4 58%, #6e757d 100%) border-box;
+  box-shadow:
+    inset 0 10px 8px rgb(255 255 255 / 28%),
+    inset 0 -8px 8px rgb(0 0 0 / 24%),
+    0 1px 0 rgb(255 255 255 / 80%),
+    0 2px 4px rgb(0 0 0 / 30%);
   cursor: pointer;
 }
 
 .switchOn {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
+  background:
+    linear-gradient(180deg, #9adf62 0%, #4fbe3d 36%, #2f9a34 72%, #27862d 100%) padding-box,
+    linear-gradient(180deg, #f7f8fa 0%, #d8dce1 28%, #a7adb4 58%, #6e757d 100%) border-box;
+}
+
+.face {
+  position: relative;
+  z-index: 1;
+  min-width: 46px;
+  padding: 0 14px 0 48px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-align: center;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 35%), 0 2px 2px rgb(0 0 0 / 28%);
+  text-transform: uppercase;
+}
+
+.switch:not(.switchOn) .face {
+  padding: 0 48px 0 14px;
+}
+
+.knob {
+  position: absolute;
+  z-index: 1;
+  top: 4px;
+  left: calc(100% - 48px);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 28%, #fff 0%, #f7f8fa 36%, #e4e7eb 68%, #c5cbd2 100%);
+  box-shadow:
+    0 2px 4px rgb(0 0 0 / 40%),
+    inset 0 2px 2px #fff,
+    inset 0 -3px 4px rgb(90 98 108 / 28%);
+  transition: left 160ms ease;
+}
+
+.switchOn .knob {
+  left: 4px;
+}
+
+.switch:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 3px;
 }
 
 .switch:disabled {
   cursor: wait;
-  opacity: 0.6;
+  filter: saturate(0.65);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .knob {
+    transition: none;
+  }
 }
 
 .failed {

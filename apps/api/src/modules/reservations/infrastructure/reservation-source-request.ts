@@ -24,6 +24,13 @@ export const reservationSelect = {
   sourceConversationId: true,
   sourceMessageId: true,
   status: true,
+  confirmedAt: true,
+  arrivedAt: true,
+  seatedAt: true,
+  completedAt: true,
+  cancelledAt: true,
+  createdAt: true,
+  updatedAt: true,
 } as const;
 
 export async function findStoredSourceRequest(

@@ -6,12 +6,14 @@ import {
   passwordResetAuditSchema,
   pipelineAuditSchema,
   reservationCreatedAuditSchema,
+  reservationLifecycleAuditSchema,
   userSessionsTerminatedAuditSchema,
   type ContactLifecycleAudit,
   type InvitationAudit,
   type PasswordResetAudit,
   type PipelineAudit,
   type ReservationCreatedAudit,
+  type ReservationLifecycleAudit,
   type UserSessionsTerminatedAudit,
 } from '@lobby/contracts';
 import type { Prisma, PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
@@ -33,7 +35,8 @@ export type AuditWrite =
   | Omit<InvitationAudit, 'schemaVersion'>
   | Omit<PasswordResetAudit, 'schemaVersion'>
   | Omit<PipelineAudit, 'schemaVersion'>
-  | Omit<ReservationCreatedAudit, 'schemaVersion'>;
+  | Omit<ReservationCreatedAudit, 'schemaVersion'>
+  | Omit<ReservationLifecycleAudit, 'schemaVersion'>;
 
 /** Append-only audit rows. There is no update and no delete. */
 @Injectable()
@@ -89,7 +92,8 @@ function parseAuditWrite(
   | InvitationAudit
   | PasswordResetAudit
   | PipelineAudit
-  | ReservationCreatedAudit {
+  | ReservationCreatedAudit
+  | ReservationLifecycleAudit {
   const record = { ...input, schemaVersion: auditSchemaVersion };
   if (input.action === 'contact.archived' || input.action === 'contact.restored') {
     return contactLifecycleAuditSchema.parse(record);
@@ -112,6 +116,9 @@ function parseAuditWrite(
   }
   if (input.action === 'reservation.created') {
     return reservationCreatedAuditSchema.parse(record);
+  }
+  if (input.action === 'reservation.updated' || input.action === 'reservation.status.changed') {
+    return reservationLifecycleAuditSchema.parse(record);
   }
   return userSessionsTerminatedAuditSchema.parse(record);
 }

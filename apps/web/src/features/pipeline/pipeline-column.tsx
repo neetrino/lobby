@@ -27,6 +27,7 @@ export function PipelineColumnView({
   onDeleteCard,
   onSaveCard,
   onConvertCard,
+  canConfigure = true,
 }: {
   column: PipelineColumn;
   kind: PipelineKindName;
@@ -45,6 +46,7 @@ export function PipelineColumnView({
   onDeleteCard: (cardId: string) => void;
   onSaveCard: (cardId: string, patch: CardUpdate) => void;
   onConvertCard: (cardId: string) => void;
+  canConfigure?: boolean;
 }) {
   const t = useTranslations('pipeline');
   const [draft, setDraft] = useState<number | null>(null);
@@ -66,12 +68,19 @@ export function PipelineColumnView({
           aria-label={t('columnName')}
           defaultValue={column.name}
           key={column.name}
-          onBlur={(event) => commitName(event.currentTarget.value, column.name, onRename)}
+          readOnly={!canConfigure}
+          onBlur={(event) => {
+            if (canConfigure) {
+              commitName(event.currentTarget.value, column.name, onRename);
+            }
+          }}
         />
         <span className={styles.count}>{column.cards.length}</span>
-        <button type="button" className={styles.iconButton} aria-label={t('deleteColumn')} onClick={() => setConfirming(true)}>
-          ×
-        </button>
+        {canConfigure ? (
+          <button type="button" className={styles.iconButton} aria-label={t('deleteColumn')} onClick={() => setConfirming(true)}>
+            ×
+          </button>
+        ) : null}
       </header>
       {confirming ? (
         <div className={styles.confirm}>

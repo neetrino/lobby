@@ -45,3 +45,26 @@ export const reservationCreatedAuditSchema = z.discriminatedUnion('actorType', [
 ]);
 
 export type ReservationCreatedAudit = z.infer<typeof reservationCreatedAuditSchema>;
+
+/** Staff mutation audit. PII and field values are deliberately omitted. */
+export const reservationLifecycleAuditSchema = z.strictObject({
+  tenantId: z.uuid(),
+  actorUserId: z.uuid(),
+  actorRole: tenantRoleSchema,
+  actorType: z.literal('USER'),
+  action: z.enum([
+    auditActions.RESERVATION_UPDATED,
+    auditActions.RESERVATION_STATUS_CHANGED,
+  ]),
+  resourceType: z.literal('reservation'),
+  resourceId: z.uuid(),
+  outcome: auditOutcomeSchema,
+  changes: z.null(),
+  reason: z.string().min(1).max(500).nullable(),
+  requestId: z.uuid(),
+  ipHash: sha256Hex.nullable(),
+  userAgent: z.string().min(1).max(256).nullable(),
+  schemaVersion: z.literal(auditSchemaVersion),
+});
+
+export type ReservationLifecycleAudit = z.infer<typeof reservationLifecycleAuditSchema>;

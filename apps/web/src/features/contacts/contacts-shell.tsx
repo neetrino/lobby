@@ -17,13 +17,13 @@ const NAV = [
   { id: 'messenger' },
   { id: 'contacts', href: 'contacts' },
   { id: 'team', href: 'team' },
-  { id: 'reservations' },
+  { id: 'reservations', href: 'reservations' },
   { id: 'audit' },
   { id: 'settings', href: 'settings' },
 ] as const;
 
 type NavId = (typeof NAV)[number]['id'];
-type ShellPage = 'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings' | 'team';
+type ShellPage = 'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings' | 'team' | 'reservations';
 
 export function ContactsShell({
   session,

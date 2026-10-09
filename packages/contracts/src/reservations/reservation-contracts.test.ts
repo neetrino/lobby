@@ -6,6 +6,9 @@ import {
   moduleKeySchema,
   reservationCreatedEventSchema,
   reservationStatusSchema,
+  reservationTransitionActionSchema,
+  reservationTransitionTarget,
+  transitionReservationSchema,
 } from '../index.js';
 
 const tableId = '11111111-1111-4111-8111-111111111111';
@@ -51,6 +54,11 @@ describe('reservation contracts', () => {
   it('exposes the approved reservation states and module key', () => {
     expect(reservationStatusSchema.safeParse('CONFIRMED').success).toBe(true);
     expect(reservationStatusSchema.safeParse('UNKNOWN').success).toBe(false);
+    expect(reservationTransitionActionSchema.safeParse('no-show').success).toBe(true);
+    expect(reservationTransitionActionSchema.safeParse('cancel').success).toBe(false);
+    expect(reservationTransitionTarget('confirm')).toBe('CONFIRMED');
+    expect(transitionReservationSchema.parse(undefined)).toEqual({});
+    expect(transitionReservationSchema.safeParse({ reason: 'Guest called' }).success).toBe(true);
     expect(moduleKeySchema.safeParse('reservations').success).toBe(true);
   });
 
