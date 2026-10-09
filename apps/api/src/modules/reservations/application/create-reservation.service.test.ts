@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
 import { AuditEventStore } from '../../../common/audit/audit-event.store';
+import { AuthorizationError } from '../../../common/auth/authorization';
 import { ModuleEntitlementService } from '../../../common/authorization/module-entitlement';
 import { OutboxService } from '../../../common/outbox/outbox.service';
 import { requestContextFromSession } from '../../../common/tenant/request-context';
@@ -122,29 +123,59 @@ describe('CreateReservationService', () => {
       },
     });
     const first = await build().create(user(seeded), body);
-    const pastStart = new Date('2020-01-01T18:00:00.000Z');
     await prisma.reservation.update({
       where: { id: first.reservation.id },
-      data: { startsAt: pastStart, endsAt: new Date('2020-01-01T19:00:00.000Z') },
+      data: {
+        customerPhone: '+37400000009',
+        startsAt: new Date('2020-01-01T18:00:00.000Z'),
+        endsAt: new Date('2020-01-01T19:00:00.000Z'),
+      },
     });
     await prisma.reservationLocation.update({ where: { id: seeded.location.id }, data: { status: 'INACTIVE' } });
     await prisma.contact.update({ where: { id: contact.id }, data: { archivedAt: new Date() } });
-    const retry = { ...body, startsAt: pastStart.toISOString() };
-    const replayed = await build().create(user(seeded), retry);
+    const replayed = await build().create(user(seeded), body);
 
     expect(replayed.replayed).toBe(true);
     expect(replayed.reservation.id).toBe(first.reservation.id);
-    await expect(build().create(user(seeded), { ...retry, customer: { ...retry.customer, phone: '+37400000009' } })).rejects.toMatchObject({ code: 'RESERVATION_SOURCE_CONFLICT' });
-    await expect(build().create(user(seeded), { ...retry, source: { ...retry.source, messageId: 'msg-2' } })).rejects.toMatchObject({ code: 'RESERVATION_SOURCE_CONFLICT' });
+    await expect(
+      build().create(user(seeded), { ...body, customer: { ...body.customer, phone: '+37400000009' } }),
+    ).rejects.toMatchObject({ code: 'RESERVATION_SOURCE_CONFLICT' });
+    await expect(
+      build().create(user(seeded), { ...body, source: { ...body.source, messageId: 'msg-2' } }),
+    ).rejects.toMatchObject({ code: 'RESERVATION_SOURCE_CONFLICT' });
     expect(await prisma.reservation.count()).toBe(1);
+  });
+
+  it('rejects a staff session that claims a channel idempotency key', async () => {
+    const seeded = await seed('source-actor');
+    const channelBody = command(seeded, {
+      source: { type: 'WHATSAPP', accountId: 'channel-1', externalRequestId: 'req-1' },
+    });
+    const integration = channel(seeded);
+
+    await expect(build().create(user(seeded), channelBody)).rejects.toBeInstanceOf(AuthorizationError);
+    await expect(build().create(integration, command(seeded, { source: { type: 'STAFF' } }))).rejects.toBeInstanceOf(
+      AuthorizationError,
+    );
+    await expect(
+      build().create(integration, command(seeded, { source: { type: 'INSTAGRAM', accountId: 'channel-1', externalRequestId: 'req-1' } })),
+    ).rejects.toBeInstanceOf(AuthorizationError);
+    await expect(
+      build().create(integration, command(seeded, { source: { type: 'WHATSAPP', accountId: 'other', externalRequestId: 'req-2' } })),
+    ).rejects.toBeInstanceOf(AuthorizationError);
+    expect(await prisma.reservation.count()).toBe(0);
   });
 
   it('keeps one reservation when the same source request arrives concurrently', async () => {
     const seeded = await seed('race-source');
     const body = command(seeded, { source: { type: 'WHATSAPP', accountId: 'channel-1', externalRequestId: 'req-1' } });
-    const results = await Promise.allSettled([build().create(user(seeded), body), build().create(user(seeded), body)]);
+    const actor = channel(seeded);
+    const results = await Promise.allSettled([build().create(actor, body), build().create(actor, body)]);
+    const fulfilled = results.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
 
-    expect(results.some((result) => result.status === 'fulfilled')).toBe(true);
+    expect(fulfilled).toHaveLength(2);
+    expect(fulfilled.map((result) => result.replayed).sort()).toEqual([false, true]);
+    expect(fulfilled[0]?.reservation.id).toBe(fulfilled[1]?.reservation.id);
     expect(await prisma.reservation.count()).toBe(1);
   });
 
@@ -205,6 +236,15 @@ function build(overrides: {
 
 function user(seeded: Awaited<ReturnType<typeof seed>>) {
   return { type: 'USER' as const, context: seeded.context };
+}
+
+function channel(seeded: Awaited<ReturnType<typeof seed>>) {
+  return {
+    type: 'INTEGRATION' as const,
+    tenantId: seeded.context.tenantId,
+    channelAccountId: 'channel-1',
+    provider: 'WHATSAPP' as const,
+  };
 }
 
 function command(seeded: Awaited<ReturnType<typeof seed>>, overrides: Record<string, unknown> = {}) {

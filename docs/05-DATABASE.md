@@ -242,7 +242,7 @@ Audit history remains append-only. Role creation/update/disable, permission chan
 - A reservation belongs to one tenant and one location. Contact, assignee, and creator references belong to that same tenant. A chosen table belongs to that same location.
 - Weekday `0` is Sunday. When a location is open and `closes_at` is earlier than `opens_at`, service continues past local midnight. Equal open and close times are rejected. A closed exception stores no times.
 - Walk-in bookings may omit both phone and email. Every other source needs at least one of them.
-- `reservation_source_requests` rejects a repeated external request for the same tenant, source, and account.
+- `reservation_source_requests` rejects a repeated external request for the same tenant, source, and account. `request_fingerprint` is the SHA-256 of a fixed-order JSON array of the original command. Replay uses that hash, not the current reservation row. `20261008180000` adds the column nullable. `20261008190000` sets it `NOT NULL` only when every row already has a hash, and it does not invent one from the current reservation.
 - Guest count, name length, and capacity are database checks. The `btree_gist` exclusion constraint is the concurrency guard for active table bookings. Application availability checks do not replace it.
 - `20261008160000_booking_foundation` drops the earlier venue, dining-area, and table-assignment tables. Existing reservation rows are not copied.
 

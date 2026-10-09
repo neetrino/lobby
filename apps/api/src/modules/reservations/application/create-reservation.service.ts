@@ -32,10 +32,10 @@ import {
   assertActorSource,
   assertBookable,
   reservationPeriod,
-  sameBooking,
   storedSourceAccountId,
   type ReservationPeriod,
 } from './reservation-rules';
+import { requestFingerprint } from './reservation-fingerprint';
 
 export type CreateReservationResult = {
   reservation: ReservationRecord;
@@ -95,7 +95,10 @@ export class CreateReservationService {
       return null;
     }
     const existing = await scope.findBySourceRequest(source);
-    return existing === null ? null : replay(existing, command, period);
+    if (existing === null) {
+      return null;
+    }
+    return replay(existing.reservation, existing.requestFingerprint, requestFingerprint(command, period));
   }
 
   private async commit(
@@ -106,7 +109,15 @@ export class CreateReservationService {
   ): Promise<CreateReservationResult> {
     const tenantId = actor.type === 'USER' ? actor.context.tenantId : actor.tenantId;
     const source = sourceIdentity(command);
-    const reservation = await scope.transaction(async (writes, tx) => {
+    const fingerprint = requestFingerprint(command, period);
+    return scope.transaction(async (writes, tx) => {
+      if (source !== null) {
+        await writes.lockSourceRequest(source);
+        const existing = await writes.findBySourceRequest(source);
+        if (existing !== null) {
+          return replay(existing.reservation, existing.requestFingerprint, fingerprint);
+        }
+      }
       const created = await writes.insertReservation(reservationInsert(actor, command, period));
       await this.history.appendInitial(tx, {
         tenantId,
@@ -114,15 +125,14 @@ export class CreateReservationService {
         changedByUserId: actor.type === 'USER' ? actor.context.userId : null,
       });
       if (source !== null) {
-        await writes.insertSourceRequest(source, created.id);
+        await writes.insertSourceRequest(source, created.id, fingerprint);
       }
       if (actor.type === 'USER') {
         await this.audit.append(tx, createdAudit(actor.context, created.id));
       }
       await this.outbox.enqueue(tx, reservationCreatedEvent(eventInput(tenantId, created, command)));
-      return created;
+      return { reservation: created, replayed: false };
     });
-    return { reservation, replayed: false };
   }
 
   private async recover(
@@ -136,7 +146,7 @@ export class CreateReservationService {
     if (source !== null && duplicate) {
       const existing = await scope.findBySourceRequest(source);
       if (existing !== null) {
-        return replay(existing, command, period);
+        return replay(existing.reservation, existing.requestFingerprint, requestFingerprint(command, period));
       }
     }
     if (isReservationOverlap(error)) {
@@ -147,14 +157,14 @@ export class CreateReservationService {
 }
 
 function replay(
-  existing: ReservationRecord,
-  command: CreateReservationCommand,
-  period: ReservationPeriod,
+  reservation: ReservationRecord,
+  storedFingerprint: string,
+  commandFingerprint: string,
 ): CreateReservationResult {
-  if (!sameBooking(existing, command, period)) {
+  if (storedFingerprint !== commandFingerprint) {
     throw new ReservationFailure('RESERVATION_SOURCE_CONFLICT');
   }
-  return { reservation: existing, replayed: true };
+  return { reservation, replayed: true };
 }
 
 function sourceIdentity(command: CreateReservationCommand): SourceIdentity | null {

@@ -7,6 +7,12 @@ import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import type { TenantId } from '../../../common/tenant/tenant-id';
 import { clockMinutes } from '../domain/reservation-hours';
 import type { ReservationActor } from '../application/reservation-actor';
+import {
+  findStoredSourceRequest,
+  insertStoredSourceRequest,
+  lockStoredSourceRequest,
+  reservationSelect,
+} from './reservation-source-request';
 
 const BLOCKING = ['PENDING', 'CONFIRMED', 'ARRIVED', 'SEATED'] as const;
 
@@ -51,6 +57,11 @@ export type AvailabilityInput = {
   guestCount: number;
 };
 
+export type StoredSourceRequest = {
+  reservation: ReservationRecord;
+  requestFingerprint: string;
+};
+
 export type SourceIdentity = {
   source: ReservationSource;
   sourceAccountId: string;
@@ -87,9 +98,10 @@ export type ReservationOperations = {
   findActiveContact(id: string): Promise<{ id: string } | null>;
   findActiveUser(id: string): Promise<{ id: string } | null>;
   findHours(locationId: string, localDate: string, weekday: number): Promise<HoursWindow | null>;
-  findBySourceRequest(source: SourceIdentity): Promise<ReservationRecord | null>;
+  findBySourceRequest(source: SourceIdentity): Promise<StoredSourceRequest | null>;
+  lockSourceRequest(source: SourceIdentity): Promise<void>;
   insertReservation(input: ReservationInsert): Promise<ReservationRecord>;
-  insertSourceRequest(source: SourceIdentity, reservationId: string): Promise<void>;
+  insertSourceRequest(source: SourceIdentity, reservationId: string, requestFingerprint: string): Promise<void>;
 };
 
 export type TenantReservations = ReservationOperations & {
@@ -185,17 +197,12 @@ class ReservationQueries implements ReservationOperations {
     return exceptionWindow(weekly.isClosed, weekly.opensAt, weekly.closesAt);
   }
 
-  async findBySourceRequest(source: SourceIdentity): Promise<ReservationRecord | null> {
-    const row = await this.db.reservationSourceRequest.findFirst({
-      where: {
-        tenantId: this.tenantId,
-        source: source.source,
-        sourceAccountId: source.sourceAccountId,
-        externalRequestId: source.externalRequestId,
-      },
-      select: { reservation: { select: reservationSelect } },
-    });
-    return row === null ? null : toReservation(row.reservation);
+  findBySourceRequest(source: SourceIdentity): Promise<StoredSourceRequest | null> {
+    return findStoredSourceRequest(this.db, this.tenantId, source);
+  }
+
+  lockSourceRequest(source: SourceIdentity): Promise<void> {
+    return lockStoredSourceRequest(this.db, this.tenantId, source);
   }
 
   async insertReservation(input: ReservationInsert): Promise<ReservationRecord> {
@@ -206,10 +213,8 @@ class ReservationQueries implements ReservationOperations {
     return toReservation(row);
   }
 
-  async insertSourceRequest(source: SourceIdentity, reservationId: string): Promise<void> {
-    await this.db.reservationSourceRequest.create({
-      data: { tenantId: this.tenantId, reservationId, ...source },
-    });
+  insertSourceRequest(source: SourceIdentity, reservationId: string, requestFingerprint: string): Promise<void> {
+    return insertStoredSourceRequest(this.db, this.tenantId, source, reservationId, requestFingerprint);
   }
 
   private overlapping(tableId: string, startsAt: Date, endsAt: Date): Promise<number> {
@@ -250,27 +255,6 @@ export class ReservationRepository {
     return new TenantReservationScope(this.prisma, tenantId);
   }
 }
-
-const reservationSelect = {
-  id: true,
-  locationId: true,
-  tableId: true,
-  contactId: true,
-  assignedUserId: true,
-  source: true,
-  guestCount: true,
-  startsAt: true,
-  endsAt: true,
-  customerName: true,
-  customerPhone: true,
-  customerEmail: true,
-  customerNote: true,
-  sourceAccountId: true,
-  sourceRequestId: true,
-  sourceConversationId: true,
-  sourceMessageId: true,
-  status: true,
-} as const;
 
 function toReservation(row: ReservationRecord): ReservationRecord {
   return row;

@@ -1,27 +1,33 @@
-import type { CreateReservationCommand } from '@lobby/contracts';
+import type { CreateReservationCommand, ReservationSource } from '@lobby/contracts';
 import { z } from 'zod';
 
 import { AuthorizationError } from '../../../common/auth/authorization';
 import { ValidationError } from '../../../common/http/validation-error';
 import { fitsOpenWindow, localMoment, previousLocalDate } from '../domain/reservation-hours';
-import type { ReservationActor } from './reservation-actor';
+import { integrationProviders, type ReservationActor } from './reservation-actor';
 import { ReservationFailure } from './reservation-errors';
-import type { ReservationRecord, TenantReservations } from '../infrastructure/reservation.repository';
+import type { TenantReservations } from '../infrastructure/reservation.repository';
 
 export type ReservationPeriod = { startsAt: Date; endsAt: Date };
 
 const MINUTE_MS = 60_000;
+const staffSources = new Set<ReservationSource>(['STAFF', 'PHONE', 'WALK_IN']);
+const channelSources = new Set<ReservationSource>(integrationProviders);
 
 export function reservationPeriod(command: CreateReservationCommand): ReservationPeriod {
   const startsAt = new Date(command.startsAt);
   return { startsAt, endsAt: new Date(startsAt.getTime() + command.durationMinutes * MINUTE_MS) };
 }
 
+/** A session may record staff, phone, or walk-in. Channel keys belong to the integration actor. */
 export function assertActorSource(actor: ReservationActor, command: CreateReservationCommand): void {
+  const source = command.source.type;
   if (actor.type === 'USER') {
+    assertSourceAllowed(source, staffSources);
     return;
   }
-  if (command.source.type !== actor.provider || command.source.accountId !== actor.channelAccountId) {
+  assertSourceAllowed(source, channelSources);
+  if (source !== actor.provider || command.source.accountId !== actor.channelAccountId) {
     throw new AuthorizationError();
   }
   if (command.source.externalRequestId === undefined) {
@@ -45,37 +51,18 @@ export async function assertBookable(
   await requireAssignee(scope, command.assignedUserId);
 }
 
+function assertSourceAllowed(source: ReservationSource, allowed: ReadonlySet<ReservationSource>): void {
+  if (!allowed.has(source)) {
+    throw new AuthorizationError();
+  }
+}
+
 /** Account id stored on the reservation. Non-UUID channel ids stay on the source-request row. */
 export function storedSourceAccountId(value: string | undefined): string | null {
   if (value === undefined || !z.uuid().safeParse(value).success) {
     return null;
   }
   return value;
-}
-
-export function sameBooking(
-  existing: ReservationRecord,
-  command: CreateReservationCommand,
-  period: ReservationPeriod,
-): boolean {
-  return (
-    existing.locationId === command.locationId &&
-    existing.tableId === command.requestedTableId &&
-    existing.contactId === (command.customer.contactId ?? null) &&
-    existing.assignedUserId === (command.assignedUserId ?? null) &&
-    existing.source === command.source.type &&
-    existing.guestCount === command.guestCount &&
-    existing.customerName === command.customer.name &&
-    existing.customerPhone === (command.customer.phone ?? null) &&
-    existing.customerEmail === (command.customer.email ?? null) &&
-    existing.customerNote === (command.customerNote ?? null) &&
-    existing.sourceAccountId === storedSourceAccountId(command.source.accountId) &&
-    existing.sourceRequestId === (command.source.externalRequestId ?? null) &&
-    existing.sourceConversationId === (command.source.conversationId ?? null) &&
-    existing.sourceMessageId === (command.source.messageId ?? null) &&
-    existing.startsAt.getTime() === period.startsAt.getTime() &&
-    existing.endsAt.getTime() === period.endsAt.getTime()
-  );
 }
 
 async function requireLocation(scope: TenantReservations, locationId: string) {

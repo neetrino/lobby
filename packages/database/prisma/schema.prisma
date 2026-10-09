@@ -452,14 +452,16 @@ model Reservation {
 }
 
 /// Deduplicates a channel webhook. The same external request cannot create a second booking.
+/// `requestFingerprint` is the SHA-256 of a fixed-order JSON array of the original command. Later reservation edits do not change it.
 model ReservationSourceRequest {
-  id                String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId          String            @map("tenant_id") @db.Uuid
-  source            ReservationSource
-  sourceAccountId   String            @map("source_account_id")
-  externalRequestId String            @map("external_request_id")
-  reservationId     String            @map("reservation_id") @db.Uuid
-  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  id                  String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId            String            @map("tenant_id") @db.Uuid
+  source              ReservationSource
+  sourceAccountId     String            @map("source_account_id")
+  externalRequestId   String            @map("external_request_id")
+  reservationId       String            @map("reservation_id") @db.Uuid
+  requestFingerprint  String            @map("request_fingerprint")
+  createdAt           DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
 
   tenant      Tenant      @relation(fields: [tenantId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   reservation Reservation @relation(fields: [reservationId, tenantId], references: [id, tenantId], onDelete: Cascade, onUpdate: Cascade)
