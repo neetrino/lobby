@@ -1,19 +1,6 @@
 'use client';
 
-import {
-  Briefcase,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  LayoutDashboard,
-  MessageCircle,
-  Settings,
-  User,
-  UserPlus,
-  Users,
-  type LucideIcon,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -29,33 +16,8 @@ import {
 import { SignOutButton } from '../auth/sign-out-button';
 import { updateLeadsEnabled } from './contacts-api';
 import type { SessionPrincipal } from './contact';
+import { SidebarNav, type ShellPage } from './sidebar-nav';
 import styles from './contacts.module.css';
-
-const NAV = [
-  { id: 'dashboard', href: 'dashboard' },
-  { id: 'leads', href: 'leads' },
-  { id: 'deals', href: 'deals' },
-  { id: 'messenger' },
-  { id: 'contacts', href: 'contacts' },
-  { id: 'team', href: 'team' },
-  { id: 'reservations', href: 'reservations' },
-  { id: 'audit', href: 'audit' },
-  { id: 'settings', href: 'settings' },
-] as const;
-
-type NavId = (typeof NAV)[number]['id'];
-
-const NAV_ICONS: Record<NavId, LucideIcon> = {
-  dashboard: LayoutDashboard,
-  leads: UserPlus,
-  deals: Briefcase,
-  messenger: MessageCircle,
-  contacts: User,
-  team: Users,
-  reservations: Calendar,
-  audit: ClipboardList,
-  settings: Settings,
-};
 
 const SIDEBAR_KEY = 'lobby-sidebar';
 const sidebarListeners = new Set<() => void>();
@@ -81,9 +43,6 @@ function writeSidebarOpen(open: boolean): void {
     listener();
   }
 }
-
-type ShellPage =
-  'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings' | 'team' | 'reservations' | 'audit';
 
 export function ContactsShell({
   session,
@@ -133,19 +92,14 @@ export function ContactsShell({
           {sidebarOpen ? <ChevronLeft aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
         </button>
       </div>
-      <nav className={styles.nav} aria-label={t('workspaceName')}>
-        {NAV.filter(
-          (item) => (item.id !== 'leads' || leadsOn) && (item.id !== 'audit' || canReadAudit),
-        ).map((item) => (
-          <NavItem
-            key={item.id}
-            item={item}
-            current={current}
-            locale={locale}
-            label={t(`nav.${item.id}`)}
-          />
-        ))}
-      </nav>
+      <SidebarNav
+        current={current}
+        locale={locale}
+        leadsOn={leadsOn}
+        canReadAudit={canReadAudit}
+        workspaceLabel={t('workspaceName')}
+        labelFor={(id) => t(`nav.${id}`)}
+      />
       {session === null ? null : (
         <Account
           session={session}
@@ -156,43 +110,6 @@ export function ContactsShell({
         />
       )}
     </aside>
-  );
-}
-
-function NavItem({
-  item,
-  current,
-  locale,
-  label,
-}: {
-  item: (typeof NAV)[number];
-  current: ShellPage;
-  locale: string;
-  label: string;
-}) {
-  const active = item.id === current;
-  const content = (
-    <>
-      <ItemIcon name={item.id} />
-      <span>{label}</span>
-    </>
-  );
-  if (!('href' in item)) {
-    return (
-      <span className={styles.navIdle} aria-disabled="true" title={label}>
-        {content}
-      </span>
-    );
-  }
-  return (
-    <Link
-      className={active ? styles.navActive : styles.navLink}
-      href={`/${locale}/${item.href}`}
-      aria-current={active ? 'page' : undefined}
-      title={label}
-    >
-      {content}
-    </Link>
   );
 }
 
@@ -311,7 +228,3 @@ function initials(name: string): string {
   return letters.join('') || 'L';
 }
 
-function ItemIcon({ name }: { name: NavId }) {
-  const Icon = NAV_ICONS[name];
-  return <Icon className={styles.navIcon} aria-hidden="true" />;
-}

@@ -227,6 +227,7 @@
 }
 
 .nav {
+  position: relative;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -236,6 +237,28 @@
   min-height: 0;
   overflow: auto;
   padding: 0;
+}
+
+.navIndicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  width: 100%;
+  height: 44px;
+  border-radius: 14px;
+  background: rgb(255 255 255 / 12%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(var(--nav-x, 0px), var(--nav-y, 0px), 0);
+}
+
+.nav[data-nav-ready] .navIndicator {
+  opacity: 1;
+}
+
+.nav[data-nav-motion] .navIndicator {
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .navActive,
@@ -249,24 +272,21 @@
   overflow: hidden;
   border-radius: 14px;
   padding: 0;
+  position: relative;
+  z-index: 1;
+  background: transparent;
   color: rgb(255 255 255 / 72%);
   font-size: 14px;
   text-decoration: none;
 }
 
 .navActive {
-  background: rgb(255 255 255 / 12%);
   color: #fff;
   font-weight: 600;
 }
 
-.navLink {
-  color: rgb(255 255 255 / 72%);
-}
-
 .navLink:hover,
-.navIdle:hover,
-.navActive:hover {
+.navIdle:hover {
   background: rgb(255 255 255 / 10%);
   color: #fff;
 }
@@ -1192,6 +1212,10 @@ button:focus-visible {
     overflow: auto;
   }
 
+  .navIndicator {
+    width: 44px;
+  }
+
   .account {
     margin: 0 0 0 auto;
     padding: 0;
@@ -1216,7 +1240,8 @@ button:focus-visible {
   .accountButton > span:not(.avatar),
   .navActive,
   .navLink,
-  .navIdle {
+  .navIdle,
+  .nav[data-nav-motion] .navIndicator {
     transition: none;
   }
 }
