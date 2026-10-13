@@ -37,6 +37,8 @@ describe('route authorization', () => {
       'PasswordResetController',
       'PipelinesController',
       'PlatformOrganizationsController',
+      'ReservationAvailabilityController',
+      'ReservationLocationsController',
       'ReservationsController',
       'SessionController',
       'TeamController',
