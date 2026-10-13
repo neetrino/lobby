@@ -3,7 +3,15 @@
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useId, useRef, useState, type ReactNode, type RefObject } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 
 import { SignOutButton } from '../auth/sign-out-button';
 import { updateLeadsEnabled } from './contacts-api';
@@ -23,6 +31,29 @@ const NAV = [
 ] as const;
 
 const SIDEBAR_KEY = 'lobby-sidebar';
+const sidebarListeners = new Set<() => void>();
+
+function subscribeSidebar(listener: () => void): () => void {
+  sidebarListeners.add(listener);
+  return () => {
+    sidebarListeners.delete(listener);
+  };
+}
+
+function readSidebarOpen(): boolean {
+  return window.localStorage.getItem(SIDEBAR_KEY) === 'open';
+}
+
+function readServerSidebarOpen(): boolean {
+  return false;
+}
+
+function writeSidebarOpen(open: boolean): void {
+  window.localStorage.setItem(SIDEBAR_KEY, open ? 'open' : 'closed');
+  for (const listener of sidebarListeners) {
+    listener();
+  }
+}
 
 type NavId = (typeof NAV)[number]['id'];
 type ShellPage =
@@ -41,7 +72,11 @@ export function ContactsShell({
   const sessionLeads = session?.user.leadsEnabled ?? true;
   const canReadAudit = session?.user.role === 'OWNER' || session?.user.role === 'ADMIN';
   const [leadChoice, setLeadChoice] = useState<{ source: boolean; value: boolean } | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarOpen = useSyncExternalStore(
+    subscribeSidebar,
+    readSidebarOpen,
+    readServerSidebarOpen,
+  );
   const leadsOn = leadChoice?.source === sessionLeads ? leadChoice.value : sessionLeads;
 
   useEffect(() => {
@@ -49,12 +84,6 @@ export function ContactsShell({
       router.replace(`/${locale}/platform`);
     }
   }, [locale, router, session]);
-
-  useEffect(() => {
-    if (window.localStorage.getItem(SIDEBAR_KEY) === 'open') {
-      setSidebarOpen(true);
-    }
-  }, []);
 
   return (
     <aside className={sidebarOpen ? `${styles.sidebar} ${styles.sidebarWide}` : styles.sidebar}>
@@ -72,11 +101,7 @@ export function ContactsShell({
           aria-expanded={sidebarOpen}
           aria-label={t(sidebarOpen ? 'hideSidebar' : 'showSidebar')}
           onClick={() => {
-            setSidebarOpen((open) => {
-              const next = !open;
-              window.localStorage.setItem(SIDEBAR_KEY, next ? 'open' : 'closed');
-              return next;
-            });
+            writeSidebarOpen(!sidebarOpen);
           }}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true">
