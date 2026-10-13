@@ -1,7 +1,3 @@
-.canvas.canvas {
-  background: #f3f1fb;
-}
-
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -67,7 +63,7 @@
 .invite button,
 .send {
   border: 0;
-  background: #5b61f6;
+  background: #6eaff8;
   color: white;
   font-weight: 650;
   cursor: pointer;
@@ -160,7 +156,7 @@
 }
 
 .you {
-  color: #5b61f6;
+  color: #6eaff8;
   font-weight: 650;
 }
 
@@ -241,7 +237,7 @@
   height: 34px;
   border: 0;
   border-radius: 10px;
-  background: #5b61f6;
+  background: #6eaff8;
   color: white;
   font-weight: 650;
   cursor: pointer;
@@ -268,7 +264,7 @@
 }
 
 .pageOn {
-  background: #5b61f6;
+  background: #6eaff8;
   color: white;
 }
 
@@ -308,7 +304,7 @@
   border: 0;
   border-radius: 999px;
   background: white;
-  color: #5b61f6;
+  color: #6eaff8;
   font: inherit;
   font-size: 12px;
   font-weight: 650;
@@ -366,7 +362,7 @@
 
 .outgoing .bubble {
   border: 0;
-  background: #e6e3fb;
+  background: #e7f2fe;
 }
 
 .chatState,

@@ -22,6 +22,8 @@ const NAV = [
   { id: 'settings', href: 'settings' },
 ] as const;
 
+const SIDEBAR_KEY = 'lobby-sidebar';
+
 type NavId = (typeof NAV)[number]['id'];
 type ShellPage =
   'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings' | 'team' | 'reservations' | 'audit';
@@ -39,6 +41,7 @@ export function ContactsShell({
   const sessionLeads = session?.user.leadsEnabled ?? true;
   const canReadAudit = session?.user.role === 'OWNER' || session?.user.role === 'ADMIN';
   const [leadChoice, setLeadChoice] = useState<{ source: boolean; value: boolean } | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const leadsOn = leadChoice?.source === sessionLeads ? leadChoice.value : sessionLeads;
 
   useEffect(() => {
@@ -47,15 +50,40 @@ export function ContactsShell({
     }
   }, [locale, router, session]);
 
+  useEffect(() => {
+    if (window.localStorage.getItem(SIDEBAR_KEY) === 'open') {
+      setSidebarOpen(true);
+    }
+  }, []);
+
   return (
-    <aside className={styles.sidebar}>
-      <Link className={styles.brand} href={`/${locale}/dashboard`}>
-        <span className={styles.brandMark}>L</span>
-        <span>
-          <strong>Lobby</strong>
-          <small>{t('workspaceName')}</small>
-        </span>
-      </Link>
+    <aside className={sidebarOpen ? `${styles.sidebar} ${styles.sidebarWide}` : styles.sidebar}>
+      <div className={styles.sidebarHead}>
+        <Link className={styles.brand} href={`/${locale}/dashboard`}>
+          <span className={styles.brandMark}>L</span>
+          <span>
+            <strong>Lobby</strong>
+            <small>{t('workspaceName')}</small>
+          </span>
+        </Link>
+        <button
+          type="button"
+          className={styles.sidebarToggle}
+          aria-expanded={sidebarOpen}
+          aria-label={t(sidebarOpen ? 'hideSidebar' : 'showSidebar')}
+          onClick={() => {
+            setSidebarOpen((open) => {
+              const next = !open;
+              window.localStorage.setItem(SIDEBAR_KEY, next ? 'open' : 'closed');
+              return next;
+            });
+          }}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d={sidebarOpen ? 'M15 6 9 12l6 6' : 'M9 6l6 6-6 6'} />
+          </svg>
+        </button>
+      </div>
       <nav className={styles.nav} aria-label={t('workspaceName')}>
         {NAV.filter(
           (item) => (item.id !== 'leads' || leadsOn) && (item.id !== 'audit' || canReadAudit),
@@ -102,7 +130,7 @@ function NavItem({
   );
   if (!('href' in item)) {
     return (
-      <span className={styles.navIdle} aria-disabled="true">
+      <span className={styles.navIdle} aria-disabled="true" title={label}>
         {content}
       </span>
     );
@@ -112,6 +140,7 @@ function NavItem({
       className={active ? styles.navActive : styles.navLink}
       href={`/${locale}/${item.href}`}
       aria-current={active ? 'page' : undefined}
+      title={label}
     >
       {content}
     </Link>

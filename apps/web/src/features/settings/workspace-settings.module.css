@@ -17,12 +17,10 @@
   justify-content: space-between;
   gap: 16px;
   padding: 20px;
-  border: 1px solid rgb(255 255 255 / 70%);
+  border: 0;
   border-radius: 22px;
-  background: rgb(255 255 255 / 46%);
-  box-shadow: 0 18px 44px rgb(29 45 85 / 12%);
-  -webkit-backdrop-filter: blur(18px);
-  backdrop-filter: blur(18px);
+  background: #fff;
+  box-shadow: 0 10px 28px rgb(28 33 48 / 6%);
 }
 
 .page .card + .card {

@@ -78,6 +78,8 @@
   "contacts": {
     "title": "Contacts",
     "workspaceName": "CRM Workspace",
+    "hideSidebar": "Hide sidebar",
+    "showSidebar": "Show sidebar",
     "showLeads": "Show leads",
     "settingsTitle": "My preferences",
     "settingsLeadsTitle": "Leads board",

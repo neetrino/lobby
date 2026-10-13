@@ -78,6 +78,8 @@
   "contacts": {
     "title": "Контакты",
     "workspaceName": "CRM пространство",
+    "hideSidebar": "Скрыть боковую панель",
+    "showSidebar": "Показать боковую панель",
     "showLeads": "Показывать лиды",
     "settingsTitle": "Мои настройки",
     "settingsLeadsTitle": "Доска лидов",

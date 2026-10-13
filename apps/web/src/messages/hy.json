@@ -78,6 +78,8 @@
   "contacts": {
     "title": "Կոնտակտներ",
     "workspaceName": "CRM աշխատատեղ",
+    "hideSidebar": "Թաքցնել կողային վահանակը",
+    "showSidebar": "Ցույց տալ կողային վահանակը",
     "showLeads": "Ցույց տալ լիդերը",
     "settingsTitle": "Իմ նախընտրությունները",
     "settingsLeadsTitle": "Լիդերի տախտակ",

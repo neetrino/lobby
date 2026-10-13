@@ -91,9 +91,9 @@
 }
 
 .views button[aria-pressed='true'] {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
+  border-color: transparent;
+  background: #1e2128;
+  color: #fff;
 }
 
 .table {

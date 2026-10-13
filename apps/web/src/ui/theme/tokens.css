@@ -1,10 +1,16 @@
 :root {
-  --radius-sm: 12px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --glass-ink: #14213d;
-  --glass-muted: #4b5568;
-  --glass-line: rgb(255 255 255 / 72%);
-  --glass-highlight: rgb(255 255 255 / 85%);
-  --glass-shadow: rgb(29 45 85 / 12%);
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 24px;
+  --glass-ink: #1a1d24;
+  --glass-muted: #8a909b;
+  --glass-line: #eef1f4;
+  --glass-highlight: #ffffff;
+  --glass-shadow: rgb(28 33 48 / 8%);
+  --shell-canvas: #e6e8ed;
+  --shell-frame: #1e2128;
+  --shell-panel: #f7f8fa;
+  --shell-blue: #6eaff8;
+  --shell-ink: #1a1d24;
+  --shell-muted: #8a909b;
 }

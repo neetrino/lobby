@@ -3,14 +3,14 @@
   min-height: 100vh;
   place-items: center;
   padding: 24px;
-  background: #f8f9ff;
+  background: var(--shell-canvas);
   color: #0b1c30;
 }
 
 .card {
   width: min(460px, 100%);
   padding: 28px;
-  border-radius: 16px;
+  border-radius: 24px;
   background: #fff;
   box-shadow: 0 8px 28px rgb(11 28 48 / 6%);
 }
@@ -28,8 +28,8 @@
   width: 36px;
   height: 36px;
   place-items: center;
-  border-radius: 10px;
-  background: #2563eb;
+  border-radius: 12px;
+  background: #1e2128;
   color: #fff;
   font-weight: 700;
 }
@@ -69,9 +69,9 @@
   height: 40px;
   box-sizing: border-box;
   padding: 0 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
+  border: 0;
+  border-radius: 14px;
+  background: #f3f5f8;
   color: #0b1c30;
   font: inherit;
   font-size: 14px;
@@ -119,10 +119,10 @@
 }
 
 .submit {
-  height: 42px;
+  height: 44px;
   border: 0;
-  border-radius: 10px;
-  background: #2563eb;
+  border-radius: 999px;
+  background: #6eaff8;
   color: #fff;
   font: inherit;
   font-size: 14px;
@@ -131,7 +131,7 @@
 }
 
 .submit:hover {
-  background: #004ac6;
+  background: #5aa0f0;
 }
 
 .submit:disabled,
