@@ -13,12 +13,18 @@ import { AppModule } from '../../../app.module';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { configureHttpApp } from '../../../common/http/configure-http-app';
 import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
-import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../../identity/infrastructure/rate-limit-config';
+import {
+  AUTH_RATE_LIMITS,
+  permissiveAuthRateLimits,
+} from '../../identity/infrastructure/rate-limit-config';
 import { RATE_LIMIT_REDIS } from '../../identity/infrastructure/rate-limit-redis';
 import { MemoryRateLimitRedis } from '../../identity/infrastructure/memory-rate-limit-redis';
 import { REGISTRATION_ENABLED } from '../../identity/infrastructure/registration-config';
 import { SESSION_REDIS } from '../../identity/infrastructure/session-redis';
-import { clearTenantRows, IndexedSessionRedis } from '../../identity/presentation/session-guard.fixtures';
+import {
+  clearTenantRows,
+  IndexedSessionRedis,
+} from '../../identity/presentation/session-guard.fixtures';
 
 const origin = 'http://localhost:3000';
 const password = 'correct-horse-battery';
@@ -104,7 +110,11 @@ describe('Pipeline HTTP', () => {
 
     expect(created.status).toBe(201);
     expect(dealCard.status).toBe(201);
-    expect(created.body.data.columns[0].cards[0]).toMatchObject({ title: 'Ada lead', amount: 10, position: 0 });
+    expect(created.body.data.columns[0].cards[0]).toMatchObject({
+      title: 'Ada lead',
+      amount: 10,
+      position: 0,
+    });
     expect(hidden.status).toBe(404);
     expect(crossed.status).toBe(404);
     expect(stillLead.body.data.columns[0].cards).toEqual([
@@ -151,9 +161,11 @@ describe('Pipeline HTTP', () => {
       .delete(`/api/v1/pipelines/lead/columns/${columnId}`)
       .set('Origin', origin)
       .set('Cookie', owner);
-    const cardId = blocked.status === 409
-      ? (await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner)).body.data.columns[0].cards[0].id as string
-      : '';
+    const cardId =
+      blocked.status === 409
+        ? ((await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner)).body.data
+            .columns[0].cards[0].id as string)
+        : '';
     await request(http)
       .delete(`/api/v1/pipelines/lead/cards/${cardId}`)
       .set('Origin', origin)
@@ -166,7 +178,9 @@ describe('Pipeline HTTP', () => {
     expect(blocked.status).toBe(409);
     expect(blocked.body.error.code).toBe('PIPELINE_COLUMN_NOT_EMPTY');
     expect(removed.status).toBe(200);
-    expect(removed.body.data.columns.some((column: { id: string }) => column.id === columnId)).toBe(false);
+    expect(removed.body.data.columns.some((column: { id: string }) => column.id === columnId)).toBe(
+      false,
+    );
   }, 30_000);
 
   it('puts a moved card at the end of the destination column', async () => {
@@ -191,10 +205,17 @@ describe('Pipeline HTTP', () => {
       .set('Origin', origin)
       .set('Cookie', owner)
       .send({ columnId: destinationId });
-    const destination = moved.body.data.columns.find((column: { id: string }) => column.id === destinationId);
+    const destination = moved.body.data.columns.find(
+      (column: { id: string }) => column.id === destinationId,
+    );
 
     expect(moved.status).toBe(200);
-    expect(destination.cards.map((card: { title: string; position: number }) => [card.title, card.position])).toEqual([
+    expect(
+      destination.cards.map((card: { title: string; position: number }) => [
+        card.title,
+        card.position,
+      ]),
+    ).toEqual([
       ['Already there', 0],
       ['Moving', 1],
     ]);
@@ -264,7 +285,9 @@ describe('Pipeline HTTP', () => {
     expect(dealCard.status).toBe(201);
     expect(dealCard.body.data.columns[0].cards[0].title).toBe('Member deal');
     expect(column.status).toBe(201);
-    expect(column.body.data.columns.some((item: { name: string }) => item.name === 'Member column')).toBe(true);
+    expect(
+      column.body.data.columns.some((item: { name: string }) => item.name === 'Member column'),
+    ).toBe(true);
   }, 30_000);
 
   it('keeps card chat and notes inside the tenant and reports their counts', async () => {
@@ -308,11 +331,19 @@ describe('Pipeline HTTP', () => {
       .set('Cookie', other);
 
     expect(posted.status).toBe(201);
-    expect(posted.body.data).toMatchObject({ cardId, body: 'First internal note', authorName: 'Ada' });
+    expect(posted.body.data).toMatchObject({
+      cardId,
+      body: 'First internal note',
+      authorName: 'Ada',
+    });
     expect(messages.status).toBe(200);
     expect(messages.body.data).toHaveLength(1);
     expect(postedNote.status).toBe(201);
-    expect(postedNote.body.data).toMatchObject({ cardId, body: 'Remember the contract', authorName: 'Ada' });
+    expect(postedNote.body.data).toMatchObject({
+      cardId,
+      body: 'Remember the contract',
+      authorName: 'Ada',
+    });
     expect(notes.body.data).toHaveLength(1);
     expect(updatedNote.status).toBe(200);
     expect(updatedNote.body.data.body).toBe('Updated sticky text');

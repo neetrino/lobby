@@ -15,7 +15,12 @@ export const updateReservationSchema = z
   .strictObject({
     locationId: z.uuid().optional(),
     startsAt: z.iso.datetime().optional(),
-    durationMinutes: z.number().int().min(RESERVATION_MIN_DURATION_MINUTES).max(RESERVATION_MAX_DURATION_MINUTES).optional(),
+    durationMinutes: z
+      .number()
+      .int()
+      .min(RESERVATION_MIN_DURATION_MINUTES)
+      .max(RESERVATION_MAX_DURATION_MINUTES)
+      .optional(),
     guestCount: z.number().int().min(RESERVATION_MIN_GUESTS).max(RESERVATION_MAX_GUESTS).optional(),
     requestedTableId: z.uuid().optional(),
     assignedUserId: z.uuid().nullable().optional(),

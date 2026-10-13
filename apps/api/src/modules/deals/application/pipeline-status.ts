@@ -44,9 +44,11 @@ export async function createStatus(
       _max: { position: true },
     });
     const position = (last._max.position ?? -1) + 1;
-    await tx.pipelineStatus.create({
-      data: { tenantId, name: input.name, color: input.color, position },
-    }).catch(rethrowWrite);
+    await tx.pipelineStatus
+      .create({
+        data: { tenantId, name: input.name, color: input.color, position },
+      })
+      .catch(rethrowWrite);
   });
 }
 
@@ -58,10 +60,12 @@ export async function updateStatus(
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await requireStatus(tx, tenantId, statusId);
-    await tx.pipelineStatus.update({
-      where: { id: statusId },
-      data: { name: patch.name, color: patch.color },
-    }).catch(rethrowWrite);
+    await tx.pipelineStatus
+      .update({
+        where: { id: statusId },
+        data: { name: patch.name, color: patch.color },
+      })
+      .catch(rethrowWrite);
   });
 }
 

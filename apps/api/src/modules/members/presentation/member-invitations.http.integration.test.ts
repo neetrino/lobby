@@ -14,12 +14,18 @@ import { AppModule } from '../../../app.module';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { configureHttpApp } from '../../../common/http/configure-http-app';
 import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
-import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../../identity/infrastructure/rate-limit-config';
+import {
+  AUTH_RATE_LIMITS,
+  permissiveAuthRateLimits,
+} from '../../identity/infrastructure/rate-limit-config';
 import { RATE_LIMIT_REDIS } from '../../identity/infrastructure/rate-limit-redis';
 import { MemoryRateLimitRedis } from '../../identity/infrastructure/memory-rate-limit-redis';
 import { REGISTRATION_ENABLED } from '../../identity/infrastructure/registration-config';
 import { SESSION_REDIS } from '../../identity/infrastructure/session-redis';
-import { clearTenantRows, IndexedSessionRedis } from '../../identity/presentation/session-guard.fixtures';
+import {
+  clearTenantRows,
+  IndexedSessionRedis,
+} from '../../identity/presentation/session-guard.fixtures';
 import { INVITATION_TOKEN_KEY } from '../application/invite-member.service';
 import { hashInvitationToken, openInvitationToken } from '../infrastructure/invitation-seal';
 
@@ -110,7 +116,10 @@ describe('member invitations HTTP', () => {
       password,
     });
     const memberCookie = sessionCookie(accepted.headers['set-cookie']);
-    const memberInvite = await invite(http, memberCookie, { email: 'other@example.com', role: 'MEMBER' });
+    const memberInvite = await invite(http, memberCookie, {
+      email: 'other@example.com',
+      role: 'MEMBER',
+    });
 
     const replayed = await postPublic(http, '/api/v1/auth/invitations/exchange', {
       invitationId,
@@ -185,7 +194,10 @@ function readCiphertext(payload: unknown): string {
   return ciphertext;
 }
 
-async function registerOwner(http: Parameters<typeof request>[0], subdomain: string): Promise<string> {
+async function registerOwner(
+  http: Parameters<typeof request>[0],
+  subdomain: string,
+): Promise<string> {
   const registered = await request(http)
     .post('/api/v1/auth/register')
     .set('Origin', origin)

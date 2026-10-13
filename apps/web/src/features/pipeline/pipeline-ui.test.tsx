@@ -23,7 +23,9 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('next/link', () => ({
-  default: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,
+  default: ({ href, children }: { href: string; children: ReactNode }) => (
+    <a href={href}>{children}</a>
+  ),
 }));
 
 const cardId = '00000000-0000-4000-8000-000000000010';
@@ -39,7 +41,10 @@ describe('pipeline board controls', () => {
   it('asks before deleting a card and edits amount, outcome, contact, and owner', async () => {
     const onDelete = vi.fn();
     const onSave = vi.fn();
-    vi.stubGlobal('fetch', vi.fn(async () => json({ data: [contactRow()], page: { nextCursor: null } })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ data: [contactRow()], page: { nextCursor: null } })),
+    );
     renderCard({ onDelete, onSave });
 
     fireEvent.click(screen.getByRole('button', { name: 'Delete card' }));
@@ -55,12 +60,14 @@ describe('pipeline board controls', () => {
     fireEvent.change(screen.getByLabelText('Owner'), { target: { value: userId } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(onSave).toHaveBeenCalledWith(expect.objectContaining({
-      amount: 40,
-      outcome: 'WON',
-      contactId,
-      ownerUserId: userId,
-    }));
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        amount: 40,
+        outcome: 'WON',
+        contactId,
+        ownerUserId: userId,
+      }),
+    );
   });
 
   it('toggles a card between urgent and normal', () => {
@@ -105,7 +112,10 @@ describe('pipeline board controls', () => {
   });
 
   it('opens the card chat on the page, outside the card', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => json({ data: [] })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => json({ data: [] })),
+    );
     Element.prototype.scrollIntoView = () => undefined;
     renderCard({});
     fireEvent.click(screen.getByRole('button', { name: 'Open card chat' }));
@@ -151,9 +161,17 @@ describe('pipeline board controls', () => {
   });
 
   it('hides Leads after the account switch', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => json({
-      data: { user: { id: userId, name: 'Ada', role: 'OWNER', leadsEnabled: false }, tenant: { id: tenantId } },
-    })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        json({
+          data: {
+            user: { id: userId, name: 'Ada', role: 'OWNER', leadsEnabled: false },
+            tenant: { id: tenantId },
+          },
+        }),
+      ),
+    );
     renderShell();
     fireEvent.click(screen.getByRole('button', { name: /Ada/ }));
     fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Show leads' }));
@@ -172,15 +190,25 @@ describe('pipeline board controls', () => {
       await gate;
       return workspaceReply(input, 'REQUEST_FAILED', 500);
     });
-    render(<NextIntlClientProvider locale="en" messages={messages}><PipelineWorkspace kind="lead" /></NextIntlClientProvider>);
+    render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <PipelineWorkspace kind="lead" />
+      </NextIntlClientProvider>,
+    );
     expect(screen.getByText('Loading the board…')).toBeTruthy();
     release?.();
     expect(await screen.findByText('The board could not be loaded.')).toBeTruthy();
 
     cleanup();
     router.replace.mockReset();
-    vi.stubGlobal('fetch', (input: RequestInfo | URL) => Promise.resolve(workspaceReply(input, 'LEADS_DISABLED', 403)));
-    render(<NextIntlClientProvider locale="en" messages={messages}><PipelineWorkspace kind="lead" /></NextIntlClientProvider>);
+    vi.stubGlobal('fetch', (input: RequestInfo | URL) =>
+      Promise.resolve(workspaceReply(input, 'LEADS_DISABLED', 403)),
+    );
+    render(
+      <NextIntlClientProvider locale="en" messages={messages}>
+        <PipelineWorkspace kind="lead" />
+      </NextIntlClientProvider>,
+    );
     await waitFor(() => {
       expect(router.replace).toHaveBeenCalledWith('/en/dashboard');
     });
@@ -219,7 +247,10 @@ function renderColumn(handlers: {
     name: 'New',
     position: 0,
     widthPx: 300,
-    cards: [sampleCard(), { ...sampleCard(), id: '00000000-0000-4000-8000-000000000011', title: 'Bo', position: 1 }],
+    cards: [
+      sampleCard(),
+      { ...sampleCard(), id: '00000000-0000-4000-8000-000000000011', title: 'Bo', position: 1 },
+    ],
   };
   renderUi(
     <PipelineColumnView
@@ -250,7 +281,11 @@ function renderShell(): void {
 }
 
 function renderUi(node: ReactNode): void {
-  render(<NextIntlClientProvider locale="en" messages={messages}>{node}</NextIntlClientProvider>);
+  render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      {node}
+    </NextIntlClientProvider>,
+  );
 }
 
 function sampleCard(): PipelineCard {
@@ -297,12 +332,18 @@ function workspaceReply(input: RequestInfo | URL, code: string, status: number):
   const path = new URL(String(input), 'http://localhost:3001').pathname;
   if (path.endsWith('/auth/session')) {
     return json({
-      data: { user: { id: userId, name: 'Ada', role: 'OWNER', leadsEnabled: true }, tenant: { id: tenantId } },
+      data: {
+        user: { id: userId, name: 'Ada', role: 'OWNER', leadsEnabled: true },
+        tenant: { id: tenantId },
+      },
     });
   }
   return json({ error: { code } }, status);
 }
 
 function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
 }

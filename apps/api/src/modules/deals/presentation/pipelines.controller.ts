@@ -292,7 +292,10 @@ export class PipelinesController {
     return { data: await this.pipelines.updateNote(context, 'deal', cardId, noteId, body) };
   }
 
-  private async read(context: RequestContext, kind: PipelineKindName): Promise<{ data: PipelineBoard }> {
+  private async read(
+    context: RequestContext,
+    kind: PipelineKindName,
+  ): Promise<{ data: PipelineBoard }> {
     return { data: await this.pipelines.read(context, kind) };
   }
 

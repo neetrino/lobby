@@ -82,7 +82,8 @@ function pageSummary(
 }
 
 function unfilteredTotal(filters: ContactListFilters, activeCount: number | null): number | null {
-  const narrowed = filters.archived || filters.search !== '' || filters.type !== 'all' || filters.owner !== '';
+  const narrowed =
+    filters.archived || filters.search !== '' || filters.type !== 'all' || filters.owner !== '';
   if (activeCount === null || narrowed) {
     return null;
   }

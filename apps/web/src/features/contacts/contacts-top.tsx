@@ -139,7 +139,11 @@ function UserMenu({ session }: { session: SessionPrincipal | null }) {
   );
 }
 
-function useDismiss(open: boolean, rootRef: RefObject<HTMLDivElement | null>, close: () => void): void {
+function useDismiss(
+  open: boolean,
+  rootRef: RefObject<HTMLDivElement | null>,
+  close: () => void,
+): void {
   useEffect(() => {
     if (!open) {
       return;

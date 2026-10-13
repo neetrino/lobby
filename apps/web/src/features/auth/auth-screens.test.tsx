@@ -75,7 +75,10 @@ describe('auth screens', () => {
   });
 
   it('shows the Armenian message for a rejected sign-in', async () => {
-    replies['/api/v1/auth/login'] = { status: 401, body: { error: { code: 'INVALID_CREDENTIALS' } } };
+    replies['/api/v1/auth/login'] = {
+      status: 401,
+      body: { error: { code: 'INVALID_CREDENTIALS' } },
+    };
     renderLogin();
     await fillLogin();
     fireEvent.click(screen.getByRole('button', { name: 'Մտնել' }));
@@ -147,7 +150,10 @@ describe('auth screens', () => {
   });
 
   it('shows a banner when sign-out fails', async () => {
-    replies['/api/v1/auth/logout'] = { status: 503, body: { error: { code: 'SERVICE_UNAVAILABLE' } } };
+    replies['/api/v1/auth/logout'] = {
+      status: 503,
+      body: { error: { code: 'SERVICE_UNAVAILABLE' } },
+    };
     renderForm(<SignOutButton />);
     fireEvent.click(screen.getByRole('button', { name: 'Դուրս գալ' }));
 
@@ -167,7 +173,11 @@ function renderLogin(): void {
 }
 
 function renderForm(node: ReactNode): void {
-  render(<NextIntlClientProvider locale="hy" messages={messages}>{node}</NextIntlClientProvider>);
+  render(
+    <NextIntlClientProvider locale="hy" messages={messages}>
+      {node}
+    </NextIntlClientProvider>,
+  );
 }
 
 async function fillLogin(): Promise<void> {

@@ -18,8 +18,7 @@
   background:
     radial-gradient(880px 420px at 0% 0%, rgb(186 230 253 / 75%), transparent 62%),
     radial-gradient(760px 460px at 100% 8%, rgb(221 214 254 / 70%), transparent 58%),
-    radial-gradient(680px 420px at 50% 100%, rgb(167 243 208 / 55%), transparent 55%),
-    #eef3fb;
+    radial-gradient(680px 420px at 50% 100%, rgb(167 243 208 / 55%), transparent 55%), #eef3fb;
   color: var(--text-primary);
   font-family: var(--font-inter), var(--font-armenian), var(--font-sans), sans-serif;
   font-size: 14px;
@@ -39,12 +38,24 @@
   gap: 20px;
 }
 
-.span3 { grid-column: span 3; }
-.span4 { grid-column: span 4; }
-.span6 { grid-column: span 6; }
-.span12 { grid-column: span 12; }
-.work { grid-column: span 8; }
-.snapshot { grid-column: span 4; }
+.span3 {
+  grid-column: span 3;
+}
+.span4 {
+  grid-column: span 4;
+}
+.span6 {
+  grid-column: span 6;
+}
+.span12 {
+  grid-column: span 12;
+}
+.work {
+  grid-column: span 8;
+}
+.snapshot {
+  grid-column: span 4;
+}
 
 .page .card {
   display: flex;
@@ -102,8 +113,12 @@
   line-height: 1;
 }
 
-.value { font-size: 32px; }
-.valueSmall { font-size: 24px; }
+.value {
+  font-size: 32px;
+}
+.valueSmall {
+  font-size: 24px;
+}
 
 .trendUp,
 .trendDown,
@@ -118,9 +133,19 @@
   font-weight: 600;
 }
 
-.trendUp { background: #ecfdf3; color: var(--success); }
-.trendDown { background: #fef3f2; color: var(--danger); }
-.trendQuiet { padding-left: 0; background: transparent; color: var(--text-secondary); }
+.trendUp {
+  background: #ecfdf3;
+  color: var(--success);
+}
+.trendDown {
+  background: #fef3f2;
+  color: var(--danger);
+}
+.trendQuiet {
+  padding-left: 0;
+  background: transparent;
+  color: var(--text-secondary);
+}
 
 .quietAction,
 .card a,
@@ -131,9 +156,13 @@
   text-decoration: none;
 }
 
-.quietAction { margin-top: auto; }
+.quietAction {
+  margin-top: auto;
+}
 .quietAction:hover,
-.list a:hover { color: var(--primary); }
+.list a:hover {
+  color: var(--primary);
+}
 
 .card h2,
 .card h3 {
@@ -143,8 +172,13 @@
   letter-spacing: -0.02em;
 }
 
-.card h2 { font-size: 18px; }
-.card h3 { margin: 8px 0 0; font-size: 14px; }
+.card h2 {
+  font-size: 18px;
+}
+.card h3 {
+  margin: 8px 0 0;
+  font-size: 14px;
+}
 
 .list {
   display: flex;
@@ -163,7 +197,10 @@
   font-size: 14px;
 }
 
-.list small { color: var(--text-secondary); font-size: 13px; }
+.list small {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
 
 .emptyState {
   display: flex;
@@ -174,9 +211,14 @@
   text-align: center;
 }
 
-.emptyState h3 { margin: 0; font-size: 16px; }
+.emptyState h3 {
+  margin: 0;
+  font-size: 16px;
+}
 .emptyState p,
-.quietLine { margin: 0; }
+.quietLine {
+  margin: 0;
+}
 
 .emptyAction {
   display: inline-flex;
@@ -213,7 +255,9 @@
   background: var(--primary-soft);
 }
 
-.bars .barNow { background: var(--primary); }
+.bars .barNow {
+  background: var(--primary);
+}
 
 .metric {
   display: flex;
@@ -222,8 +266,14 @@
   margin: 0;
 }
 
-.metric span { color: var(--text-secondary); font-size: 13px; }
-.metric strong { font-size: 20px; font-weight: 700; }
+.metric span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.metric strong {
+  font-size: 20px;
+  font-weight: 700;
+}
 
 .banner,
 .notice {
@@ -233,24 +283,42 @@
   font-size: 13px;
 }
 
-.banner { background: #fef3f2; color: var(--danger); }
-.notice { background: #ecfdf3; color: #027a48; }
+.banner {
+  background: #fef3f2;
+  color: var(--danger);
+}
+.notice {
+  background: #ecfdf3;
+  color: #027a48;
+}
 
 @media (max-width: 1100px) {
   .span3,
-  .span4 { grid-column: span 6; }
+  .span4 {
+    grid-column: span 6;
+  }
   .work,
   .snapshot,
-  .ops { grid-column: span 12; }
-  .ops { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ops {
+    grid-column: span 12;
+  }
+  .ops {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 720px) {
-  .page { padding: 16px; }
+  .page {
+    padding: 16px;
+  }
   .span3,
   .span4,
   .span6,
   .work,
-  .snapshot { grid-column: span 12; }
-  .ops { grid-template-columns: 1fr; }
+  .snapshot {
+    grid-column: span 12;
+  }
+  .ops {
+    grid-template-columns: 1fr;
+  }
 }

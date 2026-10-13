@@ -31,16 +31,19 @@ export function DashboardWorkspace() {
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const load = useCallback(async (query: { range?: DashboardRangeDays; scope?: DashboardScope }, signal?: AbortSignal) => {
-    const [nextSession, nextBoard] = await Promise.all([
-      readSession(signal),
-      readDashboard(query, signal),
-    ]);
-    setSession(nextSession);
-    setBoard(nextBoard);
-    setRange(nextBoard.rangeDays);
-    setScope(nextBoard.scope);
-  }, []);
+  const load = useCallback(
+    async (query: { range?: DashboardRangeDays; scope?: DashboardScope }, signal?: AbortSignal) => {
+      const [nextSession, nextBoard] = await Promise.all([
+        readSession(signal),
+        readDashboard(query, signal),
+      ]);
+      setSession(nextSession);
+      setBoard(nextBoard);
+      setRange(nextBoard.rangeDays);
+      setScope(nextBoard.scope);
+    },
+    [],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -59,7 +62,11 @@ export function DashboardWorkspace() {
           return;
         }
         const code = caught instanceof DashboardRequestError ? caught.code : 'REQUEST_FAILED';
-        if (code === 'UNAUTHENTICATED' || code === 'SESSION_EXPIRED' || code === 'SESSION_REVOKED') {
+        if (
+          code === 'UNAUTHENTICATED' ||
+          code === 'SESSION_EXPIRED' ||
+          code === 'SESSION_REVOKED'
+        ) {
           router.replace(`/${locale}/login`);
           return;
         }

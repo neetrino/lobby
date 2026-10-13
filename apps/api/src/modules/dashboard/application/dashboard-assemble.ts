@@ -116,13 +116,20 @@ function overviewCards(
 ): DashboardCard[] {
   const cards: DashboardCard[] = [];
   if (contacts !== null && on(layout, 'contacts.active')) {
-    cards.push({ key: 'contacts.active', value: contacts.activeCount, previous: null, trend: null });
+    cards.push({
+      key: 'contacts.active',
+      value: contacts.activeCount,
+      previous: null,
+      trend: null,
+    });
   }
   if (contacts !== null && on(layout, 'contacts.new')) {
     cards.push(compared('contacts.new', contacts.createdInRange, contacts.createdInPrevious));
   }
   if (reservations !== null && on(layout, 'reservations.today')) {
-    cards.push(compared('reservations.today', reservations.todayCount, reservations.yesterdayCount));
+    cards.push(
+      compared('reservations.today', reservations.todayCount, reservations.yesterdayCount),
+    );
   }
   if (reservations !== null && on(layout, 'reservations.attention')) {
     cards.push({
@@ -237,7 +244,9 @@ function reservationActivity(
   };
 }
 
-function invitationActivity(item: MembersDashboardSlice['accepted'][number]): DashboardActivityItem {
+function invitationActivity(
+  item: MembersDashboardSlice['accepted'][number],
+): DashboardActivityItem {
   return {
     id: `invitation:${item.id}`,
     kind: 'invitation.accepted',

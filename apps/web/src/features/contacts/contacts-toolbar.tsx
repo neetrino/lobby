@@ -80,7 +80,10 @@ function ListFilters({
   const owners = ownerChoices(rows, session, filters.owner);
   return (
     <>
-      <ArchiveSwitch archived={filters.archived} onChange={(archived) => onChange({ ...filters, archived })} />
+      <ArchiveSwitch
+        archived={filters.archived}
+        onChange={(archived) => onChange({ ...filters, archived })}
+      />
       <FilterSelect
         label={t('filterType')}
         value={filters.type}
@@ -226,7 +229,9 @@ function ownerChoices(
   if (selected.length > 0 && !names.has(selected)) {
     names.set(selected, selected);
   }
-  return [...names].map(([id, name]) => ({ id, name })).sort((left, right) => left.name.localeCompare(right.name));
+  return [...names]
+    .map(([id, name]) => ({ id, name }))
+    .sort((left, right) => left.name.localeCompare(right.name));
 }
 
 function contactType(value: string): ContactListFilters['type'] {

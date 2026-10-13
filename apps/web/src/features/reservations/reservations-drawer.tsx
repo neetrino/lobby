@@ -56,48 +56,62 @@ export function ReservationDrawer({
           <h2>{detail.customerName}</h2>
           <StatusBadge status={detail.status} />
         </div>
-        <button type="button" className={styles.textButton} onClick={onClose}>{t('close')}</button>
+        <button type="button" className={styles.textButton} onClick={onClose}>
+          {t('close')}
+        </button>
       </header>
-      <FactSection title={t('sections.guest')}>
-        <Fact label={t('name')} value={detail.customerName} />
-        <Fact label={t('phone')} value={detail.customerPhone ?? '—'} />
-        <Fact label={t('email')} value={detail.customerEmail ?? '—'} />
-        <Fact label={t('note')} value={detail.customerNote ?? '—'} />
-      </FactSection>
-      <FactSection title={t('sections.when')}>
-        <Fact label={t('starts')} value={formatWhen(detail.startsAt, locale)} />
-        <Fact label={t('ends')} value={formatWhen(detail.endsAt, locale)} />
-        <Fact label={t('duration')} value={t('minutes', { count: detail.durationMinutes })} />
-      </FactSection>
-      <FactSection title={t('sections.seating')}>
-        <Fact label={t('location')} value={venueName} />
-        <Fact label={t('table')} value={tableName} />
-        <Fact label={t('party')} value={String(detail.guestCount)} />
-      </FactSection>
-      <FactSection title={t('sections.people')}>
-        <Fact label={t('contact')} value={contactName} />
-        <Fact label={t('assignee')} value={assigneeName} />
-      </FactSection>
-      <section className={styles.section}>
-        <h3>{t('source')}</h3>
-        <p className={styles.source}>{sourceLabel(t, detail.source)}</p>
-      </section>
-      <section className={styles.section}>
-        <h3>{t('history')}</h3>
-        {history.length === 0 ? <p className={styles.muted}>{t('historyEmpty')}</p> : (
-          <ol className={styles.history}>
-            {history.map((item) => (
-              <li key={item.id}>
-                <StatusBadge status={item.toStatus} />
-                <span>{formatTime(item.createdAt, locale)}</span>
-                {item.changedByName === null ? null : <span>{t('by', { name: item.changedByName })}</span>}
-                {item.reason === null ? null : <span>{item.reason}</span>}
-              </li>
-            ))}
-          </ol>
+      <div className={styles.drawerBody}>
+        <FactSection title={t('sections.guest')}>
+          <Fact label={t('name')} value={detail.customerName} />
+          <Fact label={t('phone')} value={detail.customerPhone ?? '—'} />
+          <Fact label={t('email')} value={detail.customerEmail ?? '—'} />
+          <Fact label={t('note')} value={detail.customerNote ?? '—'} />
+        </FactSection>
+        <FactSection title={t('sections.when')}>
+          <Fact label={t('starts')} value={formatWhen(detail.startsAt, locale)} />
+          <Fact label={t('ends')} value={formatWhen(detail.endsAt, locale)} />
+          <Fact label={t('duration')} value={t('minutes', { count: detail.durationMinutes })} />
+        </FactSection>
+        <FactSection title={t('sections.seating')}>
+          <Fact label={t('location')} value={venueName} />
+          <Fact label={t('table')} value={tableName} />
+          <Fact label={t('party')} value={String(detail.guestCount)} />
+        </FactSection>
+        <FactSection title={t('sections.people')}>
+          <Fact label={t('contact')} value={contactName} />
+          <Fact label={t('assignee')} value={assigneeName} />
+        </FactSection>
+        <section className={styles.section}>
+          <h3>{t('source')}</h3>
+          <p className={styles.source}>{sourceLabel(t, detail.source)}</p>
+        </section>
+        <section className={styles.section}>
+          <h3>{t('history')}</h3>
+          {history.length === 0 ? (
+            <p className={styles.muted}>{t('historyEmpty')}</p>
+          ) : (
+            <ol className={styles.history}>
+              {history.map((item) => (
+                <li key={item.id}>
+                  <StatusBadge status={item.toStatus} />
+                  <div>
+                    <span>{formatTime(item.createdAt, locale)}</span>
+                    {item.changedByName === null ? null : (
+                      <span>{t('by', { name: item.changedByName })}</span>
+                    )}
+                    {item.reason === null ? null : <small>{item.reason}</small>}
+                  </div>
+                </li>
+              ))}
+            </ol>
+          )}
+        </section>
+        {error === null ? null : (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
         )}
-      </section>
-      {error === null ? null : <p className={styles.error} role="alert">{error}</p>}
+      </div>
       <ReservationActions
         status={detail.status}
         canUpdate={canUpdate}
@@ -145,10 +159,14 @@ export function ReservationActions({
         </button>
       ))}
       {canEditReservation(status) ? (
-        <button type="button" disabled={pending} onClick={onEdit}>{t('edit')}</button>
+        <button type="button" disabled={pending} onClick={onEdit}>
+          {t('edit')}
+        </button>
       ) : null}
       {canCancelReservation(status) ? (
-        <button type="button" className={styles.danger} disabled={pending} onClick={onCancel}>{t('cancel')}</button>
+        <button type="button" className={styles.danger} disabled={pending} onClick={onCancel}>
+          {t('cancel')}
+        </button>
       ) : null}
     </div>
   );
@@ -177,11 +195,19 @@ function CancelDialog({
         <h2>{t('cancelTitle')}</h2>
         <label>
           {t('cancelReason')}
-          <input value={reason} maxLength={500} onChange={(event) => setReason(event.target.value)} />
+          <input
+            value={reason}
+            maxLength={500}
+            onChange={(event) => setReason(event.target.value)}
+          />
         </label>
         <div className={styles.actions}>
-          <button type="button" onClick={onClose}>{t('keep')}</button>
-          <button type="submit" className={styles.danger} disabled={pending}>{t('confirmCancel')}</button>
+          <button type="button" onClick={onClose}>
+            {t('keep')}
+          </button>
+          <button type="submit" className={styles.danger} disabled={pending}>
+            {t('confirmCancel')}
+          </button>
         </div>
       </form>
     </OverlayPortal>
@@ -198,11 +224,27 @@ function FactSection({ title, children }: { title: string; children: ReactNode }
 }
 
 function Fact({ label, value }: { label: string; value: string }) {
-  return <div><dt>{label}</dt><dd>{value}</dd></div>;
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>{value}</dd>
+    </div>
+  );
 }
 
-function sourceLabel(t: ReturnType<typeof useTranslations<'reservations'>>, source: string): string {
-  if (source === 'STAFF' || source === 'PHONE' || source === 'WALK_IN' || source === 'WEBSITE' || source === 'INSTAGRAM' || source === 'WHATSAPP' || source === 'TELEGRAM') {
+function sourceLabel(
+  t: ReturnType<typeof useTranslations<'reservations'>>,
+  source: string,
+): string {
+  if (
+    source === 'STAFF' ||
+    source === 'PHONE' ||
+    source === 'WALK_IN' ||
+    source === 'WEBSITE' ||
+    source === 'INSTAGRAM' ||
+    source === 'WHATSAPP' ||
+    source === 'TELEGRAM'
+  ) {
     return t(`sources.${source}`);
   }
   return source;

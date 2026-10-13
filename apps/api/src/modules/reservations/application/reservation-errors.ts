@@ -69,8 +69,6 @@ export class ReservationFailure extends Error {
   }
 }
 
-export function isReservationFailure(
-  exception: unknown,
-): exception is ReservationFailure {
+export function isReservationFailure(exception: unknown): exception is ReservationFailure {
   return exception instanceof ReservationFailure;
 }

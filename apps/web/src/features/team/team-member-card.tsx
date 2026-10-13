@@ -6,7 +6,16 @@ import { useTranslations } from 'next-intl';
 import { updateJobTitle, type TeamMember } from './team-api';
 import styles from './team.module.css';
 
-const AVATAR_COLORS = ['#5b8def', '#f0a35e', '#e07a9a', '#7d8b73', '#c47b5a', '#6f8f72', '#d37b73', '#8b7ec8'] as const;
+const AVATAR_COLORS = [
+  '#5b8def',
+  '#f0a35e',
+  '#e07a9a',
+  '#7d8b73',
+  '#c47b5a',
+  '#6f8f72',
+  '#d37b73',
+  '#8b7ec8',
+] as const;
 
 export function TeamMemberCard({
   member,
@@ -29,13 +38,24 @@ export function TeamMemberCard({
   return (
     <article className={selected ? `${styles.card} ${styles.cardSelected}` : styles.card}>
       {canEditProfession ? <ProfessionMenu member={member} onSaved={onProfession} /> : null}
-      <span className={styles.avatar} style={{ background: avatarColor(member.id) }} aria-hidden="true">
+      <span
+        className={styles.avatar}
+        style={{ background: avatarColor(member.id) }}
+        aria-hidden="true"
+      >
         {initials(member.name)}
       </span>
       <strong className={styles.name}>{member.name}</strong>
       <span className={styles.profession}>{subtitle}</span>
-      {isSelf ? <span className={styles.you}>{t('you')}</span> : (
-        <button type="button" className={styles.emailButton} aria-label={t('message', { name: member.name })} onClick={() => onMessage(member)}>
+      {isSelf ? (
+        <span className={styles.you}>{t('you')}</span>
+      ) : (
+        <button
+          type="button"
+          className={styles.emailButton}
+          aria-label={t('message', { name: member.name })}
+          onClick={() => onMessage(member)}
+        >
           <MailIcon />
           {t('emailAction')}
         </button>
@@ -44,7 +64,13 @@ export function TeamMemberCard({
   );
 }
 
-function ProfessionMenu({ member, onSaved }: { member: TeamMember; onSaved: (member: TeamMember) => void }) {
+function ProfessionMenu({
+  member,
+  onSaved,
+}: {
+  member: TeamMember;
+  onSaved: (member: TeamMember) => void;
+}) {
   const t = useTranslations('team');
   const [value, setValue] = useState(member.jobTitle ?? '');
   const [pending, setPending] = useState(false);
@@ -71,7 +97,9 @@ function ProfessionMenu({ member, onSaved }: { member: TeamMember; onSaved: (mem
           {t('profession')}
           <input value={value} maxLength={80} onChange={(event) => setValue(event.target.value)} />
         </label>
-        <button type="submit" disabled={pending}>{t('saveProfession')}</button>
+        <button type="submit" disabled={pending}>
+          {t('saveProfession')}
+        </button>
         {failed ? <span className={styles.failed}>{t('professionFailed')}</span> : null}
       </form>
     </details>
@@ -79,7 +107,11 @@ function ProfessionMenu({ member, onSaved }: { member: TeamMember; onSaved: (mem
 }
 
 function initials(name: string): string {
-  const letters = name.trim().split(/\s+/).filter((part) => part.length > 0).slice(0, 2);
+  const letters = name
+    .trim()
+    .split(/\s+/)
+    .filter((part) => part.length > 0)
+    .slice(0, 2);
   const mark = letters.map((part) => part.charAt(0).toUpperCase()).join('');
   return mark.length > 0 ? mark : '?';
 }

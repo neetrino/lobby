@@ -118,7 +118,11 @@ function Segment({
   const href = seriesHref(locale, seriesKey);
   const className = `${styles.segment} ${seriesClass(seriesKey)}`;
   const style = { height: `${(count / max) * 100}%` };
-  const label = t('charts.seriesCount', { series: seriesLabel(t, seriesKey), count, date: day.date });
+  const label = t('charts.seriesCount', {
+    series: seriesLabel(t, seriesKey),
+    count,
+    date: day.date,
+  });
   const pick = () => onPick({ key: seriesKey, day });
   if (href === null) {
     return (

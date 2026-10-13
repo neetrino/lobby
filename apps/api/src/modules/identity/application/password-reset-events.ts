@@ -16,7 +16,9 @@ export type PasswordResetDelivery = {
 };
 
 /** Outbox event for one reset email. The ciphertext is not the raw token. */
-export function passwordResetRequestedEvent(input: PasswordResetDelivery): PasswordResetRequestedEvent {
+export function passwordResetRequestedEvent(
+  input: PasswordResetDelivery,
+): PasswordResetRequestedEvent {
   return passwordResetRequestedEventSchema.parse({
     eventId: randomUUID(),
     eventType: 'password_reset.requested',

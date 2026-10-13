@@ -19,7 +19,10 @@ export function reservationPeriod(command: CreateReservationCommand): Reservatio
 }
 
 /** A session may record staff, phone, or walk-in. Channel keys belong to the integration actor. */
-export function assertActorSource(actor: ReservationActor, command: CreateReservationCommand): void {
+export function assertActorSource(
+  actor: ReservationActor,
+  command: CreateReservationCommand,
+): void {
   const source = command.source.type;
   if (actor.type === 'USER') {
     assertSourceAllowed(source, staffSources);
@@ -60,7 +63,10 @@ export async function assertReservationWindow(
   await requireOpen(scope, location, period);
 }
 
-function assertSourceAllowed(source: ReservationSource, allowed: ReadonlySet<ReservationSource>): void {
+function assertSourceAllowed(
+  source: ReservationSource,
+  allowed: ReadonlySet<ReservationSource>,
+): void {
   if (!allowed.has(source)) {
     throw new AuthorizationError();
   }
@@ -89,14 +95,23 @@ async function requireOpen(
     (window, index) =>
       window !== null &&
       !window.closed &&
-      fitsOpenWindow(period.startsAt, period.endsAt, location.timezone, index === 0 ? start.date : yesterday, window),
+      fitsOpenWindow(
+        period.startsAt,
+        period.endsAt,
+        location.timezone,
+        index === 0 ? start.date : yesterday,
+        window,
+      ),
   );
   if (!open) {
     throw new ReservationFailure('RESERVATION_OUTSIDE_WORKING_HOURS');
   }
 }
 
-async function requireContact(scope: ReservationOperations, contactId: string | undefined): Promise<void> {
+async function requireContact(
+  scope: ReservationOperations,
+  contactId: string | undefined,
+): Promise<void> {
   if (contactId === undefined) {
     return;
   }
@@ -105,7 +120,10 @@ async function requireContact(scope: ReservationOperations, contactId: string | 
   }
 }
 
-async function requireTable(scope: ReservationOperations, command: CreateReservationCommand): Promise<void> {
+async function requireTable(
+  scope: ReservationOperations,
+  command: CreateReservationCommand,
+): Promise<void> {
   const table = await scope.findTable(command.requestedTableId);
   const bookable =
     table !== null &&
@@ -120,7 +138,10 @@ async function requireTable(scope: ReservationOperations, command: CreateReserva
   }
 }
 
-async function requireAssignee(scope: ReservationOperations, userId: string | undefined): Promise<void> {
+async function requireAssignee(
+  scope: ReservationOperations,
+  userId: string | undefined,
+): Promise<void> {
   if (userId === undefined) {
     return;
   }

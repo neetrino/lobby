@@ -62,7 +62,10 @@ export function PipelineColumnView({
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => dropCard(event, onMoveCard)}
     >
-      <header className={styles.columnHead} style={headerColor === undefined ? undefined : { background: headerColor }}>
+      <header
+        className={styles.columnHead}
+        style={headerColor === undefined ? undefined : { background: headerColor }}
+      >
         <input
           className={styles.columnName}
           aria-label={t('columnName')}
@@ -77,7 +80,12 @@ export function PipelineColumnView({
         />
         <span className={styles.count}>{column.cards.length}</span>
         {canConfigure ? (
-          <button type="button" className={styles.iconButton} aria-label={t('deleteColumn')} onClick={() => setConfirming(true)}>
+          <button
+            type="button"
+            className={styles.iconButton}
+            aria-label={t('deleteColumn')}
+            onClick={() => setConfirming(true)}
+          >
             ×
           </button>
         ) : null}
@@ -85,8 +93,12 @@ export function PipelineColumnView({
       {confirming ? (
         <div className={styles.confirm}>
           <p>{t('confirmColumn')}</p>
-          <button type="button" className={styles.danger} onClick={onDelete}>{t('deleteColumn')}</button>
-          <button type="button" className={styles.add} onClick={() => setConfirming(false)}>{t('cancel')}</button>
+          <button type="button" className={styles.danger} onClick={onDelete}>
+            {t('deleteColumn')}
+          </button>
+          <button type="button" className={styles.add} onClick={() => setConfirming(false)}>
+            {t('cancel')}
+          </button>
         </div>
       ) : null}
       <p className={styles.sum}>
@@ -126,7 +138,11 @@ export function PipelineColumnView({
   );
 }
 
-function AddCard({ onCreate }: { onCreate: (draft: { title: string; company: string; amount: number }) => void }) {
+function AddCard({
+  onCreate,
+}: {
+  onCreate: (draft: { title: string; company: string; amount: number }) => void;
+}) {
   const t = useTranslations('pipeline');
   const [open, setOpen] = useState(false);
   if (!open) {
@@ -157,7 +173,9 @@ function AddCard({ onCreate }: { onCreate: (draft: { title: string; company: str
       <input name="title" aria-label={t('cardTitle')} placeholder={t('cardTitle')} required />
       <input name="company" aria-label={t('company')} placeholder={t('company')} />
       <input name="amount" aria-label={t('amount')} placeholder={t('amount')} inputMode="numeric" />
-      <button type="submit" className={styles.add}>{t('save')}</button>
+      <button type="submit" className={styles.add}>
+        {t('save')}
+      </button>
     </form>
   );
 }
@@ -180,7 +198,9 @@ function AddColumn({ onCreate }: { onCreate: (name: string) => void }) {
     >
       <strong>{t('addColumn')}</strong>
       <input name="name" aria-label={t('columnName')} placeholder={t('columnName')} required />
-      <button type="submit" className={styles.add}>{t('save')}</button>
+      <button type="submit" className={styles.add}>
+        {t('save')}
+      </button>
     </form>
   );
 }

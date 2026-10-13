@@ -28,8 +28,7 @@
   background:
     radial-gradient(880px 420px at 0% 0%, rgb(186 230 253 / 75%), transparent 62%),
     radial-gradient(760px 460px at 100% 8%, rgb(221 214 254 / 70%), transparent 58%),
-    radial-gradient(680px 420px at 50% 100%, rgb(167 243 208 / 55%), transparent 55%),
-    #eef3fb;
+    radial-gradient(680px 420px at 50% 100%, rgb(167 243 208 / 55%), transparent 55%), #eef3fb;
 }
 
 .sidebar {
@@ -241,8 +240,7 @@
   background:
     radial-gradient(880px 420px at 0% 0%, rgb(186 230 253 / 75%), transparent 62%),
     radial-gradient(760px 460px at 100% 8%, rgb(221 214 254 / 70%), transparent 58%),
-    radial-gradient(680px 420px at 50% 100%, rgb(167 243 208 / 55%), transparent 55%),
-    #eef3fb;
+    radial-gradient(680px 420px at 50% 100%, rgb(167 243 208 / 55%), transparent 55%), #eef3fb;
 }
 
 .body {

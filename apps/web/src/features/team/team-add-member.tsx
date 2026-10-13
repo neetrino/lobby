@@ -34,11 +34,22 @@ export function AddMemberButton() {
     <div>
       {open ? (
         <form className={styles.invite} onSubmit={(event) => void submit(event)}>
-          <input type="email" required value={email} placeholder={t('inviteEmail')} aria-label={t('inviteEmail')} onChange={(event) => setEmail(event.target.value)} />
-          <button type="submit" disabled={pending || email.trim().length === 0}>{t('addMember')}</button>
+          <input
+            type="email"
+            required
+            value={email}
+            placeholder={t('inviteEmail')}
+            aria-label={t('inviteEmail')}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+          <button type="submit" disabled={pending || email.trim().length === 0}>
+            {t('addMember')}
+          </button>
         </form>
       ) : (
-        <button type="button" className={styles.add} onClick={() => setOpen(true)}>{t('addMember')}</button>
+        <button type="button" className={styles.add} onClick={() => setOpen(true)}>
+          {t('addMember')}
+        </button>
       )}
       {notice === null ? null : <p className={styles.notice}>{notice}</p>}
     </div>

@@ -36,7 +36,8 @@ export function presentCard(card: StoredCard) {
     lostReason: card.lostReason,
     outcome: card.outcome,
     priority: card.priority,
-    expectedCloseOn: card.expectedCloseOn === null ? null : card.expectedCloseOn.toISOString().slice(0, 10),
+    expectedCloseOn:
+      card.expectedCloseOn === null ? null : card.expectedCloseOn.toISOString().slice(0, 10),
     contactId: card.contactId,
     ownerUserId: card.ownerUserId,
     statusId: card.statusId,
@@ -98,7 +99,9 @@ export function cardChanges(
     contactId: patch.contactId,
     ownerUserId: patch.ownerUserId,
     statusId: patch.statusId,
-    ...(patch.expectedCloseOn !== undefined ? { expectedCloseOn: closeDay(patch.expectedCloseOn) } : {}),
+    ...(patch.expectedCloseOn !== undefined
+      ? { expectedCloseOn: closeDay(patch.expectedCloseOn) }
+      : {}),
     ...(moved ? { columnId, position } : {}),
   };
 }

@@ -99,7 +99,10 @@ export async function loadBoard(
         include: {
           cards: {
             orderBy: { position: 'asc' },
-            include: { createdBy: { select: { name: true } }, _count: { select: { messages: true, notes: true } } },
+            include: {
+              createdBy: { select: { name: true } },
+              _count: { select: { messages: true, notes: true } },
+            },
           },
         },
       },
@@ -132,10 +135,12 @@ export async function renamePipeline(
   after?: AfterWrite,
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
-    await tx.pipeline.update({
-      where: { id: pipelineId },
-      data: { name: patch.name, amountLabel: patch.amountLabel },
-    }).catch(rethrowWrite);
+    await tx.pipeline
+      .update({
+        where: { id: pipelineId },
+        data: { name: patch.name, amountLabel: patch.amountLabel },
+      })
+      .catch(rethrowWrite);
     await after?.(tx);
   });
 }
@@ -150,9 +155,11 @@ export async function appendColumn(
   await prisma.$transaction(async (tx) => {
     await lockPipeline(tx, pipelineId);
     const position = await nextColumnPosition(tx, tenantId, pipelineId);
-    await tx.pipelineColumn.create({
-      data: { tenantId, pipelineId, name, position, widthPx: 300 },
-    }).catch(rethrowWrite);
+    await tx.pipelineColumn
+      .create({
+        data: { tenantId, pipelineId, name, position, widthPx: 300 },
+      })
+      .catch(rethrowWrite);
     await after?.(tx);
   });
 }
@@ -167,10 +174,12 @@ export async function patchColumn(
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await requireColumn(tx, tenantId, pipelineId, columnId);
-    await tx.pipelineColumn.update({
-      where: { id: columnId },
-      data: { name: patch.name, widthPx: patch.widthPx },
-    }).catch(rethrowWrite);
+    await tx.pipelineColumn
+      .update({
+        where: { id: columnId },
+        data: { name: patch.name, widthPx: patch.widthPx },
+      })
+      .catch(rethrowWrite);
     await after?.(tx);
   });
 }
@@ -206,9 +215,11 @@ export async function appendCard(
     await requireParty(tx, tenantId, input.contactId, input.ownerUserId);
     await requireStatus(tx, tenantId, input.statusId);
     const position = await placeCard(tx, tenantId, pipelineId, input.columnId);
-    await tx.pipelineCard.create({
-      data: cardInsert(tenantId, pipelineId, input, position, createdByUserId),
-    }).catch(rethrowWrite);
+    await tx.pipelineCard
+      .create({
+        data: cardInsert(tenantId, pipelineId, input, position, createdByUserId),
+      })
+      .catch(rethrowWrite);
     await after?.(tx);
   });
 }
@@ -230,10 +241,12 @@ export async function patchCard(
     const destination = patch.columnId;
     const moved = destination !== undefined && destination !== card.columnId;
     const position = moved ? await placeCard(tx, tenantId, pipelineId, destination) : undefined;
-    await tx.pipelineCard.update({
-      where: { id: cardId },
-      data: cardChanges(patch, moved, destination, position),
-    }).catch(rethrowWrite);
+    await tx.pipelineCard
+      .update({
+        where: { id: cardId },
+        data: cardChanges(patch, moved, destination, position),
+      })
+      .catch(rethrowWrite);
     if (moved) {
       await compactColumn(tx, tenantId, card.columnId);
       await onMove?.(tx);
@@ -269,7 +282,9 @@ export async function convertLead(
 ): Promise<void> {
   await prisma.$transaction(async (tx) => {
     await lockCard(tx, cardId);
-    const lead = await tx.pipeline.findUnique({ where: { tenantId_kind: { tenantId, kind: 'LEAD' } } });
+    const lead = await tx.pipeline.findUnique({
+      where: { tenantId_kind: { tenantId, kind: 'LEAD' } },
+    });
     const deal = await tx.pipeline.findUnique({
       where: { tenantId_kind: { tenantId, kind: 'DEAL' } },
       include: { columns: { orderBy: { position: 'asc' }, take: 1 } },
@@ -284,9 +299,11 @@ export async function convertLead(
     }
     const source = await tx.pipelineCard.findFirstOrThrow({ where: { id: cardId, tenantId } });
     const position = await placeCard(tx, tenantId, deal.id, column.id);
-    await tx.pipelineCard.create({
-      data: copiedDeal(tenantId, deal.id, column.id, position, source, createdByUserId),
-    }).catch(rethrowWrite);
+    await tx.pipelineCard
+      .create({
+        data: copiedDeal(tenantId, deal.id, column.id, position, source, createdByUserId),
+      })
+      .catch(rethrowWrite);
     await tx.pipelineCard.update({ where: { id: cardId }, data: { outcome: 'CONVERTED' } });
     await after?.(tx);
   });

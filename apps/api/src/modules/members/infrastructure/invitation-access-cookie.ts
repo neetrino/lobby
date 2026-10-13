@@ -55,7 +55,9 @@ export function invitationAccessCookie(): InvitationAccessCookie {
   return new InvitationAccessCookie(readSessionCookieSecure());
 }
 
-function joinCookieHeader(cookieHeader: string | readonly string[] | undefined): string | undefined {
+function joinCookieHeader(
+  cookieHeader: string | readonly string[] | undefined,
+): string | undefined {
   if (cookieHeader === undefined) {
     return undefined;
   }

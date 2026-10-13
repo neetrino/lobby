@@ -53,22 +53,42 @@ type Window = {
 export class ReservationsDashboardQuery {
   constructor(@Inject(PRISMA_CLIENT) private readonly prisma: PrismaClient) {}
 
-  async read(tenantId: TenantId, userId: string, window: Window): Promise<ReservationDashboardFacts> {
-    const [today, yesterdayCount, pendingConfirmations, attentionCount, cancellations, occupied, activeTables, upcoming, mine, activity] =
-      await Promise.all([
-        this.today(tenantId, window),
-        this.dayCount(tenantId, window.yesterdayStart, window.todayStart),
-        this.prisma.reservation.count({ where: { tenantId, status: 'PENDING' } }),
-        this.attention(tenantId, window.now),
-        this.prisma.reservation.count({
-          where: { tenantId, status: { in: [...CLOSED] }, updatedAt: { gte: window.from, lt: window.to } },
-        }),
-        this.occupiedTables(tenantId, window.now),
-        this.prisma.reservationTable.count({ where: { tenantId, status: 'ACTIVE', archivedAt: null } }),
-        this.upcoming(tenantId, window.now),
-        this.mine(tenantId, userId, window.now),
-        this.activity(tenantId, window),
-      ]);
+  async read(
+    tenantId: TenantId,
+    userId: string,
+    window: Window,
+  ): Promise<ReservationDashboardFacts> {
+    const [
+      today,
+      yesterdayCount,
+      pendingConfirmations,
+      attentionCount,
+      cancellations,
+      occupied,
+      activeTables,
+      upcoming,
+      mine,
+      activity,
+    ] = await Promise.all([
+      this.today(tenantId, window),
+      this.dayCount(tenantId, window.yesterdayStart, window.todayStart),
+      this.prisma.reservation.count({ where: { tenantId, status: 'PENDING' } }),
+      this.attention(tenantId, window.now),
+      this.prisma.reservation.count({
+        where: {
+          tenantId,
+          status: { in: [...CLOSED] },
+          updatedAt: { gte: window.from, lt: window.to },
+        },
+      }),
+      this.occupiedTables(tenantId, window.now),
+      this.prisma.reservationTable.count({
+        where: { tenantId, status: 'ACTIVE', archivedAt: null },
+      }),
+      this.upcoming(tenantId, window.now),
+      this.mine(tenantId, userId, window.now),
+      this.activity(tenantId, window),
+    ]);
     return {
       todayCount: today.count,
       yesterdayCount,
@@ -84,7 +104,10 @@ export class ReservationsDashboardQuery {
     };
   }
 
-  private async today(tenantId: TenantId, window: Window): Promise<{ count: number; guests: number }> {
+  private async today(
+    tenantId: TenantId,
+    window: Window,
+  ): Promise<{ count: number; guests: number }> {
     const row = await this.prisma.reservation.aggregate({
       where: {
         tenantId,
@@ -107,7 +130,11 @@ export class ReservationsDashboardQuery {
     const soon = new Date(now.getTime() + 2 * 60 * 60 * 1000);
     const overdueFrom = new Date(now.getTime() - 12 * 60 * 60 * 1000);
     return this.prisma.reservation.count({
-      where: { tenantId, status: { in: [...ATTENTION] }, startsAt: { gte: overdueFrom, lte: soon } },
+      where: {
+        tenantId,
+        status: { in: [...ATTENTION] },
+        startsAt: { gte: overdueFrom, lte: soon },
+      },
     });
   }
 

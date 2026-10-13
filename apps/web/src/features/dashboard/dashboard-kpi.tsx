@@ -22,7 +22,15 @@ export function kpiSpan(count: number): string {
   return styles.span3 ?? '';
 }
 
-export function KpiCard({ card, locale, span }: { card: DashboardCard; locale: string; span: string }) {
+export function KpiCard({
+  card,
+  locale,
+  span,
+}: {
+  card: DashboardCard;
+  locale: string;
+  span: string;
+}) {
   const t = useTranslations('dashboard');
   return (
     <article className={`${styles.card} ${glass.panel} ${glass.soft} ${span}`}>
@@ -57,11 +65,7 @@ function Trend({ card }: { card: DashboardCard }) {
 }
 
 function KpiIcon({ name }: { name: string }) {
-  return (
-    <svg viewBox="0 0 24 24">
-      {iconPath(name)}
-    </svg>
-  );
+  return <svg viewBox="0 0 24 24">{iconPath(name)}</svg>;
 }
 
 function iconPath(name: string): ReactNode {

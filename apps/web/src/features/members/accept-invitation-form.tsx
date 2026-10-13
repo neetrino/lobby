@@ -30,7 +30,9 @@ export function AcceptInvitationForm({
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [banner, setBanner] = useState<string | null>(invitationId.length === 0 ? t('acceptMissing') : null);
+  const [banner, setBanner] = useState<string | null>(
+    invitationId.length === 0 ? t('acceptMissing') : null,
+  );
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
@@ -72,7 +74,11 @@ export function AcceptInvitationForm({
       confirmPassword,
       locale: 'en',
     });
-    if (errors.name !== undefined || errors.password !== undefined || errors.confirmPassword !== undefined) {
+    if (
+      errors.name !== undefined ||
+      errors.password !== undefined ||
+      errors.confirmPassword !== undefined
+    ) {
       setBanner(
         fieldErrorText(t, errors.name ?? errors.password ?? errors.confirmPassword ?? 'required'),
       );
@@ -84,7 +90,11 @@ export function AcceptInvitationForm({
       await acceptInvitation({ invitationId, name, password });
       router.push(`/${locale}/contacts`);
     } catch (caught) {
-      if (caught instanceof AuthRequestError && caught.code === 'ACCOUNT_CREATED_SIGN_IN_REQUIRED' && preview !== null) {
+      if (
+        caught instanceof AuthRequestError &&
+        caught.code === 'ACCOUNT_CREATED_SIGN_IN_REQUIRED' &&
+        preview !== null
+      ) {
         router.push(signInRequiredHref(locale, preview.subdomain, preview.email));
         return;
       }
@@ -112,7 +122,11 @@ export function AcceptInvitationForm({
         </p>
         <label>
           {t('ownerName')}
-          <input value={name} autoComplete="name" onChange={(event) => setName(event.target.value)} />
+          <input
+            value={name}
+            autoComplete="name"
+            onChange={(event) => setName(event.target.value)}
+          />
         </label>
         <label>
           {t('password')}

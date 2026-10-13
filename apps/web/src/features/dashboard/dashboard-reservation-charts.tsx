@@ -37,13 +37,22 @@ function LoadChart({ load, generatedAt }: { load: Load; generatedAt: string }) {
     <section className={`${board.card} ${glass.panel} ${glass.soft} ${board.span6}`}>
       <div className={styles.head}>
         <h2>{t('charts.loadTitle')}</h2>
-        <p className={styles.meta}>{t(view === 'week' ? 'charts.loadWeekMetric' : 'charts.loadMetric')}</p>
+        <p className={styles.meta}>
+          {t(view === 'week' ? 'charts.loadWeekMetric' : 'charts.loadMetric')}
+        </p>
       </div>
       <ViewToggle view={view} onChange={setView} />
       {points.length === 0 ? (
         <p className={styles.zero}>{t('charts.loadZero')}</p>
       ) : (
-        <LoadBars points={points} scale={scale} capacity={capacity} date={date} tip={tip} onPick={setTip} />
+        <LoadBars
+          points={points}
+          scale={scale}
+          capacity={capacity}
+          date={date}
+          tip={tip}
+          onPick={setTip}
+        />
       )}
     </section>
   );
@@ -82,7 +91,14 @@ function LoadBars({
       </ul>
       <div className={styles.plot}>
         {points.map((point) => (
-          <HourColumn key={point.hour} point={point} scale={scale} capacity={capacity} date={date} onPick={onPick} />
+          <HourColumn
+            key={point.hour}
+            point={point}
+            scale={scale}
+            capacity={capacity}
+            date={date}
+            onPick={onPick}
+          />
         ))}
       </div>
       <p className={styles.detail}>{tipText(t, tip, date, over)}</p>
@@ -114,7 +130,10 @@ function HourColumn({
     <div className={styles.column}>
       <div className={styles.stack}>
         {capacity === null ? null : (
-          <span className={styles.capacityLine} style={{ bottom: `${(capacity / scale) * 100}%` }} />
+          <span
+            className={styles.capacityLine}
+            style={{ bottom: `${(capacity / scale) * 100}%` }}
+          />
         )}
         <button
           type="button"
@@ -153,7 +172,9 @@ function OccupancyChart({ load }: { load: Load }) {
       ) : null}
       {capacity === null
         ? null
-        : load.today.map((point) => <OccupancyRow key={point.hour} point={point} capacity={capacity} />)}
+        : load.today.map((point) => (
+            <OccupancyRow key={point.hour} point={point} capacity={capacity} />
+          ))}
     </section>
   );
 }

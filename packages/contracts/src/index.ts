@@ -15,6 +15,7 @@ export {
   pipelineAuditSchema,
   reservationCreatedAuditSchema,
   reservationLifecycleAuditSchema,
+  reservationLifecycleChangesSchema,
   passwordResetAuditSchema,
   userSessionsTerminatedAuditSchema,
 } from './audit/index.js';
@@ -29,6 +30,7 @@ export type {
   PipelineAudit,
   ReservationCreatedAudit,
   ReservationLifecycleAudit,
+  ReservationLifecycleChanges,
   PasswordResetAudit,
   UserSessionsTerminatedAudit,
 } from './audit/index.js';
@@ -40,7 +42,11 @@ export {
   dashboardWidgetKeySchema,
   dashboardWidgetKeys,
 } from './dashboard/dashboard.js';
-export type { DashboardRangeDays, DashboardScope, DashboardWidgetKey } from './dashboard/dashboard.js';
+export type {
+  DashboardRangeDays,
+  DashboardScope,
+  DashboardWidgetKey,
+} from './dashboard/dashboard.js';
 export {
   PIPELINE_AMOUNT_MAX,
   pipelineBoardResponseSchema,
@@ -117,7 +123,13 @@ export {
   teamRoleSchema,
   teamRoles,
 } from './team/index.js';
-export type { DirectMessage, DirectMessagePage, TeamDirectory, TeamMember, TeamRole } from './team/index.js';
+export type {
+  DirectMessage,
+  DirectMessagePage,
+  TeamDirectory,
+  TeamMember,
+  TeamRole,
+} from './team/index.js';
 export { defaultLocale, localeSchema, supportedLocales } from './locales.js';
 export type { Locale } from './locales.js';
 export {

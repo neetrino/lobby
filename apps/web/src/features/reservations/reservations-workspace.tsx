@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 
@@ -34,7 +34,6 @@ import {
   type DiningTable,
   type ReservationDetail,
   type ReservationSummary,
-  type ReservationTransitionAction,
   type StatusHistoryItem,
   type Venue,
 } from './reservations-model';
@@ -43,6 +42,12 @@ import styles from './reservations.module.css';
 
 type Member = { id: string; name: string };
 type ViewName = 'list' | 'calendar' | 'timeline';
+type LoadedDetail = {
+  id: string;
+  detail: ReservationDetail | null;
+  history: StatusHistoryItem[];
+};
+type NamedContact = { id: string; name: string | null };
 
 export function ReservationsWorkspace() {
   const t = useTranslations('reservations');
@@ -88,13 +93,24 @@ export function ReservationsWorkspace() {
             onSearch={board.setSearch}
           />
           <ViewSwitch view={board.view} onView={board.setView} />
-          {board.failed === null ? null : <p className={styles.error} role="alert">{messageFor(t, board.failed)}</p>}
+          {board.failed === null ? null : (
+            <p className={styles.error} role="alert">
+              {messageFor(t, board.failed)}
+            </p>
+          )}
           {board.loading ? <p>{t('loading')}</p> : null}
-          {!board.loading && board.rows.length === 0 ? <p className={styles.muted}>{t('empty')}</p> : null}
+          {!board.loading && board.rows.length === 0 ? (
+            <p className={styles.muted}>{t('empty')}</p>
+          ) : null}
           <ReservationViews
             view={board.view}
             rows={board.rows}
-            names={{ venues: board.venues, tables: board.tables, locale, onOpen: board.setSelectedId }}
+            names={{
+              venues: board.venues,
+              tables: board.tables,
+              locale,
+              onOpen: board.setSelectedId,
+            }}
           />
           <Pager
             hasPrevious={board.cursorStack.length > 0}
@@ -113,11 +129,19 @@ export function ReservationsWorkspace() {
             contactName={detail.contactName ?? t('noContact')}
             canUpdate={canUpdate}
             pending={board.pending}
-            error={board.actionError === null || board.editing !== null ? null : messageFor(t, board.actionError)}
+            error={
+              board.actionError === null || board.editing !== null
+                ? null
+                : messageFor(t, board.actionError)
+            }
             onClose={() => board.setSelectedId(null)}
             onEdit={() => board.setEditing('edit')}
-            onCancel={(reason) => void board.run(() => cancelReservation(detail.detail!.id, reason))}
-            onTransition={(action) => void board.run(() => transitionReservation(detail.detail!.id, action))}
+            onCancel={(reason) =>
+              void board.run(() => cancelReservation(detail.detail!.id, reason))
+            }
+            onTransition={(action) =>
+              void board.run(() => transitionReservation(detail.detail!.id, action))
+            }
           />
         )}
         {board.editing === null ? null : (
@@ -159,11 +183,28 @@ function useBoard() {
   const [pending, setPending] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [revision, setRevision] = useState(0);
+  const listKey = [
+    fromDay,
+    toDay,
+    status,
+    locationId,
+    assigneeId,
+    search,
+    cursor ?? '',
+    String(revision),
+  ].join('\0');
+  const [requestedKey, setRequestedKey] = useState(listKey);
+  if (requestedKey !== listKey) {
+    setRequestedKey(listKey);
+    setLoading(true);
+  }
 
   useEffect(() => {
     const controller = new AbortController();
-    setLoading(true);
-    void listReservations({ fromDay, toDay, status, locationId, assigneeId, search, cursor }, controller.signal)
+    void listReservations(
+      { fromDay, toDay, status, locationId, assigneeId, search, cursor },
+      controller.signal,
+    )
       .then((page) => {
         setRows(page.rows);
         setNextCursor(page.nextCursor);
@@ -180,9 +221,13 @@ function useBoard() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void listVenues(controller.signal).then(setVenues).catch(() => setVenues([]));
+    void listVenues(controller.signal)
+      .then(setVenues)
+      .catch(() => setVenues([]));
     void readTeamDirectory(controller.signal)
-      .then((directory) => setMembers(directory.members.map((member) => ({ id: member.id, name: member.name }))))
+      .then((directory) =>
+        setMembers(directory.members.map((member) => ({ id: member.id, name: member.name }))),
+      )
       .catch(() => setMembers([]));
     return () => controller.abort();
   }, []);
@@ -223,15 +268,57 @@ function useBoard() {
   }
 
   return {
-    fromDay, toDay, status, locationId, assigneeId, search, view, rows, nextCursor, venues, tables, members,
-    selectedId, editing, loading, failed, pending, actionError, cursorStack, revision,
-    setRange: (from: string, to: string) => { setFromDay(from); setToDay(to); resetPage(); },
-    shift: (delta: number) => { setFromDay(shiftDay(fromDay, delta)); setToDay(shiftDay(toDay, delta)); resetPage(); },
-    setStatus: (value: string) => { setStatus(value); resetPage(); },
-    setLocationId: (value: string) => { setLocationId(value); resetPage(); },
-    setAssigneeId: (value: string) => { setAssigneeId(value); resetPage(); },
-    setSearch: (value: string) => { setSearch(value); resetPage(); },
-    setView, setSelectedId, setEditing, run, save,
+    fromDay,
+    toDay,
+    status,
+    locationId,
+    assigneeId,
+    search,
+    view,
+    rows,
+    nextCursor,
+    venues,
+    tables,
+    members,
+    selectedId,
+    editing,
+    loading,
+    failed,
+    pending,
+    actionError,
+    cursorStack,
+    revision,
+    setRange: (from: string, to: string) => {
+      setFromDay(from);
+      setToDay(to);
+      resetPage();
+    },
+    shift: (delta: number) => {
+      setFromDay(shiftDay(fromDay, delta));
+      setToDay(shiftDay(toDay, delta));
+      resetPage();
+    },
+    setStatus: (value: string) => {
+      setStatus(value);
+      resetPage();
+    },
+    setLocationId: (value: string) => {
+      setLocationId(value);
+      resetPage();
+    },
+    setAssigneeId: (value: string) => {
+      setAssigneeId(value);
+      resetPage();
+    },
+    setSearch: (value: string) => {
+      setSearch(value);
+      resetPage();
+    },
+    setView,
+    setSelectedId,
+    setEditing,
+    run,
+    save,
     previousPage: () => {
       const previous = cursorStack.at(-1) ?? null;
       setCursorStack((stack) => stack.slice(0, -1));
@@ -245,36 +332,44 @@ function useBoard() {
   };
 }
 
-function useDetail(id: string | null, revision: number): {
+function useDetail(
+  id: string | null,
+  revision: number,
+): {
   detail: ReservationDetail | null;
   history: StatusHistoryItem[];
   contactName: string | null;
 } {
-  const [detail, setDetail] = useState<ReservationDetail | null>(null);
-  const [history, setHistory] = useState<StatusHistoryItem[]>([]);
-  const [contactName, setContactName] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState<LoadedDetail | null>(null);
+  const [namedContact, setNamedContact] = useState<NamedContact | null>(null);
+  const detail = loaded?.id === id ? loaded.detail : null;
+  const history = loaded?.id === id ? loaded.history : [];
+  const contactId = detail?.contactId ?? null;
+  const contactName =
+    namedContact !== null && namedContact.id === contactId ? namedContact.name : null;
   useEffect(() => {
-    if (id === null) {
-      setDetail(null);
-      setHistory([]);
-      return undefined;
-    }
+    if (id === null) return undefined;
     const controller = new AbortController();
-    void readReservation(id, controller.signal).then(setDetail).catch(() => setDetail(null));
-    void readHistory(id, controller.signal).then(setHistory).catch(() => setHistory([]));
+    const reservationId = id;
+    void Promise.all([
+      readReservation(reservationId, controller.signal).catch(() => null),
+      readHistory(reservationId, controller.signal).catch(() => []),
+    ]).then(([nextDetail, nextHistory]) => {
+      if (!controller.signal.aborted) {
+        setLoaded({ id: reservationId, detail: nextDetail, history: nextHistory });
+      }
+    });
     return () => controller.abort();
   }, [id, revision]);
   useEffect(() => {
-    if (detail?.contactId == null) {
-      setContactName(null);
-      return undefined;
-    }
+    if (contactId === null) return undefined;
     const controller = new AbortController();
-    void readContact(detail.contactId, controller.signal)
-      .then((contact) => setContactName(contact.name))
-      .catch(() => setContactName(null));
+    const requestedId = contactId;
+    void readContact(requestedId, controller.signal)
+      .then((contact) => setNamedContact({ id: requestedId, name: contact.name }))
+      .catch(() => setNamedContact({ id: requestedId, name: null }));
     return () => controller.abort();
-  }, [detail?.contactId]);
+  }, [contactId]);
   return { detail, history, contactName };
 }
 
@@ -294,16 +389,39 @@ function Header(props: {
       <h1>{t('title')}</h1>
       <div className={styles.controls}>
         <div className={styles.dateControls}>
-          <button type="button" aria-label={t('previousDay')} onClick={() => props.onShift(-1)}>‹</button>
-          <input aria-label={t('date')} type="date" value={props.day} onChange={(event) => props.onDay(event.target.value)} />
-          <button type="button" aria-label={t('nextDay')} onClick={() => props.onShift(1)}>›</button>
+          <button type="button" aria-label={t('previousDay')} onClick={() => props.onShift(-1)}>
+            ‹
+          </button>
+          <input
+            aria-label={t('date')}
+            type="date"
+            value={props.day}
+            onChange={(event) => props.onDay(event.target.value)}
+          />
+          <button type="button" aria-label={t('nextDay')} onClick={() => props.onShift(1)}>
+            ›
+          </button>
         </div>
-        <select aria-label={t('location')} value={props.locationId} onChange={(event) => props.onLocation(event.target.value)}>
+        <select
+          aria-label={t('location')}
+          value={props.locationId}
+          onChange={(event) => props.onLocation(event.target.value)}
+        >
           <option value="">{t('allLocations')}</option>
-          {props.venues.map((venue) => <option key={venue.id} value={venue.id}>{venue.name}</option>)}
+          {props.venues.map((venue) => (
+            <option key={venue.id} value={venue.id}>
+              {venue.name}
+            </option>
+          ))}
         </select>
         {props.canCreate ? (
-          <button type="button" className={`${styles.create} ${glass.button} ${glass.primary}`} onClick={props.onCreate}>{t('new')}</button>
+          <button
+            type="button"
+            className={`${styles.create} ${glass.button} ${glass.primary}`}
+            onClick={props.onCreate}
+          >
+            {t('new')}
+          </button>
         ) : null}
       </div>
     </header>
@@ -316,7 +434,9 @@ function ViewSwitch({ view, onView }: { view: ViewName; onView: (view: ViewName)
   return (
     <div className={styles.views} role="group" aria-label={t('views')}>
       {views.map((name) => (
-        <button key={name} type="button" aria-pressed={view === name} onClick={() => onView(name)}>{t(name)}</button>
+        <button key={name} type="button" aria-pressed={view === name} onClick={() => onView(name)}>
+          {t(name)}
+        </button>
       ))}
     </div>
   );
@@ -336,35 +456,72 @@ function Filters(props: {
   onSearch: (search: string) => void;
 }) {
   const t = useTranslations('reservations');
+  const { onSearch } = props;
   const [draft, setDraft] = useState(props.search);
-  const onSearch = useRef(props.onSearch);
-  onSearch.current = props.onSearch;
   useEffect(() => {
-    const timer = window.setTimeout(() => onSearch.current(draft.trim()), 300);
+    const timer = window.setTimeout(() => onSearch(draft.trim()), 300);
     return () => window.clearTimeout(timer);
-  }, [draft]);
+  }, [draft, onSearch]);
   return (
     <div className={styles.filters}>
-      <select aria-label={t('status')} value={props.status} onChange={(event) => props.onStatus(event.target.value)}>
+      <select
+        aria-label={t('status')}
+        value={props.status}
+        onChange={(event) => props.onStatus(event.target.value)}
+      >
         <option value="">{t('allStatuses')}</option>
-        {RESERVATION_STATUSES.map((status) => <option key={status} value={status}>{t(`statuses.${status}`)}</option>)}
+        {RESERVATION_STATUSES.map((status) => (
+          <option key={status} value={status}>
+            {t(`statuses.${status}`)}
+          </option>
+        ))}
       </select>
-      <label>{t('from')}
-        <input aria-label={t('from')} type="date" value={props.fromDay} onChange={(event) => props.onFrom(event.target.value)} />
+      <label>
+        {t('from')}
+        <input
+          aria-label={t('from')}
+          type="date"
+          value={props.fromDay}
+          onChange={(event) => props.onFrom(event.target.value)}
+        />
       </label>
-      <label>{t('to')}
-        <input aria-label={t('to')} type="date" value={props.toDay} onChange={(event) => props.onTo(event.target.value)} />
+      <label>
+        {t('to')}
+        <input
+          aria-label={t('to')}
+          type="date"
+          value={props.toDay}
+          onChange={(event) => props.onTo(event.target.value)}
+        />
       </label>
-      <select aria-label={t('assignee')} value={props.assigneeId} onChange={(event) => props.onAssignee(event.target.value)}>
+      <select
+        aria-label={t('assignee')}
+        value={props.assigneeId}
+        onChange={(event) => props.onAssignee(event.target.value)}
+      >
         <option value="">{t('allAssignees')}</option>
-        {props.members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+        {props.members.map((member) => (
+          <option key={member.id} value={member.id}>
+            {member.name}
+          </option>
+        ))}
       </select>
-      <input aria-label={t('search')} placeholder={t('search')} value={draft} onChange={(event) => setDraft(event.target.value)} />
+      <input
+        aria-label={t('search')}
+        placeholder={t('search')}
+        value={draft}
+        onChange={(event) => setDraft(event.target.value)}
+      />
     </div>
   );
 }
 
-function Pager({ hasPrevious, hasNext, onPrevious, onNext }: {
+function Pager({
+  hasPrevious,
+  hasNext,
+  onPrevious,
+  onNext,
+}: {
   hasPrevious: boolean;
   hasNext: boolean;
   onPrevious: () => void;
@@ -373,8 +530,12 @@ function Pager({ hasPrevious, hasNext, onPrevious, onNext }: {
   const t = useTranslations('reservations');
   return (
     <div className={styles.pager}>
-      <button type="button" disabled={!hasPrevious} onClick={onPrevious}>{t('previousPage')}</button>
-      <button type="button" disabled={!hasNext} onClick={onNext}>{t('nextPage')}</button>
+      <button type="button" disabled={!hasPrevious} onClick={onPrevious}>
+        {t('previousPage')}
+      </button>
+      <button type="button" disabled={!hasNext} onClick={onNext}>
+        {t('nextPage')}
+      </button>
     </div>
   );
 }

@@ -72,10 +72,7 @@ export class ReservationsController {
 
   @Get(':id/history')
   @Authorize('reservations:read')
-  async history(
-    @CurrentRequest() context: RequestContext,
-    @ZodParam('id', z.uuid()) id: string,
-  ) {
+  async history(@CurrentRequest() context: RequestContext, @ZodParam('id', z.uuid()) id: string) {
     const history = await this.access.history(context, id);
     return {
       data: history.map((item) => ({

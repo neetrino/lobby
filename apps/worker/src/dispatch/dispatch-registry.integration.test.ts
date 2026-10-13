@@ -118,7 +118,11 @@ describe('dispatch registry failures', () => {
       },
     });
     const reservationHandler = new ReservationCreatedHandler();
-    const { processor } = createProcessor(new ContactCreatedHandler(), new TenantCreatedHandler(), reservationHandler);
+    const { processor } = createProcessor(
+      new ContactCreatedHandler(),
+      new TenantCreatedHandler(),
+      reservationHandler,
+    );
     const claimed = await claimOne();
 
     await processor.process(claimed);

@@ -45,7 +45,12 @@ export function ExportButton({ onExport }: { onExport: () => Promise<void> }): R
   }
 
   return (
-    <button type="button" className={styles.exportButton} disabled={exporting} onClick={() => void exportCsv()}>
+    <button
+      type="button"
+      className={styles.exportButton}
+      disabled={exporting}
+      onClick={() => void exportCsv()}
+    >
       <DownloadIcon />
       {t('csv')}
     </button>
@@ -118,7 +123,11 @@ function columnLabel(
   return t('columns.registered');
 }
 
-function useDismiss(open: boolean, rootRef: RefObject<HTMLDivElement | null>, close: () => void): void {
+function useDismiss(
+  open: boolean,
+  rootRef: RefObject<HTMLDivElement | null>,
+  close: () => void,
+): void {
   useEffect(() => {
     if (!open) {
       return;

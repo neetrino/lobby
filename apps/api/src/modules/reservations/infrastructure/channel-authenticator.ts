@@ -27,7 +27,11 @@ export class ChannelAuthenticator {
   async authenticate(headers: WebhookHeaders, rawBody: Uint8Array): Promise<AuthenticatedChannel> {
     const credential = headerValue(headers, CREDENTIAL_HEADER);
     const signature = headerValue(headers, SIGNATURE_HEADER);
-    if (credential === undefined || signature === undefined || !signatureMatches(credential, rawBody, signature)) {
+    if (
+      credential === undefined ||
+      signature === undefined ||
+      !signatureMatches(credential, rawBody, signature)
+    ) {
       throw new AuthorizationError();
     }
     const row = await this.channels.findByCredentialHash(hashChannelCredential(credential));
@@ -49,7 +53,10 @@ export function channelBodySignature(credential: string, rawBody: Uint8Array): s
   return createHmac('sha256', credential).update(rawBody).digest('hex');
 }
 
-function authenticatedChannel(row: ChannelConfiguration, provider: IntegrationProvider): AuthenticatedChannel {
+function authenticatedChannel(
+  row: ChannelConfiguration,
+  provider: IntegrationProvider,
+): AuthenticatedChannel {
   return {
     tenantId: row.tenantId as TenantId,
     provider,

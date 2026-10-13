@@ -15,7 +15,13 @@ import {
 } from './platform-api';
 import styles from './platform.module.css';
 
-const EMPTY: NewOrganization = { name: '', subdomain: '', ownerName: '', ownerEmail: '', password: '' };
+const EMPTY: NewOrganization = {
+  name: '',
+  subdomain: '',
+  ownerName: '',
+  ownerEmail: '',
+  password: '',
+};
 
 export function PlatformWorkspace() {
   const t = useTranslations('platform');
@@ -39,7 +45,10 @@ export function PlatformWorkspace() {
         {notice === null ? null : <p className={auth.success}>{notice}</p>}
         <OrganizationForm
           onCreated={(created) => {
-            setRows((current) => [created, ...current.filter((row) => row.subdomain !== created.subdomain)]);
+            setRows((current) => [
+              created,
+              ...current.filter((row) => row.subdomain !== created.subdomain),
+            ]);
             setNotice(t('created', { workspace: created.subdomain, email: created.ownerEmail }));
             setError(null);
           }}
@@ -116,20 +125,41 @@ function OrganizationForm({
         void submit();
       }}
     >
-      <Field label={t('companyName')} value={draft.name} onChange={(name) => setDraft({ ...draft, name })} />
-      <Field label={t('workspace')} value={draft.subdomain} onChange={(subdomain) => setDraft({ ...draft, subdomain })} />
-      <Field label={t('ownerName')} value={draft.ownerName} onChange={(ownerName) => setDraft({ ...draft, ownerName })} />
-      <Field label={t('email')} type="email" value={draft.ownerEmail} onChange={(ownerEmail) => setDraft({ ...draft, ownerEmail })} />
-      <Field label={t('password')} type="password" value={draft.password} onChange={(password) => setDraft({ ...draft, password })} />
-      <button className={auth.submit} type="submit" disabled={pending}>{t('submit')}</button>
+      <Field
+        label={t('companyName')}
+        value={draft.name}
+        onChange={(name) => setDraft({ ...draft, name })}
+      />
+      <Field
+        label={t('workspace')}
+        value={draft.subdomain}
+        onChange={(subdomain) => setDraft({ ...draft, subdomain })}
+      />
+      <Field
+        label={t('ownerName')}
+        value={draft.ownerName}
+        onChange={(ownerName) => setDraft({ ...draft, ownerName })}
+      />
+      <Field
+        label={t('email')}
+        type="email"
+        value={draft.ownerEmail}
+        onChange={(ownerEmail) => setDraft({ ...draft, ownerEmail })}
+      />
+      <Field
+        label={t('password')}
+        type="password"
+        value={draft.password}
+        onChange={(password) => setDraft({ ...draft, password })}
+      />
+      <button className={auth.submit} type="submit" disabled={pending}>
+        {t('submit')}
+      </button>
     </form>
   );
 }
 
-function failureText(
-  t: ReturnType<typeof useTranslations<'platform'>>,
-  caught: unknown,
-): string {
+function failureText(t: ReturnType<typeof useTranslations<'platform'>>, caught: unknown): string {
   const code = caught instanceof ContactsRequestError ? caught.code : 'REQUEST_FAILED';
   if (code === 'TENANT_SUBDOMAIN_TAKEN') {
     return t('taken');
@@ -151,7 +181,12 @@ function Field({
   return (
     <label>
       {label}
-      <input type={type} value={value} onChange={(event) => onChange(event.target.value)} required />
+      <input
+        type={type}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        required
+      />
     </label>
   );
 }

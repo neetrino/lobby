@@ -76,36 +76,36 @@
 
 ## 5. Authentication, authorization, and tenancy
 
-| Decision area                                       | Current decision                                                                         | Status                                       |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Login                                               | Tenant subdomain + normalized email + password                                           | Implemented                                  |
-| Password hashing                                    | Argon2id in Identity; Organizations accepts only `passwordHash`                          | Implemented                                  |
-| Session strategy                                    | Opaque, revocable Redis-backed session in an `HttpOnly` cookie                           | Implemented                                  |
-| Session lifecycle                                   | Idle and absolute expiry, sliding renewal, logout, terminate-all, authentication version | Implemented                                  |
-| Global authentication                               | `SessionGuard` is global; explicitly public routes use `@Public()`                       | Implemented                                  |
-| Authorization                                       | Permission + tenant module entitlement + tenant/resource scope                           | Implemented foundation                       |
-| Roles                                               | `OWNER`, `ADMIN`, `MEMBER`                                                               | Implemented                                  |
-| Module activation                                   | `tenant_modules`; a missing row is disabled                                              | Implemented                                  |
-| CSRF boundary                                       | Credentialed CORS allowlist plus Origin/Referer validation for mutations                 | Implemented for the current same-site design |
-| Password recovery                               | One-time emailed token, 30-minute expiry, authentication version bump                   | Implemented                                  |
-| Member invitations                              | Owner/Admin invite, accept, revoke, and resend                                          | Implemented                                  |
-| Email verification and OAuth/OIDC               | No provider or flow implemented                                                          | Unresolved by capability                     |
+| Decision area                     | Current decision                                                                         | Status                                       |
+| --------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Login                             | Tenant subdomain + normalized email + password                                           | Implemented                                  |
+| Password hashing                  | Argon2id in Identity; Organizations accepts only `passwordHash`                          | Implemented                                  |
+| Session strategy                  | Opaque, revocable Redis-backed session in an `HttpOnly` cookie                           | Implemented                                  |
+| Session lifecycle                 | Idle and absolute expiry, sliding renewal, logout, terminate-all, authentication version | Implemented                                  |
+| Global authentication             | `SessionGuard` is global; explicitly public routes use `@Public()`                       | Implemented                                  |
+| Authorization                     | Permission + tenant module entitlement + tenant/resource scope                           | Implemented foundation                       |
+| Roles                             | `OWNER`, `ADMIN`, `MEMBER`                                                               | Implemented                                  |
+| Module activation                 | `tenant_modules`; a missing row is disabled                                              | Implemented                                  |
+| CSRF boundary                     | Credentialed CORS allowlist plus Origin/Referer validation for mutations                 | Implemented for the current same-site design |
+| Password recovery                 | One-time emailed token, 30-minute expiry, authentication version bump                    | Implemented                                  |
+| Member invitations                | Owner/Admin invite, accept, revoke, and resend                                           | Implemented                                  |
+| Email verification and OAuth/OIDC | No provider or flow implemented                                                          | Unresolved by capability                     |
 
 ## 6. Implemented modules and shared capabilities
 
-| Area             | Current repository state                                                                                                                                                    |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Identity         | Registration, login, logout, session lookup/revocation, rate limits, cookie/session security                                                                                |
-| Organizations    | Transactional tenant + first ACTIVE OWNER + default entitlements + `tenant.created` outbox event                                                                            |
-| Contacts         | Create, read, update, soft archive, and restore, plus the web screen at `/{locale}/contacts`. Permissions, entitlement, tenant scope, and `contact.created` stay in the API |
-| Dashboard        | Read-only `GET /api/v1/dashboard` and per-user layout. Contacts, reservation, and accepted-invitation projections. Deals, messenger, and inventory stay hidden until those modules expose a projection |
-| Audit            | Append-only events, HMAC-hashed client IP metadata, permissioned cursor-paginated read API                                                                                  |
-| Tenant RBAC      | Current fixed roles; planned Owner/Admin-managed tenant roles from a closed permission catalog with anti-escalation rules                                                   |
+| Area             | Current repository state                                                                                                                                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity         | Registration, login, logout, session lookup/revocation, rate limits, cookie/session security                                                                                                                                  |
+| Organizations    | Transactional tenant + first ACTIVE OWNER + default entitlements + `tenant.created` outbox event                                                                                                                              |
+| Contacts         | Create, read, update, soft archive, and restore, plus the web screen at `/{locale}/contacts`. Permissions, entitlement, tenant scope, and `contact.created` stay in the API                                                   |
+| Dashboard        | Read-only `GET /api/v1/dashboard` and per-user layout. Contacts, reservation, and accepted-invitation projections. Deals, messenger, and inventory stay hidden until those modules expose a projection                        |
+| Audit            | Append-only events, HMAC-hashed client IP metadata, permissioned cursor-paginated read API                                                                                                                                    |
+| Tenant RBAC      | Current fixed roles; planned Owner/Admin-managed tenant roles from a closed permission catalog with anti-escalation rules                                                                                                     |
 | Reservations     | Contracts, schema, cross-tenant constraints, overlap prevention, status policy, create/read/list/update/cancel endpoints, and a read-only dashboard projection. Remaining status transitions and channel webhooks remain open |
-| Deals            | Module boundary only; no business implementation                                                                                                                            |
-| Messenger        | Module boundary only; no business implementation                                                                                                                            |
-| Worker           | Versioned dispatch registry, retry classification, durable side-effect reservation, failed-event requeue                                                                    |
-| Shared contracts | Runtime Zod schemas for events, locales, reservations, audit, module keys, and cursor pagination primitives                                                                 |
+| Deals            | Module boundary only; no business implementation                                                                                                                                                                              |
+| Messenger        | Module boundary only; no business implementation                                                                                                                                                                              |
+| Worker           | Versioned dispatch registry, retry classification, durable side-effect reservation, failed-event requeue                                                                                                                      |
+| Shared contracts | Runtime Zod schemas for events, locales, reservations, audit, module keys, and cursor pagination primitives                                                                                                                   |
 
 ## 7. Security and operations
 

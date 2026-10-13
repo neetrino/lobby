@@ -13,5 +13,7 @@ export function GlassButton({
   type = 'button',
   ...props
 }: GlassButtonProps) {
-  return <button type={type} className={`${styles.button} ${styles[tone]} ${className}`} {...props} />;
+  return (
+    <button type={type} className={`${styles.button} ${styles[tone]} ${className}`} {...props} />
+  );
 }

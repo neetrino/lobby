@@ -1,7 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { readDirectMessages, readNewerMessages, type DirectMessage } from './team-api';
-import { isNearBottom, mergeNewest, nextScrollTop, TEAM_CHAT_POLL_MS, watchLatest } from './team-live';
+import {
+  isNearBottom,
+  mergeNewest,
+  nextScrollTop,
+  TEAM_CHAT_POLL_MS,
+  watchLatest,
+} from './team-live';
 
 vi.mock('./team-api', () => ({
   readDirectMessages: vi.fn(),
@@ -55,16 +61,30 @@ describe('team chat live merge', () => {
     await vi.waitFor(() => expect(readDirectMessages).toHaveBeenCalledTimes(1));
     await vi.advanceTimersByTimeAsync(TEAM_CHAT_POLL_MS);
 
-    expect(readNewerMessages).toHaveBeenNthCalledWith(1, 'member', 'sync-tip', expect.any(AbortSignal));
-    expect(readNewerMessages).toHaveBeenNthCalledWith(2, 'member', 'page-2', expect.any(AbortSignal));
+    expect(readNewerMessages).toHaveBeenNthCalledWith(
+      1,
+      'member',
+      'sync-tip',
+      expect.any(AbortSignal),
+    );
+    expect(readNewerMessages).toHaveBeenNthCalledWith(
+      2,
+      'member',
+      'page-2',
+      expect.any(AbortSignal),
+    );
     expect(onLatest).toHaveBeenCalledWith([middle, last]);
     stop();
   });
 
   it('retries the first load on the poll interval', async () => {
     vi.useFakeTimers();
-    const first = page([message('00000000-0000-4000-8000-000000000010', '2026-10-08T08:00:00.000Z')]);
-    vi.mocked(readDirectMessages).mockRejectedValueOnce(new Error('offline')).mockResolvedValue(first);
+    const first = page([
+      message('00000000-0000-4000-8000-000000000010', '2026-10-08T08:00:00.000Z'),
+    ]);
+    vi.mocked(readDirectMessages)
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue(first);
     const onOpen = vi.fn();
     const onFail = vi.fn();
     const stop = watchLatest('member', new AbortController().signal, {

@@ -15,7 +15,10 @@ import { ListTeamService } from './application/list-team.service';
 import { TeamDirectoryService } from './application/team-directory.service';
 import { ResendInvitationService } from './application/resend-invitation.service';
 import { RevokeInvitationService } from './application/revoke-invitation.service';
-import { InvitationAccessCookie, invitationAccessCookie } from './infrastructure/invitation-access-cookie';
+import {
+  InvitationAccessCookie,
+  invitationAccessCookie,
+} from './infrastructure/invitation-access-cookie';
 import { MemberInvitationRepository } from './infrastructure/member-invitation.repository';
 import { InvitationAcceptController } from './presentation/invitation-accept.controller';
 import { MemberInvitationsController } from './presentation/member-invitations.controller';

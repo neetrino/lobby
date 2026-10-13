@@ -41,47 +41,56 @@ export class ResendInvitationService {
     const expiresAt = invitationExpiresAt(now);
     try {
       return await this.invitations.transaction(async (tx) => {
-      const current = await this.invitations.findById(tx, invitationId);
-      if (current === null || current.tenantId !== context.tenantId || current.acceptedAt !== null || current.revokedAt !== null) {
-        throw new InvitationError(invitationErrorCodes.INVALID);
-      }
-      const replaced = await this.invitations.replaceToken(
-        tx,
-        invitationId,
-        current.tokenHash,
-        secret.tokenHash,
-        expiresAt,
-      );
-      if (replaced !== 1) {
-        throw new InvitationError(invitationErrorCodes.INVALID);
-      }
-      const tenant = await this.invitations.tenantIdentity(tx, context.tenantId);
-      const inviterName = await this.invitations.inviterName(tx, context.userId, context.tenantId);
-      if (tenant === null || inviterName === null) {
-        throw new InvitationError(invitationErrorCodes.INVALID);
-      }
-      await this.outbox.enqueue(
-        tx,
-        invitationCreatedEvent({
+        const current = await this.invitations.findById(tx, invitationId);
+        if (
+          current === null ||
+          current.tenantId !== context.tenantId ||
+          current.acceptedAt !== null ||
+          current.revokedAt !== null
+        ) {
+          throw new InvitationError(invitationErrorCodes.INVALID);
+        }
+        const replaced = await this.invitations.replaceToken(
+          tx,
           invitationId,
-          tenantId: context.tenantId,
-          recipientEmail: current.email,
-          locale,
-          organizationName: tenant.name,
-          inviterName,
-          tokenCiphertext: ciphertext,
-        }),
-      );
-      await this.audit.append(
-        tx,
-        invitationAuditRecord({
-          context,
-          invitationId,
-          action: invitationAuditActions.resent,
-          client,
-        }),
-      );
-      return { id: invitationId, expiresAt };
+          current.tokenHash,
+          secret.tokenHash,
+          expiresAt,
+        );
+        if (replaced !== 1) {
+          throw new InvitationError(invitationErrorCodes.INVALID);
+        }
+        const tenant = await this.invitations.tenantIdentity(tx, context.tenantId);
+        const inviterName = await this.invitations.inviterName(
+          tx,
+          context.userId,
+          context.tenantId,
+        );
+        if (tenant === null || inviterName === null) {
+          throw new InvitationError(invitationErrorCodes.INVALID);
+        }
+        await this.outbox.enqueue(
+          tx,
+          invitationCreatedEvent({
+            invitationId,
+            tenantId: context.tenantId,
+            recipientEmail: current.email,
+            locale,
+            organizationName: tenant.name,
+            inviterName,
+            tokenCiphertext: ciphertext,
+          }),
+        );
+        await this.audit.append(
+          tx,
+          invitationAuditRecord({
+            context,
+            invitationId,
+            action: invitationAuditActions.resent,
+            client,
+          }),
+        );
+        return { id: invitationId, expiresAt };
       });
     } catch (error) {
       rethrowInvitationConflict(error);

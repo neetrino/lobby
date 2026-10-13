@@ -33,7 +33,13 @@ export function SignOutButton({
   }
 
   return (
-    <span className={groupClassName === undefined ? styles.signOutGroup : `${styles.signOutGroup} ${groupClassName}`}>
+    <span
+      className={
+        groupClassName === undefined
+          ? styles.signOutGroup
+          : `${styles.signOutGroup} ${groupClassName}`
+      }
+    >
       <button type="button" className={className} disabled={pending} onClick={() => void signOut()}>
         {t('signOut')}
       </button>

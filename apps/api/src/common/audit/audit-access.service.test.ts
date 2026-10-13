@@ -174,7 +174,10 @@ describe.sequential('AuditAccessService', () => {
     await insertEvent(owner, '10000000-0000-4000-8000-000000000031', '2026-01-01T00:00:00.000Z');
     await insertEvent(other, '20000000-0000-4000-8000-000000000032', '2026-01-01T00:00:00.000Z');
 
-    const byName = await access.list(contextFor(owner), pageQuery({ search: 'acme', actorType: 'USER' }));
+    const byName = await access.list(
+      contextFor(owner),
+      pageQuery({ search: 'acme', actorType: 'USER' }),
+    );
     const byAction = await access.list(
       contextFor(owner),
       pageQuery({ search: 'sessions.terminated' }),

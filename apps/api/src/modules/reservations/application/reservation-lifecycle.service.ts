@@ -8,6 +8,7 @@ import {
   updateReservationSchema,
   type CancelReservationInput,
   type CreateReservationCommand,
+  type ReservationLifecycleChanges,
   type ReservationStatus,
   type ReservationTransitionAction,
   type TransitionReservationInput,
@@ -31,6 +32,7 @@ import {
   type ReservationUpdate,
 } from '../infrastructure/reservation.repository';
 import { canTransitionReservation } from '../domain/reservation-status-policy';
+import { reservationAuditChanges } from './reservation-audit-changes';
 import { ReservationFailure } from './reservation-errors';
 import { ReservationHistoryWriter } from './reservation-history';
 import { assertBookable, reservationPeriod } from './reservation-rules';
@@ -64,7 +66,16 @@ export class ReservationLifecycleService {
         await assertBookable(reservations, command, period, new Date());
         const updated = await reservations.update(id, updateData(command, period));
         if (updated === null) throw new ReservationFailure('RESERVATION_NOT_FOUND');
-        await this.audit.append(tx, lifecycleAudit(context, id, auditActions.RESERVATION_UPDATED, null));
+        await this.audit.append(
+          tx,
+          lifecycleAudit(
+            context,
+            id,
+            auditActions.RESERVATION_UPDATED,
+            reservationAuditChanges(current, updated),
+            null,
+          ),
+        );
         return updated;
       });
     } catch (error) {
@@ -88,7 +99,10 @@ export class ReservationLifecycleService {
       if (!canTransitionReservation(current.status, 'CANCELLED')) {
         throw new ReservationFailure('RESERVATION_NOT_EDITABLE');
       }
-      const updated = await reservations.update(id, { status: 'CANCELLED', cancelledAt: new Date() });
+      const updated = await reservations.update(id, {
+        status: 'CANCELLED',
+        cancelledAt: new Date(),
+      });
       if (updated === null) throw new ReservationFailure('RESERVATION_NOT_FOUND');
       await this.history.appendTransition(tx, {
         tenantId: context.tenantId,
@@ -100,7 +114,13 @@ export class ReservationLifecycleService {
       });
       await this.audit.append(
         tx,
-        lifecycleAudit(context, id, auditActions.RESERVATION_STATUS_CHANGED, body.reason ?? null),
+        lifecycleAudit(
+          context,
+          id,
+          auditActions.RESERVATION_STATUS_CHANGED,
+          reservationAuditChanges(current, updated),
+          body.reason ?? null,
+        ),
       );
       return updated;
     });
@@ -139,7 +159,13 @@ export class ReservationLifecycleService {
       });
       await this.audit.append(
         tx,
-        lifecycleAudit(context, id, auditActions.RESERVATION_STATUS_CHANGED, body.reason ?? null),
+        lifecycleAudit(
+          context,
+          id,
+          auditActions.RESERVATION_STATUS_CHANGED,
+          reservationAuditChanges(current, updated),
+          body.reason ?? null,
+        ),
       );
       return updated;
     });
@@ -149,7 +175,8 @@ export class ReservationLifecycleService {
     try {
       await this.entitlements.requireEnabled(scopedTenantId(context), 'reservations');
     } catch (error) {
-      if (error instanceof ModuleDisabledError) throw new ReservationFailure('RESERVATION_MODULE_DISABLED');
+      if (error instanceof ModuleDisabledError)
+        throw new ReservationFailure('RESERVATION_MODULE_DISABLED');
       throw error;
     }
     requirePermission(context, 'reservations:update');
@@ -170,7 +197,9 @@ function mergedCommand(
   patch: UpdateReservationCommand,
 ): CreateReservationCommand {
   const startsAt = patch.startsAt ?? current.startsAt.toISOString();
-  const currentDuration = Math.round((current.endsAt.getTime() - current.startsAt.getTime()) / 60_000);
+  const currentDuration = Math.round(
+    (current.endsAt.getTime() - current.startsAt.getTime()) / 60_000,
+  );
   return createReservationSchema.parse({
     locationId: patch.locationId ?? current.locationId,
     startsAt,
@@ -178,28 +207,50 @@ function mergedCommand(
     guestCount: patch.guestCount ?? current.guestCount,
     requestedTableId: patch.requestedTableId ?? current.tableId ?? '',
     ...(patch.assignedUserId === undefined
-      ? current.assignedUserId === null ? {} : { assignedUserId: current.assignedUserId }
-      : patch.assignedUserId === null ? {} : { assignedUserId: patch.assignedUserId }),
+      ? current.assignedUserId === null
+        ? {}
+        : { assignedUserId: current.assignedUserId }
+      : patch.assignedUserId === null
+        ? {}
+        : { assignedUserId: patch.assignedUserId }),
     customer: {
       name: patch.customerName ?? current.customerName,
       ...(patch.customerPhone === undefined
-        ? current.customerPhone === null ? {} : { phone: current.customerPhone }
-        : patch.customerPhone === null ? {} : { phone: patch.customerPhone }),
+        ? current.customerPhone === null
+          ? {}
+          : { phone: current.customerPhone }
+        : patch.customerPhone === null
+          ? {}
+          : { phone: patch.customerPhone }),
       ...(patch.customerEmail === undefined
-        ? current.customerEmail === null ? {} : { email: current.customerEmail }
-        : patch.customerEmail === null ? {} : { email: patch.customerEmail }),
+        ? current.customerEmail === null
+          ? {}
+          : { email: current.customerEmail }
+        : patch.customerEmail === null
+          ? {}
+          : { email: patch.customerEmail }),
       ...(patch.contactId === undefined
-        ? current.contactId === null ? {} : { contactId: current.contactId }
-        : patch.contactId === null ? {} : { contactId: patch.contactId }),
+        ? current.contactId === null
+          ? {}
+          : { contactId: current.contactId }
+        : patch.contactId === null
+          ? {}
+          : { contactId: patch.contactId }),
     },
     ...(patch.customerNote === undefined
-      ? current.customerNote === null ? {} : { customerNote: current.customerNote }
-      : patch.customerNote === null ? {} : { customerNote: patch.customerNote }),
+      ? current.customerNote === null
+        ? {}
+        : { customerNote: current.customerNote }
+      : patch.customerNote === null
+        ? {}
+        : { customerNote: patch.customerNote }),
     source: {
       type: current.source,
       ...(current.sourceAccountId === null ? {} : { accountId: current.sourceAccountId }),
       ...(current.sourceRequestId === null ? {} : { externalRequestId: current.sourceRequestId }),
-      ...(current.sourceConversationId === null ? {} : { conversationId: current.sourceConversationId }),
+      ...(current.sourceConversationId === null
+        ? {}
+        : { conversationId: current.sourceConversationId }),
       ...(current.sourceMessageId === null ? {} : { messageId: current.sourceMessageId }),
     },
   });
@@ -237,6 +288,7 @@ function lifecycleAudit(
   context: RequestContext,
   reservationId: string,
   action: typeof auditActions.RESERVATION_UPDATED | typeof auditActions.RESERVATION_STATUS_CHANGED,
+  changes: ReservationLifecycleChanges,
   reason: string | null,
 ): AuditWrite {
   return {
@@ -248,7 +300,7 @@ function lifecycleAudit(
     resourceType: 'reservation',
     resourceId: reservationId,
     outcome: 'SUCCESS',
-    changes: null,
+    changes,
     reason,
     requestId: context.requestId,
     ipHash: null,

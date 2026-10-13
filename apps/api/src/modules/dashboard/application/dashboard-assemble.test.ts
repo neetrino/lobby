@@ -17,9 +17,7 @@ const contacts: ContactsDashboardSlice = {
   createdInRange: 2,
   createdInPrevious: 1,
   owned: [{ id: 'c1', name: 'Nareg', updatedAt: '2026-10-05T07:00:00.000Z' }],
-  activity: [
-    { id: 'c1', name: 'Nareg', kind: 'created', occurredAt: '2026-10-05T07:00:00.000Z' },
-  ],
+  activity: [{ id: 'c1', name: 'Nareg', kind: 'created', occurredAt: '2026-10-05T07:00:00.000Z' }],
   days: [{ date: '2026-10-05', created: 1, updated: 0, archived: 0 }],
 };
 

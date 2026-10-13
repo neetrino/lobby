@@ -33,9 +33,6 @@ export default async function LoginPage({ params, searchParams }: PageProps) {
     notFound();
   }
   setRequestLocale(locale);
-  const [registrationStatus, query] = await Promise.all([
-    readRegistrationStatus(),
-    searchParams,
-  ]);
+  const [registrationStatus, query] = await Promise.all([readRegistrationStatus(), searchParams]);
   return <LoginForm registrationStatus={registrationStatus} prefill={loginPrefill(query)} />;
 }

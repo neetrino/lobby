@@ -42,16 +42,19 @@ export class ContactsDashboardQuery {
     window: Window,
   ): Promise<ContactDashboardFacts> {
     const owner = scope === 'mine' ? { ownerUserId: userId } : {};
-    const [activeCount, createdInRange, createdInPrevious, owned, recent, stamps] = await Promise.all([
-      this.prisma.contact.count({ where: { tenantId, archivedAt: null, ...owner } }),
-      this.prisma.contact.count({ where: { tenantId, ...owner, createdAt: { gte: window.from, lt: window.to } } }),
-      this.prisma.contact.count({
-        where: { tenantId, ...owner, createdAt: { gte: window.previousFrom, lt: window.from } },
-      }),
-      this.owned(tenantId, userId),
-      this.recent(tenantId, owner),
-      this.stamps(tenantId, owner, window),
-    ]);
+    const [activeCount, createdInRange, createdInPrevious, owned, recent, stamps] =
+      await Promise.all([
+        this.prisma.contact.count({ where: { tenantId, archivedAt: null, ...owner } }),
+        this.prisma.contact.count({
+          where: { tenantId, ...owner, createdAt: { gte: window.from, lt: window.to } },
+        }),
+        this.prisma.contact.count({
+          where: { tenantId, ...owner, createdAt: { gte: window.previousFrom, lt: window.from } },
+        }),
+        this.owned(tenantId, userId),
+        this.recent(tenantId, owner),
+        this.stamps(tenantId, owner, window),
+      ]);
     return { activeCount, createdInRange, createdInPrevious, owned, recent, stamps };
   }
 

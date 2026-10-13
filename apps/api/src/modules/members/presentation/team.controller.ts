@@ -63,7 +63,11 @@ export class TeamController {
     @ZodBody(directMessageBodySchema) body: DirectMessageBody,
     @Req() request: { ip?: string; socket?: { remoteAddress?: string } },
   ) {
-    await this.rates.consumeTeamMessage(readClientAddress(request), context.tenantId, context.userId);
+    await this.rates.consumeTeamMessage(
+      readClientAddress(request),
+      context.tenantId,
+      context.userId,
+    );
     return { data: await this.messages.add(context, userId, body.body) };
   }
 }

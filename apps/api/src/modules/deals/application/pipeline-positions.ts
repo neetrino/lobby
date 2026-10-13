@@ -12,7 +12,11 @@ export function storedKind(kind: PipelineKindName): 'LEAD' | 'DEAL' {
   return kind === 'lead' ? 'LEAD' : 'DEAL';
 }
 
-export async function nextColumnPosition(tx: Tx, tenantId: TenantId, pipelineId: string): Promise<number> {
+export async function nextColumnPosition(
+  tx: Tx,
+  tenantId: TenantId,
+  pipelineId: string,
+): Promise<number> {
   const last = await tx.pipelineColumn.aggregate({
     where: { tenantId, pipelineId },
     _max: { position: true },
@@ -50,9 +54,13 @@ export async function placeAt(
   if (from === target) {
     return;
   }
-  await tx.pipelineCard.update({ where: { id: cardId }, data: { position: -1 } }).catch(rethrowWrite);
+  await tx.pipelineCard
+    .update({ where: { id: cardId }, data: { position: -1 } })
+    .catch(rethrowWrite);
   await shiftPositions(tx, tenantId, columnId, from, target);
-  await tx.pipelineCard.update({ where: { id: cardId }, data: { position: target } }).catch(rethrowWrite);
+  await tx.pipelineCard
+    .update({ where: { id: cardId }, data: { position: target } })
+    .catch(rethrowWrite);
 }
 
 /** Parks the range above the unique positions, then writes the shifted values. */
@@ -143,13 +151,19 @@ export async function requireParty(
   ownerUserId: string | null | undefined,
 ): Promise<void> {
   if (contactId) {
-    const contact = await tx.contact.findFirst({ where: { id: contactId, tenantId }, select: { id: true } });
+    const contact = await tx.contact.findFirst({
+      where: { id: contactId, tenantId },
+      select: { id: true },
+    });
     if (contact === null) {
       throw new NotFoundException();
     }
   }
   if (ownerUserId) {
-    const owner = await tx.user.findFirst({ where: { id: ownerUserId, tenantId }, select: { id: true } });
+    const owner = await tx.user.findFirst({
+      where: { id: ownerUserId, tenantId },
+      select: { id: true },
+    });
     if (owner === null) {
       throw new NotFoundException();
     }
@@ -172,7 +186,12 @@ export function rethrowWrite(error: unknown): never {
 }
 
 function prismaCode(error: unknown): string | undefined {
-  if (typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string') {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof error.code === 'string'
+  ) {
     return error.code;
   }
   return undefined;

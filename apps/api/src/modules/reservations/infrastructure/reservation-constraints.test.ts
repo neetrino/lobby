@@ -49,7 +49,9 @@ describe('reservation database constraints', () => {
     const first = await createLocationWithTable('location-a');
     const second = await createLocationWithTableForTenant(first.tenant.id, 'location-b');
 
-    await expect(book(first.tenant.id, first.location.id, second.table.id, '18:00', '19:30')).rejects.toThrow();
+    await expect(
+      book(first.tenant.id, first.location.id, second.table.id, '18:00', '19:30'),
+    ).rejects.toThrow();
   });
 });
 

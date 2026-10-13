@@ -59,7 +59,9 @@ export async function lockStoredSourceRequest(
   tenantId: TenantId,
   source: SourceIdentity,
 ): Promise<void> {
-  const key = [tenantId, source.source, source.sourceAccountId, source.externalRequestId].join('\u001f');
+  const key = [tenantId, source.source, source.sourceAccountId, source.externalRequestId].join(
+    '\u001f',
+  );
   await db.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${key}, ${0n}))`;
 }
 

@@ -19,7 +19,10 @@ export class TeamDirectoryService {
   async list(context: RequestContext): Promise<TeamDirectory> {
     requirePermission(context, 'team:read');
     const tenantId = scopedTenantId(context);
-    const tenant = await this.prisma.tenant.findUnique({ where: { id: tenantId }, select: { name: true } });
+    const tenant = await this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { name: true },
+    });
     if (tenant === null) {
       throw new NotFoundException();
     }
@@ -27,10 +30,17 @@ export class TeamDirectoryService {
       where: { tenantId, status: 'ACTIVE' },
       select: memberSelect,
     });
-    return { organization: { name: tenant.name }, members: users.map(toMember).sort(byRoleThenName) };
+    return {
+      organization: { name: tenant.name },
+      members: users.map(toMember).sort(byRoleThenName),
+    };
   }
 
-  async updateJobTitle(context: RequestContext, userId: string, jobTitle: string | null): Promise<TeamMember> {
+  async updateJobTitle(
+    context: RequestContext,
+    userId: string,
+    jobTitle: string | null,
+  ): Promise<TeamMember> {
     requirePermission(context, 'team:manage');
     const tenantId = scopedTenantId(context);
     const updated = await this.prisma.user.updateMany({
@@ -44,7 +54,10 @@ export class TeamDirectoryService {
   }
 
   private async readMember(tenantId: string, userId: string): Promise<TeamMember> {
-    const member = await this.prisma.user.findFirst({ where: { id: userId, tenantId }, select: memberSelect });
+    const member = await this.prisma.user.findFirst({
+      where: { id: userId, tenantId },
+      select: memberSelect,
+    });
     if (member === null) {
       throw new NotFoundException();
     }

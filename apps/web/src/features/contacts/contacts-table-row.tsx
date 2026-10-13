@@ -85,7 +85,9 @@ function NameCell({
   archived: boolean;
   onOpen: (contact: Contact) => void;
 }): ReactElement {
-  const className = archived ? `${styles.nameButton} ${tableStyles.archivedName}` : styles.nameButton;
+  const className = archived
+    ? `${styles.nameButton} ${tableStyles.archivedName}`
+    : styles.nameButton;
   return (
     <td className={styles.nameCol}>
       <div className={tableStyles.identity}>
@@ -115,7 +117,12 @@ function OptionalCells({
     <>
       {ui.columns.details ? <DetailsCell contact={contact} /> : null}
       {ui.columns.owner ? <OwnerCell name={contact.ownerName} /> : null}
-      {ui.columns.status ? <StatusCell archived={archived} label={archived ? t('status.archived') : t('status.active')} /> : null}
+      {ui.columns.status ? (
+        <StatusCell
+          archived={archived}
+          label={archived ? t('status.archived') : t('status.active')}
+        />
+      ) : null}
       {ui.columns.created ? <CreatedCell date={stamp.date} time={stamp.time} /> : null}
     </>
   );
@@ -146,7 +153,9 @@ function OwnerCell({ name }: { name: string }): ReactElement {
 function StatusCell({ archived, label }: { archived: boolean; label: string }): ReactElement {
   return (
     <td>
-      <span className={archived ? tableStyles.statusArchived : tableStyles.statusActive}>{label}</span>
+      <span className={archived ? tableStyles.statusArchived : tableStyles.statusActive}>
+        {label}
+      </span>
     </td>
   );
 }
@@ -163,8 +172,9 @@ function CreatedCell({ date, time }: { date: string; time: string }): ReactEleme
 }
 
 function rowClass(selected: boolean, archived: boolean): string | undefined {
-  const names = [archived ? tableStyles.archivedRow : '', selected ? styles.selectedRow : ''].filter(
-    (name) => name !== '',
-  );
+  const names = [
+    archived ? tableStyles.archivedRow : '',
+    selected ? styles.selectedRow : '',
+  ].filter((name) => name !== '');
   return names.length === 0 ? undefined : names.join(' ');
 }

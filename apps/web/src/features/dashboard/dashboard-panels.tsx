@@ -22,7 +22,9 @@ export function WorkPanel({
   const activity = board.activity;
   const quiet = groups.length === 0 && (activity === undefined || activity.items.length === 0);
   return (
-    <section className={`${styles.card} ${glass.panel} ${glass.soft} ${wide ? styles.span12 : styles.work}`}>
+    <section
+      className={`${styles.card} ${glass.panel} ${glass.soft} ${wide ? styles.span12 : styles.work}`}
+    >
       <h2>{t('work')}</h2>
       {quiet ? <CaughtUp locale={locale} /> : null}
       {groups.map((group) => (
@@ -30,7 +32,12 @@ export function WorkPanel({
           <h3>{widgetLabel(t, group.key)}</h3>
           <ItemList
             locale={locale}
-            items={group.items.map((item) => ({ id: item.id, label: item.label, href: item.href, when: item.detail }))}
+            items={group.items.map((item) => ({
+              id: item.id,
+              label: item.label,
+              href: item.href,
+              when: item.detail,
+            }))}
           />
         </div>
       ))}
@@ -75,7 +82,11 @@ function Activity({
               <span>
                 <small>{kindLabel(t, item.kind)}</small>
                 <br />
-                {item.href === null ? item.label : <Link href={`/${locale}${item.href}`}>{item.label}</Link>}
+                {item.href === null ? (
+                  item.label
+                ) : (
+                  <Link href={`/${locale}${item.href}`}>{item.label}</Link>
+                )}
               </span>
               <small>{formatWhen(item.occurredAt, locale)}</small>
             </li>
@@ -97,7 +108,11 @@ function ItemList({
     <ul className={styles.list}>
       {items.map((item) => (
         <li key={item.id}>
-          {item.href === null ? item.label : <Link href={`/${locale}${item.href}`}>{item.label}</Link>}
+          {item.href === null ? (
+            item.label
+          ) : (
+            <Link href={`/${locale}${item.href}`}>{item.label}</Link>
+          )}
           <small>{formatWhen(item.when, locale)}</small>
         </li>
       ))}
@@ -121,7 +136,9 @@ export function Snapshot({ board }: { board: DashboardBoard }) {
           </strong>
         </p>
       )}
-      {growth === null && occupancy === null ? <p className={styles.quietLine}>{t('noDataYet')}</p> : null}
+      {growth === null && occupancy === null ? (
+        <p className={styles.quietLine}>{t('noDataYet')}</p>
+      ) : null}
     </aside>
   );
 }
@@ -143,7 +160,9 @@ function Growth({
         <span>{t('contactGrowth')}</span>
         <strong>{growth.current}</strong>
         {growth.trend === null ? null : (
-          <small className={growth.trend < 0 ? styles.trendDown : styles.trendUp}>{growth.trend}%</small>
+          <small className={growth.trend < 0 ? styles.trendDown : styles.trendUp}>
+            {growth.trend}%
+          </small>
         )}
       </p>
     </>

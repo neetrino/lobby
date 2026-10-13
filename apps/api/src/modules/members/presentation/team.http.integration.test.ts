@@ -14,12 +14,18 @@ import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { encodeCursor } from '../../../common/pagination';
 import { configureHttpApp } from '../../../common/http/configure-http-app';
 import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
-import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../../identity/infrastructure/rate-limit-config';
+import {
+  AUTH_RATE_LIMITS,
+  permissiveAuthRateLimits,
+} from '../../identity/infrastructure/rate-limit-config';
 import { RATE_LIMIT_REDIS } from '../../identity/infrastructure/rate-limit-redis';
 import { MemoryRateLimitRedis } from '../../identity/infrastructure/memory-rate-limit-redis';
 import { REGISTRATION_ENABLED } from '../../identity/infrastructure/registration-config';
 import { SESSION_REDIS } from '../../identity/infrastructure/session-redis';
-import { clearTenantRows, IndexedSessionRedis } from '../../identity/presentation/session-guard.fixtures';
+import {
+  clearTenantRows,
+  IndexedSessionRedis,
+} from '../../identity/presentation/session-guard.fixtures';
 
 const origin = 'http://localhost:3000';
 const password = 'correct-horse-battery';
@@ -69,7 +75,10 @@ describe('Team HTTP', () => {
     const http = app.getHttpServer();
     const directory = await request(http).get('/api/v1/team');
     const messages = await request(http).get(`/api/v1/team/members/${missingUser}/messages`);
-    const sent = await request(http).post(`/api/v1/team/members/${missingUser}/messages`).set('Origin', origin).send({ body: 'Hi' });
+    const sent = await request(http)
+      .post(`/api/v1/team/members/${missingUser}/messages`)
+      .set('Origin', origin)
+      .send({ body: 'Hi' });
 
     expect(directory.status).toBe(401);
     expect(messages.status).toBe(401);
@@ -139,7 +148,11 @@ describe('Team HTTP', () => {
       pages.push(older.body.data as Array<{ body: string }>);
       cursor = older.body.page.nextCursor as string | null;
     }
-    const chronological = pages.slice().reverse().flat().map((message) => message.body);
+    const chronological = pages
+      .slice()
+      .reverse()
+      .flat()
+      .map((message) => message.body);
 
     expect(first.status).toBe(200);
     expect(typeof first.body.page.syncCursor).toBe('string');
@@ -153,14 +166,20 @@ describe('Team HTTP', () => {
     const http = app.getHttpServer();
     const company = await openCompany(http, 'team-private');
     const sent = await postMessage(http, company.owner, company.member.id, 'Hello Bea');
-    const seen = await request(http).get(`/api/v1/team/members/${company.ownerUserId}/messages`).set('Cookie', company.memberCookie);
-    const outsider = await request(http).get(`/api/v1/team/members/${company.member.id}/messages`).set('Cookie', company.adminCookie);
+    const seen = await request(http)
+      .get(`/api/v1/team/members/${company.ownerUserId}/messages`)
+      .set('Cookie', company.memberCookie);
+    const outsider = await request(http)
+      .get(`/api/v1/team/members/${company.member.id}/messages`)
+      .set('Cookie', company.adminCookie);
     const self = await postMessage(http, company.owner, company.ownerUserId, 'Hello me');
     const other = await login(http, 'team-other', 'dee@example.com');
     const hidden = await postMessage(http, other, company.member.id, 'Wrong company');
 
     expect(sent.status).toBe(201);
-    expect(seen.body.data).toEqual([expect.objectContaining({ body: 'Hello Bea', authorName: 'Ada' })]);
+    expect(seen.body.data).toEqual([
+      expect.objectContaining({ body: 'Hello Bea', authorName: 'Ada' }),
+    ]);
     expect(seen.body.page.nextCursor).toBeNull();
     expect(outsider.body.data).toEqual([]);
     expect(self.status).toBe(400);
@@ -207,7 +226,11 @@ describe('Team HTTP', () => {
 async function loginMemberDenied(http: Parameters<typeof request>[0], company: OpenCompany) {
   const active = await addCoworker('MEMBER', 'bea-live@example.com', 'Bea Live', null);
   const cookie = await signIn(http, 'team-roles', active.email);
-  return request(http).patch(`/api/v1/team/members/${company.admin.id}`).set('Origin', origin).set('Cookie', cookie).send({ jobTitle: 'Nope' });
+  return request(http)
+    .patch(`/api/v1/team/members/${company.admin.id}`)
+    .set('Origin', origin)
+    .set('Cookie', cookie)
+    .send({ jobTitle: 'Nope' });
 }
 
 type OpenCompany = {
@@ -219,9 +242,14 @@ type OpenCompany = {
   member: { id: string };
 };
 
-async function openCompany(http: Parameters<typeof request>[0], subdomain: string): Promise<OpenCompany> {
+async function openCompany(
+  http: Parameters<typeof request>[0],
+  subdomain: string,
+): Promise<OpenCompany> {
   const owner = await login(http, subdomain, 'ada@example.com');
-  const ownerUser = await prisma.user.findFirstOrThrow({ where: { email: 'ada@example.com', tenant: { subdomain } } });
+  const ownerUser = await prisma.user.findFirstOrThrow({
+    where: { email: 'ada@example.com', tenant: { subdomain } },
+  });
   const member = await addCoworker('MEMBER', 'bea@example.com', 'Bea', 'Designer');
   const admin = await addCoworker('ADMIN', 'cam@example.com', 'Cam', null);
   return {
@@ -234,12 +262,30 @@ async function openCompany(http: Parameters<typeof request>[0], subdomain: strin
   };
 }
 
-function patchTitle(http: Parameters<typeof request>[0], cookie: string, userId: string, jobTitle: string) {
-  return request(http).patch(`/api/v1/team/members/${userId}`).set('Origin', origin).set('Cookie', cookie).send({ jobTitle });
+function patchTitle(
+  http: Parameters<typeof request>[0],
+  cookie: string,
+  userId: string,
+  jobTitle: string,
+) {
+  return request(http)
+    .patch(`/api/v1/team/members/${userId}`)
+    .set('Origin', origin)
+    .set('Cookie', cookie)
+    .send({ jobTitle });
 }
 
-function postMessage(http: Parameters<typeof request>[0], cookie: string, userId: string, body: string) {
-  return request(http).post(`/api/v1/team/members/${userId}/messages`).set('Origin', origin).set('Cookie', cookie).send({ body });
+function postMessage(
+  http: Parameters<typeof request>[0],
+  cookie: string,
+  userId: string,
+  body: string,
+) {
+  return request(http)
+    .post(`/api/v1/team/members/${userId}/messages`)
+    .set('Origin', origin)
+    .set('Cookie', cookie)
+    .send({ body });
 }
 
 async function seedThread(ownerId: string, memberId: string, count: number): Promise<void> {
@@ -260,24 +306,50 @@ async function seedThread(ownerId: string, memberId: string, count: number): Pro
   });
 }
 
-async function addCoworker(role: 'ADMIN' | 'MEMBER', email: string, name: string, jobTitle: string | null) {
+async function addCoworker(
+  role: 'ADMIN' | 'MEMBER',
+  email: string,
+  name: string,
+  jobTitle: string | null,
+) {
   const owner = await prisma.user.findFirstOrThrow({ where: { email: 'ada@example.com' } });
   return prisma.user.create({
-    data: { tenantId: owner.tenantId, email, name, passwordHash: owner.passwordHash, role, jobTitle },
+    data: {
+      tenantId: owner.tenantId,
+      email,
+      name,
+      passwordHash: owner.passwordHash,
+      role,
+      jobTitle,
+    },
   });
 }
 
-async function login(http: Parameters<typeof request>[0], subdomain: string, email: string): Promise<string> {
-  const registered = await request(http).post('/api/v1/auth/register').set('Origin', origin).send({
-    tenant: { name: subdomain, subdomain, plan: 'starter' },
-    owner: { name: 'Ada', email, password },
-  });
+async function login(
+  http: Parameters<typeof request>[0],
+  subdomain: string,
+  email: string,
+): Promise<string> {
+  const registered = await request(http)
+    .post('/api/v1/auth/register')
+    .set('Origin', origin)
+    .send({
+      tenant: { name: subdomain, subdomain, plan: 'starter' },
+      owner: { name: 'Ada', email, password },
+    });
   expect(registered.status).toBe(201);
   return signIn(http, subdomain, email);
 }
 
-async function signIn(http: Parameters<typeof request>[0], subdomain: string, email: string): Promise<string> {
-  const loggedIn = await request(http).post('/api/v1/auth/login').set('Origin', origin).send({ subdomain, email, password });
+async function signIn(
+  http: Parameters<typeof request>[0],
+  subdomain: string,
+  email: string,
+): Promise<string> {
+  const loggedIn = await request(http)
+    .post('/api/v1/auth/login')
+    .set('Origin', origin)
+    .send({ subdomain, email, password });
   expect(loggedIn.status).toBe(200);
   return sessionCookie(loggedIn.headers['set-cookie']);
 }

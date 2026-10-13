@@ -38,7 +38,13 @@ describe('team member card', () => {
   });
 });
 
-function renderCard({ isSelf, onMessage }: { isSelf: boolean; onMessage: (member: TeamMember) => void }): void {
+function renderCard({
+  isSelf,
+  onMessage,
+}: {
+  isSelf: boolean;
+  onMessage: (member: TeamMember) => void;
+}): void {
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
       <TeamMemberCard

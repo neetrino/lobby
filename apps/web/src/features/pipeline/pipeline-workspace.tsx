@@ -85,9 +85,11 @@ export function PipelineWorkspace({ kind }: { kind: PipelineKindName }) {
           router.replace(`/${locale}/login`);
           return;
         }
-        setError(reason instanceof PipelineRequestError && reason.code === 'PIPELINE_COLUMN_NOT_EMPTY'
-          ? t('columnNotEmpty')
-          : t('failed'));
+        setError(
+          reason instanceof PipelineRequestError && reason.code === 'PIPELINE_COLUMN_NOT_EMPTY'
+            ? t('columnNotEmpty')
+            : t('failed'),
+        );
       },
     );
   }
@@ -96,7 +98,9 @@ export function PipelineWorkspace({ kind }: { kind: PipelineKindName }) {
     <div className={shell.app}>
       <ContactsShell session={session} current={kind === 'lead' ? 'leads' : 'deals'} />
       <main className={shell.main}>
-        {board === null ? <p className={styles.page}>{error ?? t('loading')}</p> : (
+        {board === null ? (
+          <p className={styles.page}>{error ?? t('loading')}</p>
+        ) : (
           <PipelineView
             board={board}
             error={error}
@@ -126,13 +130,24 @@ function PipelineMetrics({
   const empty = board.columns.filter((column) => column.cards.length === 0).length;
   return (
     <section className={styles.metrics} aria-label={t('summary')}>
-      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}><span>{t('metricCards')}</span><strong>{cards}</strong></article>
+      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}>
+        <span>{t('metricCards')}</span>
+        <strong>{cards}</strong>
+      </article>
       <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}>
         <span>{t('metricAmount')}</span>
-        <strong>{new Intl.NumberFormat(locale).format(total)} {board.amountLabel}</strong>
+        <strong>
+          {new Intl.NumberFormat(locale).format(total)} {board.amountLabel}
+        </strong>
       </article>
-      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}><span>{t('metricColumns')}</span><strong>{board.columns.length}</strong></article>
-      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}><span>{t('metricEmpty')}</span><strong>{empty}</strong></article>
+      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}>
+        <span>{t('metricColumns')}</span>
+        <strong>{board.columns.length}</strong>
+      </article>
+      <article className={`${styles.metric} ${glass.panel} ${glass.soft}`}>
+        <span>{t('metricEmpty')}</span>
+        <strong>{empty}</strong>
+      </article>
     </section>
   );
 }
@@ -233,10 +248,14 @@ function PipelineView({
             onRename={(name) => void onChange(() => patchColumn(board.kind, column.id, { name }))}
             onResize={(widthPx) => onChange(() => patchColumn(board.kind, column.id, { widthPx }))}
             onDelete={() => void onChange(() => deleteColumn(board.kind, column.id))}
-            onCreateCard={(draft) => void onChange(() => createCard(board.kind, { ...draft, columnId: column.id }))}
+            onCreateCard={(draft) =>
+              void onChange(() => createCard(board.kind, { ...draft, columnId: column.id }))
+            }
             onMoveCard={(cardId) => void onChange(() => moveCard(board.kind, cardId, column.id))}
             onDeleteCard={(cardId) => void onChange(() => deleteCard(board.kind, cardId))}
-            onSaveCard={(cardId, patch) => void onChange(() => updateCard(board.kind, cardId, patch))}
+            onSaveCard={(cardId, patch) =>
+              void onChange(() => updateCard(board.kind, cardId, patch))
+            }
             onConvertCard={(cardId) => void onChange(() => convertLead(cardId))}
             canConfigure={canConfigure}
           />
@@ -251,8 +270,10 @@ function isSignedOut(reason: unknown): boolean {
   if (!(reason instanceof PipelineRequestError) && !(reason instanceof ContactsRequestError)) {
     return false;
   }
-  return reason.status === 401
-    || reason.code === 'UNAUTHENTICATED'
-    || reason.code === 'SESSION_EXPIRED'
-    || reason.code === 'SESSION_REVOKED';
+  return (
+    reason.status === 401 ||
+    reason.code === 'UNAUTHENTICATED' ||
+    reason.code === 'SESSION_EXPIRED' ||
+    reason.code === 'SESSION_REVOKED'
+  );
 }

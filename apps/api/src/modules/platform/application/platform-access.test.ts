@@ -44,8 +44,12 @@ beforeEach(async () => {
 describe('platform organizations', () => {
   it('creates a customer owner without adding the platform operator', async () => {
     const admin = new PlatformAdminService(prisma, hasher);
-    expect(await admin.ensure({ name: 'Operator', email: 'Root@Example.com', password })).toBe('created');
-    expect(await admin.ensure({ name: 'Operator', email: 'Root@Example.com', password })).toBe('exists');
+    expect(await admin.ensure({ name: 'Operator', email: 'Root@Example.com', password })).toBe(
+      'created',
+    );
+    expect(await admin.ensure({ name: 'Operator', email: 'Root@Example.com', password })).toBe(
+      'exists',
+    );
 
     const created = await organizations().create({
       tenant: { name: 'North', subdomain: 'North' },
@@ -82,7 +86,9 @@ describe('platform organizations', () => {
       owner: { name: 'Nia', email: 'nia@example.com', password },
     });
     const guard = new PlatformOperatorGuard(prisma);
-    const platform = await prisma.tenant.findUniqueOrThrow({ where: { subdomain: PLATFORM_SUBDOMAIN } });
+    const platform = await prisma.tenant.findUniqueOrThrow({
+      where: { subdomain: PLATFORM_SUBDOMAIN },
+    });
     const north = await prisma.tenant.findUniqueOrThrow({ where: { subdomain: 'north' } });
 
     await expect(guard.canActivate(asOwner(platform.id))).resolves.toBe(true);

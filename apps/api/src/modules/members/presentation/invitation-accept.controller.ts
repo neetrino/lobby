@@ -51,7 +51,10 @@ export class InvitationAcceptController {
   @Public()
   @Post('preview')
   @HttpCode(200)
-  async preview(@ZodBody(previewInvitationSchema) body: PreviewInvitationBody, @Req() request: InvitationHttpRequest) {
+  async preview(
+    @ZodBody(previewInvitationSchema) body: PreviewInvitationBody,
+    @Req() request: InvitationHttpRequest,
+  ) {
     await this.rates.consumeAccept(readClientAddress(request));
     const preview = await this.acceptInvitation.preview(body.invitationId, request.headers?.cookie);
     return { data: preview };

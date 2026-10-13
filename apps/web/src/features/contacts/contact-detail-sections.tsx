@@ -2,6 +2,8 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 
+import { actionText, outcomeText } from '../audit/audit-labels';
+
 import type { Contact } from './contact';
 import { formatContactStamp, shortId } from './contact-format';
 import type { ContactAuditEvent } from './contacts-api';
@@ -118,6 +120,7 @@ function AuditBody({
   locale: string;
 }) {
   const t = useTranslations('contacts');
+  const audit = useTranslations('audit');
   if (status === 'loading' || status === 'idle') {
     return <p className={panel.note}>{t('loading')}</p>;
   }
@@ -138,8 +141,12 @@ function AuditBody({
             •
           </span>
           <div className={panel.eventCopy}>
-            <strong>{event.action}</strong>
-            <small>{event.actorRole === null ? event.outcome : t(`role.${event.actorRole}`)}</small>
+            <strong>{actionText(audit, event.action)}</strong>
+            <small>
+              {event.actorRole === null
+                ? outcomeText(audit, event.outcome)
+                : t(`role.${event.actorRole}`)}
+            </small>
           </div>
           <time dateTime={event.occurredAt}>
             {formatContactStamp(event.occurredAt, locale).date}

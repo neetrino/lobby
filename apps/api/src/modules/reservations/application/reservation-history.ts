@@ -25,7 +25,11 @@ export class ReservationHistoryWriter {
 
   async appendTransition(
     tx: Prisma.TransactionClient,
-    input: InitialHistory & { fromStatus: ReservationStatus; toStatus: ReservationStatus; reason: string | null },
+    input: InitialHistory & {
+      fromStatus: ReservationStatus;
+      toStatus: ReservationStatus;
+      reason: string | null;
+    },
   ): Promise<void> {
     await tx.reservationStatusHistory.create({
       data: {

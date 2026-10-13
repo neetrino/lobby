@@ -48,7 +48,9 @@ export function toReservationDetailView(reservation: ReservationRecord): Reserva
     contactId: reservation.contactId,
     assignedUserId: reservation.assignedUserId,
     source: reservation.source,
-    durationMinutes: Math.round((reservation.endsAt.getTime() - reservation.startsAt.getTime()) / 60_000),
+    durationMinutes: Math.round(
+      (reservation.endsAt.getTime() - reservation.startsAt.getTime()) / 60_000,
+    ),
     customerPhone: reservation.customerPhone,
     customerEmail: reservation.customerEmail,
     customerNote: reservation.customerNote,

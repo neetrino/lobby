@@ -214,7 +214,12 @@ export class AcceptInvitationService {
       );
       return {
         authenticationVersion: user.authenticationVersion,
-        tenant: { id: invitation.tenantId, name: tenant.name, subdomain: tenant.subdomain, plan: 'starter' },
+        tenant: {
+          id: invitation.tenantId,
+          name: tenant.name,
+          subdomain: tenant.subdomain,
+          plan: 'starter',
+        },
         user: { id: user.id, name: input.name, email: invitation.email, role: 'MEMBER' as const },
       };
     });

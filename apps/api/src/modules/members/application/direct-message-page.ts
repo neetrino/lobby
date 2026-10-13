@@ -35,7 +35,11 @@ export function olderThan(cursor: MessageCursor | undefined): Prisma.DirectMessa
  * One chat page. The query is newest-first; the response is oldest-first.
  * `nextCursor` asks for the page older than this one.
  */
-export function toMessagePage(rows: readonly StoredMessage[], limit: number, memberId: string): MessageListPage {
+export function toMessagePage(
+  rows: readonly StoredMessage[],
+  limit: number,
+  memberId: string,
+): MessageListPage {
   const visible = rows.slice(0, limit).reverse().map(toMessage);
   const oldest = visible[0];
   return {
@@ -52,7 +56,11 @@ export function toMessagePage(rows: readonly StoredMessage[], limit: number, mem
  * One forward page. The query is oldest-first.
  * `nextCursor` asks for messages newer than this page.
  */
-export function toForwardPage(rows: readonly StoredMessage[], limit: number, memberId: string): MessageListPage {
+export function toForwardPage(
+  rows: readonly StoredMessage[],
+  limit: number,
+  memberId: string,
+): MessageListPage {
   const visible = rows.slice(0, limit).map(toMessage);
   const newest = visible.at(-1);
   return {

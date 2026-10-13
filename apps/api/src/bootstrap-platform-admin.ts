@@ -13,7 +13,9 @@ async function bootstrapPlatformAdmin(): Promise<void> {
   const app = await NestFactory.createApplicationContext(AppModule, { logger: ['error', 'warn'] });
   try {
     const result = await app.get(PlatformAdminService).ensure({ name, email, password });
-    console.log(result === 'created' ? 'Platform admin created.' : 'Platform admin already exists.');
+    console.log(
+      result === 'created' ? 'Platform admin created.' : 'Platform admin already exists.',
+    );
   } finally {
     await app.close();
   }

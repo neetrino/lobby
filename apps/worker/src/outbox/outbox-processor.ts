@@ -42,7 +42,11 @@ export class OutboxProcessor {
     invitation?: { handler: MemberInvitationEmailHandler; store: ProcessedEventStore },
     passwordReset?: { handler: PasswordResetEmailHandler; store: ProcessedEventStore },
   ) {
-    const registry = createWorkerEventRegistry({ contactCreated, tenantCreated, reservationCreated });
+    const registry = createWorkerEventRegistry({
+      contactCreated,
+      tenantCreated,
+      reservationCreated,
+    });
     const extras: EventRegistryEntry[] = [];
     if (invitation !== undefined) {
       extras.push(invitationEmailRegistryEntry(invitation.handler, invitation.store));

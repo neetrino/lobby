@@ -57,7 +57,9 @@ export function TeamDirectoryPage() {
               {canEdit ? <AddMemberButton /> : null}
             </div>
             {failed ? <p className={styles.failed}>{t('failed')}</p> : null}
-            {visible.rows.length === 0 && directory !== null ? <p className={styles.notice}>{t('empty')}</p> : null}
+            {visible.rows.length === 0 && directory !== null ? (
+              <p className={styles.notice}>{t('empty')}</p>
+            ) : null}
             <div className={styles.grid}>
               {visible.rows.map((member) => (
                 <TeamMemberCard
@@ -80,25 +82,48 @@ export function TeamDirectoryPage() {
   );
 }
 
-function Pager({ page, pageCount, onPage }: { page: number; pageCount: number; onPage: (page: number) => void }) {
+function Pager({
+  page,
+  pageCount,
+  onPage,
+}: {
+  page: number;
+  pageCount: number;
+  onPage: (page: number) => void;
+}) {
   const t = useTranslations('team');
   const pages = Array.from({ length: pageCount }, (_, index) => index);
   return (
     <nav className={styles.pager} aria-label={t('pages')}>
-      <button type="button" disabled={page === 0} onClick={() => onPage(page - 1)}>{t('prev')}</button>
+      <button type="button" disabled={page === 0} onClick={() => onPage(page - 1)}>
+        {t('prev')}
+      </button>
       {pages.map((index) => (
-        <button key={index} type="button" className={index === page ? styles.pageOn : undefined} aria-current={index === page ? 'page' : undefined} onClick={() => onPage(index)}>
+        <button
+          key={index}
+          type="button"
+          className={index === page ? styles.pageOn : undefined}
+          aria-current={index === page ? 'page' : undefined}
+          onClick={() => onPage(index)}
+        >
           {index + 1}
         </button>
       ))}
-      <button type="button" disabled={page >= pageCount - 1} onClick={() => onPage(page + 1)}>{t('next')}</button>
+      <button type="button" disabled={page >= pageCount - 1} onClick={() => onPage(page + 1)}>
+        {t('next')}
+      </button>
     </nav>
   );
 }
 
-function pageOf(members: TeamMember[], query: string, page: number): { rows: TeamMember[]; page: number; pageCount: number } {
+function pageOf(
+  members: TeamMember[],
+  query: string,
+  page: number,
+): { rows: TeamMember[]; page: number; pageCount: number } {
   const needle = query.trim().toLowerCase();
-  const filtered = needle.length === 0 ? members : members.filter((member) => matches(member, needle));
+  const filtered =
+    needle.length === 0 ? members : members.filter((member) => matches(member, needle));
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
   const start = safePage * PAGE_SIZE;
@@ -106,7 +131,10 @@ function pageOf(members: TeamMember[], query: string, page: number): { rows: Tea
 }
 
 function matches(member: TeamMember, needle: string): boolean {
-  return [member.name, member.email, member.jobTitle ?? '', member.role].join(' ').toLowerCase().includes(needle);
+  return [member.name, member.email, member.jobTitle ?? '', member.role]
+    .join(' ')
+    .toLowerCase()
+    .includes(needle);
 }
 
 function useTeamDirectory(): {
@@ -140,13 +168,20 @@ function replaceMember(
     if (current === null) {
       return current;
     }
-    return { ...current, members: current.members.map((member) => (member.id === saved.id ? saved : member)) };
+    return {
+      ...current,
+      members: current.members.map((member) => (member.id === saved.id ? saved : member)),
+    };
   });
   setOpenMember((current) => (current?.id === saved.id ? saved : current));
 }
 
 function isSignedOut(error: ContactsRequestError | null): boolean {
-  return error?.code === 'UNAUTHENTICATED' || error?.code === 'SESSION_EXPIRED' || error?.code === 'SESSION_REVOKED';
+  return (
+    error?.code === 'UNAUTHENTICATED' ||
+    error?.code === 'SESSION_EXPIRED' ||
+    error?.code === 'SESSION_REVOKED'
+  );
 }
 
 function SearchIcon() {

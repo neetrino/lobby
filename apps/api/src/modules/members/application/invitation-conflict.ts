@@ -1,4 +1,8 @@
-import { InvitationError, invitationErrorCodes, type InvitationErrorCode } from '../domain/invitation.errors';
+import {
+  InvitationError,
+  invitationErrorCodes,
+  type InvitationErrorCode,
+} from '../domain/invitation.errors';
 
 const OPEN_EMAIL_INDEX = 'member_invitations_open_email_key';
 const TOKEN_HASH_INDEX = 'member_invitations_token_hash_key';
@@ -79,7 +83,10 @@ function constraintFields(meta: unknown): readonly string[] {
   return readConstraint(meta).fields ?? [];
 }
 
-function readConstraint(meta: Record<string, unknown>): { index?: string; fields?: readonly string[] } {
+function readConstraint(meta: Record<string, unknown>): {
+  index?: string;
+  fields?: readonly string[];
+} {
   const cause = adapterCause(meta);
   if (cause === undefined || !isRecord(cause.constraint)) {
     return {};

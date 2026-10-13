@@ -10,7 +10,10 @@ const FINGERPRINT_VERSION = '1';
  * The payload is a fixed-order JSON array, so a separator inside one value cannot join two fields.
  * Omitted optional values are null. Phone, email, and notes stay inside the hash.
  */
-export function requestFingerprint(command: CreateReservationCommand, period: ReservationPeriod): string {
+export function requestFingerprint(
+  command: CreateReservationCommand,
+  period: ReservationPeriod,
+): string {
   const canonical = JSON.stringify([
     FINGERPRINT_VERSION,
     command.locationId,

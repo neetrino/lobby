@@ -30,7 +30,10 @@ export const columnPatchSchema = z
 
 const outcomeSchema = z.enum(['OPEN', 'WON', 'LOST', 'DISQUALIFIED', 'CONVERTED']);
 const prioritySchema = z.enum(['NORMAL', 'URGENT']);
-const statusColorSchema = z.string().regex(/^#[0-9a-fA-F]{6}$/).transform((value) => value.toLowerCase());
+const statusColorSchema = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/)
+  .transform((value) => value.toLowerCase());
 
 export const cardCreateSchema = z.strictObject({
   columnId: columnIdSchema,

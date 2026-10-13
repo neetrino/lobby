@@ -31,7 +31,11 @@ type WatchState = {
  * Loads the newest page, then keeps reading every message newer than the last one shown.
  * The timer starts immediately, so a failed first load retries on the same interval.
  */
-export function watchLatest(memberId: string, signal: AbortSignal, handlers: ThreadWatch): () => void {
+export function watchLatest(
+  memberId: string,
+  signal: AbortSignal,
+  handlers: ThreadWatch,
+): () => void {
   const state: WatchState = { stopped: false, busy: false, opened: false, syncCursor: null };
   const timer = setInterval(() => {
     void refresh(memberId, signal, handlers, state);
@@ -44,7 +48,10 @@ export function watchLatest(memberId: string, signal: AbortSignal, handlers: Thr
 }
 
 /** Keeps the current list when every incoming id is already present. */
-export function mergeNewest(current: DirectMessage[], incoming: readonly DirectMessage[]): DirectMessage[] {
+export function mergeNewest(
+  current: DirectMessage[],
+  incoming: readonly DirectMessage[],
+): DirectMessage[] {
   const known = new Set(current.map((message) => message.id));
   const fresh = incoming.filter((message) => !known.has(message.id));
   if (fresh.length === 0) {
@@ -63,7 +70,11 @@ export function nextScrollTop(anchor: ScrollAnchor, nextHeight: number): number 
   return anchor.top + (nextHeight - anchor.height);
 }
 
-export function isNearBottom(scrollHeight: number, scrollTop: number, clientHeight: number): boolean {
+export function isNearBottom(
+  scrollHeight: number,
+  scrollTop: number,
+  clientHeight: number,
+): boolean {
   return scrollHeight - scrollTop - clientHeight <= TEAM_CHAT_STICK_PX;
 }
 

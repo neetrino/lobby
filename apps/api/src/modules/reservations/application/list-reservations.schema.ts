@@ -73,11 +73,10 @@ export function encodeReservationCursor(
   });
 }
 
-function reservationCursorMatches(
-  cursor: ReservationCursor,
-  query: ReservationListQuery,
-): boolean {
-  return cursor.sort === query.sort && cursor.filterFingerprint === reservationFilterFingerprint(query);
+function reservationCursorMatches(cursor: ReservationCursor, query: ReservationListQuery): boolean {
+  return (
+    cursor.sort === query.sort && cursor.filterFingerprint === reservationFilterFingerprint(query)
+  );
 }
 
 function reservationFilterFingerprint(query: ReservationListQuery): string {

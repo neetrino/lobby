@@ -52,7 +52,9 @@ function List({ rows, names }: { rows: ReservationSummary[]; names: Names }) {
             <td>{formatTime(row.startsAt, names.locale)}</td>
             <td>{row.customerName}</td>
             <td>{row.guestCount}</td>
-            <td><StatusBadge status={row.status} /></td>
+            <td>
+              <StatusBadge status={row.status} />
+            </td>
             <td>{venueName(names.venues, row.locationId)}</td>
             <td>{tableName(names.tables, row.tableId)}</td>
           </tr>
@@ -69,9 +71,11 @@ function Calendar({ rows, names }: { rows: ReservationSummary[]; names: Names })
         <section key={hour} className={styles.hour}>
           <h3>{String(hour).padStart(2, '0')}:00</h3>
           <div className={styles.hourCards}>
-            {rows.filter((row) => hourOf(row.startsAt) === hour).map((row) => (
-              <BookingCard key={row.id} row={row} names={names} />
-            ))}
+            {rows
+              .filter((row) => hourOf(row.startsAt) === hour)
+              .map((row) => (
+                <BookingCard key={row.id} row={row} names={names} />
+              ))}
           </div>
         </section>
       ))}
@@ -88,7 +92,9 @@ function Timeline({ rows, names }: { rows: ReservationSummary[]; names: Names })
         <thead>
           <tr>
             <th />
-            {hours.map((hour) => <th key={hour}>{String(hour).padStart(2, '0')}</th>)}
+            {hours.map((hour) => (
+              <th key={hour}>{String(hour).padStart(2, '0')}</th>
+            ))}
           </tr>
         </thead>
         <tbody>
@@ -100,7 +106,12 @@ function Timeline({ rows, names }: { rows: ReservationSummary[]; names: Names })
                   {rows
                     .filter((row) => row.tableId === table.id && hourOf(row.startsAt) === hour)
                     .map((row) => (
-                      <button key={row.id} type="button" className={styles.chip} onClick={() => names.onOpen(row.id)}>
+                      <button
+                        key={row.id}
+                        type="button"
+                        className={styles.chip}
+                        onClick={() => names.onOpen(row.id)}
+                      >
                         {formatTime(row.startsAt, names.locale)} {row.customerName}
                       </button>
                     ))}
@@ -117,8 +128,12 @@ function Timeline({ rows, names }: { rows: ReservationSummary[]; names: Names })
 function BookingCard({ row, names }: { row: ReservationSummary; names: Names }) {
   return (
     <button type="button" className={styles.card} onClick={() => names.onOpen(row.id)}>
-      <strong>{formatTime(row.startsAt, names.locale)} {row.customerName}</strong>
-      <span>{row.guestCount} · {tableName(names.tables, row.tableId)}</span>
+      <strong>
+        {formatTime(row.startsAt, names.locale)} {row.customerName}
+      </strong>
+      <span>
+        {row.guestCount} · {tableName(names.tables, row.tableId)}
+      </span>
       <StatusBadge status={row.status} />
     </button>
   );
@@ -127,7 +142,11 @@ function BookingCard({ row, names }: { row: ReservationSummary; names: Names }) 
 export function StatusBadge({ status }: { status: string }) {
   const t = useTranslations('reservations');
   const label = isKnownStatus(status) ? t(`statuses.${status}`) : status;
-  return <span className={styles.badge} data-status={status}>{label}</span>;
+  return (
+    <span className={styles.badge} data-status={status}>
+      {label}
+    </span>
+  );
 }
 
 function venueName(venues: Venue[], id: string): string {
@@ -149,15 +168,28 @@ function hourRange(rows: ReservationSummary[]): number[] {
 function timelineTables(rows: ReservationSummary[], tables: DiningTable[]): DiningTable[] {
   const ids = new Set(rows.map((row) => row.tableId).filter((id): id is string => id !== null));
   const known = tables.filter((table) => ids.has(table.id));
-  return known.length > 0 ? known : [...ids].map((id) => ({
-    id,
-    locationId: '',
-    name: id.slice(0, 8),
-    minCapacity: 1,
-    capacity: 1,
-  }));
+  return known.length > 0
+    ? known
+    : [...ids].map((id) => ({
+        id,
+        locationId: '',
+        name: id.slice(0, 8),
+        minCapacity: 1,
+        capacity: 1,
+      }));
 }
 
-function isKnownStatus(status: string): status is 'PENDING' | 'CONFIRMED' | 'ARRIVED' | 'SEATED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW' {
-  return ['PENDING', 'CONFIRMED', 'ARRIVED', 'SEATED', 'COMPLETED', 'CANCELLED', 'NO_SHOW'].includes(status);
+function isKnownStatus(
+  status: string,
+): status is
+  'PENDING' | 'CONFIRMED' | 'ARRIVED' | 'SEATED' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW' {
+  return [
+    'PENDING',
+    'CONFIRMED',
+    'ARRIVED',
+    'SEATED',
+    'COMPLETED',
+    'CANCELLED',
+    'NO_SHOW',
+  ].includes(status);
 }

@@ -58,19 +58,38 @@ export class PipelineService {
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
-  async rename(context: RequestContext, kind: PipelineKindName, patch: PipelinePatch): Promise<PipelineBoard> {
+  async rename(
+    context: RequestContext,
+    kind: PipelineKindName,
+    patch: PipelinePatch,
+  ): Promise<PipelineBoard> {
     await this.gate(context, 'pipelines:configure');
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
-    await renamePipeline(this.prisma, pipeline.id, patch, this.configured(context, kind, pipeline.id));
+    await renamePipeline(
+      this.prisma,
+      pipeline.id,
+      patch,
+      this.configured(context, kind, pipeline.id),
+    );
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
-  async addColumn(context: RequestContext, kind: PipelineKindName, input: ColumnCreate): Promise<PipelineBoard> {
+  async addColumn(
+    context: RequestContext,
+    kind: PipelineKindName,
+    input: ColumnCreate,
+  ): Promise<PipelineBoard> {
     await this.gate(context, 'pipelines:add-column');
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
-    await appendColumn(this.prisma, tenantId, pipeline.id, input.name, this.configured(context, kind, pipeline.id));
+    await appendColumn(
+      this.prisma,
+      tenantId,
+      pipeline.id,
+      input.name,
+      this.configured(context, kind, pipeline.id),
+    );
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
@@ -83,19 +102,40 @@ export class PipelineService {
     await this.gate(context, patch.name === undefined ? 'pipelines:resize' : 'pipelines:configure');
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
-    await patchColumn(this.prisma, tenantId, pipeline.id, columnId, patch, this.configured(context, kind, pipeline.id));
+    await patchColumn(
+      this.prisma,
+      tenantId,
+      pipeline.id,
+      columnId,
+      patch,
+      this.configured(context, kind, pipeline.id),
+    );
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
-  async removeColumn(context: RequestContext, kind: PipelineKindName, columnId: string): Promise<PipelineBoard> {
+  async removeColumn(
+    context: RequestContext,
+    kind: PipelineKindName,
+    columnId: string,
+  ): Promise<PipelineBoard> {
     await this.gate(context, 'pipelines:configure');
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
-    await deleteColumn(this.prisma, tenantId, pipeline.id, columnId, this.configured(context, kind, pipeline.id));
+    await deleteColumn(
+      this.prisma,
+      tenantId,
+      pipeline.id,
+      columnId,
+      this.configured(context, kind, pipeline.id),
+    );
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
-  async addCard(context: RequestContext, kind: PipelineKindName, input: CardCreate): Promise<PipelineBoard> {
+  async addCard(
+    context: RequestContext,
+    kind: PipelineKindName,
+    input: CardCreate,
+  ): Promise<PipelineBoard> {
     await this.gate(context, cardPermission(kind, 'create'));
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
@@ -124,11 +164,21 @@ export class PipelineService {
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
-  async removeCard(context: RequestContext, kind: PipelineKindName, cardId: string): Promise<PipelineBoard> {
+  async removeCard(
+    context: RequestContext,
+    kind: PipelineKindName,
+    cardId: string,
+  ): Promise<PipelineBoard> {
     await this.gate(context, cardPermission(kind, 'delete'));
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
-    await deleteCard(this.prisma, tenantId, pipeline.id, cardId, this.removed(context, kind, cardId));
+    await deleteCard(
+      this.prisma,
+      tenantId,
+      pipeline.id,
+      cardId,
+      this.removed(context, kind, cardId),
+    );
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
@@ -136,11 +186,21 @@ export class PipelineService {
     await this.gate(context, 'leads:update');
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, 'lead');
-    await convertLead(this.prisma, tenantId, cardId, context.userId, this.converted(context, cardId));
+    await convertLead(
+      this.prisma,
+      tenantId,
+      cardId,
+      context.userId,
+      this.converted(context, cardId),
+    );
     return loadBoard(this.prisma, tenantId, pipeline.id, 'lead');
   }
 
-  async addStatus(context: RequestContext, kind: PipelineKindName, input: StatusCreate): Promise<PipelineBoard> {
+  async addStatus(
+    context: RequestContext,
+    kind: PipelineKindName,
+    input: StatusCreate,
+  ): Promise<PipelineBoard> {
     await this.gate(context, 'pipelines:configure');
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
@@ -161,7 +221,11 @@ export class PipelineService {
     return loadBoard(this.prisma, tenantId, pipeline.id, kind);
   }
 
-  async removeStatus(context: RequestContext, kind: PipelineKindName, statusId: string): Promise<PipelineBoard> {
+  async removeStatus(
+    context: RequestContext,
+    kind: PipelineKindName,
+    statusId: string,
+  ): Promise<PipelineBoard> {
     await this.gate(context, 'pipelines:configure');
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
@@ -218,7 +282,11 @@ export class PipelineService {
     };
   }
 
-  async listNotes(context: RequestContext, kind: PipelineKindName, cardId: string): Promise<PipelineNote[]> {
+  async listNotes(
+    context: RequestContext,
+    kind: PipelineKindName,
+    cardId: string,
+  ): Promise<PipelineNote[]> {
     await this.gate(context, cardPermission(kind, 'read'));
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
@@ -274,7 +342,9 @@ export class PipelineService {
     const tenantId = scopedTenantId(context);
     const pipeline = await existingPipeline(this.prisma, tenantId, kind);
     await this.requireCard(tenantId, pipeline.id, cardId);
-    const existing = await this.prisma.pipelineCardNote.findFirst({ where: { id: noteId, cardId, tenantId } });
+    const existing = await this.prisma.pipelineCardNote.findFirst({
+      where: { id: noteId, cardId, tenantId },
+    });
     if (existing === null) throw new NotFoundException();
     const note = await this.prisma.pipelineCardNote.update({
       where: { id: noteId },
@@ -291,7 +361,11 @@ export class PipelineService {
     };
   }
 
-  private async requireCard(tenantId: ReturnType<typeof scopedTenantId>, pipelineId: string, cardId: string): Promise<void> {
+  private async requireCard(
+    tenantId: ReturnType<typeof scopedTenantId>,
+    pipelineId: string,
+    cardId: string,
+  ): Promise<void> {
     const card = await this.prisma.pipelineCard.findFirst({
       where: { id: cardId, tenantId, pipelineId },
       select: { id: true },
@@ -310,7 +384,10 @@ export class PipelineService {
     }
   }
 
-  private async requireLeads(context: RequestContext, tenantId: ReturnType<typeof scopedTenantId>): Promise<void> {
+  private async requireLeads(
+    context: RequestContext,
+    tenantId: ReturnType<typeof scopedTenantId>,
+  ): Promise<void> {
     const user = await this.prisma.user.findUnique({
       where: { id_tenantId: { id: context.userId, tenantId } },
       select: { leadsEnabled: true },
@@ -320,7 +397,11 @@ export class PipelineService {
     }
   }
 
-  private configured(context: RequestContext, kind: PipelineKindName, pipelineId: string): AfterWrite {
+  private configured(
+    context: RequestContext,
+    kind: PipelineKindName,
+    pipelineId: string,
+  ): AfterWrite {
     return pipelineTrace(this.audit, this.outbox, context, {
       action: 'pipeline.configured',
       resourceType: 'pipeline',
@@ -393,7 +474,10 @@ const cardPermissions = {
     update: 'deals:update',
     delete: 'deals:delete',
   },
-} as const satisfies Record<PipelineKindName, Record<'create' | 'read' | 'update' | 'delete', Permission>>;
+} as const satisfies Record<
+  PipelineKindName,
+  Record<'create' | 'read' | 'update' | 'delete', Permission>
+>;
 
 function tracksCardFields(patch: CardPatch): boolean {
   return (

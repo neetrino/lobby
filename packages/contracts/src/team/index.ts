@@ -9,4 +9,10 @@ export {
   teamRoleSchema,
   teamRoles,
 } from './team.js';
-export type { DirectMessage, DirectMessagePage, TeamDirectory, TeamMember, TeamRole } from './team.js';
+export type {
+  DirectMessage,
+  DirectMessagePage,
+  TeamDirectory,
+  TeamMember,
+  TeamRole,
+} from './team.js';

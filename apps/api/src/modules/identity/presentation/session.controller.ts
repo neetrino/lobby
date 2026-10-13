@@ -1,4 +1,14 @@
-import { Controller, Get, HttpCode, Inject, NotFoundException, Patch, Post, Req, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  Inject,
+  NotFoundException,
+  Patch,
+  Post,
+  Req,
+  Res,
+} from '@nestjs/common';
 import { z } from 'zod';
 
 import type { AuthenticatedSession } from '../../../common/auth/authenticated-session';
@@ -58,7 +68,11 @@ export class SessionController {
     @CurrentSession() current: AuthenticatedSession,
     @ZodBody(leadsPreferenceSchema) body: { enabled: boolean },
   ): Promise<{ data: SessionView }> {
-    const updated = await this.users.setLeadsEnabled(current.userId, current.tenantId, body.enabled);
+    const updated = await this.users.setLeadsEnabled(
+      current.userId,
+      current.tenantId,
+      body.enabled,
+    );
     if (!updated) {
       throw new NotFoundException();
     }

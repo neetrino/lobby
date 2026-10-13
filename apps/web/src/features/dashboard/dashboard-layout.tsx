@@ -1,6 +1,9 @@
 import { useTranslations } from 'next-intl';
 
-export function widgetLabel(t: ReturnType<typeof useTranslations<'dashboard'>>, key: string): string {
+export function widgetLabel(
+  t: ReturnType<typeof useTranslations<'dashboard'>>,
+  key: string,
+): string {
   switch (key) {
     case 'contacts.active':
       return t('kpi.contactsActive');
@@ -25,7 +28,10 @@ export function widgetLabel(t: ReturnType<typeof useTranslations<'dashboard'>>, 
   }
 }
 
-export function kindLabel(t: ReturnType<typeof useTranslations<'dashboard'>>, kind: string): string {
+export function kindLabel(
+  t: ReturnType<typeof useTranslations<'dashboard'>>,
+  kind: string,
+): string {
   switch (kind) {
     case 'contact.created':
       return t('kinds.contactCreated');

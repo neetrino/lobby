@@ -16,6 +16,7 @@ import {
   type AuditDetail,
   type AuditEvent,
 } from './audit-api';
+import { actionText, changeLines, outcomeText, resourceText, roleText } from './audit-labels';
 import styles from './audit.module.css';
 
 type Filters = {
@@ -145,9 +146,9 @@ export function AuditWorkspace() {
                   onChange={(e) => setFilters({ ...filters, outcome: e.target.value })}
                 >
                   <option value="">{t('allOutcomes')}</option>
-                  <option value="SUCCESS">{t('success')}</option>
-                  <option value="DENIED">{t('denied')}</option>
-                  <option value="FAILURE">{t('failure')}</option>
+                  <option value="SUCCESS">{outcomeText(t, 'SUCCESS')}</option>
+                  <option value="DENIED">{outcomeText(t, 'DENIED')}</option>
+                  <option value="FAILURE">{outcomeText(t, 'FAILURE')}</option>
                 </select>
                 <select
                   aria-label={t('actorType')}
@@ -166,7 +167,7 @@ export function AuditWorkspace() {
                   <option value="">{t('allResources')}</option>
                   {auditResourceTypes.map((type) => (
                     <option key={type} value={type}>
-                      {type}
+                      {resourceText(t, type)}
                     </option>
                   ))}
                 </select>
@@ -303,19 +304,18 @@ function AuditTable({
               </td>
               <td>
                 <strong>{event.actor.name ?? t('system')}</strong>
-                <small>{event.actor.role ?? event.actor.type}</small>
+                <small>{roleText(t, event.actor) ?? t('user')}</small>
               </td>
               <td>
-                <code>{event.action}</code>
-                <small>{event.module}</small>
+                <strong>{actionText(t, event.action)}</strong>
+                <small>{resourceText(t, event.resource.type)}</small>
               </td>
               <td>
-                <strong>{event.resource.label ?? event.resource.type}</strong>
-                <small>{event.resource.id.slice(0, 8)}</small>
+                <strong>{event.resource.label ?? resourceText(t, event.resource.type)}</strong>
               </td>
               <td>
                 <span className={`${styles.badge} ${styles[event.outcome.toLowerCase()]}`}>
-                  {event.outcome}
+                  {outcomeText(t, event.outcome)}
                 </span>
               </td>
             </tr>
@@ -342,7 +342,7 @@ function Detail({
       <div className={styles.detailHead}>
         <div>
           <span>{t('eventDetail')}</span>
-          <h2>{event.action}</h2>
+          <h2>{actionText(t, event.action)}</h2>
         </div>
         <button type="button" onClick={onClose} aria-label={t('close')}>
           ×
@@ -356,26 +356,52 @@ function Detail({
           )}
         </dd>
         <dt>{t('actor')}</dt>
-        <dd>
-          {event.actor.name ?? t('system')} · {event.actor.role ?? event.actor.type}
-        </dd>
+        <dd>{actorLine(t, event.actor)}</dd>
         <dt>{t('resource')}</dt>
         <dd>
-          {event.resource.label ?? event.resource.type}
-          <small>{event.resource.id}</small>
+          {event.resource.label ?? resourceText(t, event.resource.type)}
+          {event.resource.label === null ? null : (
+            <small>{resourceText(t, event.resource.type)}</small>
+          )}
         </dd>
         <dt>{t('outcome')}</dt>
-        <dd>{event.outcome}</dd>
-        <dt>{t('requestId')}</dt>
-        <dd>
-          <code>{event.requestId}</code>
-        </dd>
+        <dd>{outcomeText(t, event.outcome)}</dd>
         <dt>{t('reason')}</dt>
-        <dd>{event.reason ?? '—'}</dd>
+        <dd>{event.reason ?? t('noReason')}</dd>
       </dl>
       <h3>{t('changes')}</h3>
-      <pre>{event.changes === null ? t('noChanges') : JSON.stringify(event.changes, null, 2)}</pre>
+      <ChangeList t={t} changes={event.changes} />
     </aside>
+  );
+}
+
+function actorLine(
+  t: ReturnType<typeof useTranslations<'audit'>>,
+  actor: AuditEvent['actor'],
+): string {
+  const name = actor.name ?? t('system');
+  const role = roleText(t, actor);
+  return role === null || role === name ? name : `${name} · ${role}`;
+}
+
+function ChangeList({
+  t,
+  changes,
+}: {
+  t: ReturnType<typeof useTranslations<'audit'>>;
+  changes: unknown;
+}) {
+  const lines = changeLines(t, changes);
+  if (lines.length === 0) return <p className={styles.changes}>{t('noChanges')}</p>;
+  return (
+    <ul className={styles.changes}>
+      {lines.map((line, index) => (
+        <li key={`${line.label}-${index}`}>
+          <strong>{line.label}</strong>
+          <span>{line.value}</span>
+        </li>
+      ))}
+    </ul>
   );
 }
 

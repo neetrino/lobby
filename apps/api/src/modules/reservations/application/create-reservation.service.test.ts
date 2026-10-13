@@ -1,4 +1,8 @@
-import { createTestPrismaClient, disposeTestPrismaClient, type PrismaClient } from '@lobby/database/testing';
+import {
+  createTestPrismaClient,
+  disposeTestPrismaClient,
+  type PrismaClient,
+} from '@lobby/database/testing';
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
@@ -36,7 +40,9 @@ describe('CreateReservationService', () => {
   it('creates a staff reservation with history, audit, and an outbox payload without contact details', async () => {
     const seeded = await seed('staff');
     const created = await build().create(user(seeded), command(seeded));
-    const event = await prisma.outboxEvent.findFirstOrThrow({ where: { aggregateId: created.reservation.id } });
+    const event = await prisma.outboxEvent.findFirstOrThrow({
+      where: { aggregateId: created.reservation.id },
+    });
     const history = await prisma.reservationStatusHistory.findFirstOrThrow();
     const audit = await prisma.auditEvent.findFirstOrThrow();
 
@@ -61,34 +67,73 @@ describe('CreateReservationService', () => {
       },
     });
 
-    await expect(service.create(user(owner), command(owner, { locationId: other.location.id }))).rejects.toMatchObject({ code: 'RESERVATION_LOCATION_NOT_FOUND' });
-    await expect(service.create(user(owner), command(owner, { requestedTableId: other.table.id }))).rejects.toMatchObject({ code: 'RESERVATION_TABLE_NOT_FOUND' });
-    await expect(service.create(user(owner), command(owner, { customer: { name: 'Anna', phone: '+37400000000', contactId: contact.id } }))).rejects.toMatchObject({ code: 'RESERVATION_CONTACT_NOT_FOUND' });
-    await expect(service.create(user(owner), command(owner, { assignedUserId: other.user.id }))).rejects.toMatchObject({ code: 'RESERVATION_ASSIGNEE_NOT_FOUND' });
+    await expect(
+      service.create(user(owner), command(owner, { locationId: other.location.id })),
+    ).rejects.toMatchObject({ code: 'RESERVATION_LOCATION_NOT_FOUND' });
+    await expect(
+      service.create(user(owner), command(owner, { requestedTableId: other.table.id })),
+    ).rejects.toMatchObject({ code: 'RESERVATION_TABLE_NOT_FOUND' });
+    await expect(
+      service.create(
+        user(owner),
+        command(owner, {
+          customer: { name: 'Anna', phone: '+37400000000', contactId: contact.id },
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'RESERVATION_CONTACT_NOT_FOUND' });
+    await expect(
+      service.create(user(owner), command(owner, { assignedUserId: other.user.id })),
+    ).rejects.toMatchObject({ code: 'RESERVATION_ASSIGNEE_NOT_FOUND' });
   });
 
   it('rejects an inactive location or table and a party larger than the table', async () => {
     const seeded = await seed('inactive');
-    await prisma.reservationLocation.update({ where: { id: seeded.location.id }, data: { status: 'INACTIVE' } });
-    await expect(build().create(user(seeded), command(seeded))).rejects.toMatchObject({ code: 'RESERVATION_LOCATION_NOT_FOUND' });
-    await prisma.reservationLocation.update({ where: { id: seeded.location.id }, data: { status: 'ACTIVE' } });
-    await prisma.reservationTable.update({ where: { id: seeded.table.id }, data: { status: 'INACTIVE' } });
-    await expect(build().create(user(seeded), command(seeded))).rejects.toMatchObject({ code: 'RESERVATION_TABLE_NOT_FOUND' });
-    await prisma.reservationTable.update({ where: { id: seeded.table.id }, data: { status: 'ACTIVE' } });
-    await expect(build().create(user(seeded), command(seeded, { guestCount: 8 }))).rejects.toMatchObject({ code: 'RESERVATION_TABLE_CAPACITY_EXCEEDED' });
+    await prisma.reservationLocation.update({
+      where: { id: seeded.location.id },
+      data: { status: 'INACTIVE' },
+    });
+    await expect(build().create(user(seeded), command(seeded))).rejects.toMatchObject({
+      code: 'RESERVATION_LOCATION_NOT_FOUND',
+    });
+    await prisma.reservationLocation.update({
+      where: { id: seeded.location.id },
+      data: { status: 'ACTIVE' },
+    });
+    await prisma.reservationTable.update({
+      where: { id: seeded.table.id },
+      data: { status: 'INACTIVE' },
+    });
+    await expect(build().create(user(seeded), command(seeded))).rejects.toMatchObject({
+      code: 'RESERVATION_TABLE_NOT_FOUND',
+    });
+    await prisma.reservationTable.update({
+      where: { id: seeded.table.id },
+      data: { status: 'ACTIVE' },
+    });
+    await expect(
+      build().create(user(seeded), command(seeded, { guestCount: 8 })),
+    ).rejects.toMatchObject({ code: 'RESERVATION_TABLE_CAPACITY_EXCEEDED' });
   });
 
   it('rejects a visit outside working hours', async () => {
     const seeded = await seed('hours');
-    await prisma.reservationWorkingHours.updateMany({ data: { opensAt: clock(10), closesAt: clock(12) } });
-    await expect(build().create(user(seeded), command(seeded))).rejects.toMatchObject({ code: 'RESERVATION_OUTSIDE_WORKING_HOURS' });
-    await expect(build().create(user(seeded), command(seeded, { startsAt: '2020-01-01T18:00:00.000Z' }))).rejects.toMatchObject({ code: 'RESERVATION_START_NOT_IN_FUTURE' });
+    await prisma.reservationWorkingHours.updateMany({
+      data: { opensAt: clock(10), closesAt: clock(12) },
+    });
+    await expect(build().create(user(seeded), command(seeded))).rejects.toMatchObject({
+      code: 'RESERVATION_OUTSIDE_WORKING_HOURS',
+    });
+    await expect(
+      build().create(user(seeded), command(seeded, { startsAt: '2020-01-01T18:00:00.000Z' })),
+    ).rejects.toMatchObject({ code: 'RESERVATION_START_NOT_IN_FUTURE' });
   });
 
   it('replays the same source request and keeps one row', async () => {
     const seeded = await seed('replay');
     const service = build();
-    const body = command(seeded, { source: { type: 'STAFF', accountId: seeded.user.id, externalRequestId: 'req-1' } });
+    const body = command(seeded, {
+      source: { type: 'STAFF', accountId: seeded.user.id, externalRequestId: 'req-1' },
+    });
     const first = await service.create(user(seeded), body);
     const second = await service.create(user(seeded), body);
 
@@ -132,14 +177,20 @@ describe('CreateReservationService', () => {
         endsAt: new Date('2020-01-01T19:00:00.000Z'),
       },
     });
-    await prisma.reservationLocation.update({ where: { id: seeded.location.id }, data: { status: 'INACTIVE' } });
+    await prisma.reservationLocation.update({
+      where: { id: seeded.location.id },
+      data: { status: 'INACTIVE' },
+    });
     await prisma.contact.update({ where: { id: contact.id }, data: { archivedAt: new Date() } });
     const replayed = await build().create(user(seeded), body);
 
     expect(replayed.replayed).toBe(true);
     expect(replayed.reservation.id).toBe(first.reservation.id);
     await expect(
-      build().create(user(seeded), { ...body, customer: { ...body.customer, phone: '+37400000009' } }),
+      build().create(user(seeded), {
+        ...body,
+        customer: { ...body.customer, phone: '+37400000009' },
+      }),
     ).rejects.toMatchObject({ code: 'RESERVATION_SOURCE_CONFLICT' });
     await expect(
       build().create(user(seeded), { ...body, source: { ...body.source, messageId: 'msg-2' } }),
@@ -154,33 +205,54 @@ describe('CreateReservationService', () => {
     });
     const integration = await whatsappActor(prisma, seeded.tenant.id, randomUUID());
 
-    await expect(build().create(user(seeded), channelBody)).rejects.toBeInstanceOf(AuthorizationError);
-    await expect(build().create(integration, command(seeded, { source: { type: 'STAFF' } }))).rejects.toBeInstanceOf(
+    await expect(build().create(user(seeded), channelBody)).rejects.toBeInstanceOf(
       AuthorizationError,
     );
     await expect(
-      build().create(integration, command(seeded, { source: { type: 'INSTAGRAM', accountId: 'channel-1', externalRequestId: 'req-1' } })),
+      build().create(integration, command(seeded, { source: { type: 'STAFF' } })),
     ).rejects.toBeInstanceOf(AuthorizationError);
     await expect(
-      build().create(integration, command(seeded, { source: { type: 'WHATSAPP', accountId: 'other', externalRequestId: 'req-2' } })),
+      build().create(
+        integration,
+        command(seeded, {
+          source: { type: 'INSTAGRAM', accountId: 'channel-1', externalRequestId: 'req-1' },
+        }),
+      ),
+    ).rejects.toBeInstanceOf(AuthorizationError);
+    await expect(
+      build().create(
+        integration,
+        command(seeded, {
+          source: { type: 'WHATSAPP', accountId: 'other', externalRequestId: 'req-2' },
+        }),
+      ),
     ).rejects.toBeInstanceOf(AuthorizationError);
     expect(await prisma.reservation.count()).toBe(0);
   });
 
   it('keeps one reservation when the same source request arrives concurrently', async () => {
     const seeded = await seed('race-source');
-    const body = command(seeded, { source: { type: 'WHATSAPP', accountId: 'channel-1', externalRequestId: 'req-1' } });
+    const body = command(seeded, {
+      source: { type: 'WHATSAPP', accountId: 'channel-1', externalRequestId: 'req-1' },
+    });
     const requestId = randomUUID();
     const actor = await whatsappActor(prisma, seeded.tenant.id, requestId);
-    const results = await Promise.allSettled([build().create(actor, body), build().create(actor, body)]);
-    const fulfilled = results.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
+    const results = await Promise.allSettled([
+      build().create(actor, body),
+      build().create(actor, body),
+    ]);
+    const fulfilled = results.flatMap((result) =>
+      result.status === 'fulfilled' ? [result.value] : [],
+    );
 
     expect(fulfilled).toHaveLength(2);
     expect(fulfilled.map((result) => result.replayed).sort()).toEqual([false, true]);
     expect(fulfilled[0]?.reservation.id).toBe(fulfilled[1]?.reservation.id);
     expect(await prisma.reservation.count()).toBe(1);
     expect((await prisma.reservation.findFirstOrThrow()).sourceAccountId).toBe('channel-1');
-    expect((await prisma.reservationSourceRequest.findFirstOrThrow()).sourceAccountId).toBe('channel-1');
+    expect((await prisma.reservationSourceRequest.findFirstOrThrow()).sourceAccountId).toBe(
+      'channel-1',
+    );
     const audit = await prisma.auditEvent.findFirstOrThrow();
     expect(audit).toMatchObject({
       actorType: 'INTEGRATION',
@@ -200,13 +272,18 @@ describe('CreateReservationService', () => {
     const service = build();
     const results = await Promise.allSettled([
       service.create(user(seeded), command(seeded)),
-      service.create(user(seeded), command(seeded, { customer: { name: 'Ben', phone: '+37400000001' } })),
+      service.create(
+        user(seeded),
+        command(seeded, { customer: { name: 'Ben', phone: '+37400000001' } }),
+      ),
     ]);
     expect(results.filter((result) => result.status === 'fulfilled')).toHaveLength(1);
     expect(await prisma.reservation.count()).toBe(1);
 
     const next = new Date(seeded.starts.getTime() + 60 * 60_000);
-    await expect(service.create(user(seeded), command(seeded, { startsAt: next.toISOString() }))).resolves.toMatchObject({ replayed: false });
+    await expect(
+      service.create(user(seeded), command(seeded, { startsAt: next.toISOString() })),
+    ).resolves.toMatchObject({ replayed: false });
     expect(await prisma.reservation.count()).toBe(2);
   });
 
@@ -219,9 +296,15 @@ describe('CreateReservationService', () => {
     const outbox = new OutboxService();
     outbox.enqueue = () => Promise.reject(new Error('outbox unavailable'));
 
-    await expect(build({ history }).create(user(seeded), command(seeded))).rejects.toThrow('history unavailable');
-    await expect(build({ audit }).create(user(seeded), command(seeded))).rejects.toThrow('audit unavailable');
-    await expect(build({ outbox }).create(user(seeded), command(seeded))).rejects.toThrow('outbox unavailable');
+    await expect(build({ history }).create(user(seeded), command(seeded))).rejects.toThrow(
+      'history unavailable',
+    );
+    await expect(build({ audit }).create(user(seeded), command(seeded))).rejects.toThrow(
+      'audit unavailable',
+    );
+    await expect(build({ outbox }).create(user(seeded), command(seeded))).rejects.toThrow(
+      'outbox unavailable',
+    );
     expect(await prisma.reservation.count()).toBe(0);
     expect(await prisma.reservationStatusHistory.count()).toBe(0);
     expect(await prisma.auditEvent.count()).toBe(0);
@@ -231,16 +314,22 @@ describe('CreateReservationService', () => {
   it('rejects a disabled reservations module', async () => {
     const seeded = await seed('disabled');
     await prisma.tenantModule.updateMany({ data: { status: 'DISABLED' } });
-    await expect(build().create(user(seeded), command(seeded))).rejects.toBeInstanceOf(ReservationFailure);
-    await expect(build().create(user(seeded), command(seeded))).rejects.toMatchObject({ code: 'RESERVATION_MODULE_DISABLED' });
+    await expect(build().create(user(seeded), command(seeded))).rejects.toBeInstanceOf(
+      ReservationFailure,
+    );
+    await expect(build().create(user(seeded), command(seeded))).rejects.toMatchObject({
+      code: 'RESERVATION_MODULE_DISABLED',
+    });
   });
 });
 
-function build(overrides: {
-  history?: ReservationHistoryWriter;
-  audit?: AuditEventStore;
-  outbox?: OutboxService;
-} = {}) {
+function build(
+  overrides: {
+    history?: ReservationHistoryWriter;
+    audit?: AuditEventStore;
+    outbox?: OutboxService;
+  } = {},
+) {
   return new CreateReservationService(
     new ReservationRepository(prisma),
     overrides.history ?? new ReservationHistoryWriter(),
@@ -254,7 +343,10 @@ function user(seeded: Awaited<ReturnType<typeof seed>>) {
   return { type: 'USER' as const, context: seeded.context };
 }
 
-function command(seeded: Awaited<ReturnType<typeof seed>>, overrides: Record<string, unknown> = {}) {
+function command(
+  seeded: Awaited<ReturnType<typeof seed>>,
+  overrides: Record<string, unknown> = {},
+) {
   return {
     locationId: seeded.location.id,
     startsAt: seeded.starts.toISOString(),
@@ -270,7 +362,13 @@ function command(seeded: Awaited<ReturnType<typeof seed>>, overrides: Record<str
 async function seed(name: string) {
   const tenant = await prisma.tenant.create({ data: { name, subdomain: name, plan: 'STARTER' } });
   const userRow = await prisma.user.create({
-    data: { tenantId: tenant.id, email: `${name}@example.test`, name: 'Ada', passwordHash, role: 'OWNER' },
+    data: {
+      tenantId: tenant.id,
+      email: `${name}@example.test`,
+      name: 'Ada',
+      passwordHash,
+      role: 'OWNER',
+    },
   });
   await prisma.tenantModule.create({
     data: { tenantId: tenant.id, moduleKey: 'reservations', status: 'ENABLED' },

@@ -59,41 +59,118 @@ export function readAuthRateLimitConfig(env: NodeJS.ProcessEnv = process.env): A
   };
 }
 
-function credentialPolicies(env: NodeJS.ProcessEnv): Pick<
-  AuthRateLimitConfig,
-  'loginIp' | 'loginAccount' | 'registerIp' | 'invalidSessionIp'
-> {
+function credentialPolicies(
+  env: NodeJS.ProcessEnv,
+): Pick<AuthRateLimitConfig, 'loginIp' | 'loginAccount' | 'registerIp' | 'invalidSessionIp'> {
   return {
-    loginIp: policy(env, 'RATE_LIMIT_LOGIN_IP_LIMIT', 'RATE_LIMIT_LOGIN_IP_WINDOW_MS', DEFAULT_LOGIN_IP_LIMIT, DEFAULT_LOGIN_IP_WINDOW_MS),
-    loginAccount: policy(env, 'RATE_LIMIT_LOGIN_ACCOUNT_LIMIT', 'RATE_LIMIT_LOGIN_ACCOUNT_WINDOW_MS', DEFAULT_LOGIN_ACCOUNT_LIMIT, DEFAULT_LOGIN_ACCOUNT_WINDOW_MS),
-    registerIp: policy(env, 'RATE_LIMIT_REGISTER_IP_LIMIT', 'RATE_LIMIT_REGISTER_IP_WINDOW_MS', DEFAULT_REGISTER_IP_LIMIT, DEFAULT_REGISTER_IP_WINDOW_MS),
-    invalidSessionIp: policy(env, 'RATE_LIMIT_INVALID_SESSION_IP_LIMIT', 'RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS', DEFAULT_INVALID_SESSION_IP_LIMIT, DEFAULT_INVALID_SESSION_IP_WINDOW_MS),
+    loginIp: policy(
+      env,
+      'RATE_LIMIT_LOGIN_IP_LIMIT',
+      'RATE_LIMIT_LOGIN_IP_WINDOW_MS',
+      DEFAULT_LOGIN_IP_LIMIT,
+      DEFAULT_LOGIN_IP_WINDOW_MS,
+    ),
+    loginAccount: policy(
+      env,
+      'RATE_LIMIT_LOGIN_ACCOUNT_LIMIT',
+      'RATE_LIMIT_LOGIN_ACCOUNT_WINDOW_MS',
+      DEFAULT_LOGIN_ACCOUNT_LIMIT,
+      DEFAULT_LOGIN_ACCOUNT_WINDOW_MS,
+    ),
+    registerIp: policy(
+      env,
+      'RATE_LIMIT_REGISTER_IP_LIMIT',
+      'RATE_LIMIT_REGISTER_IP_WINDOW_MS',
+      DEFAULT_REGISTER_IP_LIMIT,
+      DEFAULT_REGISTER_IP_WINDOW_MS,
+    ),
+    invalidSessionIp: policy(
+      env,
+      'RATE_LIMIT_INVALID_SESSION_IP_LIMIT',
+      'RATE_LIMIT_INVALID_SESSION_IP_WINDOW_MS',
+      DEFAULT_INVALID_SESSION_IP_LIMIT,
+      DEFAULT_INVALID_SESSION_IP_WINDOW_MS,
+    ),
   };
 }
 
-function invitationPolicies(env: NodeJS.ProcessEnv): Pick<AuthRateLimitConfig, 'inviteIp' | 'inviteUser' | 'acceptIp'> {
+function invitationPolicies(
+  env: NodeJS.ProcessEnv,
+): Pick<AuthRateLimitConfig, 'inviteIp' | 'inviteUser' | 'acceptIp'> {
   return {
-    inviteIp: policy(env, 'RATE_LIMIT_INVITE_IP_LIMIT', 'RATE_LIMIT_INVITE_IP_WINDOW_MS', DEFAULT_INVITE_IP_LIMIT, DEFAULT_INVITE_IP_WINDOW_MS),
-    inviteUser: policy(env, 'RATE_LIMIT_INVITE_USER_LIMIT', 'RATE_LIMIT_INVITE_USER_WINDOW_MS', DEFAULT_INVITE_USER_LIMIT, DEFAULT_INVITE_USER_WINDOW_MS),
-    acceptIp: policy(env, 'RATE_LIMIT_ACCEPT_IP_LIMIT', 'RATE_LIMIT_ACCEPT_IP_WINDOW_MS', DEFAULT_ACCEPT_IP_LIMIT, DEFAULT_ACCEPT_IP_WINDOW_MS),
+    inviteIp: policy(
+      env,
+      'RATE_LIMIT_INVITE_IP_LIMIT',
+      'RATE_LIMIT_INVITE_IP_WINDOW_MS',
+      DEFAULT_INVITE_IP_LIMIT,
+      DEFAULT_INVITE_IP_WINDOW_MS,
+    ),
+    inviteUser: policy(
+      env,
+      'RATE_LIMIT_INVITE_USER_LIMIT',
+      'RATE_LIMIT_INVITE_USER_WINDOW_MS',
+      DEFAULT_INVITE_USER_LIMIT,
+      DEFAULT_INVITE_USER_WINDOW_MS,
+    ),
+    acceptIp: policy(
+      env,
+      'RATE_LIMIT_ACCEPT_IP_LIMIT',
+      'RATE_LIMIT_ACCEPT_IP_WINDOW_MS',
+      DEFAULT_ACCEPT_IP_LIMIT,
+      DEFAULT_ACCEPT_IP_WINDOW_MS,
+    ),
   };
 }
 
-function teamMessagePolicies(env: NodeJS.ProcessEnv): Pick<AuthRateLimitConfig, 'teamMessageIp' | 'teamMessageUser'> {
+function teamMessagePolicies(
+  env: NodeJS.ProcessEnv,
+): Pick<AuthRateLimitConfig, 'teamMessageIp' | 'teamMessageUser'> {
   return {
-    teamMessageIp: policy(env, 'RATE_LIMIT_TEAM_MESSAGE_IP_LIMIT', 'RATE_LIMIT_TEAM_MESSAGE_IP_WINDOW_MS', DEFAULT_TEAM_MESSAGE_IP_LIMIT, DEFAULT_TEAM_MESSAGE_IP_WINDOW_MS),
-    teamMessageUser: policy(env, 'RATE_LIMIT_TEAM_MESSAGE_USER_LIMIT', 'RATE_LIMIT_TEAM_MESSAGE_USER_WINDOW_MS', DEFAULT_TEAM_MESSAGE_USER_LIMIT, DEFAULT_TEAM_MESSAGE_USER_WINDOW_MS),
+    teamMessageIp: policy(
+      env,
+      'RATE_LIMIT_TEAM_MESSAGE_IP_LIMIT',
+      'RATE_LIMIT_TEAM_MESSAGE_IP_WINDOW_MS',
+      DEFAULT_TEAM_MESSAGE_IP_LIMIT,
+      DEFAULT_TEAM_MESSAGE_IP_WINDOW_MS,
+    ),
+    teamMessageUser: policy(
+      env,
+      'RATE_LIMIT_TEAM_MESSAGE_USER_LIMIT',
+      'RATE_LIMIT_TEAM_MESSAGE_USER_WINDOW_MS',
+      DEFAULT_TEAM_MESSAGE_USER_LIMIT,
+      DEFAULT_TEAM_MESSAGE_USER_WINDOW_MS,
+    ),
   };
 }
 
-function passwordResetPolicies(env: NodeJS.ProcessEnv): Pick<
+function passwordResetPolicies(
+  env: NodeJS.ProcessEnv,
+): Pick<
   AuthRateLimitConfig,
   'passwordResetIp' | 'passwordResetAccount' | 'passwordResetConfirmIp'
 > {
   return {
-    passwordResetIp: policy(env, 'RATE_LIMIT_PASSWORD_RESET_IP_LIMIT', 'RATE_LIMIT_PASSWORD_RESET_IP_WINDOW_MS', DEFAULT_PASSWORD_RESET_IP_LIMIT, DEFAULT_PASSWORD_RESET_IP_WINDOW_MS),
-    passwordResetAccount: policy(env, 'RATE_LIMIT_PASSWORD_RESET_ACCOUNT_LIMIT', 'RATE_LIMIT_PASSWORD_RESET_ACCOUNT_WINDOW_MS', DEFAULT_PASSWORD_RESET_ACCOUNT_LIMIT, DEFAULT_PASSWORD_RESET_ACCOUNT_WINDOW_MS),
-    passwordResetConfirmIp: policy(env, 'RATE_LIMIT_PASSWORD_RESET_CONFIRM_IP_LIMIT', 'RATE_LIMIT_PASSWORD_RESET_CONFIRM_IP_WINDOW_MS', DEFAULT_PASSWORD_RESET_CONFIRM_IP_LIMIT, DEFAULT_PASSWORD_RESET_CONFIRM_IP_WINDOW_MS),
+    passwordResetIp: policy(
+      env,
+      'RATE_LIMIT_PASSWORD_RESET_IP_LIMIT',
+      'RATE_LIMIT_PASSWORD_RESET_IP_WINDOW_MS',
+      DEFAULT_PASSWORD_RESET_IP_LIMIT,
+      DEFAULT_PASSWORD_RESET_IP_WINDOW_MS,
+    ),
+    passwordResetAccount: policy(
+      env,
+      'RATE_LIMIT_PASSWORD_RESET_ACCOUNT_LIMIT',
+      'RATE_LIMIT_PASSWORD_RESET_ACCOUNT_WINDOW_MS',
+      DEFAULT_PASSWORD_RESET_ACCOUNT_LIMIT,
+      DEFAULT_PASSWORD_RESET_ACCOUNT_WINDOW_MS,
+    ),
+    passwordResetConfirmIp: policy(
+      env,
+      'RATE_LIMIT_PASSWORD_RESET_CONFIRM_IP_LIMIT',
+      'RATE_LIMIT_PASSWORD_RESET_CONFIRM_IP_WINDOW_MS',
+      DEFAULT_PASSWORD_RESET_CONFIRM_IP_LIMIT,
+      DEFAULT_PASSWORD_RESET_CONFIRM_IP_WINDOW_MS,
+    ),
   };
 }
 

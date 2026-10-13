@@ -7,7 +7,10 @@ import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import type { TenantId } from '../../../common/tenant/tenant-id';
 import { clockMinutes } from '../domain/reservation-hours';
 import type { ReservationActor } from '../application/reservation-actor';
-import { reservationListFilter, reservationListOrder } from '../application/list-reservations.query';
+import {
+  reservationListFilter,
+  reservationListOrder,
+} from '../application/list-reservations.query';
 import type { ReservationListQuery } from '../application/list-reservations.schema';
 import type { AvailabilityQuery } from '../application/reservation-read.schema';
 import {
@@ -140,7 +143,11 @@ export type ReservationOperations = {
   update(id: string, input: ReservationUpdate): Promise<ReservationRecord | null>;
   listLocations(): Promise<LocationListRecord[]>;
   listTables(locationId: string): Promise<TableRecord[]>;
-  listAvailableTables(query: AvailabilityQuery, startsAt: Date, endsAt: Date): Promise<TableRecord[]>;
+  listAvailableTables(
+    query: AvailabilityQuery,
+    startsAt: Date,
+    endsAt: Date,
+  ): Promise<TableRecord[]>;
   history(id: string): Promise<ReservationHistoryRecord[]>;
   findLocation(id: string): Promise<LocationRecord | null>;
   findTable(id: string): Promise<TableRecord | null>;
@@ -151,7 +158,11 @@ export type ReservationOperations = {
   findBySourceRequest(source: SourceIdentity): Promise<StoredSourceRequest | null>;
   lockSourceRequest(source: SourceIdentity): Promise<void>;
   insertReservation(input: ReservationInsert): Promise<ReservationRecord>;
-  insertSourceRequest(source: SourceIdentity, reservationId: string, requestFingerprint: string): Promise<void>;
+  insertSourceRequest(
+    source: SourceIdentity,
+    reservationId: string,
+    requestFingerprint: string,
+  ): Promise<void>;
 };
 
 export type TenantReservations = ReservationOperations & {
@@ -355,7 +366,11 @@ class ReservationQueries implements ReservationOperations {
     });
   }
 
-  async findHours(locationId: string, localDate: string, weekday: number): Promise<HoursWindow | null> {
+  async findHours(
+    locationId: string,
+    localDate: string,
+    weekday: number,
+  ): Promise<HoursWindow | null> {
     const exception = await this.db.reservationScheduleException.findFirst({
       where: { tenantId: this.tenantId, locationId, localDate: dateOnly(localDate) },
     });
@@ -387,8 +402,18 @@ class ReservationQueries implements ReservationOperations {
     return toReservation(row);
   }
 
-  insertSourceRequest(source: SourceIdentity, reservationId: string, requestFingerprint: string): Promise<void> {
-    return insertStoredSourceRequest(this.db, this.tenantId, source, reservationId, requestFingerprint);
+  insertSourceRequest(
+    source: SourceIdentity,
+    reservationId: string,
+    requestFingerprint: string,
+  ): Promise<void> {
+    return insertStoredSourceRequest(
+      this.db,
+      this.tenantId,
+      source,
+      reservationId,
+      requestFingerprint,
+    );
   }
 
   private overlapping(tableId: string, startsAt: Date, endsAt: Date): Promise<number> {
@@ -434,11 +459,19 @@ function toReservation(row: ReservationRecord): ReservationRecord {
   return row;
 }
 
-function exceptionWindow(closed: boolean, opensAt: Date | null, closesAt: Date | null): HoursWindow {
+function exceptionWindow(
+  closed: boolean,
+  opensAt: Date | null,
+  closesAt: Date | null,
+): HoursWindow {
   if (closed || opensAt === null || closesAt === null) {
     return { closed: true, opensMinute: 0, closesMinute: 0 };
   }
-  return { closed: false, opensMinute: clockMinutes(opensAt), closesMinute: clockMinutes(closesAt) };
+  return {
+    closed: false,
+    opensMinute: clockMinutes(opensAt),
+    closesMinute: clockMinutes(closesAt),
+  };
 }
 
 function dateOnly(localDate: string): Date {

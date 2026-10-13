@@ -80,7 +80,11 @@ export function TeamPanel() {
           />
         </label>
         <p className={styles.hint}>{t('memberRole')}</p>
-        <button type="submit" className={styles.submit} disabled={pending || email.trim().length === 0}>
+        <button
+          type="submit"
+          className={styles.submit}
+          disabled={pending || email.trim().length === 0}
+        >
           {t('inviteMember')}
         </button>
       </form>
@@ -149,7 +153,12 @@ function InvitationRow({
       >
         {t('resend')}
       </button>{' '}
-      <button type="button" className={styles.textButton} disabled={busy} onClick={() => void run(onRevoke)}>
+      <button
+        type="button"
+        className={styles.textButton}
+        disabled={busy}
+        onClick={() => void run(onRevoke)}
+      >
         {t('revoke')}
       </button>
     </p>

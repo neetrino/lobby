@@ -198,7 +198,11 @@ describe('Reservations HTTP', () => {
       .patch(`/api/v1/reservations/${reservationId}`)
       .set('Origin', origin)
       .set('Cookie', owner.cookie)
-      .send({ startsAt: rescheduledStarts.toISOString(), guestCount: 3, customerName: 'Anna Updated' });
+      .send({
+        startsAt: rescheduledStarts.toISOString(),
+        guestCount: 3,
+        customerName: 'Anna Updated',
+      });
     const cancelled = await request(http)
       .post(`/api/v1/reservations/${reservationId}/cancel`)
       .set('Origin', origin)
@@ -207,9 +211,7 @@ describe('Reservations HTTP', () => {
     const hiddenRead = await request(http)
       .get(`/api/v1/reservations/${reservationId}`)
       .set('Cookie', other.cookie);
-    const otherList = await request(http)
-      .get('/api/v1/reservations')
-      .set('Cookie', other.cookie);
+    const otherList = await request(http).get('/api/v1/reservations').set('Cookie', other.cookie);
     const hiddenUpdate = await request(http)
       .patch(`/api/v1/reservations/${reservationId}`)
       .set('Origin', origin)
@@ -284,10 +286,12 @@ describe('Reservations HTTP', () => {
     expect(hidden.status).toBe(404);
     expect(hidden.body.error.code).toBe('RESERVATION_LOCATION_NOT_FOUND');
     expect(historyResponse.status).toBe(200);
-    expect(historyResponse.body.data.map((item: { fromStatus: string | null; toStatus: string }) => [
-      item.fromStatus,
-      item.toStatus,
-    ])).toEqual([
+    expect(
+      historyResponse.body.data.map((item: { fromStatus: string | null; toStatus: string }) => [
+        item.fromStatus,
+        item.toStatus,
+      ]),
+    ).toEqual([
       [null, 'PENDING'],
       ['PENDING', 'CANCELLED'],
     ]);
@@ -306,13 +310,23 @@ describe('Reservations HTTP', () => {
     });
     expect(auditActions).toEqual([
       { action: 'reservation.created', changes: null, reason: null },
-      { action: 'reservation.updated', changes: null, reason: null },
+      {
+        action: 'reservation.updated',
+        changes: {
+          startsAt: { from: starts.toISOString(), to: rescheduledStarts.toISOString() },
+          guestCount: { from: 4, to: 3 },
+          guestDetailsChanged: true,
+        },
+        reason: null,
+      },
       {
         action: 'reservation.status.changed',
-        changes: null,
+        changes: { status: { from: 'PENDING', to: 'CANCELLED' } },
         reason: 'Customer requested cancellation',
       },
     ]);
+    expect(JSON.stringify(auditActions)).not.toContain('Anna Updated');
+    expect(JSON.stringify(auditActions)).not.toContain('+37400000000');
   }, 30_000);
 
   it('walks confirm, arrive, seat, complete, and no-show', async () => {
@@ -429,7 +443,10 @@ describe('Reservations HTTP', () => {
   }, 30_000);
 
   it('requires a session', async () => {
-    const missing = await request(app.getHttpServer()).post('/api/v1/reservations').set('Origin', origin).send({});
+    const missing = await request(app.getHttpServer())
+      .post('/api/v1/reservations')
+      .set('Origin', origin)
+      .send({});
     expect(missing.status).toBe(401);
   });
 });
@@ -438,14 +455,20 @@ async function login(http: Parameters<typeof request>[0], subdomain: string, ema
   const registered = await request(http)
     .post('/api/v1/auth/register')
     .set('Origin', origin)
-    .send({ tenant: { name: subdomain, subdomain, plan: 'starter' }, owner: { name: 'Ada', email, password } });
+    .send({
+      tenant: { name: subdomain, subdomain, plan: 'starter' },
+      owner: { name: 'Ada', email, password },
+    });
   expect(registered.status).toBe(201);
   const loggedIn = await request(http)
     .post('/api/v1/auth/login')
     .set('Origin', origin)
     .send({ subdomain, email, password });
   expect(loggedIn.status).toBe(200);
-  return { cookie: sessionCookie(loggedIn.headers['set-cookie']), tenantId: registered.body.data.tenant.id as string };
+  return {
+    cookie: sessionCookie(loggedIn.headers['set-cookie']),
+    tenantId: registered.body.data.tenant.id as string,
+  };
 }
 
 function sessionCookie(header: string | string[] | undefined): string {

@@ -80,7 +80,12 @@ export class DirectMessageService {
       select: { id: true },
     });
     const message = await this.prisma.directMessage.create({
-      data: { tenantId: pair.tenantId, conversationId: conversation.id, authorUserId: context.userId, body },
+      data: {
+        tenantId: pair.tenantId,
+        conversationId: conversation.id,
+        authorUserId: context.userId,
+        body,
+      },
       include: { author: { select: { name: true } } },
     });
     return {
@@ -118,7 +123,8 @@ export class DirectMessageService {
     if (peer === null) {
       throw new NotFoundException();
     }
-    const [userLowId, userHighId] = context.userId < memberId ? [context.userId, memberId] : [memberId, context.userId];
+    const [userLowId, userHighId] =
+      context.userId < memberId ? [context.userId, memberId] : [memberId, context.userId];
     return { tenantId, userLowId, userHighId };
   }
 }

@@ -50,7 +50,10 @@ export class CreateReservationService {
     private readonly entitlements: ModuleEntitlementService,
   ) {}
 
-  async create(actor: ReservationActor, input: CreateReservationInput): Promise<CreateReservationResult> {
+  async create(
+    actor: ReservationActor,
+    input: CreateReservationInput,
+  ): Promise<CreateReservationResult> {
     await this.gate(actor);
     const command = createReservationSchema.parse(input);
     assertActorSource(actor, command);
@@ -96,7 +99,11 @@ export class CreateReservationService {
     if (existing === null) {
       return null;
     }
-    return replay(existing.reservation, existing.requestFingerprint, requestFingerprint(command, period));
+    return replay(
+      existing.reservation,
+      existing.requestFingerprint,
+      requestFingerprint(command, period),
+    );
   }
 
   private async commit(
@@ -126,7 +133,10 @@ export class CreateReservationService {
         await writes.insertSourceRequest(source, created.id, fingerprint);
       }
       await this.audit.append(tx, createdAudit(actor, created.id));
-      await this.outbox.enqueue(tx, reservationCreatedEvent(eventInput(tenantId, created, command)));
+      await this.outbox.enqueue(
+        tx,
+        reservationCreatedEvent(eventInput(tenantId, created, command)),
+      );
       return { reservation: created, replayed: false };
     });
   }
@@ -142,7 +152,11 @@ export class CreateReservationService {
     if (source !== null && duplicate) {
       const existing = await scope.findBySourceRequest(source);
       if (existing !== null) {
-        return replay(existing.reservation, existing.requestFingerprint, requestFingerprint(command, period));
+        return replay(
+          existing.reservation,
+          existing.requestFingerprint,
+          requestFingerprint(command, period),
+        );
       }
     }
     if (isReservationOverlap(error)) {
@@ -198,7 +212,11 @@ function reservationInsert(
   };
 }
 
-function eventInput(tenantId: string, reservation: ReservationRecord, command: CreateReservationCommand) {
+function eventInput(
+  tenantId: string,
+  reservation: ReservationRecord,
+  command: CreateReservationCommand,
+) {
   return {
     tenantId,
     reservationId: reservation.id,
@@ -243,4 +261,3 @@ function createdAudit(actor: ReservationActor, reservationId: string): AuditWrit
     userAgent: null,
   };
 }
-

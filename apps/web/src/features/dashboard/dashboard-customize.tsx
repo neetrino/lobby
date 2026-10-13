@@ -2,7 +2,13 @@
 
 import { dashboardWidgetKeys } from '@lobby/contracts';
 import { useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from 'react';
 
 import type { DashboardBoard } from './dashboard-api';
 import { widgetLabel } from './dashboard-layout';
@@ -54,7 +60,9 @@ export function CustomizeDrawer({
           dragIndex.current = null;
           setRows((current) => move(current, from, index));
         }}
-        onKeyMove={(index, direction) => setRows((current) => move(current, index, index + direction))}
+        onKeyMove={(index, direction) =>
+          setRows((current) => move(current, index, index + direction))
+        }
         onReset={() => setRows(resetRows(widgets))}
         onSave={() => onSave(rows.filter((widget) => widget.enabled).map((widget) => widget.key))}
       />
@@ -104,7 +112,12 @@ function DrawerForm({
     >
       <header className={drawer.drawerHead}>
         <h2 id={titleId}>{title}</h2>
-        <button type="button" className={drawer.iconButton} onClick={onClose} aria-label={t('close')}>
+        <button
+          type="button"
+          className={drawer.iconButton}
+          onClick={onClose}
+          aria-label={t('close')}
+        >
           ×
         </button>
       </header>
@@ -154,7 +167,11 @@ function WidgetRowEditor({
 }) {
   const t = useTranslations('dashboard');
   return (
-    <div className={drawer.widgetRow} onDragOver={(event) => event.preventDefault()} onDrop={onDrop}>
+    <div
+      className={drawer.widgetRow}
+      onDragOver={(event) => event.preventDefault()}
+      onDrop={onDrop}
+    >
       <button
         type="button"
         className={drawer.handle}
@@ -173,7 +190,10 @@ function WidgetRowEditor({
   );
 }
 
-function onReorderKey(event: ReactKeyboardEvent<HTMLButtonElement>, onKeyMove: (direction: -1 | 1) => void): void {
+function onReorderKey(
+  event: ReactKeyboardEvent<HTMLButtonElement>,
+  onKeyMove: (direction: -1 | 1) => void,
+): void {
   if (event.key === 'ArrowUp') {
     event.preventDefault();
     onKeyMove(-1);

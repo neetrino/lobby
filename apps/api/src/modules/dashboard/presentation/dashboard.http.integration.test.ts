@@ -14,12 +14,18 @@ import { AppModule } from '../../../app.module';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { configureHttpApp } from '../../../common/http/configure-http-app';
 import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
-import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../../identity/infrastructure/rate-limit-config';
+import {
+  AUTH_RATE_LIMITS,
+  permissiveAuthRateLimits,
+} from '../../identity/infrastructure/rate-limit-config';
 import { RATE_LIMIT_REDIS } from '../../identity/infrastructure/rate-limit-redis';
 import { MemoryRateLimitRedis } from '../../identity/infrastructure/memory-rate-limit-redis';
 import { REGISTRATION_ENABLED } from '../../identity/infrastructure/registration-config';
 import { SESSION_REDIS } from '../../identity/infrastructure/session-redis';
-import { clearTenantRows, IndexedSessionRedis } from '../../identity/presentation/session-guard.fixtures';
+import {
+  clearTenantRows,
+  IndexedSessionRedis,
+} from '../../identity/presentation/session-guard.fixtures';
 
 const origin = 'http://localhost:3000';
 const password = 'correct-horse-battery';
@@ -95,7 +101,9 @@ describe('dashboard HTTP', () => {
     expect(board.body.data.reservations).toBeUndefined();
     expect(board.body.data.reservationLoad).toBeUndefined();
     expect(
-      board.body.data.activityTrend.days.some((day: { created: number | null }) => day.created === 1),
+      board.body.data.activityTrend.days.some(
+        (day: { created: number | null }) => day.created === 1,
+      ),
     ).toBe(true);
     expect(card(board.body, 'contacts.active')).toBe(1);
     expect(JSON.stringify(board.body)).not.toContain('deals');
@@ -110,7 +118,10 @@ describe('dashboard HTTP', () => {
   }, 45_000);
 });
 
-function card(body: { data: { overview: Array<{ key: string; value: number }> } }, key: string): number {
+function card(
+  body: { data: { overview: Array<{ key: string; value: number }> } },
+  key: string,
+): number {
   const found = body.data.overview.find((item) => item.key === key);
   if (found === undefined) {
     throw new Error(`Missing ${key} card.`);
@@ -118,7 +129,10 @@ function card(body: { data: { overview: Array<{ key: string; value: number }> } 
   return found.value;
 }
 
-async function register(http: ReturnType<NestExpressApplication['getHttpServer']>, subdomain: string) {
+async function register(
+  http: ReturnType<NestExpressApplication['getHttpServer']>,
+  subdomain: string,
+) {
   const response = await request(http)
     .post('/api/v1/auth/register')
     .set('Origin', origin)

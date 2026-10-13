@@ -166,76 +166,76 @@ export function ContactsWorkspace() {
             </p>
           )}
           <ContactsListUi>
-          <ContactsToolbar
-            filters={filters}
-            search={search}
-            rows={list.rows}
-            session={session}
-            onSearch={setSearch}
-            onChange={changeFilters}
-            onExport={exportCsv}
-          />
-          <div className={styles.workspace}>
-            <ContactsTable
-              rows={list.rows}
-              selectedId={editor.contact?.id ?? null}
-              session={session}
-              status={list.status}
-              pending={list.pending}
-              nextCursor={list.nextCursor}
-              hasPrevious={history.length > 0}
+            <ContactsToolbar
               filters={filters}
-              activeCount={activeCount}
-              pageIndex={history.length}
-              onOpen={editor.openContact}
-              onEdit={editor.openEditor}
-              onAskLifecycle={lifecycle.ask}
-              onNext={showNext}
-              onPrevious={showPrevious}
-              onLimit={(limit) => changeFilters({ ...filters, limit })}
+              search={search}
+              rows={list.rows}
+              session={session}
+              onSearch={setSearch}
+              onChange={changeFilters}
+              onExport={exportCsv}
             />
-            {lifecycle.prompt === null ? null : (
-              <LifecycleConfirm
-                contacts={lifecycle.prompt.contacts}
-                action={lifecycle.prompt.action}
-                pending={editor.pending}
-                error={lifecycle.failed ? editor.error : null}
-                onConfirm={() => void confirmLifecycle()}
-                onCancel={lifecycle.cancel}
+            <div className={styles.workspace}>
+              <ContactsTable
+                rows={list.rows}
+                selectedId={editor.contact?.id ?? null}
+                session={session}
+                status={list.status}
+                pending={list.pending}
+                nextCursor={list.nextCursor}
+                hasPrevious={history.length > 0}
+                filters={filters}
+                activeCount={activeCount}
+                pageIndex={history.length}
+                onOpen={editor.openContact}
+                onEdit={editor.openEditor}
+                onAskLifecycle={lifecycle.ask}
+                onNext={showNext}
+                onPrevious={showPrevious}
+                onLimit={(limit) => changeFilters({ ...filters, limit })}
               />
-            )}
-            <EditorOverlay
-              portal={editor.placement === 'portal' && editor.mode !== 'closed'}
-              label={editor.contact?.name ?? t('edit')}
-              onDismiss={editor.pending ? undefined : editor.close}
-            >
-              {editor.mode === 'closed' ? null : (
-                <ContactEditor
-                  mode={editor.mode}
-                  contact={editor.contact}
-                  draft={editor.draft}
-                  rows={list.rows}
-                  session={session}
+              {lifecycle.prompt === null ? null : (
+                <LifecycleConfirm
+                  contacts={lifecycle.prompt.contacts}
+                  action={lifecycle.prompt.action}
                   pending={editor.pending}
-                  error={editor.error}
-                  onDraft={editor.setDraft}
-                  onClose={editor.close}
-                  onInvalid={() => showToast('danger', t('errors.validation'))}
-                  onSave={() => void saveContact()}
-                  onArchive={() => {
-                    if (editor.contact !== null) {
-                      lifecycle.ask([editor.contact], 'archive');
-                    }
-                  }}
-                  onRestore={() => {
-                    if (editor.contact !== null) {
-                      lifecycle.ask([editor.contact], 'restore');
-                    }
-                  }}
+                  error={lifecycle.failed ? editor.error : null}
+                  onConfirm={() => void confirmLifecycle()}
+                  onCancel={lifecycle.cancel}
                 />
               )}
-            </EditorOverlay>
-          </div>
+              <EditorOverlay
+                portal={editor.placement === 'portal' && editor.mode !== 'closed'}
+                label={editor.contact?.name ?? t('edit')}
+                onDismiss={editor.pending ? undefined : editor.close}
+              >
+                {editor.mode === 'closed' ? null : (
+                  <ContactEditor
+                    mode={editor.mode}
+                    contact={editor.contact}
+                    draft={editor.draft}
+                    rows={list.rows}
+                    session={session}
+                    pending={editor.pending}
+                    error={editor.error}
+                    onDraft={editor.setDraft}
+                    onClose={editor.close}
+                    onInvalid={() => showToast('danger', t('errors.validation'))}
+                    onSave={() => void saveContact()}
+                    onArchive={() => {
+                      if (editor.contact !== null) {
+                        lifecycle.ask([editor.contact], 'archive');
+                      }
+                    }}
+                    onRestore={() => {
+                      if (editor.contact !== null) {
+                        lifecycle.ask([editor.contact], 'restore');
+                      }
+                    }}
+                  />
+                )}
+              </EditorOverlay>
+            </div>
           </ContactsListUi>
         </div>
       </main>

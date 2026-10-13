@@ -84,9 +84,21 @@ function ActionMenu({
       <MenuItem label={t('view')} onSelect={onView} close={onClose} />
       <MenuItem label={t('edit')} onSelect={onEdit} close={onClose} />
       {archived ? (
-        <MenuItem label={t('restore')} disabled={!manageable} hint={denied} onSelect={onRestore} close={onClose} />
+        <MenuItem
+          label={t('restore')}
+          disabled={!manageable}
+          hint={denied}
+          onSelect={onRestore}
+          close={onClose}
+        />
       ) : (
-        <MenuItem label={t('archive')} disabled={!manageable} hint={denied} onSelect={onArchive} close={onClose} />
+        <MenuItem
+          label={t('archive')}
+          disabled={!manageable}
+          hint={denied}
+          onSelect={onArchive}
+          close={onClose}
+        />
       )}
     </ul>
   );

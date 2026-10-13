@@ -122,7 +122,8 @@ function ContactGrid({
 }): ReactElement {
   const t = useTranslations('contacts');
   const ui = useContactsListUi();
-  const tableClass = ui.density === 'comfortable' ? `${styles.table} ${styles.comfortable}` : styles.table;
+  const tableClass =
+    ui.density === 'comfortable' ? `${styles.table} ${styles.comfortable}` : styles.table;
   return (
     <table className={tableClass}>
       <caption className={styles.srOnly}>{t('title')}</caption>

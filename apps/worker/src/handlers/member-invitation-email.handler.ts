@@ -28,7 +28,12 @@ export class MemberInvitationEmailHandler {
     } catch {
       throw new PermanentDispatchError('Invitation token seal is invalid.');
     }
-    const invitationUrl = invitationLink(this.appUrl, event.payload.locale, event.aggregateId, token);
+    const invitationUrl = invitationLink(
+      this.appUrl,
+      event.payload.locale,
+      event.aggregateId,
+      token,
+    );
     await this.email.sendMemberInvitation({
       to: event.payload.recipientEmail,
       organizationName: event.payload.organizationName,
@@ -40,7 +45,12 @@ export class MemberInvitationEmailHandler {
   }
 }
 
-function invitationLink(appUrl: string, locale: string, invitationId: string, token: string): string {
+function invitationLink(
+  appUrl: string,
+  locale: string,
+  invitationId: string,
+  token: string,
+): string {
   const base = appUrl.replace(/\/$/, '');
   const query = new URLSearchParams({ id: invitationId, token });
   return `${base}/${locale}/invitations/accept?${query.toString()}`;

@@ -183,7 +183,9 @@ export function passwordResetEmailRegistryEntry(
   });
 }
 
-function workerRegistryEntries(handlers: WorkerHandlers): readonly [
+function workerRegistryEntries(
+  handlers: WorkerHandlers,
+): readonly [
   EventRegistryEntry<1>,
   EventRegistryEntry<1>,
   EventRegistryEntry<2>,
@@ -236,7 +238,9 @@ function pipelineChangedEntry(schema: EventSchema): EventRegistryEntry<1> {
     eventType: 'pipeline.changed',
     eventVersion: 1,
     schema,
-    handlers: [bindSideEffectFree('PipelineChangedHandler', schema, 'transient', async () => undefined)],
+    handlers: [
+      bindSideEffectFree('PipelineChangedHandler', schema, 'transient', async () => undefined),
+    ],
   });
 }
 
@@ -249,7 +253,9 @@ function reservationCreatedEntry(
     eventVersion: 1,
     schema,
     handlers: [
-      bindSideEffectFree('ReservationCreatedHandler', schema, 'transient', (event) => handler.handle(event)),
+      bindSideEffectFree('ReservationCreatedHandler', schema, 'transient', (event) =>
+        handler.handle(event),
+      ),
     ],
   });
 }

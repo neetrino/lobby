@@ -98,9 +98,7 @@ export function DashboardToolbar({
         />
         <LanguageSwitch compact />
         {session === null ? null : (
-          <UserMenu
-            label={session.user.name.trim() || roles(`role.${session.user.role}`)}
-          />
+          <UserMenu label={session.user.name.trim() || roles(`role.${session.user.role}`)} />
         )}
       </div>
     </header>
@@ -151,7 +149,11 @@ function updatedLabel(
   return t('updatedAt', { when: formatWhen(generatedAt, locale) });
 }
 
-function useDismiss(open: boolean, rootRef: RefObject<HTMLDivElement | null>, close: () => void): void {
+function useDismiss(
+  open: boolean,
+  rootRef: RefObject<HTMLDivElement | null>,
+  close: () => void,
+): void {
   useEffect(() => {
     if (!open) {
       return;

@@ -1,6 +1,9 @@
 import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'import' };
 
-import { reservationActorFromChannel, type ReservationActor } from '../src/modules/reservations/application/reservation-actor';
+import {
+  reservationActorFromChannel,
+  type ReservationActor,
+} from '../src/modules/reservations/application/reservation-actor';
 import {
   channelBodySignature,
   ChannelAuthenticator,
@@ -24,7 +27,9 @@ export async function whatsappActor(
       credentialHash: hashChannelCredential(credential),
     },
   });
-  const authenticated = await new ChannelAuthenticator(new ReservationChannelStore(prisma)).authenticate(
+  const authenticated = await new ChannelAuthenticator(
+    new ReservationChannelStore(prisma),
+  ).authenticate(
     {
       'x-lobby-channel-credential': credential,
       'x-lobby-channel-signature': channelBodySignature(credential, rawBody),

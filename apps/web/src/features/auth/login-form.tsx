@@ -140,13 +140,7 @@ export function LoginForm({
   );
 }
 
-function RegistrationEntry({
-  locale,
-  status,
-}: {
-  locale: string;
-  status: RegistrationStatus;
-}) {
+function RegistrationEntry({ locale, status }: { locale: string; status: RegistrationStatus }) {
   const t = useTranslations('auth');
   if (status === 'enabled') {
     return (

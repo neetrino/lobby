@@ -34,7 +34,10 @@ export async function readTeam(): Promise<TeamSnapshot> {
   return readJson('/api/v1/members/invitations');
 }
 
-export function inviteMember(email: string, locale: string): Promise<{ id: string; expiresAt: string }> {
+export function inviteMember(
+  email: string,
+  locale: string,
+): Promise<{ id: string; expiresAt: string }> {
   return sendJson('/api/v1/members/invitations', { email, role: 'MEMBER', locale });
 }
 
@@ -57,11 +60,12 @@ export function exchangeInvitation(invitationId: string, token: string): Promise
   if (existing !== undefined) {
     return existing;
   }
-  const pending = sendEmptyBody('/api/v1/auth/invitations/exchange', { invitationId, token }).finally(
-    () => {
-      pendingExchanges.delete(invitationId);
-    },
-  );
+  const pending = sendEmptyBody('/api/v1/auth/invitations/exchange', {
+    invitationId,
+    token,
+  }).finally(() => {
+    pendingExchanges.delete(invitationId);
+  });
   pendingExchanges.set(invitationId, pending);
   return pending;
 }

@@ -91,7 +91,11 @@ describe('password reset', () => {
 });
 
 function services(key: Buffer | null = tokenKey) {
-  const store = new PrismaPasswordResetStore(prisma, new OutboxService(), new AuditEventStore(prisma));
+  const store = new PrismaPasswordResetStore(
+    prisma,
+    new OutboxService(),
+    new AuditEventStore(prisma),
+  );
   return {
     request: new RequestPasswordResetService(new PrismaLoginAccountStore(prisma), store, key),
     confirm: new ConfirmPasswordResetService(store, new Argon2PasswordHasher(), quietSessions()),
@@ -137,7 +141,9 @@ async function readToken(): Promise<string> {
     throw new Error('Reset seal is not a string.');
   }
   const token = openInvitationToken(sealed, tokenKey);
-  expect(await prisma.passwordReset.findUnique({ where: { tokenHash: hashPasswordResetToken(token) } })).not.toBeNull();
+  expect(
+    await prisma.passwordReset.findUnique({ where: { tokenHash: hashPasswordResetToken(token) } }),
+  ).not.toBeNull();
   expect(JSON.stringify(payload)).not.toContain(token);
   return token;
 }

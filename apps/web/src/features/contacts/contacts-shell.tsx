@@ -37,6 +37,7 @@ export function ContactsShell({
   const locale = useLocale();
   const router = useRouter();
   const sessionLeads = session?.user.leadsEnabled ?? true;
+  const canReadAudit = session?.user.role === 'OWNER' || session?.user.role === 'ADMIN';
   const [leadChoice, setLeadChoice] = useState<{ source: boolean; value: boolean } | null>(null);
   const leadsOn = leadChoice?.source === sessionLeads ? leadChoice.value : sessionLeads;
 
@@ -56,7 +57,9 @@ export function ContactsShell({
         </span>
       </Link>
       <nav className={styles.nav} aria-label={t('workspaceName')}>
-        {NAV.filter((item) => item.id !== 'leads' || leadsOn).map((item) => (
+        {NAV.filter(
+          (item) => (item.id !== 'leads' || leadsOn) && (item.id !== 'audit' || canReadAudit),
+        ).map((item) => (
           <NavItem
             key={item.id}
             item={item}

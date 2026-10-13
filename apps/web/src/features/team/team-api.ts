@@ -25,7 +25,12 @@ export class TeamRequestError extends Error {
 }
 
 export function readTeamDirectory(signal?: AbortSignal): Promise<TeamDirectory> {
-  return request('/api/v1/team', { method: 'GET' }, signal, (body) => readSchema(teamDirectoryResponseSchema, body).data);
+  return request(
+    '/api/v1/team',
+    { method: 'GET' },
+    signal,
+    (body) => readSchema(teamDirectoryResponseSchema, body).data,
+  );
 }
 
 export function updateJobTitle(userId: string, jobTitle: string | null): Promise<TeamMember> {
@@ -47,8 +52,11 @@ export function readDirectMessages(
     params.set('cursor', cursor);
   }
   const query = params.size === 0 ? '' : `?${params.toString()}`;
-  return request(`/api/v1/team/members/${userId}/messages${query}`, { method: 'GET' }, signal, (body) =>
-    readSchema(directMessagePageSchema, body),
+  return request(
+    `/api/v1/team/members/${userId}/messages${query}`,
+    { method: 'GET' },
+    signal,
+    (body) => readSchema(directMessagePageSchema, body),
   );
 }
 
@@ -86,9 +94,10 @@ async function request<T>(
     ...init,
     signal,
     credentials: 'include',
-    headers: init.body === undefined
-      ? { accept: 'application/json' }
-      : { accept: 'application/json', 'content-type': 'application/json' },
+    headers:
+      init.body === undefined
+        ? { accept: 'application/json' }
+        : { accept: 'application/json', 'content-type': 'application/json' },
   });
   if (!response.ok) {
     throw await readError(response);
@@ -96,7 +105,10 @@ async function request<T>(
   return parse(await response.json());
 }
 
-function readSchema<T>(schema: { safeParse: (value: unknown) => { success: true; data: T } | { success: false } }, body: unknown): T {
+function readSchema<T>(
+  schema: { safeParse: (value: unknown) => { success: true; data: T } | { success: false } },
+  body: unknown,
+): T {
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
     throw new TeamRequestError('REQUEST_FAILED');

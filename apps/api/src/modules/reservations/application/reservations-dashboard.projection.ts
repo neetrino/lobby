@@ -32,7 +32,12 @@ export type ReservationsDashboardSlice = {
   activeTables: number;
   upcoming: ReservationCard[];
   mine: ReservationCard[];
-  activity: Array<{ id: string; customerName: string; kind: ReservationActivityKind; occurredAt: string }>;
+  activity: Array<{
+    id: string;
+    customerName: string;
+    kind: ReservationActivityKind;
+    occurredAt: string;
+  }>;
   load: ReservationLoad;
 };
 
@@ -59,7 +64,10 @@ export class ReservationsDashboardProjection {
     private readonly load: ReservationLoadQuery,
   ) {}
 
-  async project(context: RequestContext, window: Window): Promise<ReservationsDashboardSlice | null> {
+  async project(
+    context: RequestContext,
+    window: Window,
+  ): Promise<ReservationsDashboardSlice | null> {
     if (!(await this.allowed(context))) {
       return null;
     }
@@ -107,7 +115,9 @@ function activity(row: ReservationActivityRow): ReservationsDashboardSlice['acti
   if (kind === null) {
     return [];
   }
-  return [{ id: row.id, customerName: row.customerName, kind, occurredAt: row.updatedAt.toISOString() }];
+  return [
+    { id: row.id, customerName: row.customerName, kind, occurredAt: row.updatedAt.toISOString() },
+  ];
 }
 
 function reservationKind(

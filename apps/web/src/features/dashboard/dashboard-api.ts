@@ -31,9 +31,23 @@ export type DashboardBoard = {
     cancellations: number;
     occupiedTables: number;
     activeTables: number;
-    upcoming: Array<{ id: string; label: string; partySize: number; startsAt: string; status: string }>;
+    upcoming: Array<{
+      id: string;
+      label: string;
+      partySize: number;
+      startsAt: string;
+      status: string;
+    }>;
   };
-  activity?: { items: Array<{ id: string; kind: string; label: string; occurredAt: string; href: string | null }> };
+  activity?: {
+    items: Array<{
+      id: string;
+      kind: string;
+      label: string;
+      occurredAt: string;
+      href: string | null;
+    }>;
+  };
   activityTrend?: {
     days: Array<{
       date: string;
@@ -82,7 +96,11 @@ export function saveDashboardLayout(body: {
   return request('/api/v1/dashboard/layout', { method: 'PUT', body: JSON.stringify(body) });
 }
 
-async function request(path: string, init: RequestInit, signal?: AbortSignal): Promise<DashboardBoard> {
+async function request(
+  path: string,
+  init: RequestInit,
+  signal?: AbortSignal,
+): Promise<DashboardBoard> {
   const response = await fetch(`${API_ORIGIN}${path}`, {
     ...init,
     signal,
@@ -103,7 +121,11 @@ function parseBoard(value: unknown): DashboardBoard {
     throw new ContactsRequestError(500, 'REQUEST_FAILED');
   }
   const data = value.data;
-  if (typeof data.generatedAt !== 'string' || !Array.isArray(data.overview) || !Array.isArray(data.failures)) {
+  if (
+    typeof data.generatedAt !== 'string' ||
+    !Array.isArray(data.overview) ||
+    !Array.isArray(data.failures)
+  ) {
     throw new ContactsRequestError(500, 'REQUEST_FAILED');
   }
   return data as DashboardBoard;

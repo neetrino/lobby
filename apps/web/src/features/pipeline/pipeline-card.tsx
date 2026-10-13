@@ -56,29 +56,57 @@ export function PipelineCardView({
         <span className={styles.cardTools}>
           <span className={styles.cardToolRow}>
             {card.createdByName === null ? null : (
-              <span className={styles.avatar} title={card.createdByName} aria-label={card.createdByName}>
+              <span
+                className={styles.avatar}
+                title={card.createdByName}
+                aria-label={card.createdByName}
+              >
                 {initials(card.createdByName)}
               </span>
             )}
             <button
               type="button"
-              className={card.priority === 'URGENT' ? `${styles.flagButton} ${styles.flagOn}` : styles.flagButton}
+              className={
+                card.priority === 'URGENT'
+                  ? `${styles.flagButton} ${styles.flagOn}`
+                  : styles.flagButton
+              }
               aria-pressed={card.priority === 'URGENT'}
               aria-label={card.priority === 'URGENT' ? t('clearUrgent') : t('markUrgent')}
               onClick={() => onSave({ priority: card.priority === 'URGENT' ? 'NORMAL' : 'URGENT' })}
             >
               <FlagIcon />
             </button>
-            <button type="button" className={styles.iconButton} aria-label={t('editCard')} onClick={() => setEditing(true)}>
+            <button
+              type="button"
+              className={styles.iconButton}
+              aria-label={t('editCard')}
+              onClick={() => setEditing(true)}
+            >
               ✎
             </button>
-            <button type="button" className={styles.iconButton} aria-label={t('deleteCard')} onClick={() => setConfirming(true)}>
+            <button
+              type="button"
+              className={styles.iconButton}
+              aria-label={t('deleteCard')}
+              onClick={() => setConfirming(true)}
+            >
               ×
             </button>
           </span>
           <span className={styles.cardIcons}>
-            <PipelineNotes cardId={card.id} cardTitle={card.title} kind={kind} initialCount={card.noteCount} />
-            <PipelineChat cardId={card.id} cardTitle={card.title} kind={kind} initialCount={card.messageCount} />
+            <PipelineNotes
+              cardId={card.id}
+              cardTitle={card.title}
+              kind={kind}
+              initialCount={card.noteCount}
+            />
+            <PipelineChat
+              cardId={card.id}
+              cardTitle={card.title}
+              kind={kind}
+              initialCount={card.messageCount}
+            />
           </span>
         </span>
       </div>
@@ -88,10 +116,20 @@ export function PipelineCardView({
       {card.company === '' ? null : <small>{card.company}</small>}
       <CardMarks card={card} locale={locale} stageColors={stageColors} stageIndex={stageIndex} />
       <div className={styles.cardActions}>
-        <button type="button" className={styles.add} disabled={index === 0} onClick={() => onSave({ position: index - 1 })}>
+        <button
+          type="button"
+          className={styles.add}
+          disabled={index === 0}
+          onClick={() => onSave({ position: index - 1 })}
+        >
           {t('earlier')}
         </button>
-        <button type="button" className={styles.add} disabled={index >= total - 1} onClick={() => onSave({ position: index + 1 })}>
+        <button
+          type="button"
+          className={styles.add}
+          disabled={index >= total - 1}
+          onClick={() => onSave({ position: index + 1 })}
+        >
           {t('later')}
         </button>
       </div>
@@ -99,8 +137,12 @@ export function PipelineCardView({
       {confirming ? (
         <div className={styles.confirm}>
           <p>{t('confirmDelete')}</p>
-          <button type="button" className={styles.danger} onClick={onDelete}>{t('deleteCard')}</button>
-          <button type="button" className={styles.add} onClick={() => setConfirming(false)}>{t('cancel')}</button>
+          <button type="button" className={styles.danger} onClick={onDelete}>
+            {t('deleteCard')}
+          </button>
+          <button type="button" className={styles.add} onClick={() => setConfirming(false)}>
+            {t('cancel')}
+          </button>
         </div>
       ) : null}
       {editing ? (
@@ -139,11 +181,15 @@ function CardStatus({
         aria-label={t('status')}
         value={card.statusId ?? ''}
         style={color === undefined ? undefined : { background: color, color: textOn(color) }}
-        onChange={(event) => onSave({ statusId: event.currentTarget.value === '' ? null : event.currentTarget.value })}
+        onChange={(event) =>
+          onSave({ statusId: event.currentTarget.value === '' ? null : event.currentTarget.value })
+        }
       >
         <option value="">{t('noStatus')}</option>
         {statuses.map((status) => (
-          <option key={status.id} value={status.id}>{status.name}</option>
+          <option key={status.id} value={status.id}>
+            {status.name}
+          </option>
         ))}
       </select>
     </div>
@@ -164,11 +210,17 @@ function CardMarks({
   return (
     <>
       {card.createdAt === null ? null : (
-        <time className={styles.when} dateTime={card.createdAt}>{formatWhen(card.createdAt, locale)}</time>
+        <time className={styles.when} dateTime={card.createdAt}>
+          {formatWhen(card.createdAt, locale)}
+        </time>
       )}
       <div className={styles.stages} aria-hidden="true">
         {stageColors.map((color, index) => (
-          <span key={color + String(index)} className={styles.stage} style={{ background: index <= stageIndex ? color : '#e7eaf0' }} />
+          <span
+            key={color + String(index)}
+            className={styles.stage}
+            style={{ background: index <= stageIndex ? color : '#e7eaf0' }}
+          />
         ))}
       </div>
     </>
@@ -203,38 +255,80 @@ function CardEditor({
       >
         <input name="title" aria-label={t('cardTitle')} defaultValue={card.title} required />
         <input name="company" aria-label={t('company')} defaultValue={card.company} />
-        <input name="amount" aria-label={t('amount')} defaultValue={card.amount} inputMode="numeric" />
-        <input name="source" aria-label={t('source')} defaultValue={card.source} placeholder={t('source')} />
-        <input name="qualification" aria-label={t('qualification')} defaultValue={card.qualification} placeholder={t('qualification')} />
-        <input name="nextAction" aria-label={t('nextAction')} defaultValue={card.nextAction} placeholder={t('nextAction')} />
-        <input name="lostReason" aria-label={t('lostReason')} defaultValue={card.lostReason} placeholder={t('lostReason')} />
+        <input
+          name="amount"
+          aria-label={t('amount')}
+          defaultValue={card.amount}
+          inputMode="numeric"
+        />
+        <input
+          name="source"
+          aria-label={t('source')}
+          defaultValue={card.source}
+          placeholder={t('source')}
+        />
+        <input
+          name="qualification"
+          aria-label={t('qualification')}
+          defaultValue={card.qualification}
+          placeholder={t('qualification')}
+        />
+        <input
+          name="nextAction"
+          aria-label={t('nextAction')}
+          defaultValue={card.nextAction}
+          placeholder={t('nextAction')}
+        />
+        <input
+          name="lostReason"
+          aria-label={t('lostReason')}
+          defaultValue={card.lostReason}
+          placeholder={t('lostReason')}
+        />
         <select name="outcome" aria-label={t('outcome')} defaultValue={card.outcome}>
           {OUTCOMES.map((outcome) => (
-            <option key={outcome} value={outcome}>{t(outcomeLabel(outcome))}</option>
+            <option key={outcome} value={outcome}>
+              {t(outcomeLabel(outcome))}
+            </option>
           ))}
         </select>
-        <input name="expectedCloseOn" aria-label={t('expectedClose')} type="date" defaultValue={card.expectedCloseOn ?? ''} />
+        <input
+          name="expectedCloseOn"
+          aria-label={t('expectedClose')}
+          type="date"
+          defaultValue={card.expectedCloseOn ?? ''}
+        />
         <select name="contactId" aria-label={t('contact')} defaultValue={card.contactId ?? ''}>
           <option value="">{t('noContact')}</option>
           {contacts.map((contact) => (
-            <option key={contact.id} value={contact.id}>{contact.name}</option>
+            <option key={contact.id} value={contact.id}>
+              {contact.name}
+            </option>
           ))}
         </select>
         <select name="statusId" aria-label={t('status')} defaultValue={card.statusId ?? ''}>
           <option value="">{t('noStatus')}</option>
           {statuses.map((status) => (
-            <option key={status.id} value={status.id}>{status.name}</option>
+            <option key={status.id} value={status.id}>
+              {status.name}
+            </option>
           ))}
         </select>
         <select name="ownerUserId" aria-label={t('owner')} defaultValue={card.ownerUserId ?? ''}>
           <option value="">{t('clearOwner')}</option>
           {userId === null ? null : <option value={userId}>{t('assignToMe')}</option>}
         </select>
-        <button type="submit" className={styles.add}>{t('save')}</button>
+        <button type="submit" className={styles.add}>
+          {t('save')}
+        </button>
         {kind === 'lead' && card.outcome !== 'CONVERTED' ? (
-          <button type="button" className={styles.add} onClick={onConvert}>{t('convert')}</button>
+          <button type="button" className={styles.add} onClick={onConvert}>
+            {t('convert')}
+          </button>
         ) : null}
-        <button type="button" className={styles.add} onClick={onClose}>{t('cancel')}</button>
+        <button type="button" className={styles.add} onClick={onClose}>
+          {t('cancel')}
+        </button>
       </form>
     </div>
   );
@@ -252,7 +346,11 @@ function useContacts(): Contact[] {
   return contacts;
 }
 
-function submitCard(event: FormEvent<HTMLFormElement>, onSave: (patch: CardUpdate) => void, onClose: () => void): void {
+function submitCard(
+  event: FormEvent<HTMLFormElement>,
+  onSave: (patch: CardUpdate) => void,
+  onClose: () => void,
+): void {
   event.preventDefault();
   const data = new FormData(event.currentTarget);
   const title = String(data.get('title') ?? '').trim();
@@ -302,8 +400,14 @@ function FlagIcon() {
 }
 
 function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter((part) => part !== '');
-  return parts.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join('');
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter((part) => part !== '');
+  return parts
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
 }
 
 function formatWhen(value: string, locale: string): string {
@@ -316,7 +420,9 @@ function formatWhen(value: string, locale: string): string {
   }).format(new Date(value));
 }
 
-function outcomeLabel(outcome: PipelineCard['outcome']): 'outcomeOpen' | 'outcomeWon' | 'outcomeLost' | 'outcomeDisqualified' | 'outcomeConverted' {
+function outcomeLabel(
+  outcome: PipelineCard['outcome'],
+): 'outcomeOpen' | 'outcomeWon' | 'outcomeLost' | 'outcomeDisqualified' | 'outcomeConverted' {
   if (outcome === 'WON') return 'outcomeWon';
   if (outcome === 'LOST') return 'outcomeLost';
   if (outcome === 'DISQUALIFIED') return 'outcomeDisqualified';

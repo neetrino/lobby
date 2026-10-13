@@ -13,12 +13,18 @@ import { AppModule } from '../../../app.module';
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { configureHttpApp } from '../../../common/http/configure-http-app';
 import { ALLOWED_ORIGINS } from '../../../common/security/allowed-origins';
-import { AUTH_RATE_LIMITS, permissiveAuthRateLimits } from '../../identity/infrastructure/rate-limit-config';
+import {
+  AUTH_RATE_LIMITS,
+  permissiveAuthRateLimits,
+} from '../../identity/infrastructure/rate-limit-config';
 import { RATE_LIMIT_REDIS } from '../../identity/infrastructure/rate-limit-redis';
 import { MemoryRateLimitRedis } from '../../identity/infrastructure/memory-rate-limit-redis';
 import { REGISTRATION_ENABLED } from '../../identity/infrastructure/registration-config';
 import { SESSION_REDIS } from '../../identity/infrastructure/session-redis';
-import { clearTenantRows, IndexedSessionRedis } from '../../identity/presentation/session-guard.fixtures';
+import {
+  clearTenantRows,
+  IndexedSessionRedis,
+} from '../../identity/presentation/session-guard.fixtures';
 
 const origin = 'http://localhost:3000';
 const password = 'correct-horse-battery';
@@ -66,7 +72,11 @@ describe('pipeline card details', () => {
     const owner = await login(http, 'pipe-order', 'ada@example.com');
     const lead = await request(http).get('/api/v1/pipelines/lead').set('Cookie', owner);
     const columnId = lead.body.data.columns[0].id as string;
-    await request(http).post('/api/v1/pipelines/lead/cards').set('Origin', origin).set('Cookie', owner).send({ columnId, title: 'First' });
+    await request(http)
+      .post('/api/v1/pipelines/lead/cards')
+      .set('Origin', origin)
+      .set('Cookie', owner)
+      .send({ columnId, title: 'First' });
     const second = await request(http)
       .post('/api/v1/pipelines/lead/cards')
       .set('Origin', origin)
@@ -128,7 +138,10 @@ describe('pipeline card details', () => {
     const afterDelete = columnCards(removed.body, sourceId);
 
     expect(moved.status).toBe(200);
-    expect(source.map((card) => [card.title, card.position])).toEqual([['A', 0], ['C', 1]]);
+    expect(source.map((card) => [card.title, card.position])).toEqual([
+      ['A', 0],
+      ['C', 1],
+    ]);
     expect(await prisma.auditEvent.count({ where: { action: 'lead.stage.changed' } })).toBe(1);
     const sameColumn = await request(http)
       .patch(`/api/v1/pipelines/lead/cards/${middle?.id}`)
@@ -157,19 +170,31 @@ describe('pipeline card details', () => {
 });
 
 function columnCards(
-  body: { data: { columns: Array<{ id: string; cards: Array<{ title: string; position: number }> }> } },
+  body: {
+    data: { columns: Array<{ id: string; cards: Array<{ title: string; position: number }> }> };
+  },
   columnId: string,
 ): Array<{ title: string; position: number }> {
   return body.data.columns.find((column) => column.id === columnId)?.cards ?? [];
 }
 
-async function login(http: Parameters<typeof request>[0], subdomain: string, email: string): Promise<string> {
-  const registered = await request(http).post('/api/v1/auth/register').set('Origin', origin).send({
-    tenant: { name: subdomain, subdomain, plan: 'starter' },
-    owner: { name: 'Ada', email, password },
-  });
+async function login(
+  http: Parameters<typeof request>[0],
+  subdomain: string,
+  email: string,
+): Promise<string> {
+  const registered = await request(http)
+    .post('/api/v1/auth/register')
+    .set('Origin', origin)
+    .send({
+      tenant: { name: subdomain, subdomain, plan: 'starter' },
+      owner: { name: 'Ada', email, password },
+    });
   expect(registered.status).toBe(201);
-  const loggedIn = await request(http).post('/api/v1/auth/login').set('Origin', origin).send({ subdomain, email, password });
+  const loggedIn = await request(http)
+    .post('/api/v1/auth/login')
+    .set('Origin', origin)
+    .send({ subdomain, email, password });
   expect(loggedIn.status).toBe(200);
   return sessionCookie(loggedIn.headers['set-cookie']);
 }

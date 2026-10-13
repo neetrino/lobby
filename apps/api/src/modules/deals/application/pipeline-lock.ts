@@ -1,7 +1,10 @@
 import type { Prisma } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 /** Holds the pipeline row until the surrounding transaction commits. */
-export async function lockPipeline(db: Prisma.TransactionClient, pipelineId: string): Promise<void> {
+export async function lockPipeline(
+  db: Prisma.TransactionClient,
+  pipelineId: string,
+): Promise<void> {
   await db.$queryRaw`SELECT id FROM "pipelines" WHERE id = ${pipelineId}::uuid FOR UPDATE`;
 }
 

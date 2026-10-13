@@ -44,8 +44,16 @@ export type ReservationDraft = {
   source: StaffSource;
 };
 
-export function listReservations(filters: ReservationFilters, signal?: AbortSignal): Promise<ReservationPage> {
-  return requestJson(`/api/v1/reservations?${listQuery(filters)}`, { method: 'GET' }, signal, parsePage);
+export function listReservations(
+  filters: ReservationFilters,
+  signal?: AbortSignal,
+): Promise<ReservationPage> {
+  return requestJson(
+    `/api/v1/reservations?${listQuery(filters)}`,
+    { method: 'GET' },
+    signal,
+    parsePage,
+  );
 }
 
 export function readReservation(id: string, signal?: AbortSignal): Promise<ReservationDetail> {
@@ -69,13 +77,16 @@ export function listDiningTables(locationId: string, signal?: AbortSignal): Prom
   );
 }
 
-export function listAvailableTables(input: {
-  locationId: string;
-  startsAt: string;
-  durationMinutes: number;
-  guestCount: number;
-  excludeReservationId?: string;
-}, signal?: AbortSignal): Promise<DiningTable[]> {
+export function listAvailableTables(
+  input: {
+    locationId: string;
+    startsAt: string;
+    durationMinutes: number;
+    guestCount: number;
+    excludeReservationId?: string;
+  },
+  signal?: AbortSignal,
+): Promise<DiningTable[]> {
   const params = new URLSearchParams({
     locationId: input.locationId,
     startsAt: input.startsAt,
@@ -85,7 +96,12 @@ export function listAvailableTables(input: {
   if (input.excludeReservationId !== undefined) {
     params.set('excludeReservationId', input.excludeReservationId);
   }
-  return requestJson(`/api/v1/reservation-availability?${params}`, { method: 'GET' }, signal, parseAvailability);
+  return requestJson(
+    `/api/v1/reservation-availability?${params}`,
+    { method: 'GET' },
+    signal,
+    parseAvailability,
+  );
 }
 
 export function createReservation(draft: ReservationDraft): Promise<ReservationSummary> {
@@ -97,7 +113,10 @@ export function createReservation(draft: ReservationDraft): Promise<ReservationS
   );
 }
 
-export function updateReservation(id: string, draft: ReservationDraft): Promise<ReservationSummary> {
+export function updateReservation(
+  id: string,
+  draft: ReservationDraft,
+): Promise<ReservationSummary> {
   return requestJson(
     `/api/v1/reservations/${id}`,
     { method: 'PATCH', body: JSON.stringify(updateBody(draft)) },
@@ -130,7 +149,12 @@ export function transitionReservation(
 
 function listQuery(filters: ReservationFilters): string {
   const bounds = rangeBounds(filters.fromDay, filters.toDay);
-  const params = new URLSearchParams({ limit: '50', sort: 'asc', from: bounds.from, to: bounds.to });
+  const params = new URLSearchParams({
+    limit: '50',
+    sort: 'asc',
+    from: bounds.from,
+    to: bounds.to,
+  });
   if (filters.status !== '') params.set('status', filters.status);
   if (filters.locationId !== '') params.set('locationId', filters.locationId);
   if (filters.assigneeId !== '') params.set('assignedUserId', filters.assigneeId);
@@ -193,9 +217,10 @@ async function requestJson<T>(
     ...init,
     signal,
     credentials: 'include',
-    headers: init.body === undefined
-      ? { accept: 'application/json' }
-      : { accept: 'application/json', 'content-type': 'application/json' },
+    headers:
+      init.body === undefined
+        ? { accept: 'application/json' }
+        : { accept: 'application/json', 'content-type': 'application/json' },
   });
   if (!response.ok) {
     throw await readError(response);
@@ -227,7 +252,11 @@ function parsePage(body: unknown): ReservationPage {
 function parseDetail(body: unknown): ReservationDetail {
   const value = record(body).data;
   const summary = parseSummary(value);
-  if (!isRecord(value) || typeof value.durationMinutes !== 'number' || typeof value.source !== 'string') {
+  if (
+    !isRecord(value) ||
+    typeof value.durationMinutes !== 'number' ||
+    typeof value.source !== 'string'
+  ) {
     throw new ReservationRequestError(200, 'REQUEST_FAILED');
   }
   return {
@@ -249,7 +278,12 @@ function parseHistory(body: unknown): StatusHistoryItem[] {
 }
 
 function parseHistoryItem(value: unknown): StatusHistoryItem {
-  if (!isRecord(value) || typeof value.id !== 'string' || typeof value.toStatus !== 'string' || typeof value.createdAt !== 'string') {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    typeof value.toStatus !== 'string' ||
+    typeof value.createdAt !== 'string'
+  ) {
     throw new ReservationRequestError(200, 'REQUEST_FAILED');
   }
   return {
@@ -266,7 +300,12 @@ function parseVenues(body: unknown): Venue[] {
   const data = record(body).data;
   if (!Array.isArray(data)) throw new ReservationRequestError(200, 'REQUEST_FAILED');
   return data.map((item) => {
-    if (!isRecord(item) || typeof item.id !== 'string' || typeof item.name !== 'string' || typeof item.timezone !== 'string') {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== 'string' ||
+      typeof item.name !== 'string' ||
+      typeof item.timezone !== 'string'
+    ) {
       throw new ReservationRequestError(200, 'REQUEST_FAILED');
     }
     return { id: item.id, name: item.name, timezone: item.timezone };

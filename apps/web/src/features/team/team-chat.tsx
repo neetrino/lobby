@@ -1,25 +1,39 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState, type Dispatch, type FormEvent, type SetStateAction } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type FormEvent,
+  type SetStateAction,
+} from 'react';
 import { useTranslations } from 'next-intl';
 
-import { readDirectMessages, sendDirectMessage, type DirectMessage, type TeamMember } from './team-api';
-import { isNearBottom, mergeNewest, nextScrollTop, watchLatest, type ScrollAnchor } from './team-live';
+import {
+  readDirectMessages,
+  sendDirectMessage,
+  type DirectMessage,
+  type TeamMember,
+} from './team-api';
+import {
+  isNearBottom,
+  mergeNewest,
+  nextScrollTop,
+  watchLatest,
+  type ScrollAnchor,
+} from './team-live';
 import styles from './team.module.css';
 
 export function TeamChat({ member, selfId }: { member: TeamMember | null; selfId: string | null }) {
   return <TeamThread key={member?.id ?? 'none'} member={member} selfId={selfId} />;
 }
 
-function TeamThread({
-  member,
-  selfId,
-}: {
-  member: TeamMember | null;
-  selfId: string | null;
-}) {
+function TeamThread({ member, selfId }: { member: TeamMember | null; selfId: string | null }) {
   const t = useTranslations('team');
-  const { messages, setMessages, loading, error, setError, nextCursor, setNextCursor } = useThread(member);
+  const { messages, setMessages, loading, error, setError, nextCursor, setNextCursor } =
+    useThread(member);
   const [sending, setSending] = useState(false);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
   const scroller = useRef<HTMLDivElement>(null);
@@ -85,20 +99,37 @@ function TeamThread({
   }
 
   return (
-    <aside className={styles.chatPanel} aria-label={member === null ? t('chat') : t('chatTitle', { name: member.name })}>
+    <aside
+      className={styles.chatPanel}
+      aria-label={member === null ? t('chat') : t('chatTitle', { name: member.name })}
+    >
       <h2>
         {t('chat')}
         {member === null ? null : <small>{member.name}</small>}
       </h2>
-      <div ref={scroller} className={styles.chatMessages} aria-live="polite" onScroll={() => { followBottom(scroller.current, stickToEnd); }}>
+      <div
+        ref={scroller}
+        className={styles.chatMessages}
+        aria-live="polite"
+        onScroll={() => {
+          followBottom(scroller.current, stickToEnd);
+        }}
+      >
         {nextCursor === null || member === null ? null : (
-          <button type="button" className={styles.earlier} disabled={loadingEarlier} onClick={() => void loadEarlier(member.id)}>
+          <button
+            type="button"
+            className={styles.earlier}
+            disabled={loadingEarlier}
+            onClick={() => void loadEarlier(member.id)}
+          >
             {t('loadEarlier')}
           </button>
         )}
         {member === null ? <p className={styles.chatState}>{t('chatPick')}</p> : null}
         {loading ? <p className={styles.chatState}>{t('chatLoading')}</p> : null}
-        {!loading && member !== null && messages.length === 0 ? <p className={styles.chatState}>{t('chatEmpty')}</p> : null}
+        {!loading && member !== null && messages.length === 0 ? (
+          <p className={styles.chatState}>{t('chatEmpty')}</p>
+        ) : null}
         {messages.map((message) => (
           <ChatBubble key={message.id} message={message} mine={message.authorUserId === selfId} />
         ))}
@@ -106,8 +137,20 @@ function TeamThread({
       </div>
       {error ? <p className={styles.failed}>{t('chatFailed')}</p> : null}
       <form className={styles.chatComposer} onSubmit={(event) => void submit(event)}>
-        <textarea name="body" maxLength={2000} required disabled={member === null || sending} aria-label={t('chatMessage')} placeholder={t('chatPlaceholder')} />
-        <button type="submit" className={styles.send} disabled={member === null || sending} aria-label={t('chatSend')}>
+        <textarea
+          name="body"
+          maxLength={2000}
+          required
+          disabled={member === null || sending}
+          aria-label={t('chatMessage')}
+          placeholder={t('chatPlaceholder')}
+        />
+        <button
+          type="submit"
+          className={styles.send}
+          disabled={member === null || sending}
+          aria-label={t('chatSend')}
+        >
           <SendIcon />
         </button>
       </form>
@@ -182,9 +225,15 @@ function ChatBubble({ message, mine }: { message: DirectMessage; mine: boolean }
   return (
     <article className={mine ? styles.outgoing : styles.incoming}>
       <div className={styles.meta}>
-        {mine ? null : <span className={styles.mini} aria-hidden="true">{mark(message.authorName)}</span>}
+        {mine ? null : (
+          <span className={styles.mini} aria-hidden="true">
+            {mark(message.authorName)}
+          </span>
+        )}
         <strong>{mine ? t('you') : message.authorName}</strong>
-        <time className={styles.time} dateTime={message.createdAt}>{formatClock(message.createdAt)}</time>
+        <time className={styles.time} dateTime={message.createdAt}>
+          {formatClock(message.createdAt)}
+        </time>
       </div>
       <p className={styles.bubble}>{message.body}</p>
     </article>
@@ -196,7 +245,9 @@ function mark(name: string): string {
 }
 
 function formatClock(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(new Date(value));
+  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(
+    new Date(value),
+  );
 }
 
 function SendIcon() {

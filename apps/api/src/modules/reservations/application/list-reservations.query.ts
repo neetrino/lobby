@@ -2,14 +2,9 @@ import type { CursorPage } from '@lobby/contracts';
 import type { Prisma } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import type { ReservationRecord } from '../infrastructure/reservation.repository';
-import {
-  encodeReservationCursor,
-  type ReservationListQuery,
-} from './list-reservations.schema';
+import { encodeReservationCursor, type ReservationListQuery } from './list-reservations.schema';
 
-export function reservationListFilter(
-  query: ReservationListQuery,
-): Prisma.ReservationWhereInput {
+export function reservationListFilter(query: ReservationListQuery): Prisma.ReservationWhereInput {
   const filters: Prisma.ReservationWhereInput[] = [];
   if (query.locationId !== undefined) filters.push({ locationId: query.locationId });
   if (query.status !== undefined) filters.push({ status: query.status });

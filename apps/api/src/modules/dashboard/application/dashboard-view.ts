@@ -35,7 +35,13 @@ export type DashboardReservationSummary = {
   cancellations: number;
   occupiedTables: number;
   activeTables: number;
-  upcoming: Array<{ id: string; label: string; partySize: number; startsAt: string; status: string }>;
+  upcoming: Array<{
+    id: string;
+    label: string;
+    partySize: number;
+    startsAt: string;
+    status: string;
+  }>;
 };
 
 export type ActivityTrendDay = {

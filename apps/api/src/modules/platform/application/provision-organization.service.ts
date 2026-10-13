@@ -5,7 +5,12 @@ import type { PrismaClient } from '@lobby/database' with { 'resolution-mode': 'i
 import { PRISMA_CLIENT } from '../../../common/database/database.tokens';
 import { PLATFORM_SUBDOMAIN } from '../../../common/platform/platform-subdomain';
 import { CreateTenantService } from '../../organizations';
-import { IdentityError, identityErrorCodes, PASSWORD_HASHER, type PasswordHasher } from '../../identity';
+import {
+  IdentityError,
+  identityErrorCodes,
+  PASSWORD_HASHER,
+  type PasswordHasher,
+} from '../../identity';
 import {
   provisionOrganizationSchema,
   type ProvisionOrganizationInput,

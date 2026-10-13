@@ -10,8 +10,14 @@ const period = {
 
 describe('requestFingerprint', () => {
   it('keeps neighboring values distinct when one contains a field separator', () => {
-    const left = requestFingerprint(command({ phone: 'a\u001fb', email: 'c@example.test' }), period);
-    const right = requestFingerprint(command({ phone: 'a', email: 'b\u001fc@example.test' }), period);
+    const left = requestFingerprint(
+      command({ phone: 'a\u001fb', email: 'c@example.test' }),
+      period,
+    );
+    const right = requestFingerprint(
+      command({ phone: 'a', email: 'b\u001fc@example.test' }),
+      period,
+    );
 
     expect(left).not.toBe(right);
     expect(left).toMatch(/^[0-9a-f]{64}$/);

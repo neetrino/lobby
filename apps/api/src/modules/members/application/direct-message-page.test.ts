@@ -44,7 +44,10 @@ describe('forward message page', () => {
     const id = '00000000-0000-4000-8000-000000000004';
 
     expect(newerThan({ createdAt, id, memberId })).toEqual({
-      OR: [{ createdAt: { gt: new Date(createdAt) } }, { createdAt: new Date(createdAt), id: { gt: id } }],
+      OR: [
+        { createdAt: { gt: new Date(createdAt) } },
+        { createdAt: new Date(createdAt), id: { gt: id } },
+      ],
     });
   });
 });

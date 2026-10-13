@@ -74,6 +74,14 @@ export const ROLE_PERMISSIONS: Record<UserRole, readonly Permission[]> = {
     'team:manage',
     ...workspaceAccess,
   ],
-  ADMIN: ['sessions:revoke', 'audit:read', 'audit:export', 'members:invite', 'pipelines:configure', 'team:manage', ...workspaceAccess],
+  ADMIN: [
+    'sessions:revoke',
+    'audit:read',
+    'audit:export',
+    'members:invite',
+    'pipelines:configure',
+    'team:manage',
+    ...workspaceAccess,
+  ],
   MEMBER: [...workspaceAccess],
 };

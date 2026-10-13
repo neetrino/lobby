@@ -30,7 +30,9 @@ describe('MemberInvitationRepository.markAccepted', () => {
 
     const stale = await repository.markAccepted(prisma, invitation.id, now, 'replaced-hash');
     const current = await repository.markAccepted(prisma, invitation.id, now, 'current-hash');
-    const stored = await prisma.memberInvitation.findUniqueOrThrow({ where: { id: invitation.id } });
+    const stored = await prisma.memberInvitation.findUniqueOrThrow({
+      where: { id: invitation.id },
+    });
 
     expect(stale).toBe(0);
     expect(current).toBe(1);
@@ -55,7 +57,9 @@ describe('MemberInvitationRepository.markAccepted', () => {
       'next-hash',
       expiresAt,
     );
-    const stored = await prisma.memberInvitation.findUniqueOrThrow({ where: { id: invitation.id } });
+    const stored = await prisma.memberInvitation.findUniqueOrThrow({
+      where: { id: invitation.id },
+    });
 
     expect(lost).toBe(0);
     expect(replaced).toBe(1);

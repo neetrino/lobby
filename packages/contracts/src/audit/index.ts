@@ -20,8 +20,16 @@ export { contactLifecycleAuditSchema } from './contact-lifecycle-audit.js';
 export type { ContactLifecycleAudit } from './contact-lifecycle-audit.js';
 export { pipelineAuditSchema } from './pipeline-audit.js';
 export type { PipelineAudit } from './pipeline-audit.js';
-export { reservationCreatedAuditSchema, reservationLifecycleAuditSchema } from './reservation-audit.js';
-export type { ReservationCreatedAudit, ReservationLifecycleAudit } from './reservation-audit.js';
+export {
+  reservationCreatedAuditSchema,
+  reservationLifecycleAuditSchema,
+  reservationLifecycleChangesSchema,
+} from './reservation-audit.js';
+export type {
+  ReservationCreatedAudit,
+  ReservationLifecycleAudit,
+  ReservationLifecycleChanges,
+} from './reservation-audit.js';
 export { invitationAuditSchema } from './invitation-audit.js';
 export type { InvitationAudit } from './invitation-audit.js';
 export { passwordResetAuditSchema } from './password-reset-audit.js';
