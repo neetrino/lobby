@@ -3,6 +3,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import {
   createTestPrismaClient,
   disposeTestPrismaClient,
+  isDuplicateDatabaseError,
   type PrismaClient,
 } from './create-test-database';
 
@@ -10,6 +11,19 @@ const clients: PrismaClient[] = [];
 
 afterAll(async () => {
   await Promise.all(clients.map((client) => disposeTestPrismaClient(client)));
+});
+
+describe('duplicate database errors', () => {
+  it('treats a concurrent catalog insert as an existing database', () => {
+    expect(
+      isDuplicateDatabaseError({
+        code: '23505',
+        constraint: 'pg_database_datname_index',
+      }),
+    ).toBe(true);
+    expect(isDuplicateDatabaseError({ code: '42P04' })).toBe(true);
+    expect(isDuplicateDatabaseError({ code: '23505', constraint: 'users_email_key' })).toBe(false);
+  });
 });
 
 describe('isolated test database clients', () => {

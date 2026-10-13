@@ -83,7 +83,10 @@ async function ensureTestDatabase(connectionString: string): Promise<void> {
       try {
         await admin.query(`CREATE DATABASE ${databaseName}`);
       } catch (error) {
-        if (!isDuplicateDatabaseError(error)) {
+        const created = await admin.query('SELECT 1 FROM pg_database WHERE datname = $1', [
+          databaseName,
+        ]);
+        if (created.rowCount === 0 || !isDuplicateDatabaseError(error)) {
           throw error;
         }
       }
@@ -93,8 +96,19 @@ async function ensureTestDatabase(connectionString: string): Promise<void> {
   }
 }
 
-function isDuplicateDatabaseError(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && error.code === '42P04';
+/**
+ * `42P04` means the database already exists.
+ * Concurrent `CREATE DATABASE` calls can instead hit `23505` on `pg_database_datname_index`.
+ */
+export function isDuplicateDatabaseError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+  const record = error as { code?: unknown; constraint?: unknown };
+  if (record.code === '42P04') {
+    return true;
+  }
+  return record.code === '23505' && record.constraint === 'pg_database_datname_index';
 }
 
 function createTestSchemaName(): string {
