@@ -16,6 +16,7 @@ import {
 import { SignOutButton } from '../auth/sign-out-button';
 import { updateLeadsEnabled } from './contacts-api';
 import type { SessionPrincipal } from './contact';
+import { rememberSession } from './remembered-session';
 import { SidebarNav, type ShellPage } from './sidebar-nav';
 import styles from './contacts.module.css';
 
@@ -54,8 +55,9 @@ export function ContactsShell({
   const t = useTranslations('contacts');
   const locale = useLocale();
   const router = useRouter();
-  const sessionLeads = session?.user.leadsEnabled ?? true;
-  const canReadAudit = session?.user.role === 'OWNER' || session?.user.role === 'ADMIN';
+  const shown = rememberSession(session);
+  const sessionLeads = shown?.user.leadsEnabled ?? true;
+  const canReadAudit = shown?.user.role === 'OWNER' || shown?.user.role === 'ADMIN';
   const [leadChoice, setLeadChoice] = useState<{ source: boolean; value: boolean } | null>(null);
   const sidebarOpen = useSyncExternalStore(
     subscribeSidebar,
@@ -65,10 +67,10 @@ export function ContactsShell({
   const leadsOn = leadChoice?.source === sessionLeads ? leadChoice.value : sessionLeads;
 
   useEffect(() => {
-    if (session?.platform === true) {
+    if (shown?.platform === true) {
       router.replace(`/${locale}/platform`);
     }
-  }, [locale, router, session]);
+  }, [locale, router, shown]);
 
   return (
     <aside className={sidebarOpen ? `${styles.sidebar} ${styles.sidebarWide}` : styles.sidebar}>
@@ -100,10 +102,10 @@ export function ContactsShell({
         workspaceLabel={t('workspaceName')}
         labelFor={(id) => t(`nav.${id}`)}
       />
-      {session === null ? null : (
+      {shown === null ? null : (
         <Account
-          session={session}
-          role={t(`role.${session.user.role}`)}
+          session={shown}
+          role={t(`role.${shown.user.role}`)}
           leadsOn={leadsOn}
           current={current}
           onLeads={(enabled) => setLeadChoice({ source: sessionLeads, value: enabled })}
@@ -184,6 +186,7 @@ async function switchLeads(
   onLeads: (enabled: boolean) => void,
 ): Promise<void> {
   const next = await updateLeadsEnabled(!enabled);
+  rememberSession(next);
   onLeads(next.user.leadsEnabled);
   if (!next.user.leadsEnabled && current === 'leads') {
     router.replace(`/${locale}/dashboard`);

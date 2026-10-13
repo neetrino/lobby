@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import messages from '../../messages/en.json';
 import type { SessionPrincipal } from '../contacts/contact';
 import { ContactsShell } from '../contacts/contacts-shell';
+import { clearRememberedSession } from '../contacts/remembered-session';
 import type { PipelineCard, PipelineColumn } from './pipeline-api';
 import { PipelineCardView } from './pipeline-card';
 import { PipelineColumnView } from './pipeline-column';
@@ -34,6 +35,7 @@ const userId = '00000000-0000-4000-8000-000000000020';
 describe('pipeline board controls', () => {
   afterEach(() => {
     cleanup();
+    clearRememberedSession();
     vi.unstubAllGlobals();
     router.replace.mockReset();
   });
@@ -158,6 +160,13 @@ describe('pipeline board controls', () => {
     expect(screen.getByText('Delete this column?')).toBeTruthy();
     fireEvent.click(screen.getAllByRole('button', { name: 'Delete column' })[1] ?? document.body);
     expect(onDelete).toHaveBeenCalledOnce();
+  });
+
+  it('keeps the account visible while the next page session is still loading', () => {
+    renderShell();
+    cleanup();
+    renderUi(<ContactsShell session={null} current="contacts" />);
+    expect(screen.getByRole('button', { name: /Ada/ })).toBeTruthy();
   });
 
   it('hides Leads after the account switch', async () => {

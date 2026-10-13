@@ -205,6 +205,16 @@
   opacity: 1;
 }
 
+@starting-style {
+  .sidebarWide .brand > span:not(.brandMark),
+  .sidebarWide .navActive > span,
+  .sidebarWide .navLink > span,
+  .sidebarWide .navIdle > span,
+  .sidebarWide .accountButton > span:not(.avatar) {
+    opacity: 1;
+  }
+}
+
 .brand > span:not(.brandMark) {
   grid-column: 2;
   grid-row: auto;

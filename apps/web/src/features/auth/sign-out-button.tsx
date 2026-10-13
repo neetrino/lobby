@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { clearRememberedSession } from '../contacts/remembered-session';
 import { logoutAccount } from './auth-api';
 import styles from './auth.module.css';
 
@@ -25,6 +26,7 @@ export function SignOutButton({
     setError(null);
     try {
       await logoutAccount();
+      clearRememberedSession();
       router.replace(`/${locale}/login`);
     } catch {
       setError(t('errors.signOutFailed'));
