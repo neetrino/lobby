@@ -1,5 +1,19 @@
 'use client';
 
+import {
+  Briefcase,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  LayoutDashboard,
+  MessageCircle,
+  Settings,
+  User,
+  UserPlus,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,7 +23,6 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
-  type ReactNode,
   type RefObject,
 } from 'react';
 
@@ -29,6 +42,20 @@ const NAV = [
   { id: 'audit', href: 'audit' },
   { id: 'settings', href: 'settings' },
 ] as const;
+
+type NavId = (typeof NAV)[number]['id'];
+
+const NAV_ICONS: Record<NavId, LucideIcon> = {
+  dashboard: LayoutDashboard,
+  leads: UserPlus,
+  deals: Briefcase,
+  messenger: MessageCircle,
+  contacts: User,
+  team: Users,
+  reservations: Calendar,
+  audit: ClipboardList,
+  settings: Settings,
+};
 
 const SIDEBAR_KEY = 'lobby-sidebar';
 const sidebarListeners = new Set<() => void>();
@@ -55,7 +82,6 @@ function writeSidebarOpen(open: boolean): void {
   }
 }
 
-type NavId = (typeof NAV)[number]['id'];
 type ShellPage =
   'contacts' | 'dashboard' | 'leads' | 'deals' | 'settings' | 'team' | 'reservations' | 'audit';
 
@@ -104,9 +130,7 @@ export function ContactsShell({
             writeSidebarOpen(!sidebarOpen);
           }}
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d={sidebarOpen ? 'M15 6 9 12l6 6' : 'M9 6l6 6-6 6'} />
-          </svg>
+          {sidebarOpen ? <ChevronLeft aria-hidden="true" /> : <ChevronRight aria-hidden="true" />}
         </button>
       </div>
       <nav className={styles.nav} aria-label={t('workspaceName')}>
@@ -288,69 +312,6 @@ function initials(name: string): string {
 }
 
 function ItemIcon({ name }: { name: NavId }) {
-  return (
-    <svg className={styles.navIcon} viewBox="0 0 24 24" aria-hidden="true">
-      {iconPath(name)}
-    </svg>
-  );
-}
-
-function iconPath(name: NavId): ReactNode {
-  switch (name) {
-    case 'dashboard':
-      return (
-        <>
-          <path d="M4 4h7v7H4zM13 4h7v4h-7zM13 10h7v10h-7zM4 13h7v7H4z" />
-        </>
-      );
-    case 'leads':
-      return (
-        <>
-          <circle cx="9" cy="8" r="3" />
-          <path d="M4 18c1-2.4 2.8-3.5 5-3.5S13 15.6 14 18M17 8h3M18.5 6.5v3" />
-        </>
-      );
-    case 'deals':
-      return (
-        <>
-          <path d="M4 8h16v11H4zM9 8V6h6v2" />
-        </>
-      );
-    case 'messenger':
-      return <path d="M5 6h14v9H8l-3 3z" />;
-    case 'contacts':
-      return (
-        <>
-          <circle cx="12" cy="9" r="3" />
-          <path d="M6 19c1.4-2.6 3.5-4 6-4s4.6 1.4 6 4" />
-        </>
-      );
-    case 'team':
-      return (
-        <>
-          <circle cx="8" cy="9" r="2.4" />
-          <circle cx="16" cy="9" r="2.4" />
-          <path d="M3.5 18c.8-2 2.2-3 4.5-3s3.7 1 4.5 3M11.5 18c.8-2 2.2-3 4.5-3s3.7 1 4.5 3" />
-        </>
-      );
-    case 'reservations':
-      return (
-        <>
-          <path d="M5 5h14v15H5zM5 9h14M9 3v4M15 3v4" />
-        </>
-      );
-    case 'audit':
-      return (
-        <>
-          <path d="M8 3h8v18H8zM10 8h4M10 12h4M10 16h3" />
-        </>
-      );
-    case 'settings':
-      return (
-        <>
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4" />
-        </>
-      );
-  }
+  const Icon = NAV_ICONS[name];
+  return <Icon className={styles.navIcon} aria-hidden="true" />;
 }
