@@ -1,6 +1,7 @@
 'use client';
 
 import { dashboardWidgetKeys } from '@lobby/contracts';
+import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   useCallback,
@@ -50,7 +51,7 @@ export function CustomizeDrawer({
     setLeaving(true);
   }, [onClose]);
 
-  function finishClose(event: ReactAnimationEvent<HTMLFormElement>): void {
+  function finishClose(event: ReactAnimationEvent<HTMLDivElement>): void {
     if (event.target !== event.currentTarget || !leaving || closed.current) {
       return;
     }
@@ -128,7 +129,7 @@ type DrawerFormProps = {
   rows: WidgetRow[];
   pending: boolean;
   leaving: boolean;
-  onMotionEnd: (event: ReactAnimationEvent<HTMLFormElement>) => void;
+  onMotionEnd: (event: ReactAnimationEvent<HTMLDivElement>) => void;
   onClose: () => void;
   onToggle: (key: string) => void;
   onDragStart: (index: number) => void;
@@ -154,44 +155,49 @@ function DrawerForm({
   onSave,
 }: DrawerFormProps) {
   const t = useTranslations('dashboard');
+  const sheetClass = leaving ? `${drawer.sheet} ${drawer.sheetLeaving}` : drawer.sheet;
   return (
-    <form
-      className={leaving ? `${drawer.drawer} ${drawer.drawerLeaving}` : drawer.drawer}
+    <div
+      className={sheetClass}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
       onAnimationEnd={onMotionEnd}
       onClick={(event) => event.stopPropagation()}
-      onSubmit={(event) => {
-        event.preventDefault();
-        onSave();
-      }}
     >
-      <header className={drawer.drawerHead}>
-        <h2 id={titleId}>{title}</h2>
-        <button
-          type="button"
-          className={drawer.iconButton}
-          onClick={onClose}
-          aria-label={t('close')}
-        >
-          ×
-        </button>
-      </header>
-      <div className={drawer.widgetList}>
-        {rows.map((widget, index) => (
-          <WidgetRowEditor
-            key={widget.key}
-            widget={widget}
-            onToggle={() => onToggle(widget.key)}
-            onDragStart={() => onDragStart(index)}
-            onDrop={() => onDrop(index)}
-            onKeyMove={(direction) => onKeyMove(index, direction)}
-          />
-        ))}
-      </div>
-      <DrawerActions pending={pending} onReset={onReset} />
-    </form>
+      <button
+        type="button"
+        className={drawer.cornerClose}
+        onClick={onClose}
+        aria-label={t('close')}
+      >
+        <X aria-hidden="true" />
+      </button>
+      <form
+        className={drawer.drawer}
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSave();
+        }}
+      >
+        <header className={drawer.drawerHead}>
+          <h2 id={titleId}>{title}</h2>
+        </header>
+        <div className={drawer.widgetList}>
+          {rows.map((widget, index) => (
+            <WidgetRowEditor
+              key={widget.key}
+              widget={widget}
+              onToggle={() => onToggle(widget.key)}
+              onDragStart={() => onDragStart(index)}
+              onDrop={() => onDrop(index)}
+              onKeyMove={(direction) => onKeyMove(index, direction)}
+            />
+          ))}
+        </div>
+        <DrawerActions pending={pending} onReset={onReset} />
+      </form>
+    </div>
   );
 }
 
