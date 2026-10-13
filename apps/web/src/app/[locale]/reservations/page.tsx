@@ -2,9 +2,8 @@ import { supportedLocales, type Locale } from '@lobby/contracts';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Suspense } from 'react';
 
-import { ReservationsWorkspace } from '@/features/reservations/reservations-workspace';
+import { ReservationsPage as ReservationsWorkspace } from '@/features/contacts/lazy-pages';
 
 type ReservationsPageProps = {
   params: Promise<{ locale: string }>;
@@ -21,11 +20,7 @@ export default async function ReservationsPage({ params }: ReservationsPageProps
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
-  return (
-    <Suspense>
-      <ReservationsWorkspace />
-    </Suspense>
-  );
+  return <ReservationsWorkspace />;
 }
 
 function isLocale(value: string): value is Locale {

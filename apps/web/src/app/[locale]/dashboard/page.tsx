@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { DashboardWorkspace } from '@/features/dashboard/dashboard-workspace';
+import { DashboardPage as DashboardWorkspace } from '@/features/contacts/lazy-pages';
 
 type DashboardPageProps = {
   params: Promise<{ locale: string }>;

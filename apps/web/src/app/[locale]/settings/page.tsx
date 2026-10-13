@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 
-import { WorkspaceSettings } from '@/features/settings/workspace-settings';
+import { SettingsPage as WorkspaceSettings } from '@/features/contacts/lazy-pages';
 
 type PageProps = { params: Promise<{ locale: string }> };
 

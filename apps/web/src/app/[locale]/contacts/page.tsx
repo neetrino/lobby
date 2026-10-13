@@ -2,9 +2,8 @@ import { supportedLocales, type Locale } from '@lobby/contracts';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Suspense } from 'react';
 
-import { ContactsLoading, ContactsWorkspace } from '@/features/contacts/contacts-workspace';
+import { ContactsPage as ContactsWorkspace } from '@/features/contacts/lazy-pages';
 
 type ContactsPageProps = {
   params: Promise<{ locale: string }>;
@@ -26,11 +25,7 @@ export default async function ContactsPage({ params }: ContactsPageProps) {
   }
   setRequestLocale(locale);
 
-  return (
-    <Suspense fallback={<ContactsLoading />}>
-      <ContactsWorkspace />
-    </Suspense>
-  );
+  return <ContactsWorkspace />;
 }
 
 function isLocale(value: string): value is Locale {

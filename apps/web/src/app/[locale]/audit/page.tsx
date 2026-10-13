@@ -2,9 +2,8 @@ import { supportedLocales, type Locale } from '@lobby/contracts';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
-import { Suspense } from 'react';
 
-import { AuditWorkspace } from '@/features/audit/audit-workspace';
+import { AuditPage as AuditWorkspace } from '@/features/contacts/lazy-pages';
 
 type Props = { params: Promise<{ locale: string }> };
 
@@ -19,11 +18,7 @@ export default async function AuditPage({ params }: Props) {
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
   setRequestLocale(locale);
-  return (
-    <Suspense>
-      <AuditWorkspace />
-    </Suspense>
-  );
+  return <AuditWorkspace />;
 }
 
 function isLocale(value: string): value is Locale {

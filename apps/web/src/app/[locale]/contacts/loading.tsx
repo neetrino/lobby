@@ -1,6 +1,5 @@
-import { getTranslations } from 'next-intl/server';
+import { WorkspaceFallback } from '@/features/contacts/workspace-fallback';
 
-export default async function ContactsLoadingPage() {
-  const t = await getTranslations('contacts');
-  return <p>{t('loading')}</p>;
+export default function ContactsLoadingPage() {
+  return <WorkspaceFallback current="contacts" />;
 }
