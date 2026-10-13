@@ -1,0 +1,10 @@
+:root {
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --glass-ink: #14213d;
+  --glass-muted: #4b5568;
+  --glass-line: rgb(255 255 255 / 72%);
+  --glass-highlight: rgb(255 255 255 / 85%);
+  --glass-shadow: rgb(29 45 85 / 12%);
+}

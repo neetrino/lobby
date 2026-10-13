@@ -1,0 +1,176 @@
+.page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: #f8f9ff;
+  color: #0b1c30;
+}
+
+.card {
+  width: min(460px, 100%);
+  padding: 28px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 28px rgb(11 28 48 / 6%);
+}
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.mark {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 700;
+}
+
+.card h1 {
+  margin: 0;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+
+.note,
+.hint {
+  margin: 8px 0 0;
+  color: #434655;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #434655;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.form input,
+.form select {
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #fff;
+  color: #0b1c30;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.form input:focus,
+.form select:focus,
+.submit:focus-visible,
+.link:focus-visible,
+.textButton:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.fieldError {
+  color: #ba1a1a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.banner,
+.success {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.banner {
+  background: #ffdad6;
+  color: #690005;
+}
+
+.signOutGroup {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.success {
+  background: #d3f9d8;
+  color: #14532d;
+}
+
+.submit {
+  height: 42px;
+  border: 0;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.submit:hover {
+  background: #004ac6;
+}
+
+.submit:disabled,
+.textButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.textButton {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+  color: #434655;
+  font-size: 13px;
+}
+
+.footer p {
+  margin: 0;
+}
+
+.link {
+  color: #2563eb;
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.link:hover {
+  text-decoration: underline;
+}

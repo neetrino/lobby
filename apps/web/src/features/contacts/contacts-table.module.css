@@ -1,0 +1,323 @@
+.bar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid #e6ebf5;
+  background: #f7f9ff;
+}
+
+.barTools {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.count {
+  margin: 0;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.details {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+  min-width: 0;
+}
+
+.identityText,
+.lines,
+.stamp {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.nameLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 6px;
+}
+
+.identityText strong {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.lines span:first-child {
+  color: #3e4c66;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.identityText small,
+.lines span:last-child,
+.stamp span,
+.stamp small {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.stamp small {
+  font-size: 12px;
+}
+
+.owner span {
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.stack {
+  display: flex;
+  flex: 1;
+  align-items: center;
+}
+
+.stack > span + span {
+  margin-left: -8px;
+  box-shadow: 0 0 0 2px #f7f9ff;
+}
+
+.archive,
+.clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.clear {
+  width: 32px;
+  height: 32px;
+  margin-left: auto;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.archive > svg,
+.orgAvatar svg,
+.ownerMark svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rowActions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.iconButton {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #334155;
+  cursor: pointer;
+}
+
+.iconButton svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.iconButton:hover {
+  background: #eef2ff;
+  color: #1d4ed8;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% - 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 148px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(11 28 48 / 14%);
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #0b1c30;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menuItem:hover:not(:disabled) {
+  background: #f4f7fb;
+}
+
+.menuItem:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.solidIcon {
+  display: block;
+}
+
+.archivedRow {
+  color: #8b97ad;
+  opacity: 0.72;
+}
+
+.archivedName,
+.archivedName strong,
+.archivedRow small,
+.archivedRow td {
+  color: #8b97ad;
+}
+
+.archivedMark {
+  display: block;
+  margin-top: 2px;
+  color: #8b97ad;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar,
+.orgAvatar,
+.ownerMark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.avatar,
+.orgAvatar {
+  width: 40px;
+  height: 40px;
+  color: #fff;
+}
+
+.avatar {
+  border-radius: 50%;
+}
+
+.orgAvatar {
+  border-radius: 10px;
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.owner {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ownerMark {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e8eefc;
+  color: #3b4c7a;
+  font-size: 11px;
+}
+
+.personBadge,
+.orgBadgeLabel,
+.statusActive,
+.statusArchived {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1.35;
+  text-transform: none;
+}
+
+.personBadge {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.orgBadgeLabel {
+  background: #e8eef5;
+  color: #334155;
+}
+
+.statusActive,
+.statusArchived {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.statusActive {
+  background: #d8ffef;
+  color: #006c49;
+}
+
+.statusArchived {
+  background: #eceff4;
+  color: #434655;
+}
+
+.statusActive::before,
+.statusArchived::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}

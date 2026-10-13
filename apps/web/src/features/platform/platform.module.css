@@ -1,0 +1,27 @@
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f4f6fb;
+}
+
+.list strong {
+  color: #0b1c30;
+  font-size: 14px;
+}
+
+.list span {
+  color: #434655;
+  font-size: 12px;
+}

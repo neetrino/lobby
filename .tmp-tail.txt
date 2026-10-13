@@ -1,0 +1,16 @@
+Այս զրույցում արվածը երկու փուլ է։
+
+**Փուլ 7. Logout և բոլոր session-ների փակում**
+
+- `POST /api/v1/auth/logout`-ը ջնջում է ընթացիկ session-ը, հանում է այն user-ի reverse index-ից և մաքրում cookie-ն։ Կրկնակի կամ անվավեր logout-ը **204** է։ Նույն cookie-ով հաջորդ request-ը **401** է։
+- `terminateAllSessions`-ը սկզբում բարձրացնում է `authenticationVersion`-ը, հետո ջնջում այդ user-ի բոլոր session key-երը և reverse index-ը։ Սա ավարտվում է request-ի մեջ։ Outbox-ը revoke չի անում։
+- Ուրիշ user-ի session-ները փակել կարող են միայն նույն tenant-ի `OWNER`-ը և `ADMIN`-ը։ Մյուս դեպքում **403** է։
+- Terminate-ի հետ միաժամանակ ստեղծված հին version-ով session-ը չի մնում վավեր. գրելուց հետո version-ը նորից ստուգվում է, իսկ `SessionGuard`-ը մնացորդը մերժում է։
+
+**Փուլ 8. CSRF և rate limit**
+
+- `POST` / `PUT` / `PATCH` / `DELETE` request-ը անցնում է միայն թույլատրված `Origin`-ով։ `Origin` չկա՝ ստուգվում է `Referer`-ը։ Երկուսն էլ չկան՝ **403 `ORIGIN_REJECTED`**։
+- CORS-ը միայն այդ ցանկին է credentials տալիս, `*` չկա։ CORS-ը CSRF պաշտպանություն չէ։ Frontend-ն ու API-ն տարբեր site լինելու դեպքում պետք է CSRF token։
+- Login-ի IP-ն, login-ի account-ը, register-ի IP-ն և անվավեր session cookie-ն սահմանափակվում են `rate_limit:` key-երով։ Key-ում raw IP/email չկա, միայն hash։ Գերազանցելիս **429 `RATE_LIMITED`** է։ Account-ի սահմանը նույնն է, account-ը լինի թե չլինի։ Հաջող login-ը մաքրում է միայն account հաշվիչը։
+
+Սահմանների սկզբնական արժեքները. login IP 20/15 րոպե, login account 10/15 րոպե, register IP 5/1 ժամ, անվավեր session 30/5 րոպե։ Բոլորը `RATE_LIMIT_*` env-ով են։

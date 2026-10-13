@@ -1,0 +1,250 @@
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px 8px;
+  background: transparent;
+}
+
+header.profile h2 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 20px;
+}
+
+.profile p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 0;
+}
+
+.profile .close {
+  margin-left: auto;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  padding: 8px 12px;
+  color: #94a3b8;
+  cursor: pointer;
+  font: inherit;
+}
+
+.sheet,
+.block {
+  margin: 8px 16px 12px;
+  padding: 18px 18px 16px;
+  border-radius: 16px;
+  background: #f4f7fb;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.sheet h3,
+.block h3,
+.sectionHead h3 {
+  margin: 0;
+  color: #8b93a7;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hint {
+  color: #1f9d55;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sheet .fields > label {
+  gap: 6px;
+  color: #8b93a7;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.control {
+  position: relative;
+}
+
+.sheet .fields input,
+.sheet .fields select {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  border: 1px solid #e7eef6;
+  border-radius: 10px;
+  background: #fff;
+  color: #1e293b;
+  padding: 10px 14px;
+  font: inherit;
+}
+
+.sheet .fields .control input {
+  padding-right: 42px;
+}
+
+.mark {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  display: grid;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  transform: translateY(-50%);
+  color: #1f9d55;
+}
+
+.mark svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.footer {
+  padding: 4px 16px 16px;
+}
+
+.footer button:last-child {
+  margin-left: auto;
+}
+
+.tabs {
+  display: flex;
+  gap: 22px;
+  margin: 0 16px;
+  padding: 4px 4px 0;
+  border-bottom: 1px solid #e6ebf2;
+}
+
+.tab,
+.tabActive {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  background: transparent;
+  padding: 10px 0 12px;
+  color: #8b93a7;
+  cursor: pointer;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.tabActive {
+  border-bottom-color: #2563eb;
+  color: #2563eb;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.card {
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.card span,
+.event small,
+.note,
+.event time {
+  color: #8b93a7;
+  font-size: 12px;
+}
+
+.card strong {
+  display: block;
+  margin: 6px 0 2px;
+  color: #2563eb;
+  font-size: 32px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.card small {
+  color: #1f9d55;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.events {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.event {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.eventMark {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  background: #e8f1ff;
+  color: #2563eb;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.eventCopy {
+  min-width: 0;
+}
+
+.event strong,
+.event small {
+  display: block;
+}
+
+.event strong {
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.event time {
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.note {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .cards {
+    grid-template-columns: 1fr;
+  }
+}

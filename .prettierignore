@@ -5,4 +5,11 @@ build
 coverage
 pnpm-lock.yaml
 prisma/migrations
+packages/database/generated
+.agents
+.cursor
+docs/reference
+docs/archive
+**/tmp-*.mjs
+**/next-env.d.ts
 .git
