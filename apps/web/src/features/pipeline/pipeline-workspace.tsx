@@ -97,9 +97,9 @@ export function PipelineWorkspace({ kind }: { kind: PipelineKindName }) {
   return (
     <div className={shell.app}>
       <ContactsShell session={session} current={kind === 'lead' ? 'leads' : 'deals'} />
-      <main className={shell.main}>
+      <main className={board === null ? `${shell.main} ${shell.mainFill}` : shell.main}>
         {board === null ? (
-          <p className={styles.page}>{error ?? t('loading')}</p>
+          <p className={shell.loading}>{error ?? t('loading')}</p>
         ) : (
           <PipelineView
             board={board}

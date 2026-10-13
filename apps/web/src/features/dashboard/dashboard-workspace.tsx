@@ -116,9 +116,15 @@ export function DashboardWorkspace() {
   return (
     <div className={shell.app}>
       <ContactsShell session={session} current="dashboard" />
-      <main className={`${shell.main} ${glass.canvas}`}>
+      <main
+        className={
+          board === null && error === null
+            ? `${shell.main} ${glass.canvas} ${shell.mainFill}`
+            : `${shell.main} ${glass.canvas}`
+        }
+      >
         {error !== null ? <p className={styles.banner}>{t('failed')}</p> : null}
-        {board === null && error === null ? <p className={styles.page}>{t('loading')}</p> : null}
+        {board === null && error === null ? <p className={shell.loading}>{t('loading')}</p> : null}
         {board === null ? null : (
           <DashboardBoardView
             board={board}

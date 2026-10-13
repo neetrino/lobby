@@ -334,5 +334,5 @@ function withoutCursor(filters: ContactListFilters): ContactListFilters {
 
 export function ContactsLoading() {
   const t = useTranslations('contacts');
-  return <p className={styles.note}>{t('loading')}</p>;
+  return <p className={styles.loading}>{t('loading')}</p>;
 }
