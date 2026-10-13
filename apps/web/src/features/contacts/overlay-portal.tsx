@@ -1,6 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type AnimationEvent as ReactAnimationEvent,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 
 import { isTopLayer, pushLayer, removeLayer, trapTab } from './portal-layer';
@@ -19,10 +27,50 @@ export function OverlayPortal({
   const mounted = useSyncExternalStore(subscribe, isClient, isServer);
   const rootRef = useRef<HTMLDivElement>(null);
   const dismissRef = useRef(onDismiss);
+  const closed = useRef(false);
+  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
     dismissRef.current = onDismiss;
   });
+
+  const close = useCallback(() => {
+    if (dismissRef.current === undefined || closed.current) {
+      return;
+    }
+    if (prefersReducedMotion()) {
+      closed.current = true;
+      dismissRef.current();
+      return;
+    }
+    setLeaving(true);
+  }, []);
+
+  function finishClose(event: ReactAnimationEvent<HTMLDivElement>): void {
+    if (!leaving || closed.current || event.target === event.currentTarget) {
+      return;
+    }
+    const panel = event.target;
+    if (!(panel instanceof HTMLElement) || panel.parentElement !== event.currentTarget) {
+      return;
+    }
+    closed.current = true;
+    dismissRef.current?.();
+  }
+
+  useEffect(() => {
+    if (!leaving) {
+      return undefined;
+    }
+    const timer = window.setTimeout(() => {
+      if (closed.current) {
+        return;
+      }
+      closed.current = true;
+      dismissRef.current?.();
+    }, 320);
+    return () => window.clearTimeout(timer);
+  }, [leaving]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -37,7 +85,7 @@ export function OverlayPortal({
       }
       if (event.key === 'Escape' && dismissRef.current !== undefined) {
         event.preventDefault();
-        dismissRef.current();
+        close();
       }
       if (event.key === 'Tab') {
         trapTab(event, dialog);
@@ -48,20 +96,20 @@ export function OverlayPortal({
       document.removeEventListener('keydown', onKey);
       removeLayer(dialog);
     };
-  }, [mounted]);
+  }, [close, mounted]);
 
   if (!mounted) {
     return null;
   }
 
+  const backdrop = raised ? styles.backdropRaised : styles.backdrop;
   return createPortal(
     <div
       ref={rootRef}
-      className={raised ? styles.backdropRaised : styles.backdrop}
+      className={leaving ? `${backdrop} ${styles.backdropLeaving}` : backdrop}
       tabIndex={-1}
-      onClick={() => {
-        onDismiss?.();
-      }}
+      onAnimationEnd={finishClose}
+      onClick={close}
     >
       {children}
     </div>,
@@ -69,7 +117,7 @@ export function OverlayPortal({
   );
 }
 
-/** Inline editor, or the same editor centered in a portal. */
+/** Inline editor, or the same editor in a right-hand sheet. */
 export function EditorOverlay({
   portal,
   label,
@@ -99,6 +147,13 @@ export function EditorOverlay({
         {children}
       </div>
     </OverlayPortal>
+  );
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 }
 

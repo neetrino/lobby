@@ -1,10 +1,16 @@
 .panel {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
   width: min(420px, 100%);
-  padding: 20px;
+  min-height: 0;
+  max-height: 100%;
+  padding: 24px;
   border: 0;
-  border-radius: 16px;
-  background: var(--card);
-  box-shadow: 0 16px 40px rgb(11 28 48 / 18%);
+  border-radius: 28px;
+  background: #fff;
+  color: #14213d;
+  box-shadow: 0 24px 60px rgb(20 33 61 / 18%);
 }
 
 .panel:focus {
@@ -13,7 +19,8 @@
 
 .panel h2 {
   margin: 0 0 8px;
-  font-size: 20px;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .panel p {
@@ -30,5 +37,6 @@
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: auto;
+  padding-top: 20px;
 }

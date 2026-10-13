@@ -180,20 +180,22 @@
 
 .drawer {
   position: fixed;
-  top: 0;
-  right: 0;
+  top: 16px;
+  right: 16px;
+  bottom: 16px;
   z-index: 20;
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-  width: min(480px, 100vw);
-  height: 100vh;
+  width: min(440px, calc(100vw - 32px));
+  height: auto;
   overflow: hidden;
-  border-left: 1px solid rgb(203 213 225 / 70%);
-  background: radial-gradient(circle at 100% 0, rgb(219 234 254 / 70%), transparent 260px), #f6f8fc;
-  color: #0b1c30;
+  border: 0;
+  border-radius: 28px;
+  background: #fff;
+  color: #14213d;
   font-family: var(--font-inter), var(--font-armenian), system-ui, sans-serif;
-  box-shadow: -24px 0 64px rgb(15 23 42 / 16%);
+  box-shadow: 0 24px 60px rgb(20 33 61 / 18%);
 }
 
 .drawerHead {
@@ -446,15 +448,17 @@
 .confirm {
   display: flex;
   flex-direction: column;
-  width: min(560px, calc(100vw - 32px));
-  max-height: calc(100vh - 48px);
+  box-sizing: border-box;
+  width: min(440px, 100%);
+  min-height: 0;
+  max-height: 100%;
   overflow: hidden;
   padding: 0;
-  border-radius: 16px;
-  background: #f4f7fb;
-  color: #0b1c30;
+  border-radius: 28px;
+  background: #fff;
+  color: #14213d;
   font-family: var(--font-inter), var(--font-armenian), system-ui, sans-serif;
-  box-shadow: 0 16px 40px rgb(11 28 48 / 18%);
+  box-shadow: 0 24px 60px rgb(20 33 61 / 18%);
 }
 
 .formHead,

@@ -69,13 +69,7 @@ export function DashboardBoardView({
           widgets={board.layout.widgets}
           pending={pending}
           onClose={() => setCustomizing(false)}
-          onSave={(widgets) => {
-            void onSaveLayout(widgets).then((saved) => {
-              if (saved) {
-                setCustomizing(false);
-              }
-            });
-          }}
+          onSave={onSaveLayout}
         />
       ) : null}
     </div>

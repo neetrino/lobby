@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { addCardNote, readCardNotes, updateCardNote, type PipelineKindName } from './pipeline-api';
@@ -28,7 +28,6 @@ export function PipelineNotes({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(false);
-  const [position, setPosition] = useState({ x: 24, y: 88 });
 
   useEffect(() => {
     if (!open) return;
@@ -85,7 +84,6 @@ export function PipelineNotes({
   function openNotes(): void {
     setLoading(true);
     setError(false);
-    setPosition({ x: Math.max(16, window.innerWidth - 390), y: 88 });
     setOpen(true);
   }
 
@@ -108,12 +106,8 @@ export function PipelineNotes({
               className={styles.stickyNotePanel}
               role="dialog"
               aria-label={t('notesTitle', { title: cardTitle })}
-              style={{ left: position.x, top: position.y }}
             >
-              <header
-                className={`${styles.chatHeader} ${styles.stickyDragHandle}`}
-                onPointerDown={(event) => startDrag(event, position, setPosition)}
-              >
+              <header className={styles.chatHeader}>
                 <Image
                   src="/pipeline-note.png"
                   alt=""
@@ -129,7 +123,6 @@ export function PipelineNotes({
                   type="button"
                   className={styles.iconButton}
                   aria-label={t('closeNotes')}
-                  onPointerDown={(event) => event.stopPropagation()}
                   onClick={() => setOpen(false)}
                 >
                   ×
@@ -157,29 +150,4 @@ export function PipelineNotes({
         : null}
     </>
   );
-}
-
-function startDrag(
-  event: ReactPointerEvent<HTMLElement>,
-  start: { x: number; y: number },
-  setPosition: (position: { x: number; y: number }) => void,
-): void {
-  if (event.button !== 0) return;
-  event.preventDefault();
-  const originX = event.clientX;
-  const originY = event.clientY;
-  const move = (pointer: PointerEvent) => {
-    const maxX = Math.max(8, window.innerWidth - 280);
-    const maxY = Math.max(8, window.innerHeight - 120);
-    setPosition({
-      x: Math.min(maxX, Math.max(8, start.x + pointer.clientX - originX)),
-      y: Math.min(maxY, Math.max(8, start.y + pointer.clientY - originY)),
-    });
-  };
-  const stop = () => {
-    window.removeEventListener('pointermove', move);
-    window.removeEventListener('pointerup', stop);
-  };
-  window.addEventListener('pointermove', move);
-  window.addEventListener('pointerup', stop);
 }
