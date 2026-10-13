@@ -252,9 +252,9 @@
 .navIndicator {
   position: absolute;
   top: 0;
-  left: 0;
+  left: 8px;
   z-index: 0;
-  width: 100%;
+  width: calc(100% - 8px);
   height: 44px;
   border-radius: 18px;
   background: rgb(255 255 255 / 12%);
@@ -269,11 +269,6 @@
 
 .nav[data-nav-motion] .navIndicator {
   transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.sidebarWide .navIndicator {
-  left: 8px;
-  width: calc(100% - 8px);
 }
 
 .navActive,
@@ -300,14 +295,8 @@
   font-weight: 600;
 }
 
-.navLink:hover,
-.navIdle:hover {
-  background: rgb(255 255 255 / 10%);
-  color: #fff;
-}
-
-.sidebarWide .navLink::before,
-.sidebarWide .navIdle::before {
+.navLink::before,
+.navIdle::before {
   content: '';
   position: absolute;
   top: 0;
@@ -319,13 +308,14 @@
   background: transparent;
 }
 
-.sidebarWide .navLink:hover,
-.sidebarWide .navIdle:hover {
+.navLink:hover,
+.navIdle:hover {
   background: transparent;
+  color: #fff;
 }
 
-.sidebarWide .navLink:hover::before,
-.sidebarWide .navIdle:hover::before {
+.navLink:hover::before,
+.navIdle:hover::before {
   background: rgb(255 255 255 / 10%);
 }
 
@@ -340,6 +330,10 @@
 .navIdle {
   color: rgb(255 255 255 / 45%);
   cursor: default;
+}
+
+.sidebar:not(.sidebarWide) .navIcon {
+  transform: translateX(4px);
 }
 
 .navIcon {
@@ -1256,9 +1250,13 @@ button:focus-visible {
     width: 44px;
   }
 
-  .sidebarWide .navLink::before,
-  .sidebarWide .navIdle::before {
+  .navLink::before,
+  .navIdle::before {
     left: 0;
+  }
+
+  .sidebar:not(.sidebarWide) .navIcon {
+    transform: none;
   }
 
   .account {
