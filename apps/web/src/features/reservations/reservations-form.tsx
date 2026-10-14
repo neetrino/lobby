@@ -135,28 +135,30 @@ export function ReservationForm({
             </fieldset>
             <fieldset>
               <legend>{t('sections.when')}</legend>
-              <label>
-                {t('starts')}
-                <input
-                  type="datetime-local"
-                  required
-                  value={draft.startsAt}
-                  onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })}
-                />
-              </label>
-              <label>
-                {t('duration')}
-                <input
-                  type="number"
-                  min={1}
-                  max={1440}
-                  required
-                  value={draft.durationMinutes}
-                  onChange={(event) =>
-                    setDraft({ ...draft, durationMinutes: Number(event.target.value) })
-                  }
-                />
-              </label>
+              <div className={styles.fieldRow}>
+                <label>
+                  {t('starts')}
+                  <input
+                    type="datetime-local"
+                    required
+                    value={draft.startsAt}
+                    onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })}
+                  />
+                </label>
+                <label>
+                  {t('duration')}
+                  <input
+                    type="number"
+                    min={1}
+                    max={1440}
+                    required
+                    value={draft.durationMinutes}
+                    onChange={(event) =>
+                      setDraft({ ...draft, durationMinutes: Number(event.target.value) })
+                    }
+                  />
+                </label>
+              </div>
             </fieldset>
             <fieldset>
               <legend>{t('sections.seating')}</legend>
