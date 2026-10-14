@@ -6,7 +6,6 @@ import Link from 'next/link';
 
 import { SignOutButton } from '../auth/sign-out-button';
 import type { SessionPrincipal } from './contact';
-import { LanguageSwitch } from './language-switch';
 import glass from '../../ui/glass/glass.module.css';
 import styles from './contacts-top.module.css';
 
@@ -53,7 +52,6 @@ function TopBar({ session }: { session: SessionPrincipal | null }) {
         <span className={styles.bell} aria-hidden="true">
           <BellIcon />
         </span>
-        <LanguageSwitch />
         <UserMenu session={session} />
       </div>
     </header>

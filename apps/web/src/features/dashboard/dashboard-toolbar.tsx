@@ -6,7 +6,6 @@ import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
 import { SignOutButton } from '../auth/sign-out-button';
 import type { SessionPrincipal } from '../contacts/contact';
-import { LanguageSwitch } from '../contacts/language-switch';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import { formatWhen } from './dashboard-layout';
 import styles from './dashboard-toolbar.module.css';
@@ -66,7 +65,6 @@ export function DashboardToolbar({
           }))}
           onChange={onScope}
         />
-        <LanguageSwitch compact />
         {session === null ? null : (
           <UserMenu label={session.user.name.trim() || roles(`role.${session.user.role}`)} />
         )}

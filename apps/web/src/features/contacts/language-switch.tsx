@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
 import styles from './language-switch.module.css';
+import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 
 export function LanguageSwitch({ compact = false }: { compact?: boolean }) {
   const t = useTranslations('contacts.language');
@@ -91,6 +92,32 @@ function useDismissWhenOpen(
   }, [close, open, rootRef]);
 }
 
+type LanguageText = ReturnType<typeof useTranslations<'contacts.language'>>;
+
+/** Locale switch for the bottom of the account menu. */
+export function LanguageMenu() {
+  const t = useTranslations('contacts.language');
+  const router = useRouter();
+  const locale = useLocale();
+  const current = isLocale(locale) ? locale : 'en';
+
+  function choose(next: Locale): void {
+    if (next === current) {
+      return;
+    }
+    router.push(`${replaceLocale(window.location.pathname, next)}${window.location.search}`);
+  }
+
+  return (
+    <SegmentedControl
+      label={t('label')}
+      value={current}
+      options={supportedLocales.map((item) => ({ value: item, label: codeOf(t, item) }))}
+      onChange={choose}
+    />
+  );
+}
+
 function nameOf(t: LanguageText, locale: Locale): string {
   switch (locale) {
     case 'hy':
@@ -125,8 +152,6 @@ function replaceLocale(pathname: string, next: Locale): string {
   }
   return `/${next}${pathname}`;
 }
-
-type LanguageText = ReturnType<typeof useTranslations<'contacts.language'>>;
 
 function GlobeIcon() {
   return (

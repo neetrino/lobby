@@ -386,6 +386,42 @@
   background: rgb(255 255 255 / 8%);
 }
 
+.sidebarWide .accountButton {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 16px);
+  height: 48px;
+  margin-inline: 8px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 999px;
+  background: #1a1d24;
+  color: #fff;
+}
+
+.sidebarWide .accountButton:hover {
+  background: #2a2e36;
+}
+
+.sidebarWide .accountButton .avatar {
+  grid-column: auto;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+}
+
+.accountChevron {
+  display: inline-flex;
+  flex: none;
+  margin-left: auto;
+}
+
+.accountChevron svg {
+  width: 16px;
+  height: 16px;
+}
+
 .accountMenu {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -397,6 +433,31 @@
   background: #fff;
   color: var(--ink);
   box-shadow: 0 12px 32px rgb(11 28 48 / 16%);
+}
+
+.sidebarWide .accountMenu {
+  left: 50%;
+  width: calc(100% - 32px);
+  transform: translateX(-50%);
+}
+
+.sidebar:not(.sidebarWide) .sidebarHead,
+.sidebar:not(.sidebarWide) .nav {
+  overflow: hidden;
+}
+
+.sidebar:not(.sidebarWide) {
+  overflow: visible;
+}
+
+.sidebar:not(.sidebarWide) .account {
+  z-index: 6;
+}
+
+.sidebar:not(.sidebarWide) .accountMenu {
+  left: 8px;
+  z-index: 20;
+  width: 220px;
 }
 
 .accountAction {
@@ -416,6 +477,21 @@
 
 .accountAction:hover {
   background: #f4f7fb;
+}
+
+.accountLanguage {
+  margin-top: 6px;
+}
+
+.accountLanguage > div {
+  display: flex;
+  width: 100%;
+}
+
+.accountLanguage button {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
 }
 
 .accountMenuGroup {

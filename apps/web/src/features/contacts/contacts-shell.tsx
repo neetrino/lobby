@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -18,6 +18,7 @@ import { BrandLogo } from '../../ui/brand/brand-logo';
 import { updateLeadsEnabled } from './contacts-api';
 import type { SessionPrincipal } from './contact';
 import { rememberSession } from './remembered-session';
+import { LanguageMenu } from './language-switch';
 import { SidebarNav, type ShellPage } from './sidebar-nav';
 import styles from './contacts.module.css';
 
@@ -154,6 +155,9 @@ function Account({
             className={styles.accountAction}
             groupClassName={styles.accountMenuGroup}
           />
+          <div className={styles.accountLanguage}>
+            <LanguageMenu />
+          </div>
         </div>
       ) : null}
       <button
@@ -169,7 +173,9 @@ function Account({
         </span>
         <span>
           <strong>{name}</strong>
-          <small>{role}</small>
+        </span>
+        <span className={styles.accountChevron} aria-hidden="true">
+          <ChevronDown />
         </span>
       </button>
     </div>
