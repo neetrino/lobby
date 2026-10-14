@@ -59,14 +59,14 @@
   position: relative;
   display: grid;
   grid-template-columns: 76px minmax(0, 1fr);
-  grid-template-rows: 44px 48px;
+  grid-template-rows: 44px 58px;
   flex: none;
   width: 100%;
   transition: grid-template-rows 280ms ease;
 }
 
 .sidebarWide .sidebarHead {
-  grid-template-rows: 0px 48px;
+  grid-template-rows: 0px 72px;
 }
 
 .sidebarWide .sidebarToggle {
@@ -88,25 +88,17 @@
   align-items: center;
   justify-content: stretch;
   gap: 0;
+  min-width: 0;
   margin: 0;
   padding: 0;
+  overflow: visible;
   z-index: 0;
   pointer-events: none;
 }
 
 .brandMark,
-.brand strong,
-.brand small {
+.brandLockup {
   pointer-events: auto;
-}
-
-.sidebarWide .brand strong {
-  color: #fff;
-  font-size: 15px;
-}
-
-.sidebarWide .brand small {
-  color: rgb(255 255 255 / 62%);
 }
 
 .sidebarToggle {
@@ -169,23 +161,55 @@
 }
 
 .brandMark {
-  display: grid;
+  display: block;
   grid-column: 1;
-  grid-row: auto;
   justify-self: center;
   align-self: center;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border-radius: 12px;
-  background: #fff;
-  color: #1a1d24;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.06em;
+  width: 40px;
+  height: 50px;
+  min-width: 0;
+  overflow: visible;
 }
 
-.brand > span:not(.brandMark),
+.brandMark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.brandLockup {
+  display: none;
+}
+
+.sidebarWide .brandMark {
+  display: none;
+}
+
+.sidebarWide .brandLockup {
+  display: block;
+  grid-column: 1 / -1;
+  justify-self: start;
+  align-self: center;
+  box-sizing: border-box;
+  width: 114px;
+  height: 64px;
+  min-width: 0;
+  max-width: calc(100% - 64px);
+  margin-left: 18px;
+  overflow: hidden;
+  transform: translateY(-6px);
+}
+
+.sidebarWide .brandLockup img,
+.brandLockup img {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+
 .navActive > span,
 .navLink > span,
 .navIdle > span,
@@ -197,7 +221,6 @@
   transition: opacity 200ms ease;
 }
 
-.sidebarWide .brand > span:not(.brandMark),
 .sidebarWide .navActive > span,
 .sidebarWide .navLink > span,
 .sidebarWide .navIdle > span,
@@ -206,7 +229,6 @@
 }
 
 @starting-style {
-  .sidebarWide .brand > span:not(.brandMark),
   .sidebarWide .navActive > span,
   .sidebarWide .navLink > span,
   .sidebarWide .navIdle > span,
@@ -215,25 +237,11 @@
   }
 }
 
-.brand > span:not(.brandMark) {
-  grid-column: 2;
-  grid-row: auto;
-  align-self: center;
-  padding-right: 52px;
-  text-overflow: ellipsis;
-}
-
-.brand small,
 .note,
 .meta,
 .table small {
   color: var(--muted);
   font-size: 12px;
-}
-
-.brand strong,
-.brand small {
-  display: block;
 }
 
 .nav {
@@ -1167,11 +1175,21 @@ button:focus-visible {
   }
 
   .brandMark,
-  .sidebarToggle,
-  .brand > span:not(.brandMark) {
+  .brandLockup,
+  .sidebarToggle {
     grid-column: auto;
     grid-row: auto;
     margin: 0;
+  }
+
+  .sidebarWide .brandLockup {
+    display: none;
+  }
+
+  .sidebarWide .brandMark {
+    display: block;
+    width: 40px;
+    height: 50px;
   }
 
   .navActive,
@@ -1190,7 +1208,6 @@ button:focus-visible {
     margin: 0;
   }
 
-  .sidebarWide .brand > span:not(.brandMark),
   .sidebarWide .navActive > span,
   .sidebarWide .navLink > span,
   .sidebarWide .navIdle > span,
@@ -1243,7 +1260,6 @@ button:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .app,
   .sidebarHead,
-  .brand > span:not(.brandMark),
   .navActive > span,
   .navLink > span,
   .navIdle > span,

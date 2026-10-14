@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { readRegistrationStatus, type RegistrationStatus } from '../../features/auth/auth-api';
 import styles from '../../features/auth/auth.module.css';
 import { LanguageSwitch } from '../../features/contacts/language-switch';
+import { BrandLogo } from '../../ui/brand/brand-logo';
 
 type PageProps = {
   params: Promise<{ locale: string }>;
@@ -26,9 +27,7 @@ export default async function LocalizedHomePage({ params }: PageProps) {
     <main className={styles.page}>
       <section className={styles.card}>
         <div className={styles.top}>
-          <span className={styles.mark} aria-hidden="true">
-            L
-          </span>
+          <BrandLogo className={styles.mark} />
           <LanguageSwitch />
         </div>
         <h1>{t('title')}</h1>

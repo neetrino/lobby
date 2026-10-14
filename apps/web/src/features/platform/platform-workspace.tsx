@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 
 import { SignOutButton } from '../auth/sign-out-button';
 import auth from '../auth/auth.module.css';
+import { BrandLogo } from '../../ui/brand/brand-logo';
 import { ContactsRequestError, readSession } from '../contacts/contacts-api';
 import {
   createOrganization,
@@ -36,7 +37,7 @@ export function PlatformWorkspace() {
     <main className={auth.page}>
       <section className={auth.card}>
         <div className={auth.top}>
-          <span className={auth.mark}>L</span>
+          <BrandLogo className={auth.mark} />
           <SignOutButton className={auth.link} />
         </div>
         <h1>{t('title')}</h1>

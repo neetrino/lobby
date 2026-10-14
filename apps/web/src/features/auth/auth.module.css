@@ -24,14 +24,22 @@
 }
 
 .mark {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border-radius: 12px;
-  background: #1e2128;
-  color: #fff;
-  font-weight: 700;
+  display: block;
+  flex: none;
+  box-sizing: border-box;
+  width: 185px;
+  height: 104px;
+  max-width: calc(100% - 140px);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.mark img {
+  display: block;
+  width: auto;
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
 }
 
 .card h1 {

@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Lobby',
   description: 'Multi-tenant CRM and task management',
   icons: {
-    icon: '/jigsaw-puzzle.webp',
+    icon: '/favicon-pod-clear.png',
   },
 };
 

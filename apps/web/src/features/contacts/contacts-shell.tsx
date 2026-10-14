@@ -14,6 +14,7 @@ import {
 } from 'react';
 
 import { SignOutButton } from '../auth/sign-out-button';
+import { BrandLogo } from '../../ui/brand/brand-logo';
 import { updateLeadsEnabled } from './contacts-api';
 import type { SessionPrincipal } from './contact';
 import { rememberSession } from './remembered-session';
@@ -75,12 +76,9 @@ export function ContactsShell({
   return (
     <aside className={sidebarOpen ? `${styles.sidebar} ${styles.sidebarWide}` : styles.sidebar}>
       <div className={styles.sidebarHead}>
-        <Link className={styles.brand} href={`/${locale}/dashboard`}>
-          <span className={styles.brandMark}>L</span>
-          <span>
-            <strong>Lobby</strong>
-            <small>{t('workspaceName')}</small>
-          </span>
+        <Link className={styles.brand} href={`/${locale}/dashboard`} aria-label="lobi CRM">
+          <BrandLogo variant="mark" className={styles.brandMark} alt="" />
+          <BrandLogo variant="lockup" className={styles.brandLockup} alt="" />
         </Link>
         <button
           type="button"
