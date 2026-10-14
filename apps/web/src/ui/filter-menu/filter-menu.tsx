@@ -12,6 +12,7 @@ export function FilterMenu({
   options,
   onChange,
   field = false,
+  white = false,
 }: {
   label: string;
   value: string;
@@ -19,6 +20,8 @@ export function FilterMenu({
   onChange: (value: string) => void;
   /** Stretch the trigger and show only the current value. The field label sits above it. */
   field?: boolean;
+  /** White pill. The default trigger uses the gray control fill. */
+  white?: boolean;
 }): ReactElement {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -33,7 +36,7 @@ export function FilterMenu({
       <button
         ref={buttonRef}
         type="button"
-        className={styles.trigger}
+        className={white ? `${styles.trigger} ${styles.white}` : styles.trigger}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={menuId}

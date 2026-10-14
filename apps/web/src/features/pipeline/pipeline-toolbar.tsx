@@ -27,6 +27,7 @@ export function PipelineToolbar({
   onRecolor,
   onDelete,
   onCreateColumn,
+  whiteSearch = false,
 }: {
   query: string;
   statusId: string;
@@ -39,6 +40,7 @@ export function PipelineToolbar({
   onRecolor: (statusId: string, color: string) => void;
   onDelete: (statusId: string) => void;
   onCreateColumn: (name: string) => void;
+  whiteSearch?: boolean;
 }) {
   const t = useTranslations('pipeline');
   const [sheet, setSheet] = useState<ToolbarSheet | null>(null);
@@ -49,6 +51,7 @@ export function PipelineToolbar({
         onChange={onQuery}
         placeholder={t('search')}
         label={t('search')}
+        white={whiteSearch}
       />
       <FilterMenu
         label={t('status')}
@@ -58,6 +61,7 @@ export function PipelineToolbar({
           ...statuses.map((status) => ({ value: status.id, label: status.name })),
         ]}
         onChange={onStatus}
+        white={whiteSearch}
       />
       <BoardActions canConfigure={canConfigure} onOpen={setSheet} />
       {sheet === 'statuses' ? (

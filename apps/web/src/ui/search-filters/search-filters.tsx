@@ -19,6 +19,7 @@ export function SearchFilters({
   onReset,
   onApply,
   columns = 2,
+  white = false,
   children,
 }: {
   value: string;
@@ -31,6 +32,8 @@ export function SearchFilters({
   onReset?: () => void;
   onApply?: () => void;
   columns?: 2 | 3;
+  /** White pill. The default field uses the gray control fill. */
+  white?: boolean;
   children?: ReactNode;
 }): ReactElement {
   const [open, setOpen] = useState(false);
@@ -49,6 +52,7 @@ export function SearchFilters({
         maxLength={maxLength}
         placeholder={placeholder}
         label={label}
+        white={white}
         onChange={onChange}
         onFocus={() => {
           if (hasFilters) setOpen(true);
@@ -81,6 +85,7 @@ function SearchBox({
   maxLength,
   placeholder,
   label,
+  white,
   onChange,
   onFocus,
 }: {
@@ -89,11 +94,13 @@ function SearchBox({
   maxLength?: number;
   placeholder: string;
   label: string;
+  white: boolean;
   onChange: (value: string) => void;
   onFocus: () => void;
 }): ReactElement {
+  const fieldClass = white ? `${styles.field} ${styles.white}` : styles.field;
   return (
-    <label className={styles.field} ref={fieldRef}>
+    <label className={fieldClass} ref={fieldRef}>
       <SearchIcon />
       <input
         type="search"
