@@ -17,7 +17,7 @@
   align-items: center;
   gap: 8px;
   max-width: 280px;
-  border-radius: 15px;
+  border-radius: var(--control-radius);
 }
 
 .trigger:hover {
