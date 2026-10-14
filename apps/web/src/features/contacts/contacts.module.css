@@ -998,7 +998,8 @@ button:focus-visible {
 }
 
 .tableCard {
-  flex: 1 1 640px;
+  flex: none;
+  width: 100%;
   min-width: 0;
   overflow: visible;
 }
