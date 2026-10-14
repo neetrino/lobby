@@ -106,15 +106,21 @@ export function ContactsShell({
 
 function Account({ session, role }: { session: SessionPrincipal; role: string }) {
   const t = useTranslations('auth');
-  const [open, setOpen] = useState(false);
+  const [panel, setPanel] = useState<'account' | 'notes' | null>(null);
+  const accountOpen = panel === 'account';
+  const menu = useMenuMotion(accountOpen);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
-  useDismiss(open, rootRef, () => setOpen(false));
+  useDismiss(panel !== null, rootRef, () => setPanel(null));
   const name = session.user.name.trim() || role;
+  const menuClass = menu.visible ? `${styles.accountMenu} ${styles.menuOpen}` : styles.accountMenu;
+  function toggle(next: 'account' | 'notes'): void {
+    setPanel((current) => (current === next ? null : next));
+  }
   return (
     <div className={styles.account} ref={rootRef}>
-      {open ? (
-        <div className={styles.accountMenu} id={menuId} role="menu" aria-label={t('signOut')}>
+      {menu.shown ? (
+        <div className={menuClass} id={menuId} role="menu" aria-label={t('signOut')}>
           <SignOutButton
             className={styles.accountAction}
             groupClassName={styles.accountMenuGroup}
@@ -128,9 +134,9 @@ function Account({ session, role }: { session: SessionPrincipal; role: string })
         type="button"
         className={styles.accountButton}
         aria-haspopup="menu"
-        aria-expanded={open}
+        aria-expanded={accountOpen}
         aria-controls={menuId}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => toggle('account')}
       >
         <span className={styles.avatar} aria-hidden="true">
           {initials(name)}
@@ -140,27 +146,28 @@ function Account({ session, role }: { session: SessionPrincipal; role: string })
           <small>{role}</small>
         </span>
         <span
-          className={open ? `${styles.accountChevron} ${styles.accountChevronOpen}` : styles.accountChevron}
+          className={accountOpen ? `${styles.accountChevron} ${styles.accountChevronOpen}` : styles.accountChevron}
           aria-hidden="true"
         >
           <ChevronUp />
         </span>
       </button>
-      <NotificationButton />
+      <NotificationButton open={panel === 'notes'} onToggle={() => toggle('notes')} />
     </div>
   );
 }
 
-function NotificationButton() {
+function NotificationButton({ open, onToggle }: { open: boolean; onToggle: () => void }) {
   const t = useTranslations('contacts');
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
+  const menu = useMenuMotion(open);
   const menuId = useId();
-  useDismiss(open, rootRef, () => setOpen(false));
+  const menuClass = menu.visible
+    ? `${styles.notificationsMenu} ${styles.menuOpen}`
+    : styles.notificationsMenu;
   return (
-    <div className={styles.notifications} ref={rootRef}>
-      {open ? (
-        <div className={styles.notificationsMenu} id={menuId} role="region" aria-label={t('notifications')}>
+    <div className={styles.notifications}>
+      {menu.shown ? (
+        <div className={menuClass} id={menuId} role="region" aria-label={t('notifications')}>
           <p>{t('notificationsEmpty')}</p>
         </div>
       ) : null}
@@ -170,12 +177,39 @@ function NotificationButton() {
         aria-label={t('notifications')}
         aria-expanded={open}
         aria-controls={menuId}
-        onClick={() => setOpen((value) => !value)}
+        onClick={onToggle}
       >
         <Bell aria-hidden="true" />
       </button>
     </div>
   );
+}
+
+const menuMotionMs = 180;
+
+function useMenuMotion(open: boolean): { shown: boolean; visible: boolean } {
+  const [shown, setShown] = useState(open);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setShown(true);
+      const frame = window.requestAnimationFrame(() => setVisible(true));
+      return () => window.cancelAnimationFrame(frame);
+    }
+    setVisible(false);
+    const timer = window.setTimeout(() => setShown(false), menuDuration());
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
+  return { shown, visible };
+}
+
+function menuDuration(): number {
+  const reduce =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return reduce ? 0 : menuMotionMs;
 }
 
 function useDismiss(

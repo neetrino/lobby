@@ -553,6 +553,12 @@
   background: #fff;
   color: var(--ink);
   box-shadow: 0 12px 32px rgb(11 28 48 / 16%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
 }
 
 .sidebarWide .notificationsMenu {
@@ -589,21 +595,36 @@
 
 .accountMenu {
   position: absolute;
+  right: 8px;
   bottom: calc(100% + 8px);
-  left: 4px;
+  left: 8px;
   z-index: 5;
-  width: 220px;
+  box-sizing: border-box;
+  width: auto;
+  max-width: calc(100% - 16px);
   padding: 6px;
   border-radius: 16px;
   background: #fff;
   color: var(--ink);
   box-shadow: 0 12px 32px rgb(11 28 48 / 16%);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.menuOpen {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 .sidebarWide .accountMenu {
-  left: 50%;
-  width: calc(100% - 32px);
-  transform: translateX(-50%);
+  right: 0;
+  left: 8px;
+  max-width: none;
 }
 
 .sidebar:not(.sidebarWide) .sidebarHead,
@@ -620,9 +641,7 @@
 }
 
 .sidebar:not(.sidebarWide) .accountMenu {
-  left: 8px;
   z-index: 20;
-  width: 220px;
 }
 
 .accountAction {
@@ -1523,6 +1542,8 @@ button:focus-visible {
   .app,
   .account,
   .accountButton,
+  .accountMenu,
+  .notificationsMenu,
   .notificationsButton,
   .avatar,
   .sidebarHead,
