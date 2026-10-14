@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,7 +15,6 @@ import {
 
 import { SignOutButton } from '../auth/sign-out-button';
 import { BrandLogo } from '../../ui/brand/brand-logo';
-import { updateLeadsEnabled } from './contacts-api';
 import type { SessionPrincipal } from './contact';
 import { rememberSession } from './remembered-session';
 import { LanguageMenu } from './language-switch';
@@ -58,16 +57,13 @@ export function ContactsShell({
   const locale = useLocale();
   const router = useRouter();
   const shown = rememberSession(session);
-  const sessionLeads = shown?.user.leadsEnabled ?? true;
+  const leadsOn = shown?.user.leadsEnabled ?? true;
   const canReadAudit = shown?.user.role === 'OWNER' || shown?.user.role === 'ADMIN';
-  const [leadChoice, setLeadChoice] = useState<{ source: boolean; value: boolean } | null>(null);
   const sidebarOpen = useSyncExternalStore(
     subscribeSidebar,
     readSidebarOpen,
     readServerSidebarOpen,
   );
-  const leadsOn = leadChoice?.source === sessionLeads ? leadChoice.value : sessionLeads;
-
   useEffect(() => {
     if (shown?.platform === true) {
       router.replace(`/${locale}/platform`);
@@ -102,35 +98,14 @@ export function ContactsShell({
         labelFor={(id) => t(`nav.${id}`)}
       />
       {shown === null ? null : (
-        <Account
-          session={shown}
-          role={t(`role.${shown.user.role}`)}
-          leadsOn={leadsOn}
-          current={current}
-          onLeads={(enabled) => setLeadChoice({ source: sessionLeads, value: enabled })}
-        />
+        <Account session={shown} role={t(`role.${shown.user.role}`)} />
       )}
     </aside>
   );
 }
 
-function Account({
-  session,
-  role,
-  leadsOn,
-  current,
-  onLeads,
-}: {
-  session: SessionPrincipal;
-  role: string;
-  leadsOn: boolean;
-  current: ShellPage;
-  onLeads: (enabled: boolean) => void;
-}) {
+function Account({ session, role }: { session: SessionPrincipal; role: string }) {
   const t = useTranslations('auth');
-  const leads = useTranslations('contacts');
-  const locale = useLocale();
-  const router = useRouter();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
@@ -140,17 +115,6 @@ function Account({
     <div className={styles.account} ref={rootRef}>
       {open ? (
         <div className={styles.accountMenu} id={menuId} role="menu" aria-label={t('signOut')}>
-          <button
-            type="button"
-            className={styles.accountAction}
-            role="menuitemcheckbox"
-            aria-checked={leadsOn}
-            onClick={() => {
-              void switchLeads(leadsOn, current, locale, router, onLeads);
-            }}
-          >
-            {leads('showLeads')}
-          </button>
           <SignOutButton
             className={styles.accountAction}
             groupClassName={styles.accountMenuGroup}
@@ -174,27 +138,15 @@ function Account({
         <span>
           <strong>{name}</strong>
         </span>
-        <span className={styles.accountChevron} aria-hidden="true">
-          <ChevronDown />
+        <span
+          className={open ? `${styles.accountChevron} ${styles.accountChevronOpen}` : styles.accountChevron}
+          aria-hidden="true"
+        >
+          <ChevronUp />
         </span>
       </button>
     </div>
   );
-}
-
-async function switchLeads(
-  enabled: boolean,
-  current: ShellPage,
-  locale: string,
-  router: { replace: (href: string) => void },
-  onLeads: (enabled: boolean) => void,
-): Promise<void> {
-  const next = await updateLeadsEnabled(!enabled);
-  rememberSession(next);
-  onLeads(next.user.leadsEnabled);
-  if (!next.user.leadsEnabled && current === 'leads') {
-    router.replace(`/${locale}/dashboard`);
-  }
 }
 
 function useDismiss(

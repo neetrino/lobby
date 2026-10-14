@@ -132,7 +132,6 @@ export function DashboardWorkspace() {
             scope={scope}
             pending={pending}
             notice={notice}
-            session={session}
             onRange={(next) => void changeRange(next)}
             onScope={(next) => void changeScope(next)}
             onSaveLayout={save}

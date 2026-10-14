@@ -4,7 +4,6 @@ import type { DashboardRangeDays, DashboardScope } from '@lobby/contracts';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import type { SessionPrincipal } from '../contacts/contact';
 import type { DashboardBoard } from './dashboard-api';
 import { CustomizeDrawer } from './dashboard-customize';
 import { KpiCard, kpiSpan } from './dashboard-kpi';
@@ -20,7 +19,6 @@ export function DashboardBoardView({
   scope,
   pending,
   notice,
-  session,
   onRange,
   onScope,
   onSaveLayout,
@@ -30,7 +28,6 @@ export function DashboardBoardView({
   scope: DashboardScope;
   pending: boolean;
   notice: string | null;
-  session: SessionPrincipal | null;
   onRange: (range: DashboardRangeDays) => void;
   onScope: (scope: DashboardScope) => void;
   onSaveLayout: (widgets: string[]) => Promise<boolean>;
@@ -47,7 +44,6 @@ export function DashboardBoardView({
         scope={scope}
         generatedAt={board.generatedAt}
         locale={locale}
-        session={session}
         onRange={onRange}
         onScope={onScope}
         onCustomize={() => setCustomizing(true)}

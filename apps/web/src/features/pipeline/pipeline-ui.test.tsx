@@ -169,27 +169,6 @@ describe('pipeline board controls', () => {
     expect(screen.getByRole('button', { name: /Ada/ })).toBeTruthy();
   });
 
-  it('hides Leads after the account switch', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () =>
-        json({
-          data: {
-            user: { id: userId, name: 'Ada', role: 'OWNER', leadsEnabled: false },
-            tenant: { id: tenantId },
-          },
-        }),
-      ),
-    );
-    renderShell();
-    fireEvent.click(screen.getByRole('button', { name: /Ada/ }));
-    fireEvent.click(screen.getByRole('menuitemcheckbox', { name: 'Show leads' }));
-
-    await waitFor(() => {
-      expect(screen.queryByRole('link', { name: 'Leads' })).toBeNull();
-    });
-  });
-
   it('shows loading, then the failure, and leaves Leads when they are off', async () => {
     let release: (() => void) | undefined;
     const gate = new Promise<void>((resolve) => {

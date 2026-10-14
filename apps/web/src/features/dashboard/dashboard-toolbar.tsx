@@ -2,10 +2,7 @@
 
 import type { DashboardRangeDays, DashboardScope } from '@lobby/contracts';
 import { useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
-import { SignOutButton } from '../auth/sign-out-button';
-import type { SessionPrincipal } from '../contacts/contact';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import { formatWhen } from './dashboard-layout';
 import styles from './dashboard-toolbar.module.css';
@@ -19,7 +16,6 @@ export function DashboardToolbar({
   scope,
   generatedAt,
   locale,
-  session,
   onRange,
   onScope,
   onCustomize,
@@ -28,13 +24,11 @@ export function DashboardToolbar({
   scope: DashboardScope;
   generatedAt: string;
   locale: string;
-  session: SessionPrincipal | null;
   onRange: (range: DashboardRangeDays) => void;
   onScope: (scope: DashboardScope) => void;
   onCustomize: () => void;
 }) {
   const t = useTranslations('dashboard');
-  const roles = useTranslations('contacts');
   const updated = updatedLabel(t, generatedAt, locale);
   return (
     <header className={styles.toolbar}>
@@ -65,43 +59,8 @@ export function DashboardToolbar({
           }))}
           onChange={onScope}
         />
-        {session === null ? null : (
-          <UserMenu label={session.user.name.trim() || roles(`role.${session.user.role}`)} />
-        )}
       </div>
     </header>
-  );
-}
-
-function UserMenu({ label }: { label: string }) {
-  const t = useTranslations('dashboard');
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const menuId = useId();
-  useDismiss(open, rootRef, () => setOpen(false));
-
-  return (
-    <div className={styles.userMenu} ref={rootRef}>
-      <button
-        type="button"
-        className={styles.userTrigger}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={menuId}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span className={styles.userMark} aria-hidden="true">
-          {label.slice(0, 1)}
-        </span>
-        <span>{label}</span>
-        <ChevronIcon />
-      </button>
-      {open ? (
-        <div className={styles.userPanel} id={menuId} role="menu" aria-label={t('accountMenu')}>
-          <SignOutButton className={styles.menuAction} groupClassName={styles.menuGroup} />
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -115,41 +74,4 @@ function updatedLabel(
     return t('updatedNow');
   }
   return t('updatedAt', { when: formatWhen(generatedAt, locale) });
-}
-
-function useDismiss(
-  open: boolean,
-  rootRef: RefObject<HTMLDivElement | null>,
-  close: () => void,
-): void {
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    function onPointerDown(event: PointerEvent): void {
-      if (event.target instanceof Node && rootRef.current?.contains(event.target)) {
-        return;
-      }
-      close();
-    }
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') {
-        close();
-      }
-    }
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [close, open, rootRef]);
-}
-
-function ChevronIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M7 10l5 5 5-5" />
-    </svg>
-  );
 }
