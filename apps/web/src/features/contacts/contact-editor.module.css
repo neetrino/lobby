@@ -140,6 +140,7 @@ header.profile h2 {
 }
 
 .tabs {
+  position: relative;
   display: flex;
   gap: 22px;
   margin: 0 16px;
@@ -149,9 +150,9 @@ header.profile h2 {
 
 .tab,
 .tabActive {
+  height: auto;
   border: 0;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
+  border-radius: 0;
   background: transparent;
   padding: 10px 0 12px;
   color: #8b93a7;
@@ -159,11 +160,31 @@ header.profile h2 {
   font: inherit;
   font-size: 14px;
   font-weight: 600;
+  transition: color 220ms ease;
 }
 
 .tabActive {
-  border-bottom-color: #2563eb;
   color: #2563eb;
+}
+
+.tabLine {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  background: #2563eb;
+  pointer-events: none;
+  transition:
+    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab,
+  .tabActive,
+  .tabLine {
+    transition: none;
+  }
 }
 
 .cards {

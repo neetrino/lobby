@@ -1,6 +1,7 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
+import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
 
 import { actionText, outcomeText } from '../audit/audit-labels';
 
@@ -22,13 +23,15 @@ export function DetailTabs({
   onTab: (tab: DetailTab) => void;
 }) {
   const t = useTranslations('contacts');
+  const listRef = useRef<HTMLDivElement>(null);
+  const line = useTabLine(listRef, tab);
   const duplicateLabel =
     duplicateCount > 0
       ? t('tabs.duplicatesCount', { count: duplicateCount })
       : t('tabs.duplicates');
 
   return (
-    <div className={panel.tabs} role="tablist">
+    <div ref={listRef} className={panel.tabs} role="tablist">
       <TabButton active={tab === 'main'} label={t('tabs.main')} onClick={() => onTab('main')} />
       <TabButton
         active={tab === 'modules'}
@@ -41,8 +44,39 @@ export function DetailTabs({
         label={duplicateLabel}
         onClick={() => onTab('duplicates')}
       />
+      <span className={panel.tabLine} style={line} />
     </div>
   );
+}
+
+function useTabLine(
+  listRef: RefObject<HTMLDivElement | null>,
+  tab: DetailTab,
+): { width: number; transform: string } {
+  const [line, setLine] = useState({ width: 0, transform: 'translateX(0)' });
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (list === null) {
+      return undefined;
+    }
+    const place = (): void => {
+      const active = list.querySelector<HTMLElement>('[aria-selected="true"]');
+      if (active === null) {
+        return;
+      }
+      setLine({
+        width: active.offsetWidth,
+        transform: `translateX(${active.offsetLeft}px)`,
+      });
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [listRef, tab]);
+
+  return line;
 }
 
 function TabButton({

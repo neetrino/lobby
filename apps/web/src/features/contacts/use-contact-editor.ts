@@ -58,7 +58,7 @@ export function useContactEditor(reload: () => void): {
   }
 
   function openContact(next: Contact): void {
-    showContact(next, 'inline', setPlacement, setMode, setContact, setDraft, setError);
+    showContact(next, 'portal', setPlacement, setMode, setContact, setDraft, setError);
   }
 
   function openEditor(next: Contact): void {
