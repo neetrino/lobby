@@ -1,5 +1,6 @@
 'use client';
 
+import { Tags } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -89,6 +90,7 @@ function BoardActions({
         {t('addColumnShort')}
       </button>
       <button type="button" className={styles.statuses} data-tone="primary" onClick={() => onOpen('statuses')}>
+        <Tags aria-hidden="true" />
         {t('statuses')}
       </button>
     </div>
