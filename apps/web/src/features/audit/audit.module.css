@@ -130,9 +130,9 @@
   cursor: pointer;
 }
 .filterPanel .apply {
-  border-color: #2563eb;
-  background: #2563eb;
-  color: #fff;
+  border-color: var(--shell-olive);
+  background: var(--shell-olive);
+  color: #1c2410;
 }
 .content {
   display: grid;

@@ -146,8 +146,8 @@
   height: 44px;
   border: 0;
   border-radius: 999px;
-  background: #6eaff8;
-  color: #fff;
+  background: var(--shell-olive);
+  color: #1c2410;
   font: inherit;
   font-size: 14px;
   font-weight: 650;
@@ -168,7 +168,7 @@
 }
 
 .submit:hover {
-  background: #5aa0f0;
+  background: #8aaf4c;
 }
 
 .submit:disabled,

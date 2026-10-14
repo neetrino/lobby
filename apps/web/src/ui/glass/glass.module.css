@@ -32,9 +32,9 @@
 
 .primary {
   border: 0;
-  background: var(--shell-blue);
-  box-shadow: 0 8px 18px rgb(110 175 248 / 35%);
-  color: #fff;
+  background: var(--shell-olive);
+  box-shadow: 0 8px 18px rgb(42 74 49 / 28%);
+  color: #1c2410;
 }
 
 .secondary {

@@ -19,7 +19,7 @@
   z-index: 0;
   height: auto;
   border-radius: 999px;
-  background: #1e2128;
+  background: var(--shell-olive);
   pointer-events: none;
 }
 
@@ -54,8 +54,8 @@
 }
 
 .on {
-  background: #1e2128;
-  color: #fff;
+  background: var(--shell-olive);
+  color: #1c2410;
 }
 
 .ready ~ .on {

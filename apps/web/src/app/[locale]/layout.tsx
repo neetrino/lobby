@@ -1,4 +1,5 @@
 import { Inter, Noto_Sans, Noto_Sans_Armenian } from 'next/font/google';
+import localFont from 'next/font/local';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
@@ -17,6 +18,13 @@ const sans = Noto_Sans({
 const armenian = Noto_Sans_Armenian({
   subsets: ['armenian'],
   variable: '--font-armenian',
+});
+
+const display = localFont({
+  src: '../../fonts/MomoTrustDisplay-Regular.ttf',
+  variable: '--font-display',
+  weight: '400',
+  display: 'swap',
 });
 
 const inter = Inter({
@@ -43,7 +51,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
       <LocaleDocumentLang locale={locale} />
       <div
         lang={locale}
-        className={`${inter.variable} ${armenian.variable} ${sans.variable}`}
+        className={`${display.variable} ${inter.variable} ${armenian.variable} ${sans.variable}`}
         style={{ fontFamily: 'var(--font-armenian), var(--font-sans), sans-serif' }}
       >
         {children}

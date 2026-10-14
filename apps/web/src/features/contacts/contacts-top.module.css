@@ -85,8 +85,8 @@ header.bar {
   padding: 0 14px;
   border: 0;
   border-radius: 8px;
-  background: #2563eb;
-  color: #fff;
+  background: var(--shell-olive);
+  color: #1c2410;
   font: inherit;
   font-size: 13px;
   font-weight: 600;
@@ -96,7 +96,7 @@ header.bar {
 
 .headerCreate:hover,
 .create:hover {
-  background: #004ac6;
+  background: #8aaf4c;
 }
 
 .create {

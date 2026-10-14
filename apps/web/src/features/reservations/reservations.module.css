@@ -491,9 +491,9 @@
 }
 
 .primary {
-  border-color: #004ac6;
-  background: #004ac6;
-  color: #fff;
+  border-color: var(--shell-olive);
+  background: var(--shell-olive);
+  color: #1c2410;
 }
 
 .confirm {

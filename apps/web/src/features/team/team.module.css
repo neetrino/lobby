@@ -63,8 +63,8 @@
 .invite button,
 .send {
   border: 0;
-  background: #6eaff8;
-  color: white;
+  background: var(--shell-olive);
+  color: #1c2410;
   font-weight: 650;
   cursor: pointer;
 }
@@ -237,8 +237,8 @@
   height: 34px;
   border: 0;
   border-radius: 10px;
-  background: #6eaff8;
-  color: white;
+  background: var(--shell-olive);
+  color: #1c2410;
   font-weight: 650;
   cursor: pointer;
 }
@@ -264,8 +264,8 @@
 }
 
 .pageOn {
-  background: #6eaff8;
-  color: white;
+  background: var(--shell-olive);
+  color: #1c2410;
 }
 
 .chatPanel {

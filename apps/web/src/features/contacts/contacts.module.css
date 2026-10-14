@@ -507,15 +507,15 @@
 }
 
 .primaryButton {
-  background: var(--primary-container);
-  color: var(--on-primary);
+  background: var(--shell-olive);
+  color: #1c2410;
   padding: 10px 18px;
   font-weight: 600;
-  box-shadow: 0 8px 18px rgb(110 175 248 / 32%);
+  box-shadow: 0 8px 18px rgb(42 74 49 / 28%);
 }
 
 .primaryButton:hover {
-  background: #5aa0f0;
+  background: #8aaf4c;
 }
 
 .secondaryButton,
