@@ -1,6 +1,7 @@
 'use client';
 
 import { dashboardWidgetKeys } from '@lobby/contracts';
+import { Checkbox } from '../../ui/checkbox/checkbox';
 import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -247,7 +248,7 @@ function WidgetRowEditor({
         <DragIcon />
       </button>
       <label>
-        <input type="checkbox" checked={widget.enabled} onChange={onToggle} />
+        <Checkbox checked={widget.enabled} onChange={onToggle} />
         {widgetLabel(t, widget.key)}
       </label>
     </div>

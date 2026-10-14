@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { Checkbox } from '../../ui/checkbox/checkbox';
 import { contactColumns, useContactsListUi, type ContactColumn } from './contacts-list-ui';
 import styles from './contacts.module.css';
 
@@ -56,11 +57,7 @@ export function ColumnsMenu(): ReactElement {
           {contactColumns().map((column) => (
             <li key={column} role="none">
               <label className={styles.columnOption}>
-                <input
-                  type="checkbox"
-                  checked={ui.columns[column]}
-                  onChange={() => ui.toggleColumn(column)}
-                />
+                <Checkbox checked={ui.columns[column]} onChange={() => ui.toggleColumn(column)} />
                 {columnLabel(t, column)}
               </label>
             </li>

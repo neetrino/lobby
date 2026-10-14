@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
 import { ContactAvatar, OwnerAvatar, TypeBadge } from './contact-avatar';
+import { Checkbox } from '../../ui/checkbox/checkbox';
 import type { Contact, SessionPrincipal } from './contact';
 import { ContactRowActions } from './contact-row-actions';
 import { formatContactStamp } from './contact-format';
@@ -66,12 +67,7 @@ function CheckCell({
   const t = useTranslations('contacts');
   return (
     <td className={styles.checkCol}>
-      <input
-        type="checkbox"
-        checked={picked}
-        aria-label={t('selectRow', { name: contact.name })}
-        onChange={onToggle}
-      />
+      <Checkbox checked={picked} label={t('selectRow', { name: contact.name })} onChange={onToggle} />
     </td>
   );
 }

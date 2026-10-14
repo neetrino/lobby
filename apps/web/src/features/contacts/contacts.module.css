@@ -1041,12 +1041,6 @@ button:focus-visible {
   white-space: nowrap;
 }
 
-.table .checkCol input {
-  width: 16px;
-  height: 16px;
-  accent-color: #2563eb;
-}
-
 .table th.nameCol,
 .table td.nameCol {
   width: 28%;

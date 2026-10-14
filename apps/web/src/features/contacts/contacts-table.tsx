@@ -1,8 +1,9 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, type ReactElement } from 'react';
+import type { ReactElement } from 'react';
 
+import { Checkbox } from '../../ui/checkbox/checkbox';
 import type { Contact, ContactListFilters, SessionPrincipal } from './contact';
 import { useContactsListUi } from './contacts-list-ui';
 import { ContactPager } from './contacts-table-pager';
@@ -152,7 +153,7 @@ function ContactHead({
     <thead>
       <tr>
         <th className={styles.checkCol}>
-          <PageCheckbox
+          <Checkbox
             checked={allPicked}
             indeterminate={somePicked}
             label={t('selectAll')}
@@ -167,35 +168,5 @@ function ContactHead({
         <th>{t('columns.actions')}</th>
       </tr>
     </thead>
-  );
-}
-
-function PageCheckbox({
-  checked,
-  indeterminate,
-  label,
-  onChange,
-}: {
-  checked: boolean;
-  indeterminate: boolean;
-  label: string;
-  onChange: () => void;
-}) {
-  const ref = useRef<HTMLInputElement>(null);
-  const mixed = indeterminate && !checked;
-  useEffect(() => {
-    if (ref.current !== null) {
-      ref.current.indeterminate = mixed;
-    }
-  }, [mixed]);
-  return (
-    <input
-      ref={ref}
-      type="checkbox"
-      checked={checked}
-      aria-checked={mixed ? 'mixed' : checked}
-      aria-label={label}
-      onChange={onChange}
-    />
   );
 }
