@@ -78,7 +78,7 @@ export function ContactsShell({
       <div className={styles.sidebarHead}>
         <Link className={styles.brand} href={`/${locale}/dashboard`} aria-label="lobi CRM">
           <BrandLogo variant="mark" className={styles.brandMark} alt="" />
-          <BrandLogo variant="lockup" className={styles.brandLockup} alt="" />
+          <BrandLogo variant="lockup" className={styles.brandLockup} alt="" onDark />
         </Link>
         <button
           type="button"

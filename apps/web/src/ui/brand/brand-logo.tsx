@@ -2,18 +2,26 @@ import Image from 'next/image';
 
 type BrandLogoProps = {
   variant?: 'lockup' | 'mark';
+  /** White wordmark for the dark sidebar. */
+  onDark?: boolean;
   className?: string;
   alt?: string;
 };
 
 const ASSETS = {
-  lockup: { src: '/brand/lobi-logo-v2.png', width: 965, height: 547 },
-  mark: { src: '/brand/lobi-mark-v3.png', width: 444, height: 547 },
+  lockup: { src: '/brand/lobi-logo-ink-v5.png', width: 962, height: 521 },
+  lockupOnDark: { src: '/brand/lobi-logo-v5.png', width: 962, height: 521 },
+  mark: { src: '/brand/lobi-mark-v5.png', width: 433, height: 521 },
 } as const;
 
 /** lobi CRM wordmark. The mark is the pea pod for the narrow sidebar. */
-export function BrandLogo({ variant = 'lockup', className, alt = 'lobi CRM' }: BrandLogoProps) {
-  const asset = ASSETS[variant];
+export function BrandLogo({
+  variant = 'lockup',
+  onDark = false,
+  className,
+  alt = 'lobi CRM',
+}: BrandLogoProps) {
+  const asset = variant === 'lockup' && onDark ? ASSETS.lockupOnDark : ASSETS[variant];
   return (
     <span className={className}>
       <Image

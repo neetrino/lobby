@@ -27,7 +27,7 @@
   grid-template-columns: 76px minmax(0, 1fr);
   min-height: 0;
   border-radius: 0;
-  background: var(--shell-frame);
+  background: var(--shell-pod);
   transition: grid-template-columns 280ms ease;
 }
 
@@ -51,8 +51,8 @@
   min-height: 0;
   overflow: hidden;
   padding: 16px 0 14px;
-  background: var(--shell-frame);
-  color: #fff;
+  background: var(--shell-pod);
+  color: #d5ddd4;
 }
 
 .sidebarHead {
@@ -114,13 +114,13 @@
   padding: 0;
   border: 0;
   border-radius: 12px;
-  background: rgb(255 255 255 / 10%);
-  color: #fff;
+  background: rgb(255 255 255 / 8%);
+  color: #d5ddd4;
   cursor: pointer;
 }
 
 .sidebarToggle:hover {
-  background: rgb(255 255 255 / 16%);
+  background: rgb(255 255 255 / 14%);
 }
 
 .sidebarToggle:focus-visible {
@@ -265,7 +265,7 @@
   width: calc(100% - 8px);
   height: 44px;
   border-radius: 18px;
-  background: rgb(255 255 255 / 12%);
+  background: var(--shell-pod-accent);
   opacity: 0;
   pointer-events: none;
   transform: translate3d(var(--nav-x, 0px), var(--nav-y, 0px), 0);
@@ -293,13 +293,13 @@
   position: relative;
   z-index: 1;
   background: transparent;
-  color: rgb(255 255 255 / 72%);
+  color: #b7c2b8;
   font-size: 14px;
   text-decoration: none;
 }
 
 .navActive {
-  color: #fff;
+  color: #1a2410;
   font-weight: 600;
 }
 
@@ -319,12 +319,12 @@
 .navLink:hover,
 .navIdle:hover {
   background: transparent;
-  color: #fff;
+  color: #eef3ea;
 }
 
 .navLink:hover::before,
 .navIdle:hover::before {
-  background: rgb(255 255 255 / 10%);
+  background: rgb(255 255 255 / 8%);
 }
 
 .brand:focus-visible,
@@ -336,7 +336,7 @@
 }
 
 .navIdle {
-  color: rgb(255 255 255 / 45%);
+  color: rgb(183 194 184 / 55%);
   cursor: default;
 }
 
@@ -383,7 +383,7 @@
 }
 
 .accountButton:hover {
-  background: rgb(255 255 255 / 10%);
+  background: rgb(255 255 255 / 8%);
 }
 
 .accountMenu {
@@ -428,12 +428,12 @@
 }
 
 .account strong {
-  color: #fff;
+  color: #eef3ea;
   font-size: 14px;
 }
 
 .account small {
-  color: rgb(255 255 255 / 62%);
+  color: rgb(183 194 184 / 70%);
   font-size: 12px;
 }
 
