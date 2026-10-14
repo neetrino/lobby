@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
+import { Bell, ChevronLeft, ChevronRight, ChevronUp } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -145,6 +145,34 @@ function Account({ session, role }: { session: SessionPrincipal; role: string })
         >
           <ChevronUp />
         </span>
+      </button>
+      <NotificationButton />
+    </div>
+  );
+}
+
+function NotificationButton() {
+  const t = useTranslations('contacts');
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const menuId = useId();
+  useDismiss(open, rootRef, () => setOpen(false));
+  return (
+    <div className={styles.notifications} ref={rootRef}>
+      {open ? (
+        <div className={styles.notificationsMenu} id={menuId} role="region" aria-label={t('notifications')}>
+          <p>{t('notificationsEmpty')}</p>
+        </div>
+      ) : null}
+      <button
+        type="button"
+        className={styles.notificationsButton}
+        aria-label={t('notifications')}
+        aria-expanded={open}
+        aria-controls={menuId}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <Bell aria-hidden="true" />
       </button>
     </div>
   );

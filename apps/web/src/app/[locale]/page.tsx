@@ -23,7 +23,7 @@ export default async function LocalizedHomePage({ params }: PageProps) {
   const registrationStatus = await readRegistrationStatus();
 
   return (
-    <AuthFrame title={t('title')}>
+    <AuthFrame>
       <div className={styles.actions}>
         <Link className={`${styles.submit} ${styles.action}`} href={`/${locale}/login`}>
           {t('signIn')}
@@ -65,7 +65,7 @@ function HomeNotice({
       </p>
     );
   }
-  return <p className={styles.note}>{status === 'disabled' ? disabled : unavailable}</p>;
+  return <p className={styles.homeNotice}>{status === 'disabled' ? disabled : unavailable}</p>;
 }
 
 function isLocale(value: string): value is Locale {

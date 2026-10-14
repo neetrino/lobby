@@ -330,7 +330,8 @@
 .brand:focus-visible,
 .navLink:focus-visible,
 .navActive:focus-visible,
-.accountButton:focus-visible {
+.accountButton:focus-visible,
+.notificationsButton:focus-visible {
   outline: 2px solid var(--shell-blue);
   outline-offset: 2px;
 }
@@ -359,11 +360,19 @@
   position: relative;
   display: flex;
   flex: none;
-  align-items: stretch;
+  flex-direction: column;
+  align-items: center;
   width: 100%;
   margin: auto 0 0;
   padding: 12px 0 0;
   border-top: 0;
+}
+
+.sidebarWide .account {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 8px 0;
 }
 
 .accountButton {
@@ -391,13 +400,27 @@
   grid-template-columns: none;
   align-items: center;
   gap: 10px;
-  width: calc(100% - 16px);
+  flex: 1;
+  width: auto;
+  min-width: 0;
   height: 48px;
-  margin-inline: 8px;
+  margin-inline: 0;
   padding: 4px 12px 4px 4px;
   border-radius: 999px;
   background: #1a1d24;
   color: #fff;
+}
+
+.sidebarWide .accountButton > span:nth-child(2) {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.sidebarWide .accountButton strong,
+.sidebarWide .accountButton small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .sidebarWide .accountButton:hover {
@@ -454,6 +477,69 @@
   width: 36px;
   height: 36px;
   margin: 0;
+}
+
+.notifications {
+  position: relative;
+  flex: none;
+  order: -1;
+  margin-bottom: 8px;
+}
+
+.sidebarWide .notifications {
+  order: 0;
+  margin-bottom: 0;
+}
+
+.notificationsButton {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: #1a1d24;
+  color: #eef3ea;
+  cursor: pointer;
+}
+
+.sidebarWide .notificationsButton {
+  width: 48px;
+  height: 48px;
+}
+
+.notificationsButton:hover {
+  background: #2a2e36;
+}
+
+.notificationsButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.notificationsMenu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 8px;
+  z-index: 6;
+  width: 200px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 12px 32px rgb(11 28 48 / 16%);
+}
+
+.sidebarWide .notificationsMenu {
+  right: 0;
+  left: auto;
+}
+
+.notificationsMenu p {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .accountChevron {

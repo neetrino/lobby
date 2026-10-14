@@ -1,7 +1,5 @@
 {
-  "appName": "Lobby",
   "home": {
-    "title": "Lobby",
     "contacts": "Contacts",
     "signIn": "Sign in",
     "createWorkspace": "Create workspace"
@@ -80,6 +78,8 @@
     "workspaceName": "CRM Workspace",
     "hideSidebar": "Hide sidebar",
     "showSidebar": "Show sidebar",
+    "notifications": "Notifications",
+    "notificationsEmpty": "No notifications",
     "showLeads": "Show leads",
     "settingsTitle": "My preferences",
     "settingsLeadsTitle": "Leads board",
@@ -102,8 +102,8 @@
       "hy": "Հայերեն",
       "ru": "Русский",
       "en": "English",
-      "hyCode": "ARM",
-      "ruCode": "RUS",
+      "hyCode": "ՀԱՅ",
+      "ruCode": "РУС",
       "enCode": "ENG"
     },
     "createShort": "+ New contact",

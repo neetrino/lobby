@@ -12,7 +12,7 @@ export function AuthFrame({
   extra,
   children,
 }: {
-  title: string;
+  title?: string;
   note?: string;
   extra?: ReactNode;
   children: ReactNode;
@@ -27,7 +27,7 @@ export function AuthFrame({
             {extra}
           </div>
         </div>
-        <h1>{title}</h1>
+        {title === undefined || title.length === 0 ? null : <h1>{title}</h1>}
         {note === undefined ? null : <p className={styles.note}>{note}</p>}
         {children}
       </section>

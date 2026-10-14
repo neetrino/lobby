@@ -1,7 +1,5 @@
 {
-  "appName": "Lobby",
   "home": {
-    "title": "Lobby",
     "contacts": "Контакты",
     "signIn": "Войти",
     "createWorkspace": "Создать рабочее пространство"
@@ -80,6 +78,8 @@
     "workspaceName": "CRM пространство",
     "hideSidebar": "Скрыть боковую панель",
     "showSidebar": "Показать боковую панель",
+    "notifications": "Уведомления",
+    "notificationsEmpty": "Нет уведомлений",
     "showLeads": "Показывать лиды",
     "settingsTitle": "Мои настройки",
     "settingsLeadsTitle": "Доска лидов",
@@ -102,8 +102,8 @@
       "hy": "Հայերեն",
       "ru": "Русский",
       "en": "English",
-      "hyCode": "ARM",
-      "ruCode": "RUS",
+      "hyCode": "ՀԱՅ",
+      "ruCode": "РУС",
       "enCode": "ENG"
     },
     "createShort": "+ Новый контакт",

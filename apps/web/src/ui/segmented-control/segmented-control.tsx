@@ -51,21 +51,17 @@ function useSlidingThumb(value: string | number): {
 } {
   const rootRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLSpanElement>(null);
-  const place = useCallback(() => {
-    const thumb = thumbRef.current;
-    const selected = rootRef.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]');
-    if (thumb === null || selected === null || selected === undefined) {
-      return;
-    }
-    thumb.style.width = `${selected.offsetWidth}px`;
-    thumb.style.transform = `translate3d(${selected.offsetLeft}px, 0, 0)`;
+  const motionReady = useRef(false);
+  const place = useCallback((animate: boolean) => {
+    moveThumb(thumbRef.current, selectedButton(rootRef.current), animate);
   }, []);
 
   useLayoutEffect(() => {
-    place();
-    const ready = styles.ready;
-    if (ready !== undefined) {
-      thumbRef.current?.classList.add(ready);
+    const animate = motionReady.current;
+    place(animate);
+    motionReady.current = true;
+    if (!animate) {
+      showThumb(thumbRef.current);
     }
   }, [place, value]);
 
@@ -75,13 +71,42 @@ function useSlidingThumb(value: string | number): {
       return;
     }
     const observer = new ResizeObserver(() => {
-      place();
+      place(false);
     });
     observer.observe(root);
-    return () => {
-      observer.disconnect();
-    };
+    return () => observer.disconnect();
   }, [place]);
 
   return { rootRef, thumbRef };
+}
+
+function selectedButton(root: HTMLDivElement | null): HTMLButtonElement | null {
+  return root?.querySelector<HTMLButtonElement>('[aria-pressed="true"]') ?? null;
+}
+
+/** Resize and first mount must not slide the thumb in from the left edge. */
+function moveThumb(
+  thumb: HTMLSpanElement | null,
+  selected: HTMLButtonElement | null,
+  animate: boolean,
+): void {
+  if (thumb === null || selected === null) {
+    return;
+  }
+  if (!animate) {
+    thumb.style.transition = 'none';
+  }
+  thumb.style.width = `${selected.offsetWidth}px`;
+  thumb.style.transform = `translate3d(${selected.offsetLeft}px, 0, 0)`;
+  if (!animate) {
+    void thumb.offsetWidth;
+    thumb.style.transition = '';
+  }
+}
+
+function showThumb(thumb: HTMLSpanElement | null): void {
+  const ready = styles.ready;
+  if (thumb !== null && ready !== undefined) {
+    thumb.classList.add(ready);
+  }
 }

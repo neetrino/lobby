@@ -44,7 +44,7 @@ export function LanguageSwitch({ compact = false }: { compact?: boolean }) {
       </button>
       {open ? (
         <ul className={styles.menu} id={menuId} role="listbox" aria-label={t('label')}>
-          {supportedLocales.map((item) => (
+          {switchOrder.map((item) => (
             <li key={item}>
               <button
                 type="button"
@@ -92,7 +92,11 @@ function useDismissWhenOpen(
   }, [close, open, rootRef]);
 }
 
+const switchOrder = ['en', 'hy', 'ru'] as const satisfies readonly Locale[];
+
 type LanguageText = ReturnType<typeof useTranslations<'contacts.language'>>;
+
+const slideMs = 380;
 
 /** Locale switch for the bottom of the account menu. */
 export function LanguageMenu() {
@@ -100,19 +104,42 @@ export function LanguageMenu() {
   const router = useRouter();
   const locale = useLocale();
   const current = isLocale(locale) ? locale : 'en';
+  const [pending, setPending] = useState<Locale | null>(null);
+  const timer = useRef<number | null>(null);
+  const shown = pending ?? current;
+
+  useEffect(() => {
+    return () => {
+      if (timer.current !== null) {
+        window.clearTimeout(timer.current);
+      }
+    };
+  }, []);
 
   function choose(next: Locale): void {
-    if (next === current) {
+    if (next === shown) {
       return;
     }
-    router.push(`${replaceLocale(window.location.pathname, next)}${window.location.search}`);
+    if (timer.current !== null) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
+    }
+    if (prefersReducedMotion()) {
+      router.push(localeHref(next));
+      return;
+    }
+    setPending(next);
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
+      router.push(localeHref(next));
+    }, slideMs);
   }
 
   return (
     <SegmentedControl
       label={t('label')}
-      value={current}
-      options={supportedLocales.map((item) => ({ value: item, label: codeOf(t, item) }))}
+      value={shown}
+      options={switchOrder.map((item) => ({ value: item, label: codeOf(t, item) }))}
       onChange={choose}
     />
   );
@@ -142,6 +169,17 @@ function codeOf(t: LanguageText, locale: Locale): string {
 
 function isLocale(value: string): value is Locale {
   return supportedLocales.some((locale) => locale === value);
+}
+
+function localeHref(next: Locale): string {
+  return `${replaceLocale(window.location.pathname, next)}${window.location.search}`;
+}
+
+function prefersReducedMotion(): boolean {
+  return (
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
 }
 
 function replaceLocale(pathname: string, next: Locale): string {

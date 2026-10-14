@@ -205,7 +205,7 @@ function DrawerActions({ pending, onReset }: { pending: boolean; onReset: () => 
   const t = useTranslations('dashboard');
   return (
     <div className={drawer.drawerActions}>
-      <button type="button" className={styles.ghost} onClick={onReset}>
+      <button type="button" className={drawer.reset} onClick={onReset}>
         {t('reset')}
       </button>
       <button type="submit" className={styles.save} disabled={pending}>

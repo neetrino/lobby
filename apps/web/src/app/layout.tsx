@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Lobby',
+  title: 'lobi',
   description: 'Multi-tenant CRM and task management',
   icons: {
     icon: '/favicon-pod-v3.png',
