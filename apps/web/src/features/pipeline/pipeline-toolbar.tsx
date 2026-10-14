@@ -4,6 +4,7 @@ import { Tags, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { ColorField } from '../../ui/color-picker/color-picker';
 import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import { SearchFilters } from '../../ui/search-filters/search-filters';
@@ -186,11 +187,11 @@ function StatusEditor({
             maxLength={40}
             onBlur={(event) => commitStatusName(event.currentTarget.value, status, onRename)}
           />
-          <input
-            aria-label={t('statusColor')}
-            type="color"
-            defaultValue={status.color}
-            onBlur={(event) => commitStatusColor(event.currentTarget.value, status, onRecolor)}
+          <ColorField
+            label={t('statusColor')}
+            hueLabel={t('statusHue')}
+            value={status.color}
+            onChange={(hex) => commitStatusColor(hex, status, onRecolor)}
           />
           <button
             type="button"
@@ -202,19 +203,7 @@ function StatusEditor({
           </button>
         </div>
       ))}
-      <form className={styles.statusRow} onSubmit={(event) => submitStatus(event, onCreate)}>
-        <input
-          name="name"
-          aria-label={t('statusName')}
-          placeholder={t('statusName')}
-          maxLength={40}
-          required
-        />
-        <input name="color" aria-label={t('statusColor')} type="color" defaultValue="#2563eb" />
-        <button type="submit" className={styles.add}>
-          {t('addStatus')}
-        </button>
-      </form>
+      <AddStatusForm onCreate={onCreate} />
     </div>
   );
 }
@@ -240,17 +229,49 @@ function commitStatusName(
   }
 }
 
+function AddStatusForm({
+  onCreate,
+}: {
+  onCreate: (draft: { name: string; color: string }) => void;
+}) {
+  const t = useTranslations('pipeline');
+  const [color, setColor] = useState('#2563eb');
+  return (
+    <form
+      className={styles.statusRow}
+      onSubmit={(event) => {
+        if (submitStatus(event, color, onCreate)) setColor('#2563eb');
+      }}
+    >
+      <input
+        name="name"
+        aria-label={t('statusName')}
+        placeholder={t('statusName')}
+        maxLength={40}
+        required
+      />
+      <ColorField
+        label={t('statusColor')}
+        hueLabel={t('statusHue')}
+        value={color}
+        onChange={setColor}
+      />
+      <button type="submit" className={styles.add}>
+        {t('addStatus')}
+      </button>
+    </form>
+  );
+}
+
 function submitStatus(
   event: FormEvent<HTMLFormElement>,
+  color: string,
   onCreate: (draft: { name: string; color: string }) => void,
-): void {
+): boolean {
   event.preventDefault();
-  const data = new FormData(event.currentTarget);
-  const name = String(data.get('name') ?? '').trim();
-  const color = String(data.get('color') ?? '#2563eb');
-  if (name === '') {
-    return;
-  }
+  const name = String(new FormData(event.currentTarget).get('name') ?? '').trim();
+  if (name === '') return false;
   onCreate({ name, color });
   event.currentTarget.reset();
+  return true;
 }

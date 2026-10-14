@@ -400,6 +400,7 @@
     "statuses": "Statuses",
     "statusName": "Status name",
     "statusColor": "Status color",
+    "statusHue": "Hue",
     "addStatus": "Add status",
     "deleteStatus": "Delete status",
     "chat": "Internal chat",

@@ -400,6 +400,7 @@
     "statuses": "Статусы",
     "statusName": "Название статуса",
     "statusColor": "Цвет статуса",
+    "statusHue": "Оттенок",
     "addStatus": "Добавить",
     "deleteStatus": "Удалить статус",
     "chat": "Внутренний чат",

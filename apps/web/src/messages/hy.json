@@ -400,6 +400,7 @@
     "statuses": "Ստատուսներ",
     "statusName": "Ստատուսի անուն",
     "statusColor": "Ստատուսի գույն",
+    "statusHue": "Երանգ",
     "addStatus": "Ավելացնել",
     "deleteStatus": "Ջնջել ստատուսը",
     "chat": "Ներքին չատ",
