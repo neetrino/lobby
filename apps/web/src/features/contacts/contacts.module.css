@@ -59,7 +59,7 @@
   position: relative;
   display: grid;
   grid-template-columns: 76px minmax(0, 1fr);
-  grid-template-rows: 44px 58px;
+  grid-template-rows: 44px 68px;
   flex: none;
   width: 100%;
   transition: grid-template-rows 280ms ease;
@@ -165,8 +165,8 @@
   grid-column: 1;
   justify-self: center;
   align-self: center;
-  width: 40px;
-  height: 50px;
+  width: 64px;
+  height: 64px;
   min-width: 0;
   overflow: visible;
 }
@@ -1188,8 +1188,8 @@ button:focus-visible {
 
   .sidebarWide .brandMark {
     display: block;
-    width: 40px;
-    height: 50px;
+    width: 64px;
+    height: 64px;
   }
 
   .navActive,

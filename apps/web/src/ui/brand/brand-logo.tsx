@@ -11,7 +11,7 @@ type BrandLogoProps = {
 const ASSETS = {
   lockup: { src: '/brand/lobi-logo-ink-v5.png', width: 962, height: 521 },
   lockupOnDark: { src: '/brand/lobi-logo-v5.png', width: 962, height: 521 },
-  mark: { src: '/brand/lobi-mark-v5.png', width: 433, height: 521 },
+  mark: { src: '/brand/lobi-mark-v8.png', width: 1024, height: 1024 },
 } as const;
 
 /** lobi CRM wordmark. The mark is the pea pod for the narrow sidebar. */

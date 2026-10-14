@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: 'Lobby',
   description: 'Multi-tenant CRM and task management',
   icons: {
-    icon: '/favicon-pod-clear.png',
+    icon: '/favicon-pod-v3.png',
   },
 };
 
