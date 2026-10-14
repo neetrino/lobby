@@ -554,6 +554,7 @@
 .account strong,
 .account small {
   display: block;
+  line-height: 1.15;
 }
 
 .account strong {
@@ -562,8 +563,9 @@
 }
 
 .account small {
+  margin-top: 1px;
   color: rgb(183 194 184 / 70%);
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .avatar {

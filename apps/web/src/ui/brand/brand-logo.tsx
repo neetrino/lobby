@@ -9,7 +9,7 @@ type BrandLogoProps = {
 };
 
 const ASSETS = {
-  lockup: { src: '/brand/lobi-logo-ink-v5.png', width: 962, height: 521 },
+  lockup: { src: '/brand/lobi-logo-ink-v6.png', width: 1024, height: 576 },
   lockupOnDark: { src: '/brand/lobi-logo-v5.png', width: 962, height: 521 },
   mark: { src: '/brand/lobi-mark-v8.png', width: 1024, height: 1024 },
 } as const;

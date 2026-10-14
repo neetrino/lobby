@@ -61,7 +61,13 @@ export function TeamPanel() {
   }
 
   return (
-    <AuthFrame title={t('teamTitle')} note={t('teamNote')}>
+    <AuthFrame
+      title={t('teamTitle')}
+      note={t('teamNote')}
+      extra={
+        <SignOutButton className={styles.cornerSignOut} groupClassName={styles.cornerSignOutGroup} />
+      }
+    >
       <form
         className={styles.form}
         onSubmit={(event) => {
@@ -110,7 +116,6 @@ export function TeamPanel() {
             {member.name} · {member.email} · {member.role}
           </p>
         ))}
-        <SignOutButton className={styles.textButton} />
       </section>
     </AuthFrame>
   );

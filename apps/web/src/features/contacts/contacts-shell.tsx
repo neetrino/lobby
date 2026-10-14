@@ -137,6 +137,7 @@ function Account({ session, role }: { session: SessionPrincipal; role: string })
         </span>
         <span>
           <strong>{name}</strong>
+          <small>{role}</small>
         </span>
         <span
           className={open ? `${styles.accountChevron} ${styles.accountChevronOpen}` : styles.accountChevron}

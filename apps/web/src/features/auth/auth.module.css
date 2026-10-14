@@ -7,6 +7,10 @@
   color: #0b1c30;
 }
 
+.greenPage {
+  background: #c8d9a5;
+}
+
 .card {
   width: min(460px, 100%);
   padding: 28px;
@@ -21,6 +25,50 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 20px;
+}
+
+.localeCorner {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  width: 168px;
+}
+
+.localeCorner > div {
+  --segment-inset: 3px;
+  display: flex;
+  width: 100%;
+  height: 34px;
+}
+
+.localeCorner button[aria-pressed] {
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+  font-size: 11px;
+}
+
+.cornerSignOutGroup {
+  display: flex;
+  width: 100%;
+}
+
+.cornerSignOut {
+  width: 100%;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: #f3f5f8;
+  color: #14213d;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cornerSignOut:hover {
+  background: #e7ebf2;
 }
 
 .mark {

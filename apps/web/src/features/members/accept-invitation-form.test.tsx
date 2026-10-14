@@ -29,6 +29,7 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('../contacts/language-switch', () => ({
+  LanguageMenu: () => null,
   LanguageSwitch: () => null,
 }));
 

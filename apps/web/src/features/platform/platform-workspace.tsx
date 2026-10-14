@@ -4,9 +4,9 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+import { AuthFrame } from '../auth/auth-frame';
 import { SignOutButton } from '../auth/sign-out-button';
 import auth from '../auth/auth.module.css';
-import { BrandLogo } from '../../ui/brand/brand-logo';
 import { ContactsRequestError, readSession } from '../contacts/contacts-api';
 import {
   createOrganization,
@@ -34,17 +34,16 @@ export function PlatformWorkspace() {
   usePlatformSession(locale, router, t, setRows, setError);
 
   return (
-    <main className={auth.page}>
-      <section className={auth.card}>
-        <div className={auth.top}>
-          <BrandLogo className={auth.mark} />
-          <SignOutButton className={auth.link} />
-        </div>
-        <h1>{t('title')}</h1>
-        <p className={auth.note}>{t('intro')}</p>
-        {error === null ? null : <p className={auth.banner}>{error}</p>}
-        {notice === null ? null : <p className={auth.success}>{notice}</p>}
-        <OrganizationForm
+    <AuthFrame
+      title={t('title')}
+      note={t('intro')}
+      extra={
+        <SignOutButton className={auth.cornerSignOut} groupClassName={auth.cornerSignOutGroup} />
+      }
+    >
+      {error === null ? null : <p className={auth.banner}>{error}</p>}
+      {notice === null ? null : <p className={auth.success}>{notice}</p>}
+      <OrganizationForm
           onCreated={(created) => {
             setRows((current) => [
               created,
@@ -57,10 +56,9 @@ export function PlatformWorkspace() {
             setNotice(null);
             setError(message);
           }}
-        />
-        <OrganizationList rows={rows} empty={t('empty')} />
-      </section>
-    </main>
+      />
+      <OrganizationList rows={rows} empty={t('empty')} />
+    </AuthFrame>
   );
 }
 

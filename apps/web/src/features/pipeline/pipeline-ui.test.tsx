@@ -166,7 +166,7 @@ describe('pipeline board controls', () => {
     renderShell();
     cleanup();
     renderUi(<ContactsShell session={null} current="contacts" />);
-    expect(screen.getByRole('button', { name: /Ada/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Owner/ })).toBeTruthy();
   });
 
   it('shows loading, then the failure, and leaves Leads when they are off', async () => {
