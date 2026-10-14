@@ -49,9 +49,6 @@ function TopBar({ session }: { session: SessionPrincipal | null }) {
         {t('branch')}
       </span>
       <div className={styles.account}>
-        <span className={styles.bell} aria-hidden="true">
-          <BellIcon />
-        </span>
         <UserMenu session={session} />
       </div>
     </header>
@@ -118,10 +115,7 @@ function UserMenu({ session }: { session: SessionPrincipal | null }) {
         <span className={styles.avatar} aria-hidden="true">
           {initials(name)}
         </span>
-        <span>
-          <strong>{name}</strong>
-          <small>{role}</small>
-        </span>
+        <small>{role}</small>
       </button>
       {open ? (
         <div className={styles.userPanel} id={menuId} role="menu">
@@ -187,15 +181,6 @@ function StoreIcon(): ReactElement {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 10h16v9H4zM3 10l2-5h14l2 5" />
-    </svg>
-  );
-}
-
-function BellIcon(): ReactElement {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M6 16V11a6 6 0 1 1 12 0v5l1 2H5z" />
-      <path d="M10 18a2 2 0 0 0 4 0" />
     </svg>
   );
 }

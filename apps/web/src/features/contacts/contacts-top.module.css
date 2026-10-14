@@ -19,7 +19,6 @@ header.bar {
 
 .headerSearch svg,
 .branch svg,
-.bell svg,
 .crumbs svg {
   width: 18px;
   height: 18px;
@@ -114,13 +113,6 @@ header.bar {
   stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.bell {
-  display: grid;
-  width: 36px;
-  height: 36px;
-  place-items: center;
 }
 
 .account {
@@ -234,15 +226,10 @@ header.bar {
   cursor: pointer;
 }
 
-.userTrigger strong,
 .userTrigger small {
   display: block;
   line-height: 1.2;
   text-align: left;
-}
-
-.userTrigger strong {
-  font-size: 13px;
 }
 
 .userTrigger small {
@@ -467,8 +454,7 @@ header.bar {
     padding-bottom: 12px;
   }
 
-  .branch,
-  .bell {
+  .branch {
     display: none;
   }
 
