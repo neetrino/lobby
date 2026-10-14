@@ -442,6 +442,7 @@
   "team": {
     "title": "Team",
     "search": "Search by team",
+    "addShort": "+ Add Member",
     "addMember": "Add Member",
     "inviteEmail": "Email address",
     "inviteSent": "Invitation sent.",

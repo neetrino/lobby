@@ -195,24 +195,6 @@ function PipelineView({
           />
           <p className={styles.note}>{t('note')}</p>
         </div>
-        <input
-          className={styles.labelInput}
-          aria-label={t('amountLabel')}
-          defaultValue={board.amountLabel}
-          key={board.amountLabel}
-          placeholder={t('amountLabel')}
-          maxLength={8}
-          readOnly={!canConfigure}
-          onBlur={(event) => {
-            if (!canConfigure) {
-              return;
-            }
-            const amountLabel = event.currentTarget.value.trim();
-            if (amountLabel !== board.amountLabel) {
-              void onChange(() => patchPipeline(board.kind, { amountLabel }));
-            }
-          }}
-        />
       </header>
       {error === null ? null : <p className={styles.banner}>{error}</p>}
       <PipelineMetrics board={board} locale={locale} cards={cards.length} total={total} />

@@ -87,16 +87,17 @@ export function ReservationsWorkspace() {
             fromDay={board.fromDay}
             toDay={board.toDay}
             status={board.status}
+            view={board.view}
             assigneeId={board.assigneeId}
             search={board.search}
             members={board.members}
             onFrom={(day) => board.setRange(day, board.toDay)}
             onTo={(day) => board.setRange(board.fromDay, day)}
             onStatus={board.setStatus}
+            onView={board.setView}
             onAssignee={board.setAssigneeId}
             onSearch={board.setSearch}
           />
-          <ViewSwitch view={board.view} onView={board.setView} />
           {board.failed === null ? null : (
             <p className={styles.error} role="alert">
               {messageFor(t, board.failed)}
@@ -441,12 +442,14 @@ function Filters(props: {
   fromDay: string;
   toDay: string;
   status: string;
+  view: ViewName;
   assigneeId: string;
   search: string;
   members: Member[];
   onFrom: (day: string) => void;
   onTo: (day: string) => void;
   onStatus: (status: string) => void;
+  onView: (view: ViewName) => void;
   onAssignee: (id: string) => void;
   onSearch: (search: string) => void;
 }) {
@@ -500,6 +503,7 @@ function Filters(props: {
       ]}
       onChange={props.onStatus}
     />
+    <ViewSwitch view={props.view} onView={props.onView} />
     </div>
   );
 }

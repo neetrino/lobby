@@ -40,7 +40,6 @@
 }
 
 .nameInput,
-.labelInput,
 .field input {
   height: 40px;
   border: 1px solid transparent;
@@ -59,7 +58,6 @@
 }
 
 .nameInput:focus,
-.labelInput:focus,
 .field input:focus {
   border-color: #bfdbfe;
   background: #fff;

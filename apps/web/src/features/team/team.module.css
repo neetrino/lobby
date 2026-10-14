@@ -45,22 +45,50 @@
 
 .invite {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.inviteHead {
+  padding: 16px 76px 8px 24px;
+}
+
+.inviteHead h2 {
+  margin: 0;
+  color: #1c1b2e;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.invite label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 20px 24px 0;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 650;
 }
 
 .invite input {
+  box-sizing: border-box;
+  width: 100%;
   height: var(--control-height);
-  width: 220px;
   padding: 0 14px;
   border: 0;
-  border-radius: var(--control-radius);
+  border-radius: 15px;
   background: var(--control-fill);
+  color: inherit;
   font: inherit;
 }
 
 .invite button {
-  padding: 0 14px;
+  align-self: flex-start;
+  height: var(--control-height);
+  margin: 20px 24px;
+  padding: 0 18px;
+  border-radius: 999px;
 }
 
 .notice {

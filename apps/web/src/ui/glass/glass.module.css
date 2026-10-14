@@ -33,7 +33,6 @@
 .primary {
   border: 0;
   background: var(--shell-olive);
-  box-shadow: 0 8px 18px rgb(42 74 49 / 28%);
   color: #1c2410;
 }
 
