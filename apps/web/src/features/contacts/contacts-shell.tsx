@@ -185,22 +185,35 @@ function NotificationButton({ open, onToggle }: { open: boolean; onToggle: () =>
   );
 }
 
-const menuMotionMs = 180;
+const menuMotionMs = 240;
 
 function useMenuMotion(open: boolean): { shown: boolean; visible: boolean } {
   const [shown, setShown] = useState(open);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    if (open) {
-      setShown(true);
-      const frame = window.requestAnimationFrame(() => setVisible(true));
-      return () => window.cancelAnimationFrame(frame);
+    if (!open) {
+      setVisible(false);
+      const timer = window.setTimeout(() => setShown(false), menuDuration());
+      return () => window.clearTimeout(timer);
     }
-    setVisible(false);
-    const timer = window.setTimeout(() => setShown(false), menuDuration());
-    return () => window.clearTimeout(timer);
+    setShown(true);
+    return undefined;
   }, [open]);
+
+  useEffect(() => {
+    if (!shown || !open) {
+      return undefined;
+    }
+    let inner = 0;
+    const outer = window.requestAnimationFrame(() => {
+      inner = window.requestAnimationFrame(() => setVisible(true));
+    });
+    return () => {
+      window.cancelAnimationFrame(outer);
+      window.cancelAnimationFrame(inner);
+    };
+  }, [open, shown]);
 
   return { shown, visible };
 }

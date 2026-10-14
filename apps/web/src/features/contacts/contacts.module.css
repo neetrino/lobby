@@ -555,10 +555,10 @@
   box-shadow: 0 12px 32px rgb(11 28 48 / 16%);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(8px);
+  transform: translateY(10px);
   transition:
-    opacity 180ms ease,
-    transform 180ms ease;
+    opacity 240ms ease,
+    transform 240ms ease;
 }
 
 .sidebarWide .notificationsMenu {
@@ -609,10 +609,10 @@
   box-shadow: 0 12px 32px rgb(11 28 48 / 16%);
   opacity: 0;
   pointer-events: none;
-  transform: translateY(8px);
+  transform: translateY(10px);
   transition:
-    opacity 180ms ease,
-    transform 180ms ease;
+    opacity 240ms ease,
+    transform 240ms ease;
 }
 
 .menuOpen {
