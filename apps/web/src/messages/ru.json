@@ -584,6 +584,7 @@
   "reservations": {
     "title": "Брони",
     "new": "Новая бронь",
+    "createShort": "+ Новая бронь",
     "previousDay": "Предыдущий день",
     "nextDay": "Следующий день",
     "date": "Дата",

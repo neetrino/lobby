@@ -55,11 +55,13 @@ describe('pipeline board controls', () => {
     expect(onDelete).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit card' }));
-    expect(await screen.findByRole('option', { name: 'Nare' })).toBeTruthy();
-    fireEvent.change(screen.getByLabelText('Contact'), { target: { value: contactId } });
     fireEvent.change(screen.getByLabelText('Amount'), { target: { value: '40' } });
-    fireEvent.change(screen.getByLabelText('Outcome'), { target: { value: 'WON' } });
-    fireEvent.change(screen.getByLabelText('Owner'), { target: { value: userId } });
+    fireEvent.click(screen.getByLabelText('Contact'));
+    fireEvent.click(await screen.findByRole('option', { name: 'Nare' }));
+    fireEvent.click(screen.getByLabelText('Outcome'));
+    fireEvent.click(await screen.findByRole('option', { name: 'Won' }));
+    fireEvent.click(screen.getByLabelText('Owner'));
+    fireEvent.click(await screen.findByRole('option', { name: 'Assign to me' }));
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(onSave).toHaveBeenCalledWith(

@@ -208,9 +208,9 @@
   width: 220px;
   padding: 12px;
   border: 1px solid #eceaf4;
-  border-radius: 12px;
+  border-radius: 15px;
   background: white;
-  box-shadow: 0 12px 30px rgba(28, 27, 46, 0.08);
+  box-shadow: 0 16px 40px rgb(20 33 61 / 16%);
 }
 
 .menuPanel label {

@@ -7,6 +7,7 @@ import { listContacts } from '../contacts/contacts-api';
 import type { Contact } from '../contacts/contact';
 import glass from '../../ui/glass/glass.module.css';
 import { useSheetDismiss } from '../../ui/overlay/sheet-dismiss';
+import { Select, type SelectOption } from '../../ui/select/select';
 import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import type { CardUpdate, PipelineBoard, PipelineCard, PipelineKindName } from './pipeline-api';
@@ -180,21 +181,17 @@ function CardStatus({
   const color = current?.color;
   return (
     <div className={styles.statusCorner}>
-      <select
-        aria-label={t('status')}
+      <Select
+        size="compact"
+        label={t('status')}
         value={card.statusId ?? ''}
-        style={color === undefined ? undefined : { background: color, color: textOn(color) }}
-        onChange={(event) =>
-          onSave({ statusId: event.currentTarget.value === '' ? null : event.currentTarget.value })
-        }
-      >
-        <option value="">{t('noStatus')}</option>
-        {statuses.map((status) => (
-          <option key={status.id} value={status.id}>
-            {status.name}
-          </option>
-        ))}
-      </select>
+        triggerStyle={color === undefined ? undefined : { background: color, color: textOn(color) }}
+        options={[
+          { value: '', label: t('noStatus') },
+          ...statuses.map((status) => ({ value: status.id, label: status.name })),
+        ]}
+        onChange={(next) => onSave({ statusId: next === '' ? null : next })}
+      />
     </div>
   );
 }
@@ -291,39 +288,45 @@ function CardEditor({
             defaultValue={card.lostReason}
             placeholder={t('lostReason')}
           />
-          <select name="outcome" aria-label={t('outcome')} defaultValue={card.outcome}>
-            {OUTCOMES.map((outcome) => (
-              <option key={outcome} value={outcome}>
-                {t(outcomeLabel(outcome))}
-              </option>
-            ))}
-          </select>
+          <Select
+            name="outcome"
+            label={t('outcome')}
+            defaultValue={card.outcome}
+            options={OUTCOMES.map((outcome) => ({
+              value: outcome,
+              label: t(outcomeLabel(outcome)),
+            }))}
+          />
           <input
             name="expectedCloseOn"
             aria-label={t('expectedClose')}
             type="date"
             defaultValue={card.expectedCloseOn ?? ''}
           />
-          <select name="contactId" aria-label={t('contact')} defaultValue={card.contactId ?? ''}>
-            <option value="">{t('noContact')}</option>
-            {contacts.map((contact) => (
-              <option key={contact.id} value={contact.id}>
-                {contact.name}
-              </option>
-            ))}
-          </select>
-          <select name="statusId" aria-label={t('status')} defaultValue={card.statusId ?? ''}>
-            <option value="">{t('noStatus')}</option>
-            {statuses.map((status) => (
-              <option key={status.id} value={status.id}>
-                {status.name}
-              </option>
-            ))}
-          </select>
-          <select name="ownerUserId" aria-label={t('owner')} defaultValue={card.ownerUserId ?? ''}>
-            <option value="">{t('clearOwner')}</option>
-            {userId === null ? null : <option value={userId}>{t('assignToMe')}</option>}
-          </select>
+          <Select
+            name="contactId"
+            label={t('contact')}
+            defaultValue={card.contactId ?? ''}
+            options={[
+              { value: '', label: t('noContact') },
+              ...contacts.map((contact) => ({ value: contact.id, label: contact.name })),
+            ]}
+          />
+          <Select
+            name="statusId"
+            label={t('status')}
+            defaultValue={card.statusId ?? ''}
+            options={[
+              { value: '', label: t('noStatus') },
+              ...statuses.map((status) => ({ value: status.id, label: status.name })),
+            ]}
+          />
+          <Select
+            name="ownerUserId"
+            label={t('owner')}
+            defaultValue={card.ownerUserId ?? ''}
+            options={ownerOptions(t('clearOwner'), t('assignToMe'), userId)}
+          />
           <button type="submit" className={styles.add}>
             {t('save')}
           </button>
@@ -432,6 +435,20 @@ function formatWhen(value: string, locale: string): string {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value));
+}
+
+function ownerOptions(
+  emptyLabel: string,
+  mineLabel: string,
+  userId: string | null,
+): SelectOption[] {
+  if (userId === null) {
+    return [{ value: '', label: emptyLabel }];
+  }
+  return [
+    { value: '', label: emptyLabel },
+    { value: userId, label: mineLabel },
+  ];
 }
 
 function outcomeLabel(

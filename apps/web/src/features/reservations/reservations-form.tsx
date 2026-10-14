@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { listContacts } from '../contacts/contacts-api';
 import type { Contact } from '../contacts/contact';
+import { Select, type SelectOption } from '../../ui/select/select';
 import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import {
@@ -164,18 +165,11 @@ export function ReservationForm({
               <legend>{t('sections.seating')}</legend>
               <label>
                 {t('location')}
-                <select
+                <Select
                   value={draft.locationId}
-                  onChange={(event) =>
-                    setDraft({ ...draft, locationId: event.target.value, tableId: '' })
-                  }
-                >
-                  {venues.map((venue) => (
-                    <option key={venue.id} value={venue.id}>
-                      {venue.name}
-                    </option>
-                  ))}
-                </select>
+                  options={venues.map((venue) => ({ value: venue.id, label: venue.name }))}
+                  onChange={(locationId) => setDraft({ ...draft, locationId, tableId: '' })}
+                />
               </label>
               <label>
                 {t('guests')}
@@ -192,18 +186,12 @@ export function ReservationForm({
               </label>
               <label>
                 {t('table')}
-                <select
+                <Select
                   required
                   value={draft.tableId}
-                  onChange={(event) => setDraft({ ...draft, tableId: event.target.value })}
-                >
-                  <option value="">{t('chooseTable')}</option>
-                  {tables.map((table) => (
-                    <option key={table.id} value={table.id}>
-                      {table.name} · {table.minCapacity}–{table.capacity}
-                    </option>
-                  ))}
-                </select>
+                  options={tableOptions(t('chooseTable'), tables)}
+                  onChange={(tableId) => setDraft({ ...draft, tableId })}
+                />
               </label>
               {tablesNote === null ? null : <p className={styles.muted}>{tablesNote}</p>}
             </fieldset>
@@ -211,31 +199,19 @@ export function ReservationForm({
               <legend>{t('sections.people')}</legend>
               <label>
                 {t('contact')}
-                <select
+                <Select
                   value={draft.contactId}
-                  onChange={(event) => setDraft({ ...draft, contactId: event.target.value })}
-                >
-                  <option value="">{t('noContact')}</option>
-                  {contacts.map((contact) => (
-                    <option key={contact.id} value={contact.id}>
-                      {contact.name}
-                    </option>
-                  ))}
-                </select>
+                  options={namedOptions(t('noContact'), contacts)}
+                  onChange={(contactId) => setDraft({ ...draft, contactId })}
+                />
               </label>
               <label>
                 {t('assignee')}
-                <select
+                <Select
                   value={draft.assignedUserId}
-                  onChange={(event) => setDraft({ ...draft, assignedUserId: event.target.value })}
-                >
-                  <option value="">{t('allAssignees')}</option>
-                  {members.map((member) => (
-                    <option key={member.id} value={member.id}>
-                      {member.name}
-                    </option>
-                  ))}
-                </select>
+                  options={namedOptions(t('allAssignees'), members)}
+                  onChange={(assignedUserId) => setDraft({ ...draft, assignedUserId })}
+                />
               </label>
             </fieldset>
             {detail === null ? (
@@ -243,18 +219,19 @@ export function ReservationForm({
                 <legend>{t('source')}</legend>
                 <label>
                   {t('source')}
-                  <select
+                  <Select
                     value={draft.source}
-                    onChange={(event) =>
-                      setDraft({ ...draft, source: event.target.value as StaffSource })
-                    }
-                  >
-                    {STAFF_SOURCES.map((source) => (
-                      <option key={source} value={source}>
-                        {t(`sources.${source}`)}
-                      </option>
-                    ))}
-                  </select>
+                    options={STAFF_SOURCES.map((source) => ({
+                      value: source,
+                      label: t(`sources.${source}`),
+                    }))}
+                    onChange={(next) => {
+                      const source = staffSource(next);
+                      if (source !== null) {
+                        setDraft({ ...draft, source });
+                      }
+                    }}
+                  />
                 </label>
               </fieldset>
             ) : null}
@@ -273,6 +250,30 @@ export function ReservationForm({
       </SheetFrame>
     </OverlayPortal>
   );
+}
+
+function namedOptions(
+  emptyLabel: string,
+  rows: readonly { id: string; name: string }[],
+): SelectOption[] {
+  return [
+    { value: '', label: emptyLabel },
+    ...rows.map((row) => ({ value: row.id, label: row.name })),
+  ];
+}
+
+function tableOptions(emptyLabel: string, tables: readonly DiningTable[]): SelectOption[] {
+  return [
+    { value: '', label: emptyLabel },
+    ...tables.map((table) => ({
+      value: table.id,
+      label: `${table.name} · ${table.minCapacity}–${table.capacity}`,
+    })),
+  ];
+}
+
+function staffSource(value: string): StaffSource | null {
+  return STAFF_SOURCES.find((source) => source === value) ?? null;
 }
 
 function draftFrom(detail: ReservationDetail | null, locationId: string): ReservationDraft {

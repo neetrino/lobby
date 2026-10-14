@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type ReactElement, type RefObject } from 'react';
+import { useId, useRef, useState, type ReactElement, type RefObject } from 'react';
+import { createPortal } from 'react-dom';
 
+import { anchoredStyle, useAnchoredBox, useMenuDismiss } from '../select/anchored-menu';
 import styles from './filter-menu.module.css';
 
 export function FilterMenu({
@@ -17,13 +19,16 @@ export function FilterMenu({
 }): ReactElement {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const menuRef = useRef<HTMLUListElement>(null);
   const menuId = useId();
-  useDismiss(open, rootRef, () => setOpen(false));
+  useMenuDismiss(open, rootRef, menuRef, () => setOpen(false));
   const current = options.find((option) => option.value === value)?.label ?? label;
 
   return (
     <div className={styles.menu} ref={rootRef}>
       <button
+        ref={buttonRef}
         type="button"
         className={styles.trigger}
         aria-haspopup="listbox"
@@ -38,6 +43,8 @@ export function FilterMenu({
       </button>
       {open ? (
         <FilterChoices
+          menuRef={menuRef}
+          anchor={buttonRef}
           menuId={menuId}
           label={label}
           value={value}
@@ -53,20 +60,35 @@ export function FilterMenu({
 }
 
 function FilterChoices({
+  menuRef,
+  anchor,
   menuId,
   label,
   value,
   options,
   onChange,
 }: {
+  menuRef: RefObject<HTMLUListElement | null>;
+  anchor: RefObject<HTMLButtonElement | null>;
   menuId: string;
   label: string;
   value: string;
   options: ReadonlyArray<{ value: string; label: string }>;
   onChange: (value: string) => void;
-}): ReactElement {
-  return (
-    <ul className={styles.list} id={menuId} role="listbox" aria-label={label}>
+}): ReactElement | null {
+  const box = useAnchoredBox(anchor, menuRef);
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  return createPortal(
+    <ul
+      ref={menuRef}
+      className={styles.list}
+      id={menuId}
+      role="listbox"
+      aria-label={label}
+      style={anchoredStyle(box, 'minWidth')}
+    >
       {options.map((option) => (
         <li key={option.value} role="none">
           <button
@@ -80,7 +102,8 @@ function FilterChoices({
           </button>
         </li>
       ))}
-    </ul>
+    </ul>,
+    document.body,
   );
 }
 
@@ -92,31 +115,3 @@ function ChevronIcon(): ReactElement {
   );
 }
 
-function useDismiss(
-  open: boolean,
-  rootRef: RefObject<HTMLDivElement | null>,
-  close: () => void,
-): void {
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    function onPointerDown(event: PointerEvent): void {
-      if (event.target instanceof Node && rootRef.current?.contains(event.target)) {
-        return;
-      }
-      close();
-    }
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') {
-        close();
-      }
-    }
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [close, open, rootRef]);
-}

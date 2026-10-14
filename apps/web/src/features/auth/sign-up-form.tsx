@@ -16,6 +16,7 @@ import {
   type SignupDraft,
   type SignupField,
 } from './auth-draft';
+import { Select } from '../../ui/select/select';
 import { AuthFrame } from './auth-frame';
 import styles from './auth.module.css';
 
@@ -138,20 +139,18 @@ export function SignUpForm({ registrationStatus }: { registrationStatus: Registr
         />
         <label>
           {t('language')}
-          <select
+          <Select
             value={draft.locale}
-            onChange={(event) => {
-              if (isAuthLocale(event.target.value)) {
-                update('locale', event.target.value);
+            options={supportedLocales.map((item) => ({
+              value: item,
+              label: t(`localeName.${item}`),
+            }))}
+            onChange={(next) => {
+              if (isAuthLocale(next)) {
+                update('locale', next);
               }
             }}
-          >
-            {supportedLocales.map((item) => (
-              <option key={item} value={item}>
-                {t(`localeName.${item}`)}
-              </option>
-            ))}
-          </select>
+          />
         </label>
         <button type="submit" className={styles.submit} disabled={pending}>
           {t('createWorkspace')}

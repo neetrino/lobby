@@ -22,6 +22,7 @@ import {
 } from './contact-detail-sections';
 import { duplicatePeers } from './duplicate-notices';
 import { useInSheet } from '../../ui/overlay/sheet-dismiss';
+import { Select } from '../../ui/select/select';
 import styles from './contacts.module.css';
 import tableStyles from './contacts-table.module.css';
 import panel from './contact-editor.module.css';
@@ -261,18 +262,16 @@ function EditorFields({
       </label>
       <label>
         {t('kind')}
-        <select
+        <Select
           value={draft.type}
-          onChange={(event) =>
-            onDraft({
-              ...draft,
-              type: event.target.value === 'organization' ? 'organization' : 'person',
-            })
+          options={[
+            { value: 'person', label: t('type.person') },
+            { value: 'organization', label: t('type.organization') },
+          ]}
+          onChange={(next) =>
+            onDraft({ ...draft, type: next === 'organization' ? 'organization' : 'person' })
           }
-        >
-          <option value="person">{t('type.person')}</option>
-          <option value="organization">{t('type.organization')}</option>
-        </select>
+        />
       </label>
     </>
   );

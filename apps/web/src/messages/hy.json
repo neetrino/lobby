@@ -584,6 +584,7 @@
   "reservations": {
     "title": "Ամրագրումներ",
     "new": "Նոր ամրագրում",
+    "createShort": "+ Նոր ամրագրում",
     "previousDay": "Նախորդ օր",
     "nextDay": "Հաջորդ օր",
     "date": "Ամսաթիվ",

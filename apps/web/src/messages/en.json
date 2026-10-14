@@ -584,6 +584,7 @@
   "reservations": {
     "title": "Reservations",
     "new": "New reservation",
+    "createShort": "+ New Reservation",
     "previousDay": "Previous day",
     "nextDay": "Next day",
     "date": "Date",

@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
+import { Select } from '../../ui/select/select';
 import type { ContactListFilters } from './contact';
 import styles from './contacts.module.css';
 
@@ -38,15 +39,17 @@ export function ContactPager({
       <div className={styles.pagerTools}>
         <label className={styles.pageSize}>
           {t('rows')}
-          <select
-            aria-label={t('pageSize')}
-            value={limit}
-            onChange={(event) => onLimit(pageLimit(event.target.value))}
-          >
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+          <Select
+            fit
+            label={t('pageSize')}
+            value={String(limit)}
+            options={[
+              { value: '25', label: '25' },
+              { value: '50', label: '50' },
+              { value: '100', label: '100' },
+            ]}
+            onChange={(next) => onLimit(pageLimit(next))}
+          />
         </label>
         <button type="button" disabled={!hasPrevious} onClick={onPrevious}>
           {t('previousPage')}

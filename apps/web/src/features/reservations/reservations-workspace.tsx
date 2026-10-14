@@ -419,7 +419,7 @@ function Header(props: {
             className={`${styles.create} ${glass.button} ${glass.primary}`}
             onClick={props.onCreate}
           >
-            {t('new')}
+            {t('createShort')}
           </button>
         ) : null}
       </div>

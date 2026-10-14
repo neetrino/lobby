@@ -170,9 +170,9 @@
   margin: 0;
   padding: 6px;
   list-style: none;
-  border-radius: 12px;
+  border-radius: 15px;
   background: #fff;
-  box-shadow: 0 8px 24px rgb(11 28 48 / 14%);
+  box-shadow: 0 16px 40px rgb(20 33 61 / 16%);
 }
 
 .menuItem {
@@ -191,7 +191,8 @@
 }
 
 .menuItem:hover:not(:disabled) {
-  background: #f4f7fb;
+  background: var(--shell-olive);
+  color: #1c2410;
 }
 
 .menuItem:disabled {

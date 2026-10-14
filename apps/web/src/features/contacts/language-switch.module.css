@@ -70,11 +70,11 @@
   z-index: 5;
   min-width: 148px;
   margin: 0;
-  padding: 4px;
+  padding: 6px;
   list-style: none;
-  border-radius: 10px;
+  border-radius: 15px;
   background: #fff;
-  box-shadow: 0 8px 24px rgb(11 28 48 / 14%);
+  box-shadow: 0 16px 40px rgb(20 33 61 / 16%);
 }
 
 .option,
@@ -98,11 +98,8 @@
 
 .option:hover,
 .optionActive {
-  background: #eff4ff;
-}
-
-.optionActive {
-  color: #004ac6;
+  background: var(--shell-olive);
+  color: #1c2410;
 }
 
 .code {
