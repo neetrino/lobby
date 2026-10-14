@@ -20,11 +20,12 @@ export function BranchSwitch({
   const t = useTranslations('contacts');
   const { venues, selectedId, select } = useBranches();
   const name = branchName(venues, selectedId, t('branch'));
-  if (role !== 'OWNER' || venues.length === 0) {
+  const options = [{ id: '', name: t('branch') }, ...venues];
+  if (role !== 'OWNER') {
     return <p className={styles.branch}>{name}</p>;
   }
   return (
-    <BranchPicker name={name} venues={venues} selectedId={selectedId} onSelect={select} />
+    <BranchPicker name={name} venues={options} selectedId={selectedId ?? ''} onSelect={select} />
   );
 }
 
@@ -35,7 +36,7 @@ function BranchPicker({
   onSelect,
 }: {
   name: string;
-  venues: Venue[];
+  venues: ReadonlyArray<{ id: string; name: string }>;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }): ReactElement {
@@ -92,7 +93,7 @@ function BranchList({
   anchor: RefObject<HTMLButtonElement | null>;
   menuId: string;
   label: string;
-  venues: Venue[];
+  venues: ReadonlyArray<{ id: string; name: string }>;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }): ReactElement | null {
@@ -146,16 +147,17 @@ function useBranches(): {
     venues,
     selectedId,
     select(id: string): void {
-      window.localStorage.setItem(storageKey, id);
-      setSelectedId(id);
+      if (id === '') window.localStorage.removeItem(storageKey);
+      else window.localStorage.setItem(storageKey, id);
+      setSelectedId(id === '' ? null : id);
     },
   };
 }
 
 function pickBranch(rows: Venue[]): string | null {
-  if (rows.length === 0) return null;
   const stored = window.localStorage.getItem(storageKey);
-  return rows.some((row) => row.id === stored) ? stored : rows[0].id;
+  if (stored === null || stored === '') return null;
+  return rows.some((row) => row.id === stored) ? stored : null;
 }
 
 function branchName(venues: Venue[], selectedId: string | null, fallback: string): string {
