@@ -1,21 +1,17 @@
 'use client';
 
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useId, useRef, useState, type ReactElement, type RefObject } from 'react';
+import type { ReactElement } from 'react';
 import Link from 'next/link';
 
-import { SignOutButton } from '../auth/sign-out-button';
-import type { SessionPrincipal } from './contact';
 import glass from '../../ui/glass/glass.module.css';
 import styles from './contacts-top.module.css';
 
 export function ContactsTop({
-  session,
   activeCount,
   duplicateCount,
   onCreate,
 }: {
-  session: SessionPrincipal | null;
   activeCount: number | null;
   duplicateCount: number;
   onCreate: () => void;
@@ -24,7 +20,7 @@ export function ContactsTop({
   const locale = useLocale();
   return (
     <>
-      <TopBar session={session} />
+      <TopBar />
       <div className={styles.context}>
         <nav className={styles.crumbs} aria-label={t('homeCrumb')}>
           <Link href={`/${locale}`}>
@@ -40,7 +36,7 @@ export function ContactsTop({
   );
 }
 
-function TopBar({ session }: { session: SessionPrincipal | null }) {
+function TopBar() {
   const t = useTranslations('contacts');
   return (
     <header className={`${styles.bar} ${glass.soft}`}>
@@ -48,9 +44,6 @@ function TopBar({ session }: { session: SessionPrincipal | null }) {
         <StoreIcon />
         {t('branch')}
       </span>
-      <div className={styles.account}>
-        <UserMenu session={session} />
-      </div>
     </header>
   );
 }
@@ -87,86 +80,6 @@ function PageHeader({
       </button>
     </section>
   );
-}
-
-function UserMenu({ session }: { session: SessionPrincipal | null }) {
-  const t = useTranslations('contacts');
-  const locale = useLocale();
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const menuId = useId();
-  useDismiss(open, rootRef, () => setOpen(false));
-  if (session === null) {
-    return null;
-  }
-  const role = t(`role.${session.user.role}`);
-  const name = session.user.name.trim() || role;
-  const manager = session.user.role === 'OWNER' || session.user.role === 'ADMIN';
-  return (
-    <div className={styles.userMenu} ref={rootRef}>
-      <button
-        type="button"
-        className={styles.userTrigger}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-controls={menuId}
-        onClick={() => setOpen((value) => !value)}
-      >
-        <span className={styles.avatar} aria-hidden="true">
-          {initials(name)}
-        </span>
-        <small>{role}</small>
-      </button>
-      {open ? (
-        <div className={styles.userPanel} id={menuId} role="menu">
-          {manager ? (
-            <Link className={styles.menuLink} href={`/${locale}/settings/team`} role="menuitem">
-              {t('team')}
-            </Link>
-          ) : null}
-          <SignOutButton className={styles.menuAction} groupClassName={styles.menuGroup} />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function useDismiss(
-  open: boolean,
-  rootRef: RefObject<HTMLDivElement | null>,
-  close: () => void,
-): void {
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    function onPointerDown(event: PointerEvent): void {
-      if (event.target instanceof Node && rootRef.current?.contains(event.target)) {
-        return;
-      }
-      close();
-    }
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') {
-        close();
-      }
-    }
-    document.addEventListener('pointerdown', onPointerDown);
-    document.addEventListener('keydown', onKeyDown);
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown);
-      document.removeEventListener('keydown', onKeyDown);
-    };
-  }, [close, open, rootRef]);
-}
-
-function initials(name: string): string {
-  const letters = name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part.slice(0, 1).toUpperCase());
-  return letters.join('') || 'L';
 }
 
 function HomeIcon(): ReactElement {

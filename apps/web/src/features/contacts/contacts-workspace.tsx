@@ -146,7 +146,6 @@ export function ContactsWorkspace() {
       <ContactsShell session={session} />
       <main className={`${styles.main} ${glass.canvas}`}>
         <ContactsTop
-          session={session}
           activeCount={activeCount}
           duplicateCount={notices.length}
           onCreate={editor.openCreate}

@@ -375,7 +375,7 @@
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  padding: 12px 10px 0;
+  padding: 12px 0 0 8px;
 }
 
 .accountButton {
@@ -465,6 +465,8 @@
 
 .sidebar:not(.sidebarWide) .accountButton .avatar {
   z-index: 1;
+  width: 40px;
+  height: 40px;
   transform: translateX(4px);
 }
 
@@ -492,6 +494,20 @@
 .sidebarWide .notifications {
   order: 0;
   margin-bottom: 0;
+}
+
+.sidebar:not(.sidebarWide) .notifications {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  width: 100%;
+}
+
+.sidebar:not(.sidebarWide) .notificationsButton {
+  grid-column: 1;
+  justify-self: center;
+  width: 40px;
+  height: 40px;
+  transform: translateX(4px);
 }
 
 .notificationsButton {
@@ -538,8 +554,8 @@
 }
 
 .sidebarWide .notificationsMenu {
-  right: 10px;
-  left: 10px;
+  right: 0;
+  left: 8px;
   max-width: none;
 }
 
