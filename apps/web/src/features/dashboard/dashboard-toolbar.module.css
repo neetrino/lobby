@@ -61,7 +61,7 @@
 .save {
   background: var(--shell-olive);
   color: #1c2410;
-  box-shadow: 0 8px 18px rgb(42 74 49 / 28%);
+  box-shadow: none;
 }
 
 .save:disabled {

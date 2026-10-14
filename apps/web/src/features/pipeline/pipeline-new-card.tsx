@@ -32,17 +32,23 @@ function NewCardForm({ onCreate }: { onCreate: (draft: CardDraft) => void }) {
   const t = useTranslations('pipeline');
   const dismiss = useSheetDismiss(() => undefined);
   return (
-    <form
-      className={styles.dialogForm}
-      onSubmit={(event) => submitNewCard(event, onCreate, dismiss)}
-    >
-      <header className={styles.dialogHead}>
+    <form className={styles.cardSheet} onSubmit={(event) => submitNewCard(event, onCreate, dismiss)}>
+      <header>
         <h2>{t('addCard')}</h2>
       </header>
-      <input name="title" aria-label={t('cardTitle')} placeholder={t('cardTitle')} required />
-      <input name="company" aria-label={t('company')} placeholder={t('company')} />
-      <input name="amount" aria-label={t('amount')} placeholder={t('amount')} inputMode="numeric" />
-      <button type="submit" className={styles.add}>
+      <label>
+        {t('cardTitle')}
+        <input name="title" aria-label={t('cardTitle')} placeholder={t('cardTitle')} required />
+      </label>
+      <label>
+        {t('company')}
+        <input name="company" aria-label={t('company')} placeholder={t('company')} />
+      </label>
+      <label>
+        {t('amount')}
+        <input name="amount" aria-label={t('amount')} placeholder={t('amount')} inputMode="numeric" />
+      </label>
+      <button type="submit" data-tone="primary">
         {t('save')}
       </button>
     </form>

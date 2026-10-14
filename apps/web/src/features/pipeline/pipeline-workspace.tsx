@@ -8,7 +8,7 @@ import { ContactsRequestError, readSession } from '../contacts/contacts-api';
 import type { SessionPrincipal } from '../contacts/contact';
 import { ContactsShell } from '../contacts/contacts-shell';
 import shell from '../contacts/contacts.module.css';
-import { AddColumn, PipelineColumnView } from './pipeline-column';
+import { PipelineColumnView } from './pipeline-column';
 import { shownCards } from './pipeline-filter';
 import { createBoardQueue } from './pipeline-queue';
 import {
@@ -209,6 +209,7 @@ function PipelineView({
         onRename={(id, name) => void onChange(() => updateStatus(board.kind, id, { name }))}
         onRecolor={(id, color) => void onChange(() => updateStatus(board.kind, id, { color }))}
         onDelete={(id) => void onChange(() => deleteStatus(board.kind, id))}
+        onCreateColumn={(name) => void onChange(() => createColumn(board.kind, name))}
       />
       <div className={styles.board}>
         {board.columns.map((column, stageIndex) => (
@@ -238,7 +239,6 @@ function PipelineView({
             canConfigure={canConfigure}
           />
         ))}
-        <AddColumn onCreate={(name) => void onChange(() => createColumn(board.kind, name))} />
       </div>
     </div>
   );

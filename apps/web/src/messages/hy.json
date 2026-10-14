@@ -355,6 +355,7 @@
     "metricEmpty": "Դատարկ սյունակներ",
     "columnName": "Սյունակի անուն",
     "addColumn": "Ավելացնել սյունակ",
+    "addColumnShort": "+ Ավելացնել սյունակ",
     "deleteColumn": "Ջնջել սյունակը",
     "addCard": "Ավելացնել քարտ",
     "cardTitle": "Անուն",

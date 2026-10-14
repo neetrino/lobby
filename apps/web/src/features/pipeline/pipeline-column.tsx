@@ -148,40 +148,13 @@ function AddCard({
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" className={styles.add} onClick={() => setOpen(true)}>
+      <button type="button" data-tone="primary" onClick={() => setOpen(true)}>
         {t('addCard')}
       </button>
       {open ? <NewCardSheet onClose={() => setOpen(false)} onCreate={onCreate} /> : null}
     </>
   );
 }
-
-function AddColumn({ onCreate }: { onCreate: (name: string) => void }) {
-  const t = useTranslations('pipeline');
-  return (
-    <form
-      className={styles.addColumn}
-      onSubmit={(event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const name = String(data.get('name') ?? '').trim();
-        if (name === '') {
-          return;
-        }
-        onCreate(name);
-        event.currentTarget.reset();
-      }}
-    >
-      <strong>{t('addColumn')}</strong>
-      <input name="name" aria-label={t('columnName')} placeholder={t('columnName')} required />
-      <button type="submit" className={styles.add}>
-        {t('save')}
-      </button>
-    </form>
-  );
-}
-
-export { AddColumn };
 
 function commitName(next: string, current: string, onRename: (name: string) => void): void {
   const name = next.trim();

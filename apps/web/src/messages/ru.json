@@ -355,6 +355,7 @@
     "metricEmpty": "Пустые столбцы",
     "columnName": "Название столбца",
     "addColumn": "Добавить столбец",
+    "addColumnShort": "+ Добавить столбец",
     "deleteColumn": "Удалить столбец",
     "addCard": "Добавить карточку",
     "cardTitle": "Название",

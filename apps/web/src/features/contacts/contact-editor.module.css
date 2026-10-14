@@ -132,11 +132,13 @@ header.profile h2 {
 }
 
 .footer {
+  justify-content: flex-end;
+  gap: 8px;
   padding: 4px 16px 16px;
 }
 
 .footer button:last-child {
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .tabs {

@@ -355,6 +355,7 @@
     "metricEmpty": "Empty columns",
     "columnName": "Column name",
     "addColumn": "Add column",
+    "addColumnShort": "+ Add Column",
     "deleteColumn": "Delete column",
     "addCard": "Add card",
     "cardTitle": "Title",
