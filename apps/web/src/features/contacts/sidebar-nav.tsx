@@ -98,24 +98,28 @@ function useNavIndicator(
     }
     const from = previousNavId === null ? null : navItem(nav, previousNavId);
     const animate = from !== null && from !== to && !motionOff();
+    nav.removeAttribute('data-nav-motion');
     placeIndicator(nav, animate ? from : to);
+    void nav.offsetHeight;
     nav.setAttribute('data-nav-ready', '');
     if (!animate) {
-      nav.setAttribute('data-nav-motion', '');
       previousNavId = current;
-      return;
+      const frame = window.requestAnimationFrame(() => {
+        nav.setAttribute('data-nav-motion', '');
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
     let inner = 0;
-    const outer = requestAnimationFrame(() => {
+    const outer = window.requestAnimationFrame(() => {
       nav.setAttribute('data-nav-motion', '');
-      inner = requestAnimationFrame(() => {
+      inner = window.requestAnimationFrame(() => {
         placeIndicator(nav, to);
         previousNavId = current;
       });
     });
     return () => {
-      cancelAnimationFrame(outer);
-      cancelAnimationFrame(inner);
+      window.cancelAnimationFrame(outer);
+      window.cancelAnimationFrame(inner);
     };
   }, [canReadAudit, current, leadsOn, navRef]);
 }
