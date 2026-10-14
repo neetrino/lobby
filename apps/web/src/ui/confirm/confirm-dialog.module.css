@@ -1,0 +1,154 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 16px;
+  background: rgb(20 33 61 / 28%);
+  animation: fadeIn 220ms ease;
+}
+
+.leaving {
+  animation: fadeOut 200ms ease forwards;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-sizing: border-box;
+  width: min(400px, 100%);
+  padding: 24px;
+  border-radius: 28px;
+  background: #fff;
+  color: #14213d;
+  box-shadow: 0 24px 60px rgb(20 33 61 / 18%);
+  animation: rise 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.leaving .panel {
+  animation: sink 200ms ease forwards;
+}
+
+.panel:focus {
+  outline: none;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.panel p {
+  margin: 0;
+  color: #667085;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.cancel,
+.danger,
+.primary {
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.cancel {
+  background: #fff;
+  color: var(--control-ink);
+  box-shadow: inset 0 0 0 1px #e4e7ee;
+}
+
+.danger {
+  background: #fef2f2;
+  color: #b42318;
+}
+
+.primary {
+  background: var(--shell-olive);
+  color: #1c2410;
+}
+
+.cancel:hover {
+  background: #f7f8fa;
+}
+
+.danger:hover {
+  background: #fee4e2;
+}
+
+.primary:hover {
+  background: #8aaf4c;
+}
+
+.cancel:disabled,
+.danger:disabled,
+.primary:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .backdrop,
+  .leaving,
+  .panel,
+  .leaving .panel {
+    animation: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes sink {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}

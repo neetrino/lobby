@@ -370,6 +370,7 @@
     "clearUrgent": "Clear urgent",
     "confirmDelete": "Delete this card?",
     "confirmColumn": "Delete this column?",
+    "confirmStatus": "Delete the {name} status?",
     "cancel": "Cancel",
     "earlier": "Earlier",
     "later": "Later",

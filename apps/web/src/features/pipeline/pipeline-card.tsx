@@ -5,6 +5,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 
 import { listContacts } from '../contacts/contacts-api';
 import type { Contact } from '../contacts/contact';
+import { ConfirmDialog } from '../../ui/confirm/confirm-dialog';
 import glass from '../../ui/glass/glass.module.css';
 import { useSheetDismiss } from '../../ui/overlay/sheet-dismiss';
 import { DateField } from '../../ui/calendar/calendar';
@@ -140,15 +141,14 @@ export function PipelineCardView({
       </div>
       <CardStatus card={card} statuses={statuses} onSave={onSave} />
       {confirming ? (
-        <div className={styles.confirm}>
-          <p>{t('confirmDelete')}</p>
-          <button type="button" className={styles.danger} onClick={onDelete}>
-            {t('deleteCard')}
-          </button>
-          <button type="button" className={styles.add} onClick={() => setConfirming(false)}>
-            {t('cancel')}
-          </button>
-        </div>
+        <ConfirmDialog
+          title={t('deleteCard')}
+          message={t('confirmDelete')}
+          confirmLabel={t('deleteCard')}
+          cancelLabel={t('cancel')}
+          onConfirm={onDelete}
+          onClose={() => setConfirming(false)}
+        />
       ) : null}
       {editing ? (
         <CardEditor
@@ -250,45 +250,18 @@ function CardEditor({
   return (
     <OverlayPortal onDismiss={onClose}>
       <SheetFrame label={t('editCard')} closeLabel={t('close')}>
-        <form
-          className={styles.dialogForm}
-          onSubmit={(event) => submitCard(event, onSave, onClose)}
-        >
-          <header className={styles.dialogHead}>
+        <form className={styles.cardEditor} onSubmit={(event) => submitCard(event, onSave, onClose)}>
+          <header>
             <h2>{t('editCard')}</h2>
           </header>
-          <input name="title" aria-label={t('cardTitle')} defaultValue={card.title} required />
-          <input name="company" aria-label={t('company')} defaultValue={card.company} />
-          <input
-            name="amount"
-            aria-label={t('amount')}
-            defaultValue={card.amount}
-            inputMode="numeric"
-          />
-          <input
-            name="source"
-            aria-label={t('source')}
-            defaultValue={card.source}
-            placeholder={t('source')}
-          />
-          <input
-            name="qualification"
-            aria-label={t('qualification')}
-            defaultValue={card.qualification}
-            placeholder={t('qualification')}
-          />
-          <input
-            name="nextAction"
-            aria-label={t('nextAction')}
-            defaultValue={card.nextAction}
-            placeholder={t('nextAction')}
-          />
-          <input
-            name="lostReason"
-            aria-label={t('lostReason')}
-            defaultValue={card.lostReason}
-            placeholder={t('lostReason')}
-          />
+          <div className={styles.cardEditorBody}>
+          <TextField name="title" label={t('cardTitle')} defaultValue={card.title} required />
+          <TextField name="company" label={t('company')} defaultValue={card.company} />
+          <TextField name="amount" label={t('amount')} defaultValue={String(card.amount)} inputMode="numeric" />
+          <TextField name="source" label={t('source')} defaultValue={card.source} />
+          <TextField name="qualification" label={t('qualification')} defaultValue={card.qualification} />
+          <TextField name="nextAction" label={t('nextAction')} defaultValue={card.nextAction} />
+          <TextField name="lostReason" label={t('lostReason')} defaultValue={card.lostReason} />
           <Select
             name="outcome"
             label={t('outcome')}
@@ -327,15 +300,18 @@ function CardEditor({
             defaultValue={card.ownerUserId ?? ''}
             options={ownerOptions(t('clearOwner'), t('assignToMe'), userId)}
           />
-          <button type="submit" className={styles.add}>
-            {t('save')}
-          </button>
           {kind === 'lead' && card.outcome !== 'CONVERTED' ? (
-            <button type="button" className={styles.add} onClick={onConvert}>
+            <button type="button" className={styles.convert} onClick={onConvert}>
               {t('convert')}
             </button>
           ) : null}
-          <SheetCancel label={t('cancel')} />
+          </div>
+          <footer className={styles.cardEditorFoot}>
+            <SheetCancel label={t('cancel')} />
+            <button type="submit" className={styles.sheetSave}>
+              {t('save')}
+            </button>
+          </footer>
         </form>
       </SheetFrame>
     </OverlayPortal>
@@ -407,10 +383,38 @@ function FlagIcon() {
   );
 }
 
+function TextField({
+  name,
+  label,
+  defaultValue,
+  required = false,
+  inputMode,
+}: {
+  name: string;
+  label: string;
+  defaultValue: string;
+  required?: boolean;
+  inputMode?: 'numeric';
+}) {
+  return (
+    <label>
+      {label}
+      <input
+        name={name}
+        aria-label={label}
+        defaultValue={defaultValue}
+        placeholder={label}
+        required={required}
+        inputMode={inputMode}
+      />
+    </label>
+  );
+}
+
 function SheetCancel({ label }: { label: string }) {
   const dismiss = useSheetDismiss(() => undefined);
   return (
-    <button type="button" className={styles.add} onClick={dismiss}>
+    <button type="button" className={styles.sheetCancel} onClick={dismiss}>
       {label}
     </button>
   );

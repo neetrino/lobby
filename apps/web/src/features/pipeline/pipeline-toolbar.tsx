@@ -5,6 +5,7 @@ import { useState, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { ColorField } from '../../ui/color-picker/color-picker';
+import { ConfirmDialog } from '../../ui/confirm/confirm-dialog';
 import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import { SearchFilters } from '../../ui/search-filters/search-filters';
@@ -173,37 +174,72 @@ function StatusEditor({
   onDelete: (statusId: string) => void;
 }) {
   const t = useTranslations('pipeline');
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const pending = statuses.find((status) => status.id === pendingId);
   return (
     <div className={styles.statusEditor}>
       <header className={styles.statusHead}>
         <h2>{t('statuses')}</h2>
       </header>
       {statuses.map((status) => (
-        <div key={status.id} className={styles.statusRow}>
-          <input
-            aria-label={t('statusName')}
-            defaultValue={status.name}
-            key={status.name}
-            maxLength={40}
-            onBlur={(event) => commitStatusName(event.currentTarget.value, status, onRename)}
-          />
-          <ColorField
-            label={t('statusColor')}
-            hueLabel={t('statusHue')}
-            value={status.color}
-            onChange={(hex) => commitStatusColor(hex, status, onRecolor)}
-          />
-          <button
-            type="button"
-            className={styles.iconButton}
-            aria-label={t('deleteStatus')}
-            onClick={() => onDelete(status.id)}
-          >
-            <X aria-hidden="true" strokeWidth={2} />
-          </button>
-        </div>
+        <StatusRow
+          key={status.id}
+          status={status}
+          onRename={onRename}
+          onRecolor={onRecolor}
+          onAskDelete={() => setPendingId(status.id)}
+        />
       ))}
       <AddStatusForm onCreate={onCreate} />
+      {pending === undefined ? null : (
+        <ConfirmDialog
+          title={t('deleteStatus')}
+          message={t('confirmStatus', { name: pending.name })}
+          confirmLabel={t('deleteStatus')}
+          cancelLabel={t('cancel')}
+          onConfirm={() => onDelete(pending.id)}
+          onClose={() => setPendingId(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function StatusRow({
+  status,
+  onRename,
+  onRecolor,
+  onAskDelete,
+}: {
+  status: PipelineStatus;
+  onRename: (statusId: string, name: string) => void;
+  onRecolor: (statusId: string, color: string) => void;
+  onAskDelete: () => void;
+}) {
+  const t = useTranslations('pipeline');
+  return (
+    <div className={styles.statusRow}>
+      <input
+        aria-label={t('statusName')}
+        defaultValue={status.name}
+        key={status.name}
+        maxLength={40}
+        onBlur={(event) => commitStatusName(event.currentTarget.value, status, onRename)}
+      />
+      <ColorField
+        label={t('statusColor')}
+        hueLabel={t('statusHue')}
+        value={status.color}
+        onChange={(hex) => commitStatusColor(hex, status, onRecolor)}
+      />
+      <button
+        type="button"
+        className={styles.iconButton}
+        aria-label={t('deleteStatus')}
+        onClick={onAskDelete}
+      >
+        <X aria-hidden="true" strokeWidth={2} />
+      </button>
     </div>
   );
 }

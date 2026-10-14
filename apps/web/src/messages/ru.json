@@ -370,6 +370,7 @@
     "clearUrgent": "Снять срочность",
     "confirmDelete": "Удалить эту карточку?",
     "confirmColumn": "Удалить этот столбец?",
+    "confirmStatus": "Удалить статус «{name}»?",
     "cancel": "Отмена",
     "earlier": "Выше",
     "later": "Ниже",

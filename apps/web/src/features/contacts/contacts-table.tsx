@@ -5,7 +5,6 @@ import { useEffect, useRef, type ReactElement } from 'react';
 
 import type { Contact, ContactListFilters, SessionPrincipal } from './contact';
 import { useContactsListUi } from './contacts-list-ui';
-import { SelectionBar } from './contacts-selection-bar';
 import { ContactPager } from './contacts-table-pager';
 import { ContactRow } from './contacts-table-row';
 import glass from '../../ui/glass/glass.module.css';
@@ -53,14 +52,6 @@ export function ContactsTable({
 
   return (
     <section className={`${styles.tableCard} ${glass.panel} ${glass.soft}`} aria-busy={pending}>
-      <SelectionBar
-        selected={selection.picked}
-        pageCount={rows.length}
-        session={session}
-        pending={pending}
-        onAsk={onAskLifecycle}
-        onClear={selection.clear}
-      />
       <ContactGrid
         rows={rows}
         locale={locale}

@@ -370,6 +370,7 @@
     "clearUrgent": "Հանել շտապը",
     "confirmDelete": "Ջնջե՞լ այս քարտը։",
     "confirmColumn": "Ջնջե՞լ այս սյունակը։",
+    "confirmStatus": "Ջնջե՞լ «{name}» ստատուսը։",
     "cancel": "Չեղարկել",
     "earlier": "Ավելի վեր",
     "later": "Ավելի վար",

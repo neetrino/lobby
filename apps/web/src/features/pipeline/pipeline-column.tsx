@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useState, type DragEvent, type PointerEvent as ReactPointerEvent } from 'react';
 
+import { ConfirmDialog } from '../../ui/confirm/confirm-dialog';
 import glass from '../../ui/glass/glass.module.css';
 import { PipelineCardView } from './pipeline-card';
 import { NewCardSheet } from './pipeline-new-card';
@@ -92,15 +93,14 @@ export function PipelineColumnView({
         ) : null}
       </header>
       {confirming ? (
-        <div className={styles.confirm}>
-          <p>{t('confirmColumn')}</p>
-          <button type="button" className={styles.danger} onClick={onDelete}>
-            {t('deleteColumn')}
-          </button>
-          <button type="button" className={styles.add} onClick={() => setConfirming(false)}>
-            {t('cancel')}
-          </button>
-        </div>
+        <ConfirmDialog
+          title={t('deleteColumn')}
+          message={t('confirmColumn')}
+          confirmLabel={t('deleteColumn')}
+          cancelLabel={t('cancel')}
+          onConfirm={onDelete}
+          onClose={() => setConfirming(false)}
+        />
       ) : null}
       <p className={styles.sum}>
         {formatAmount(sum, locale)} {amountLabel}

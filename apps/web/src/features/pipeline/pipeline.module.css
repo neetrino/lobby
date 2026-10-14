@@ -504,39 +504,94 @@
   gap: 4px;
 }
 
-.confirm {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-
-.danger {
-  color: #b42318;
-  border-color: #fda29b;
-}
-
-.dialogForm {
+.cardEditor {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 8px;
-  box-sizing: border-box;
+  min-height: 0;
+}
+
+.cardEditor header {
+  padding: 16px 76px 8px 24px;
+}
+
+.cardEditor header h2 {
+  margin: 0;
+  color: #1c1b2e;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.cardEditorBody {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 12px;
   min-height: 0;
   overflow: auto;
-  padding: 28px 20px 20px;
-  background: transparent;
+  padding: 12px 24px 16px;
+}
+
+.cardEditorBody label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #667085;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.cardEditorBody label input {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--control-fill);
   color: inherit;
+  font: inherit;
 }
 
-.dialogHead {
-  padding: 4px 72px 16px 0;
+.cardEditorFoot {
+  display: flex;
+  flex: none;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 24px 20px;
 }
 
-.dialogHead h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
+.sheetCancel,
+.sheetSave,
+.convert {
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.sheetCancel {
+  background: #1c2410;
+  color: #fff;
+}
+
+.sheetSave {
+  background: var(--shell-olive);
+  color: #1c2410;
+}
+
+.sheetSave:hover {
+  background: #8aaf4c;
+}
+
+.convert {
+  align-self: flex-start;
+  background: transparent;
+  color: var(--control-ink);
 }
 
 .field {
