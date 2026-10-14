@@ -583,48 +583,6 @@ button:disabled {
   border-radius: 0 0 22px 22px;
 }
 
-.segments {
-  display: flex;
-  padding: 2px;
-  border-radius: 8px;
-  background: var(--low);
-}
-
-.segment,
-.segmentActive {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  padding: 0 10px;
-}
-
-.segmentActive {
-  background: var(--card);
-  color: var(--ink);
-  box-shadow: 0 1px 4px rgb(0 0 0 / 8%);
-}
-
-.segment svg,
-.segmentActive svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
 .tableCard[aria-busy='true'] {
   opacity: 0.72;
 }
@@ -1000,11 +958,6 @@ button:focus-visible {
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-
-.density {
-  display: inline-flex;
-  gap: 4px;
 }
 
 .menuWrap {

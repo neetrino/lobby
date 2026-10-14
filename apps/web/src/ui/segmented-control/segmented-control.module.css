@@ -1,0 +1,93 @@
+.track {
+  --segment-inset: 4px;
+  box-sizing: border-box;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 42px;
+  padding: var(--segment-inset);
+  gap: 2px;
+  border-radius: 999px;
+  background: #eef1f4;
+}
+
+.thumb {
+  position: absolute;
+  top: var(--segment-inset);
+  bottom: var(--segment-inset);
+  left: 0;
+  z-index: 0;
+  height: auto;
+  border-radius: 999px;
+  background: #1e2128;
+  pointer-events: none;
+}
+
+.ready {
+  transition:
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.off,
+.on {
+  position: relative;
+  z-index: 1;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  margin: 0;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #667085;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: color 280ms ease;
+}
+
+.on {
+  background: #1e2128;
+  color: #fff;
+}
+
+.ready ~ .on {
+  background: transparent;
+}
+
+.off svg,
+.on svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.off:hover {
+  background: #f3f5f8;
+}
+
+.off:focus-visible,
+.on:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ready,
+  .off,
+  .on {
+    transition: none;
+  }
+}

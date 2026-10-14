@@ -6,6 +6,7 @@ import { useState } from 'react';
 import type { DashboardBoard } from './dashboard-api';
 import styles from './dashboard-charts.module.css';
 import glass from '../../ui/glass/glass.module.css';
+import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import board from './dashboard.module.css';
 
 type Load = NonNullable<DashboardBoard['reservationLoad']>;
@@ -204,19 +205,12 @@ function ViewToggle({ view, onChange }: { view: View; onChange: (view: View) => 
   const t = useTranslations('dashboard');
   const views: View[] = ['today', 'tomorrow', 'week'];
   return (
-    <div className={styles.toggles} role="group" aria-label={t('charts.loadTitle')}>
-      {views.map((item) => (
-        <button
-          key={item}
-          type="button"
-          className={item === view ? styles.toggleOn : styles.toggle}
-          aria-pressed={item === view}
-          onClick={() => onChange(item)}
-        >
-          {t(`charts.${item}`)}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      label={t('charts.loadTitle')}
+      value={view}
+      options={views.map((item) => ({ value: item, label: t(`charts.${item}`) }))}
+      onChange={onChange}
+    />
   );
 }
 

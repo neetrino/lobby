@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import type { Contact, ContactListFilters, SessionPrincipal } from './contact';
 import { ColumnsMenu, DensitySwitch, ExportButton } from './contacts-toolbar-menus';
+import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import glass from '../../ui/glass/glass.module.css';
 import styles from './contacts.module.css';
 
@@ -143,24 +144,15 @@ function ArchiveSwitch({
 }): ReactElement {
   const t = useTranslations('contacts');
   return (
-    <div className={styles.segments} role="group" aria-label={t('status.active')}>
-      <button
-        type="button"
-        className={archived ? styles.segment : styles.segmentActive}
-        onClick={() => onChange(false)}
-      >
-        <PeopleIcon />
-        {t('active')}
-      </button>
-      <button
-        type="button"
-        className={archived ? styles.segmentActive : styles.segment}
-        onClick={() => onChange(true)}
-      >
-        <ArchiveIcon />
-        {t('archived')}
-      </button>
-    </div>
+    <SegmentedControl
+      label={t('status.active')}
+      value={archived ? 'archived' : 'active'}
+      options={[
+        { value: 'active', label: (<><PeopleIcon />{t('active')}</>) },
+        { value: 'archived', label: (<><ArchiveIcon />{t('archived')}</>) },
+      ]}
+      onChange={(value) => onChange(value === 'archived')}
+    />
   );
 }
 

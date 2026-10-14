@@ -7,43 +7,13 @@ import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 import { SignOutButton } from '../auth/sign-out-button';
 import type { SessionPrincipal } from '../contacts/contact';
 import { LanguageSwitch } from '../contacts/language-switch';
+import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import { formatWhen } from './dashboard-layout';
 import styles from './dashboard-toolbar.module.css';
 
 const RANGES = [7, 30, 90] as const;
 const SCOPES = ['all', 'mine'] as const;
 const FRESH_MS = 60_000;
-
-export function SegmentedControl<T extends string | number>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: ReadonlyArray<{ value: T; label: string }>;
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div className={styles.segment} role="group" aria-label={label}>
-      {options.map((option) => {
-        const selected = option.value === value;
-        return (
-          <button
-            key={String(option.value)}
-            type="button"
-            className={selected ? styles.segmentOn : styles.segmentOff}
-            aria-pressed={selected}
-            onClick={() => onChange(option.value)}
-          >
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 export function DashboardToolbar({
   range,

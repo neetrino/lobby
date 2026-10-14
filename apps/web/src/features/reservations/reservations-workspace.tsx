@@ -10,6 +10,7 @@ import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
 import { readTeamDirectory } from '../team/team-api';
 import glass from '../../ui/glass/glass.module.css';
+import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import {
   cancelReservation,
   createReservation,
@@ -432,13 +433,12 @@ function ViewSwitch({ view, onView }: { view: ViewName; onView: (view: ViewName)
   const t = useTranslations('reservations');
   const views = ['calendar', 'timeline', 'list'] as const;
   return (
-    <div className={styles.views} role="group" aria-label={t('views')}>
-      {views.map((name) => (
-        <button key={name} type="button" aria-pressed={view === name} onClick={() => onView(name)}>
-          {t(name)}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl
+      label={t('views')}
+      value={view}
+      options={views.map((name) => ({ value: name, label: t(name) }))}
+      onChange={onView}
+    />
   );
 }
 

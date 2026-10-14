@@ -87,7 +87,8 @@
 .drawerHead {
   display: flex;
   align-items: center;
-  min-height: 36px;
+  height: 42px;
+  margin-top: -3px;
   padding-right: 48px;
 }
 
@@ -127,6 +128,8 @@
   margin: 0;
   font-size: 18px;
   font-weight: 600;
+  line-height: 1;
+  transform: translateY(8px);
 }
 
 .widgetList {

@@ -10,8 +10,7 @@
   font-size: 13px;
 }
 
-.legend,
-.toggles {
+.legend {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -144,24 +143,6 @@
 .over {
   background: repeating-linear-gradient(-45deg, #d92d20, #d92d20 3px, #f97066 3px, #f97066 6px);
   color: var(--danger);
-}
-
-.toggle {
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--text-primary);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.toggleOn {
-  border-color: transparent;
-  background: var(--primary-soft);
-  color: var(--primary);
 }
 
 .meter {

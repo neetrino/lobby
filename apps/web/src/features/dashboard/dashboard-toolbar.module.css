@@ -28,19 +28,6 @@
   gap: 8px;
 }
 
-.segment {
-  display: inline-flex;
-  align-items: center;
-  height: 42px;
-  padding: 4px;
-  gap: 2px;
-  border: 0;
-  border-radius: 999px;
-  background: #eef1f4;
-}
-
-.segmentOff,
-.segmentOn,
 .ghost,
 .save,
 .userTrigger,
@@ -52,18 +39,6 @@
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-}
-
-.segmentOff,
-.segmentOn {
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
-}
-
-.segmentOn {
-  background: #1e2128;
-  color: #fff;
 }
 
 .ghost,
@@ -152,7 +127,6 @@
 }
 
 .menuAction:hover,
-.segmentOff:hover,
 .ghost:hover {
   background: #f3f5f8;
 }
@@ -162,8 +136,6 @@
   color: #fff;
 }
 
-.segmentOff:focus-visible,
-.segmentOn:focus-visible,
 .userTrigger:focus-visible,
 .menuAction:focus-visible,
 .ghost:focus-visible,
