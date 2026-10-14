@@ -469,9 +469,16 @@ function Filters(props: {
       label={t('search')}
       resetLabel={t('reset')}
       applyLabel={t('apply')}
+      columns={3}
       onReset={() => resetReservationFilters(setDraft, props.onStatus, props.onAssignee)}
       onApply={() => undefined}
     >
+      <FilterField label={t('from')}>
+        <DateField fit label={t('from')} value={props.fromDay} onChange={props.onFrom} />
+      </FilterField>
+      <FilterField label={t('to')}>
+        <DateField fit label={t('to')} value={props.toDay} onChange={props.onTo} />
+      </FilterField>
       <FilterField label={t('assignee')}>
         <FilterMenu
           field
@@ -483,12 +490,6 @@ function Filters(props: {
           ]}
           onChange={props.onAssignee}
         />
-      </FilterField>
-      <FilterField label={t('from')}>
-        <DateField label={t('from')} value={props.fromDay} onChange={props.onFrom} />
-      </FilterField>
-      <FilterField label={t('to')}>
-        <DateField label={t('to')} value={props.toDay} onChange={props.onTo} />
       </FilterField>
     </SearchFilters>
     <FilterMenu

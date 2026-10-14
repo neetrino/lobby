@@ -18,6 +18,7 @@ export function SearchFilters({
   applyLabel,
   onReset,
   onApply,
+  columns = 2,
   children,
 }: {
   value: string;
@@ -29,6 +30,7 @@ export function SearchFilters({
   applyLabel?: string;
   onReset?: () => void;
   onApply?: () => void;
+  columns?: 2 | 3;
   children?: ReactNode;
 }): ReactElement {
   const [open, setOpen] = useState(false);
@@ -60,6 +62,7 @@ export function SearchFilters({
           resetLabel={resetLabel ?? ''}
           applyLabel={applyLabel ?? ''}
           onReset={onReset ?? noop}
+          columns={columns}
           onApply={() => {
             onApply?.();
             setOpen(false);
@@ -132,6 +135,7 @@ function FilterPanel({
   applyLabel,
   onReset,
   onApply,
+  columns,
   children,
 }: {
   panelRef: RefObject<HTMLDivElement | null>;
@@ -141,13 +145,15 @@ function FilterPanel({
   applyLabel: string;
   onReset: () => void;
   onApply: () => void;
+  columns: 2 | 3;
   children: ReactNode;
 }): ReactElement | null {
   const box = useAnchoredBox(anchor, panelRef, { limit: 640, clip: false, contain: true });
+  const grid = columns === 3 ? `${styles.grid} ${styles.columns3}` : styles.grid;
   if (typeof document === 'undefined') return null;
   return createPortal(
-    <div ref={panelRef} id={panelId} className={styles.panel} role="region" style={panelStyle(box)}>
-      <div className={styles.grid}>{children}</div>
+    <div ref={panelRef} id={panelId} className={styles.panel} role="region" style={panelStyle(box, columns)}>
+      <div className={grid}>{children}</div>
       <div className={styles.actions}>
         <button type="button" className={styles.reset} onClick={onReset}>
           {resetLabel}
@@ -188,9 +194,10 @@ function useFilterDismiss(
   }, [close, open, panelRef, rootRef]);
 }
 
-function panelStyle(box: AnchoredBox): CSSProperties {
+function panelStyle(box: AnchoredBox, columns: 2 | 3): CSSProperties {
   const style = anchoredStyle(box, 'width');
-  const width = Math.min(Math.max(box.width, panelMinWidth), 760, window.innerWidth - 16);
+  const minWidth = columns === 3 ? 680 : panelMinWidth;
+  const width = Math.min(Math.max(box.width, minWidth), 760, window.innerWidth - 16);
   const left = Math.max(8, Math.min(box.left, window.innerWidth - width - 8));
   return { ...style, width, left };
 }

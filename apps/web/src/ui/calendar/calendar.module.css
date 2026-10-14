@@ -5,7 +5,9 @@
 }
 
 .fit {
-  width: auto;
+  width: max-content;
+  max-width: 100%;
+  align-self: flex-start;
 }
 
 .root .trigger {
@@ -28,8 +30,8 @@
 }
 
 .root.fit .trigger {
-  width: auto;
-  min-width: 148px;
+  width: max-content;
+  padding-right: 28px;
 }
 
 .root .trigger:hover,
