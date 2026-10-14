@@ -16,6 +16,7 @@ import { createPortal } from 'react-dom';
 
 import type { DashboardBoard } from './dashboard-api';
 import { widgetLabel } from './dashboard-layout';
+import chrome from '../../ui/side-sheet/side-sheet.module.css';
 import drawer from './dashboard-drawer.module.css';
 import styles from './dashboard-toolbar.module.css';
 
@@ -167,14 +168,14 @@ function DrawerForm({
     >
       <button
         type="button"
-        className={drawer.cornerClose}
+        className={chrome.cornerClose}
         onClick={onClose}
         aria-label={t('close')}
       >
         <X aria-hidden="true" />
       </button>
       <form
-        className={drawer.drawer}
+        className={`${chrome.notch} ${drawer.drawer}`}
         onSubmit={(event) => {
           event.preventDefault();
           onSave();

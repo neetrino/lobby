@@ -365,6 +365,7 @@
     "deleteCard": "Delete card",
     "resize": "Resize column",
     "editCard": "Edit card",
+    "close": "Close",
     "markUrgent": "Mark as urgent",
     "clearUrgent": "Clear urgent",
     "confirmDelete": "Delete this card?",

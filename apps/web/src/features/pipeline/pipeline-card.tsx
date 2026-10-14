@@ -6,6 +6,9 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { listContacts } from '../contacts/contacts-api';
 import type { Contact } from '../contacts/contact';
 import glass from '../../ui/glass/glass.module.css';
+import { useSheetDismiss } from '../../ui/overlay/sheet-dismiss';
+import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { OverlayPortal } from '../contacts/overlay-portal';
 import type { CardUpdate, PipelineBoard, PipelineCard, PipelineKindName } from './pipeline-api';
 import styles from './pipeline.module.css';
 import { PipelineChat } from './pipeline-chat';
@@ -247,90 +250,92 @@ function CardEditor({
   const t = useTranslations('pipeline');
   const contacts = useContacts();
   return (
-    <div className={styles.dialog} role="presentation" onClick={onClose}>
-      <form
-        className={styles.dialogForm}
-        onClick={(event) => event.stopPropagation()}
-        onSubmit={(event) => submitCard(event, onSave, onClose)}
-      >
-        <input name="title" aria-label={t('cardTitle')} defaultValue={card.title} required />
-        <input name="company" aria-label={t('company')} defaultValue={card.company} />
-        <input
-          name="amount"
-          aria-label={t('amount')}
-          defaultValue={card.amount}
-          inputMode="numeric"
-        />
-        <input
-          name="source"
-          aria-label={t('source')}
-          defaultValue={card.source}
-          placeholder={t('source')}
-        />
-        <input
-          name="qualification"
-          aria-label={t('qualification')}
-          defaultValue={card.qualification}
-          placeholder={t('qualification')}
-        />
-        <input
-          name="nextAction"
-          aria-label={t('nextAction')}
-          defaultValue={card.nextAction}
-          placeholder={t('nextAction')}
-        />
-        <input
-          name="lostReason"
-          aria-label={t('lostReason')}
-          defaultValue={card.lostReason}
-          placeholder={t('lostReason')}
-        />
-        <select name="outcome" aria-label={t('outcome')} defaultValue={card.outcome}>
-          {OUTCOMES.map((outcome) => (
-            <option key={outcome} value={outcome}>
-              {t(outcomeLabel(outcome))}
-            </option>
-          ))}
-        </select>
-        <input
-          name="expectedCloseOn"
-          aria-label={t('expectedClose')}
-          type="date"
-          defaultValue={card.expectedCloseOn ?? ''}
-        />
-        <select name="contactId" aria-label={t('contact')} defaultValue={card.contactId ?? ''}>
-          <option value="">{t('noContact')}</option>
-          {contacts.map((contact) => (
-            <option key={contact.id} value={contact.id}>
-              {contact.name}
-            </option>
-          ))}
-        </select>
-        <select name="statusId" aria-label={t('status')} defaultValue={card.statusId ?? ''}>
-          <option value="">{t('noStatus')}</option>
-          {statuses.map((status) => (
-            <option key={status.id} value={status.id}>
-              {status.name}
-            </option>
-          ))}
-        </select>
-        <select name="ownerUserId" aria-label={t('owner')} defaultValue={card.ownerUserId ?? ''}>
-          <option value="">{t('clearOwner')}</option>
-          {userId === null ? null : <option value={userId}>{t('assignToMe')}</option>}
-        </select>
-        <button type="submit" className={styles.add}>
-          {t('save')}
-        </button>
-        {kind === 'lead' && card.outcome !== 'CONVERTED' ? (
-          <button type="button" className={styles.add} onClick={onConvert}>
-            {t('convert')}
+    <OverlayPortal onDismiss={onClose}>
+      <SheetFrame label={t('editCard')} closeLabel={t('close')}>
+        <form
+          className={styles.dialogForm}
+          onSubmit={(event) => submitCard(event, onSave, onClose)}
+        >
+          <header className={styles.dialogHead}>
+            <h2>{t('editCard')}</h2>
+          </header>
+          <input name="title" aria-label={t('cardTitle')} defaultValue={card.title} required />
+          <input name="company" aria-label={t('company')} defaultValue={card.company} />
+          <input
+            name="amount"
+            aria-label={t('amount')}
+            defaultValue={card.amount}
+            inputMode="numeric"
+          />
+          <input
+            name="source"
+            aria-label={t('source')}
+            defaultValue={card.source}
+            placeholder={t('source')}
+          />
+          <input
+            name="qualification"
+            aria-label={t('qualification')}
+            defaultValue={card.qualification}
+            placeholder={t('qualification')}
+          />
+          <input
+            name="nextAction"
+            aria-label={t('nextAction')}
+            defaultValue={card.nextAction}
+            placeholder={t('nextAction')}
+          />
+          <input
+            name="lostReason"
+            aria-label={t('lostReason')}
+            defaultValue={card.lostReason}
+            placeholder={t('lostReason')}
+          />
+          <select name="outcome" aria-label={t('outcome')} defaultValue={card.outcome}>
+            {OUTCOMES.map((outcome) => (
+              <option key={outcome} value={outcome}>
+                {t(outcomeLabel(outcome))}
+              </option>
+            ))}
+          </select>
+          <input
+            name="expectedCloseOn"
+            aria-label={t('expectedClose')}
+            type="date"
+            defaultValue={card.expectedCloseOn ?? ''}
+          />
+          <select name="contactId" aria-label={t('contact')} defaultValue={card.contactId ?? ''}>
+            <option value="">{t('noContact')}</option>
+            {contacts.map((contact) => (
+              <option key={contact.id} value={contact.id}>
+                {contact.name}
+              </option>
+            ))}
+          </select>
+          <select name="statusId" aria-label={t('status')} defaultValue={card.statusId ?? ''}>
+            <option value="">{t('noStatus')}</option>
+            {statuses.map((status) => (
+              <option key={status.id} value={status.id}>
+                {status.name}
+              </option>
+            ))}
+          </select>
+          <select name="ownerUserId" aria-label={t('owner')} defaultValue={card.ownerUserId ?? ''}>
+            <option value="">{t('clearOwner')}</option>
+            {userId === null ? null : <option value={userId}>{t('assignToMe')}</option>}
+          </select>
+          <button type="submit" className={styles.add}>
+            {t('save')}
           </button>
-        ) : null}
-        <button type="button" className={styles.add} onClick={onClose}>
-          {t('cancel')}
-        </button>
-      </form>
-    </div>
+          {kind === 'lead' && card.outcome !== 'CONVERTED' ? (
+            <button type="button" className={styles.add} onClick={onConvert}>
+              {t('convert')}
+            </button>
+          ) : null}
+          <SheetCancel label={t('cancel')} />
+        </form>
+      </SheetFrame>
+    </OverlayPortal>
   );
 }
 
@@ -396,6 +401,15 @@ function FlagIcon() {
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M6 3v18M6 4h11l-2.2 4L17 12H6" />
     </svg>
+  );
+}
+
+function SheetCancel({ label }: { label: string }) {
+  const dismiss = useSheetDismiss(() => undefined);
+  return (
+    <button type="button" className={styles.add} onClick={dismiss}>
+      {label}
+    </button>
   );
 }
 

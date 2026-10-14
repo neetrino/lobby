@@ -11,6 +11,8 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 
+import { SheetDismissProvider } from '../../ui/overlay/sheet-dismiss';
+import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { isTopLayer, pushLayer, removeLayer, trapTab } from './portal-layer';
 import styles from './overlay-portal.module.css';
 
@@ -111,7 +113,7 @@ export function OverlayPortal({
       onAnimationEnd={finishClose}
       onClick={close}
     >
-      {children}
+      <SheetDismissProvider dismiss={close}>{children}</SheetDismissProvider>
     </div>,
     document.body,
   );
@@ -121,11 +123,13 @@ export function OverlayPortal({
 export function EditorOverlay({
   portal,
   label,
+  closeLabel,
   onDismiss,
   children,
 }: {
   portal: boolean;
   label: string;
+  closeLabel: string;
   onDismiss?: () => void;
   children: ReactNode;
 }): ReactNode {
@@ -137,15 +141,9 @@ export function EditorOverlay({
   }
   return (
     <OverlayPortal onDismiss={onDismiss}>
-      <div
-        className={styles.editorFrame}
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
-        onClick={(event) => event.stopPropagation()}
-      >
+      <SheetFrame label={label} closeLabel={closeLabel}>
         {children}
-      </div>
+      </SheetFrame>
     </OverlayPortal>
   );
 }

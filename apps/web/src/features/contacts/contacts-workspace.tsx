@@ -205,7 +205,10 @@ export function ContactsWorkspace() {
               )}
               <EditorOverlay
                 portal={editor.placement === 'portal' && editor.mode !== 'closed'}
-                label={editor.contact?.name ?? t('edit')}
+                label={
+                  editor.mode === 'create' ? t('createTitle') : (editor.contact?.name ?? t('edit'))
+                }
+                closeLabel={t('close')}
                 onDismiss={editor.pending ? undefined : editor.close}
               >
                 {editor.mode === 'closed' ? null : (

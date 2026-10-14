@@ -122,7 +122,8 @@ describe('pipeline board controls', () => {
     renderCard({});
     fireEvent.click(screen.getByRole('button', { name: 'Open card chat' }));
     const dialog = await screen.findByRole('dialog', { name: 'Chat for Ada' });
-    expect(dialog.parentElement).toBe(document.body);
+    expect(dialog.closest('article')).toBeNull();
+    expect(dialog.parentElement?.parentElement).toBe(document.body);
   });
 
   it('converts a lead and reorders with the buttons and a drop', () => {

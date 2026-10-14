@@ -370,7 +370,9 @@
   margin: auto 0 0;
   padding: 12px 0 0;
   border-top: 0;
-  transition: min-height 280ms ease, padding 280ms ease;
+  transition:
+    min-height 280ms ease,
+    padding 280ms ease;
 }
 
 .sidebarWide .account {
@@ -496,7 +498,10 @@
 }
 
 .avatar {
-  transition: width 280ms ease, height 280ms ease, transform 280ms ease;
+  transition:
+    width 280ms ease,
+    height 280ms ease,
+    transform 280ms ease;
 }
 
 .notifications {
@@ -1279,6 +1284,14 @@ button:focus-visible {
   max-width: none;
   padding: 0;
   scroll-margin-top: 80px;
+}
+
+.editorSheet {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
 }
 
 .editor h2 {

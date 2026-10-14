@@ -50,7 +50,7 @@ export function useContactEditor(reload: () => void): {
   const [warnings, setWarnings] = useState<ContactWarning[]>([]);
 
   function openCreate(): void {
-    setPlacement('inline');
+    setPlacement('portal');
     setMode('create');
     setContact(null);
     setDraft(EMPTY_DRAFT);

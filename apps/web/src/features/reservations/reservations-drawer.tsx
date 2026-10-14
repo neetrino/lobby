@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 
+import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import {
   allowedActions,
@@ -50,87 +51,88 @@ export function ReservationDrawer({
   const locale = useLocale();
   const [confirming, setConfirming] = useState(false);
   return (
-    <aside className={styles.drawer} role="dialog" aria-label={t('details')}>
-      <header className={styles.drawerHead}>
-        <div>
-          <h2>{detail.customerName}</h2>
-          <StatusBadge status={detail.status} />
-        </div>
-        <button type="button" className={styles.textButton} onClick={onClose}>
-          {t('close')}
-        </button>
-      </header>
-      <div className={styles.drawerBody}>
-        <FactSection title={t('sections.guest')}>
-          <Fact label={t('name')} value={detail.customerName} />
-          <Fact label={t('phone')} value={detail.customerPhone ?? '—'} />
-          <Fact label={t('email')} value={detail.customerEmail ?? '—'} />
-          <Fact label={t('note')} value={detail.customerNote ?? '—'} />
-        </FactSection>
-        <FactSection title={t('sections.when')}>
-          <Fact label={t('starts')} value={formatWhen(detail.startsAt, locale)} />
-          <Fact label={t('ends')} value={formatWhen(detail.endsAt, locale)} />
-          <Fact label={t('duration')} value={t('minutes', { count: detail.durationMinutes })} />
-        </FactSection>
-        <FactSection title={t('sections.seating')}>
-          <Fact label={t('location')} value={venueName} />
-          <Fact label={t('table')} value={tableName} />
-          <Fact label={t('party')} value={String(detail.guestCount)} />
-        </FactSection>
-        <FactSection title={t('sections.people')}>
-          <Fact label={t('contact')} value={contactName} />
-          <Fact label={t('assignee')} value={assigneeName} />
-        </FactSection>
-        <section className={styles.section}>
-          <h3>{t('source')}</h3>
-          <p className={styles.source}>{sourceLabel(t, detail.source)}</p>
-        </section>
-        <section className={styles.section}>
-          <h3>{t('history')}</h3>
-          {history.length === 0 ? (
-            <p className={styles.muted}>{t('historyEmpty')}</p>
-          ) : (
-            <ol className={styles.history}>
-              {history.map((item) => (
-                <li key={item.id}>
-                  <StatusBadge status={item.toStatus} />
-                  <div>
-                    <span>{formatTime(item.createdAt, locale)}</span>
-                    {item.changedByName === null ? null : (
-                      <span>{t('by', { name: item.changedByName })}</span>
-                    )}
-                    {item.reason === null ? null : <small>{item.reason}</small>}
-                  </div>
-                </li>
-              ))}
-            </ol>
-          )}
-        </section>
-        {error === null ? null : (
-          <p className={styles.error} role="alert">
-            {error}
-          </p>
-        )}
-      </div>
-      <ReservationActions
-        status={detail.status}
-        canUpdate={canUpdate}
-        pending={pending}
-        onEdit={onEdit}
-        onCancel={() => setConfirming(true)}
-        onTransition={onTransition}
-      />
-      {confirming ? (
-        <CancelDialog
-          pending={pending}
-          onClose={() => setConfirming(false)}
-          onConfirm={(reason) => {
-            setConfirming(false);
-            onCancel(reason);
-          }}
-        />
-      ) : null}
-    </aside>
+    <OverlayPortal onDismiss={onClose}>
+      <SheetFrame label={t('details')} closeLabel={t('close')}>
+        <aside className={styles.drawer}>
+          <header className={styles.drawerHead}>
+            <div>
+              <h2>{detail.customerName}</h2>
+              <StatusBadge status={detail.status} />
+            </div>
+          </header>
+          <div className={styles.drawerBody}>
+            <FactSection title={t('sections.guest')}>
+              <Fact label={t('name')} value={detail.customerName} />
+              <Fact label={t('phone')} value={detail.customerPhone ?? '—'} />
+              <Fact label={t('email')} value={detail.customerEmail ?? '—'} />
+              <Fact label={t('note')} value={detail.customerNote ?? '—'} />
+            </FactSection>
+            <FactSection title={t('sections.when')}>
+              <Fact label={t('starts')} value={formatWhen(detail.startsAt, locale)} />
+              <Fact label={t('ends')} value={formatWhen(detail.endsAt, locale)} />
+              <Fact label={t('duration')} value={t('minutes', { count: detail.durationMinutes })} />
+            </FactSection>
+            <FactSection title={t('sections.seating')}>
+              <Fact label={t('location')} value={venueName} />
+              <Fact label={t('table')} value={tableName} />
+              <Fact label={t('party')} value={String(detail.guestCount)} />
+            </FactSection>
+            <FactSection title={t('sections.people')}>
+              <Fact label={t('contact')} value={contactName} />
+              <Fact label={t('assignee')} value={assigneeName} />
+            </FactSection>
+            <section className={styles.section}>
+              <h3>{t('source')}</h3>
+              <p className={styles.source}>{sourceLabel(t, detail.source)}</p>
+            </section>
+            <section className={styles.section}>
+              <h3>{t('history')}</h3>
+              {history.length === 0 ? (
+                <p className={styles.muted}>{t('historyEmpty')}</p>
+              ) : (
+                <ol className={styles.history}>
+                  {history.map((item) => (
+                    <li key={item.id}>
+                      <StatusBadge status={item.toStatus} />
+                      <div>
+                        <span>{formatTime(item.createdAt, locale)}</span>
+                        {item.changedByName === null ? null : (
+                          <span>{t('by', { name: item.changedByName })}</span>
+                        )}
+                        {item.reason === null ? null : <small>{item.reason}</small>}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
+            {error === null ? null : (
+              <p className={styles.error} role="alert">
+                {error}
+              </p>
+            )}
+          </div>
+          <ReservationActions
+            status={detail.status}
+            canUpdate={canUpdate}
+            pending={pending}
+            onEdit={onEdit}
+            onCancel={() => setConfirming(true)}
+            onTransition={onTransition}
+          />
+          {confirming ? (
+            <CancelDialog
+              pending={pending}
+              onClose={() => setConfirming(false)}
+              onConfirm={(reason) => {
+                setConfirming(false);
+                onCancel(reason);
+              }}
+            />
+          ) : null}
+        </aside>
+      </SheetFrame>
+    </OverlayPortal>
   );
 }
 

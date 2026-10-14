@@ -3,7 +3,9 @@
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
+
+import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { OverlayPortal } from '../contacts/overlay-portal';
 
 import { addCardNote, readCardNotes, updateCardNote, type PipelineKindName } from './pipeline-api';
 import styles from './pipeline.module.css';
@@ -51,15 +53,6 @@ export function PipelineNotes({
     return () => controller.abort();
   }, [cardId, kind, open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [open]);
-
   async function saveNote(): Promise<void> {
     const body = draft.trim();
     if (body === '' || body === savedDraft || saving) return;
@@ -100,13 +93,10 @@ export function PipelineNotes({
           <span className={styles.noteBadge}>{count > 99 ? '99+' : count}</span>
         )}
       </button>
-      {open
-        ? createPortal(
-            <section
-              className={styles.stickyNotePanel}
-              role="dialog"
-              aria-label={t('notesTitle', { title: cardTitle })}
-            >
+      {open ? (
+        <OverlayPortal onDismiss={() => setOpen(false)}>
+          <SheetFrame label={t('notesTitle', { title: cardTitle })} closeLabel={t('closeNotes')}>
+            <section className={styles.stickyNotePanel}>
               <header className={styles.chatHeader}>
                 <Image
                   src="/pipeline-note.png"
@@ -119,14 +109,6 @@ export function PipelineNotes({
                   <strong>{t('notes')}</strong>
                   <small>{cardTitle}</small>
                 </div>
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  aria-label={t('closeNotes')}
-                  onClick={() => setOpen(false)}
-                >
-                  ×
-                </button>
               </header>
               <div className={styles.stickyCanvas} aria-live="polite">
                 {loading ? <p className={styles.chatState}>{t('notesLoading')}</p> : null}
@@ -144,10 +126,10 @@ export function PipelineNotes({
               </div>
               {error ? <p className={styles.chatError}>{t('notesFailed')}</p> : null}
               {saving ? <p className={styles.stickySaving}>{t('notesSaving')}</p> : null}
-            </section>,
-            document.body,
-          )
-        : null}
+            </section>
+          </SheetFrame>
+        </OverlayPortal>
+      ) : null}
     </>
   );
 }

@@ -20,6 +20,19 @@ header.profile h2 {
   margin: 4px 0 0;
 }
 
+.profileInSheet {
+  justify-content: flex-start;
+  padding: 8px 76px 8px 18px;
+}
+
+.profileInSheet p {
+  margin-top: 8px;
+}
+
+.sheetInPanel {
+  margin-top: 0;
+}
+
 .profile .close {
   margin-left: auto;
   border: 0;

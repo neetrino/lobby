@@ -21,6 +21,7 @@ import {
   type DetailTab,
 } from './contact-detail-sections';
 import { duplicatePeers } from './duplicate-notices';
+import { useInSheet } from '../../ui/overlay/sheet-dismiss';
 import styles from './contacts.module.css';
 import tableStyles from './contacts-table.module.css';
 import panel from './contact-editor.module.css';
@@ -68,6 +69,8 @@ export function ContactEditor({
   const audit = useContactAudit(contact?.id ?? null, canReadAudit);
   const peers = contact === null ? [] : duplicatePeers(contact, rows);
   const tab = tabState.id === contact?.id ? tabState.tab : 'main';
+  const inSheet = useInSheet();
+  const detailsClass = inSheet ? `${panel.sheet} ${panel.sheetInPanel}` : panel.sheet;
 
   useEffect(() => {
     panelRef.current?.scrollIntoView({ block: 'start' });
@@ -86,7 +89,7 @@ export function ContactEditor({
   return (
     <section
       ref={panelRef}
-      className={styles.editor}
+      className={inSheet ? `${styles.editor} ${styles.editorSheet}` : styles.editor}
       aria-label={mode === 'create' ? t('createTitle') : contact?.name}
     >
       <EditorProfile mode={mode} contact={contact} draft={draft} onClose={onClose} />
@@ -110,7 +113,7 @@ export function ContactEditor({
           />
         )}
         {contact !== null && tab !== 'main' ? null : (
-          <div className={panel.sheet}>
+          <div className={detailsClass}>
             <div className={panel.sectionHead}>
               <h3>{t('columns.details')}</h3>
               <span className={panel.hint}>{t('normalized')}</span>
@@ -173,11 +176,15 @@ function EditorProfile({
   onClose: () => void;
 }) {
   const t = useTranslations('contacts');
+  const inSheet = useInSheet();
   const archived = contact?.archivedAt !== null && contact !== null;
   const title = mode === 'create' ? t('newContact') : (contact?.name ?? draft.name);
+  const header = inSheet
+    ? `${styles.editorHeader} ${panel.profile} ${panel.profileInSheet}`
+    : `${styles.editorHeader} ${panel.profile}`;
 
   return (
-    <header className={`${styles.editorHeader} ${panel.profile}`}>
+    <header className={header}>
       {contact === null ? null : (
         <ContactAvatar name={contact.name} type={contact.type} id={contact.id} />
       )}
@@ -193,9 +200,11 @@ function EditorProfile({
           )}
         </p>
       </div>
-      <button type="button" className={panel.close} onClick={onClose}>
-        {t('close')}
-      </button>
+      {inSheet ? null : (
+        <button type="button" className={panel.close} onClick={onClose}>
+          {t('close')}
+        </button>
+      )}
     </header>
   );
 }

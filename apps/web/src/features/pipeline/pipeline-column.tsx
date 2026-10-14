@@ -5,6 +5,7 @@ import { useState, type DragEvent, type PointerEvent as ReactPointerEvent } from
 
 import glass from '../../ui/glass/glass.module.css';
 import { PipelineCardView } from './pipeline-card';
+import { NewCardSheet } from './pipeline-new-card';
 import { clampColumnWidth } from './pipeline-width';
 import type { CardUpdate, PipelineBoard, PipelineColumn, PipelineKindName } from './pipeline-api';
 import styles from './pipeline.module.css';
@@ -145,38 +146,13 @@ function AddCard({
 }) {
   const t = useTranslations('pipeline');
   const [open, setOpen] = useState(false);
-  if (!open) {
-    return (
+  return (
+    <>
       <button type="button" className={styles.add} onClick={() => setOpen(true)}>
         {t('addCard')}
       </button>
-    );
-  }
-  return (
-    <form
-      className={styles.field}
-      onSubmit={(event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        const title = String(data.get('title') ?? '').trim();
-        if (title === '') {
-          return;
-        }
-        onCreate({
-          title,
-          company: String(data.get('company') ?? '').trim(),
-          amount: Math.max(0, Math.round(Number(data.get('amount') ?? 0) || 0)),
-        });
-        setOpen(false);
-      }}
-    >
-      <input name="title" aria-label={t('cardTitle')} placeholder={t('cardTitle')} required />
-      <input name="company" aria-label={t('company')} placeholder={t('company')} />
-      <input name="amount" aria-label={t('amount')} placeholder={t('amount')} inputMode="numeric" />
-      <button type="submit" className={styles.add}>
-        {t('save')}
-      </button>
-    </form>
+      {open ? <NewCardSheet onClose={() => setOpen(false)} onCreate={onCreate} /> : null}
+    </>
   );
 }
 

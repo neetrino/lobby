@@ -3,7 +3,9 @@
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { createPortal } from 'react-dom';
+
+import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { OverlayPortal } from '../contacts/overlay-portal';
 
 import {
   addCardMessage,
@@ -56,15 +58,6 @@ export function PipelineChat({
     if (open) end.current?.scrollIntoView({ block: 'end' });
   }, [messages, open]);
 
-  useEffect(() => {
-    if (!open) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('keydown', closeOnEscape);
-    return () => window.removeEventListener('keydown', closeOnEscape);
-  }, [open]);
-
   async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     const form = event.currentTarget;
@@ -110,13 +103,10 @@ export function PipelineChat({
           <span className={styles.chatBadge}>{count > 99 ? '99+' : count}</span>
         )}
       </button>
-      {open
-        ? createPortal(
-            <section
-              className={styles.chatPanel}
-              role="dialog"
-              aria-label={t('chatTitle', { title: cardTitle })}
-            >
+      {open ? (
+        <OverlayPortal onDismiss={() => setOpen(false)}>
+          <SheetFrame label={t('chatTitle', { title: cardTitle })} closeLabel={t('closeChat')}>
+            <section className={styles.chatPanel}>
               <header className={styles.chatHeader}>
                 <span>
                   <Image src="/pipeline-chat.avif" alt="" width={38} height={38} />
@@ -125,14 +115,6 @@ export function PipelineChat({
                   <strong>{t('chat')}</strong>
                   <small>{cardTitle}</small>
                 </div>
-                <button
-                  type="button"
-                  className={styles.iconButton}
-                  aria-label={t('closeChat')}
-                  onClick={() => setOpen(false)}
-                >
-                  ×
-                </button>
               </header>
               <div className={styles.chatMessages} aria-live="polite">
                 {loading ? <p className={styles.chatState}>{t('chatLoading')}</p> : null}
@@ -166,10 +148,10 @@ export function PipelineChat({
                   {sending ? t('chatSending') : t('chatSend')}
                 </button>
               </form>
-            </section>,
-            document.body,
-          )
-        : null}
+            </section>
+          </SheetFrame>
+        </OverlayPortal>
+      ) : null}
     </>
   );
 }
