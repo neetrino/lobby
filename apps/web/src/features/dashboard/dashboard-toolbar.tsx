@@ -1,6 +1,7 @@
 'use client';
 
 import type { DashboardRangeDays, DashboardScope } from '@lobby/contracts';
+import { SlidersHorizontal } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
@@ -41,9 +42,6 @@ export function DashboardToolbar({
         </p>
       </div>
       <div className={styles.toolbarControls}>
-        <button type="button" className={styles.ghost} onClick={onCustomize}>
-          {t('customize')}
-        </button>
         <SegmentedControl
           label={t('rangeLabel')}
           value={range}
@@ -59,6 +57,10 @@ export function DashboardToolbar({
           }))}
           onChange={onScope}
         />
+        <button type="button" className={styles.ghost} onClick={onCustomize}>
+          <SlidersHorizontal aria-hidden="true" />
+          {t('customize')}
+        </button>
       </div>
     </header>
   );
