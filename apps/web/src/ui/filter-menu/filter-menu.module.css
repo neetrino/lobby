@@ -2,6 +2,16 @@
   position: relative;
 }
 
+.field {
+  width: 100%;
+}
+
+.field .trigger {
+  justify-content: space-between;
+  width: 100%;
+  max-width: none;
+}
+
 .trigger {
   display: inline-flex;
   align-items: center;

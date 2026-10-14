@@ -1,6 +1,6 @@
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   min-height: 100%;
   padding: 28px 24px 24px 32px;
@@ -26,37 +26,6 @@
   display: flex;
   gap: 12px;
   align-items: center;
-}
-
-.search {
-  display: flex;
-  flex: 1;
-  gap: 8px;
-  align-items: center;
-  height: 44px;
-  padding: 0 14px;
-  border: 1px solid #e7e4f2;
-  border-radius: 12px;
-  background: white;
-}
-
-.search svg {
-  width: 18px;
-  height: 18px;
-  flex: none;
-  fill: none;
-  stroke: #9aa0b5;
-  stroke-width: 1.8;
-}
-
-.search input {
-  width: 100%;
-  border: 0;
-  outline: none;
-  background: transparent;
-  color: #1c1b2e;
-  font: inherit;
-  font-size: 14px;
 }
 
 .add,
@@ -255,16 +224,15 @@
 }
 
 .chatPanel {
-  position: sticky;
-  top: 16px;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
-  height: calc(100vh - 48px);
-  padding: 8px 8px 12px;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 8px 20px 16px;
 }
 
 .chatPanel h2 {
-  margin: 8px 0 16px;
+  margin: 4px 76px 12px 0;
   color: #1c1b2e;
   font-size: 22px;
   font-weight: 700;
@@ -279,6 +247,8 @@
 }
 
 .chatMessages {
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   padding-right: 4px;
 }
@@ -364,6 +334,7 @@
 
 .chatComposer {
   display: flex;
+  flex: none;
   gap: 8px;
   align-items: center;
   padding-top: 12px;
@@ -401,11 +372,6 @@
 @media (max-width: 1100px) {
   .workspace {
     grid-template-columns: 1fr;
-  }
-
-  .chatPanel {
-    position: static;
-    height: 520px;
   }
 
   .grid {

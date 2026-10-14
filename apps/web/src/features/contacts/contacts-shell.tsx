@@ -17,6 +17,7 @@ import { SignOutButton } from '../auth/sign-out-button';
 import { BrandLogo } from '../../ui/brand/brand-logo';
 import type { SessionPrincipal } from './contact';
 import { rememberSession } from './remembered-session';
+import { BranchSwitch } from './branch-switch';
 import { LanguageMenu } from './language-switch';
 import { SidebarNav, type ShellPage } from './sidebar-nav';
 import styles from './contacts.module.css';
@@ -77,6 +78,7 @@ export function ContactsShell({
           <BrandLogo variant="mark" className={styles.brandMark} alt="" />
           <BrandLogo variant="lockup" className={styles.brandLockup} alt="" onDark />
         </Link>
+        <BranchSwitch role={shown?.user.role} />
         <button
           type="button"
           className={styles.sidebarToggle}

@@ -223,10 +223,6 @@ function PipelineView({
         canConfigure={canConfigure}
         onQuery={setQuery}
         onStatus={setStatusId}
-        onClear={() => {
-          setQuery('');
-          setStatusId('');
-        }}
         onCreate={(draft) => void onChange(() => createStatus(board.kind, draft))}
         onRename={(id, name) => void onChange(() => updateStatus(board.kind, id, { name }))}
         onRecolor={(id, color) => void onChange(() => updateStatus(board.kind, id, { color }))}

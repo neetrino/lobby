@@ -5,9 +5,17 @@
   padding: 28px 32px 40px;
 }
 
+.pageFit {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding-bottom: 20px;
+}
+
 .header,
 .controls,
-.filters,
+.searchRow,
 .actions,
 .pager,
 .drawerHead {
@@ -40,7 +48,6 @@
   margin: 0;
 }
 
-.filters label,
 .form label {
   display: flex;
   flex-direction: column;
@@ -51,8 +58,6 @@
 
 .controls input,
 .controls select,
-.filters input,
-.filters select,
 .form input,
 .form select,
 .form textarea,
@@ -111,6 +116,44 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.pageFit .hours {
+  flex: 1;
+  align-self: flex-start;
+  width: min(680px, 100%);
+  min-height: 0;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.pageFit .hour {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-height: 0;
+}
+
+.pageFit .hour h3 {
+  flex: none;
+  width: 52px;
+  margin: 0;
+}
+
+.pageFit .hourCards {
+  flex: 1;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pageFit .card {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 10px;
 }
 
 .hour h3 {

@@ -208,7 +208,6 @@
   gap: 8px;
 }
 
-.search,
 .tools select,
 .statusRow input[type='text'],
 .statusRow input:not([type='color']) {
@@ -219,11 +218,6 @@
   background: var(--control-fill);
   color: inherit;
   font: inherit;
-}
-
-.search {
-  flex: 1;
-  min-width: 220px;
 }
 
 .statusEditor {

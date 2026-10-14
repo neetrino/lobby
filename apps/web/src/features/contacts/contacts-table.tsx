@@ -121,11 +121,8 @@ function ContactGrid({
   onAskLifecycle: (contacts: readonly Contact[], action: 'archive' | 'restore') => void;
 }): ReactElement {
   const t = useTranslations('contacts');
-  const ui = useContactsListUi();
-  const tableClass =
-    ui.density === 'comfortable' ? `${styles.table} ${styles.comfortable}` : styles.table;
   return (
-    <table className={tableClass}>
+    <table className={styles.table}>
       <caption className={styles.srOnly}>{t('title')}</caption>
       <ContactHead allPicked={allPicked} somePicked={somePicked} onTogglePage={onTogglePage} />
       <tbody>

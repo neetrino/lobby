@@ -12,6 +12,14 @@ export type AnchoredBox = {
   width: number;
   upward: boolean;
   maxHeight: number;
+  /** When false the panel is fully visible and must not be height-clipped. */
+  capped: boolean;
+};
+
+type AnchorOptions = {
+  limit?: number;
+  clip?: boolean;
+  contain?: boolean;
 };
 
 export type MenuPlacement = {
@@ -23,69 +31,119 @@ export type MenuPlacement = {
   boundsTop: number;
   boundsBottom: number;
   viewportWidth: number;
+  limit?: number;
+  contain?: boolean;
 };
 
 /** Places a portaled menu under its trigger, or above it when the open list would be clipped. */
 export function useAnchoredBox(
   anchor: RefObject<HTMLElement | null>,
   menu: RefObject<HTMLElement | null>,
+  options?: AnchorOptions,
 ): AnchoredBox {
+  const limit = options?.limit ?? menuCap;
+  const clip = options?.clip ?? true;
+  const contain = options?.contain ?? false;
   const [box, setBox] = useState<AnchoredBox>({
     top: 0,
     left: 0,
     width: 0,
     upward: false,
-    maxHeight: menuCap,
+    maxHeight: limit,
+    capped: !contain,
   });
   useLayoutEffect(() => {
     const place = (): void => {
       const node = anchor.current;
-      if (node === null) {
-        return;
+      if (node !== null) {
+        setBox(readBox(node, menu.current, limit, clip, contain));
       }
-      const rect = node.getBoundingClientRect();
-      const bounds = clipBounds(node);
-      const menuHeight = menu.current?.scrollHeight ?? menuCap;
-      setBox(
-        menuPlacement({
-          anchorTop: rect.top,
-          anchorBottom: rect.bottom,
-          anchorLeft: rect.left,
-          anchorWidth: rect.width,
-          menuHeight,
-          boundsTop: bounds.top,
-          boundsBottom: bounds.bottom,
-          viewportWidth: window.innerWidth,
-        }),
-      );
     };
     place();
+    const observed = menu.current;
+    const observer = new ResizeObserver(place);
+    if (observed !== null) {
+      observer.observe(observed);
+    }
     window.addEventListener('resize', place);
     window.addEventListener('scroll', place, true);
     return () => {
+      observer.disconnect();
       window.removeEventListener('resize', place);
       window.removeEventListener('scroll', place, true);
     };
-  }, [anchor, menu]);
+  }, [anchor, clip, contain, limit, menu]);
   return box;
+}
+
+function readBox(
+  anchor: HTMLElement,
+  menu: HTMLElement | null,
+  limit: number,
+  clip: boolean,
+  contain: boolean,
+): AnchoredBox {
+  const rect = anchor.getBoundingClientRect();
+  const bounds = clip ? clipBounds(anchor) : { top: edge, bottom: window.innerHeight - edge };
+  return menuPlacement({
+    anchorTop: rect.top,
+    anchorBottom: rect.bottom,
+    anchorLeft: rect.left,
+    anchorWidth: rect.width,
+    menuHeight: menu?.scrollHeight ?? limit,
+    boundsTop: bounds.top,
+    boundsBottom: bounds.bottom,
+    viewportWidth: window.innerWidth,
+    limit,
+    contain,
+  });
 }
 
 /** Opens downward when the list fits, and upward when the space below is smaller. */
 export function menuPlacement(input: MenuPlacement): AnchoredBox {
+  const limit = input.limit ?? menuCap;
+  const needed = Math.min(Math.max(input.menuHeight, 0), limit);
   const width = Math.max(input.anchorWidth, 160);
   const left = Math.max(edge, Math.min(input.anchorLeft, input.viewportWidth - width - edge));
+  if (input.contain === true) {
+    return containedBox(input, needed, left, width);
+  }
   const spaceBelow = Math.max(0, input.boundsBottom - input.anchorBottom - gap);
   const spaceAbove = Math.max(0, input.anchorTop - input.boundsTop - gap);
-  const needed = Math.min(Math.max(input.menuHeight, 0), menuCap);
   const upward = needed > spaceBelow && spaceAbove > spaceBelow;
-  const maxHeight = Math.max(36, Math.min(menuCap, upward ? spaceAbove : spaceBelow));
+  const maxHeight = Math.max(36, Math.min(limit, upward ? spaceAbove : spaceBelow));
   return {
     top: upward ? input.anchorTop - gap : input.anchorBottom + gap,
     left,
     width,
     upward,
     maxHeight,
+    capped: true,
   };
+}
+
+/** Keeps a tall panel fully on screen instead of clipping it to the menu cap. */
+function containedBox(
+  input: MenuPlacement,
+  needed: number,
+  left: number,
+  width: number,
+): AnchoredBox {
+  const available = Math.max(36, input.boundsBottom - input.boundsTop);
+  const shown = Math.min(needed, available);
+  const spaceBelow = input.boundsBottom - input.anchorBottom - gap;
+  const spaceAbove = input.anchorTop - input.boundsTop - gap;
+  let top = input.anchorBottom + gap;
+  if (shown > spaceBelow && spaceAbove >= spaceBelow) {
+    top = input.anchorTop - gap - shown;
+  }
+  if (top < input.boundsTop) {
+    top = input.boundsTop;
+  }
+  if (top + shown > input.boundsBottom) {
+    top = Math.max(input.boundsTop, input.boundsBottom - shown);
+  }
+  return { top, left, width, upward: false, maxHeight: shown, capped: shown < needed };
 }
 
 function clipBounds(anchor: HTMLElement): { top: number; bottom: number } {
@@ -113,7 +171,10 @@ export function anchoredStyle(box: AnchoredBox, size: 'width' | 'minWidth'): CSS
   const side = box.upward
     ? { top: 'auto', bottom: window.innerHeight - box.top }
     : { top: box.top, bottom: 'auto' };
-  return { ...side, left: box.left, maxHeight: box.maxHeight, [size]: box.width };
+  const clip = box.capped
+    ? { maxHeight: box.maxHeight, overflow: 'auto' as const }
+    : { overflow: 'visible' as const };
+  return { ...side, left: box.left, ...clip, [size]: box.width };
 }
 
 export function useMenuDismiss(

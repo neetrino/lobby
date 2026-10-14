@@ -1,25 +1,10 @@
-header.bar {
-  position: sticky;
-  top: 0;
-  z-index: 30;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  height: 72px;
-  padding: 0 28px;
-  border-bottom: 0;
-  background: transparent;
-}
-
 .headerSearch {
   position: relative;
   flex: 1 1 280px;
   max-width: 520px;
 }
 
-.headerSearch svg,
-.branch svg,
-.crumbs svg {
+.headerSearch svg {
   width: 18px;
   height: 18px;
   fill: none;
@@ -53,17 +38,11 @@ header.bar {
 .headerCreate:focus-visible,
 .segment:focus-visible,
 .segmentActive:focus-visible,
-.exportButton:focus-visible,
-.crumbs a:focus-visible {
+.exportButton:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
-.branch {
-  margin-left: auto;
-}
-
-.branch,
 .ghost {
   display: inline-flex;
   align-items: center;
@@ -145,43 +124,12 @@ header.bar {
   font-weight: 600;
 }
 
-.context,
 .titleLine,
 .titleActions,
 .segments {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.context {
-  justify-content: space-between;
-  padding: 16px 24px 0;
-}
-
-.crumbs {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #434655;
-  font-size: 12px;
-}
-
-.crumbs a {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  color: #434655;
-  text-decoration: none;
-}
-
-.crumbs a:hover {
-  color: #004ac6;
-}
-
-.crumbs strong {
-  color: #0b1c30;
-  font-weight: 600;
 }
 
 .titleCard {
@@ -315,7 +263,6 @@ header.bar {
 }
 
 @media (max-width: 900px) {
-  .bar,
   .titleActions {
     flex-wrap: wrap;
     height: auto;
@@ -323,7 +270,4 @@ header.bar {
     padding-bottom: 12px;
   }
 
-  .branch {
-    display: none;
-  }
 }

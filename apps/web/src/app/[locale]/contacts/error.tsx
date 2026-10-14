@@ -2,6 +2,9 @@
 
 import { useTranslations } from 'next-intl';
 
+import { AuthFrame } from '../../../features/auth/auth-frame';
+import styles from '../../../features/auth/auth.module.css';
+
 export default function ContactsError({
   reset,
 }: {
@@ -11,11 +14,12 @@ export default function ContactsError({
   const t = useTranslations('contacts');
 
   return (
-    <main>
-      <p role="alert">{t('errors.generic')}</p>
-      <button type="button" onClick={reset}>
-        {t('retry')}
-      </button>
-    </main>
+    <AuthFrame title={t('errors.title')} note={t('errors.generic')}>
+      <div className={styles.form}>
+        <button type="button" className={styles.submit} onClick={reset}>
+          {t('retry')}
+        </button>
+      </div>
+    </AuthFrame>
   );
 }

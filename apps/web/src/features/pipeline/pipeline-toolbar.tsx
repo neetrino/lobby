@@ -4,6 +4,7 @@ import { type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
+import { SearchFilters } from '../../ui/search-filters/search-filters';
 import type { PipelineStatus } from './pipeline-api';
 import styles from './pipeline.module.css';
 
@@ -14,7 +15,6 @@ export function PipelineToolbar({
   canConfigure,
   onQuery,
   onStatus,
-  onClear,
   onCreate,
   onRename,
   onRecolor,
@@ -26,7 +26,6 @@ export function PipelineToolbar({
   canConfigure: boolean;
   onQuery: (query: string) => void;
   onStatus: (statusId: string) => void;
-  onClear: () => void;
   onCreate: (draft: { name: string; color: string }) => void;
   onRename: (statusId: string, name: string) => void;
   onRecolor: (statusId: string, color: string) => void;
@@ -35,13 +34,11 @@ export function PipelineToolbar({
   const t = useTranslations('pipeline');
   return (
     <div className={styles.tools}>
-      <input
-        className={styles.search}
-        type="search"
-        aria-label={t('search')}
-        placeholder={t('search')}
+      <SearchFilters
         value={query}
-        onChange={(event) => onQuery(event.currentTarget.value)}
+        onChange={onQuery}
+        placeholder={t('search')}
+        label={t('search')}
       />
       <FilterMenu
         label={t('status')}
@@ -52,9 +49,6 @@ export function PipelineToolbar({
         ]}
         onChange={onStatus}
       />
-      <button type="button" className={styles.add} onClick={onClear}>
-        {t('clearFilters')}
-      </button>
       {canConfigure ? (
         <StatusEditor
           statuses={statuses}

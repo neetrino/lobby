@@ -52,7 +52,7 @@ export function CalendarPanel({
   locale,
   onChange,
 }: PanelProps): ReactElement | null {
-  const box = useAnchoredBox(anchor, menuRef);
+  const box = useAnchoredBox(anchor, menuRef, { limit: 640, clip: false, contain: true });
   useMenuDismiss(true, rootRef, menuRef, onClose);
   if (typeof document === 'undefined') {
     return null;

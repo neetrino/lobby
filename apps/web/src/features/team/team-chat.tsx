@@ -11,6 +11,9 @@ import {
 } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { OverlayPortal } from '../contacts/overlay-portal';
+
 import {
   readDirectMessages,
   sendDirectMessage,
@@ -26,8 +29,23 @@ import {
 } from './team-live';
 import styles from './team.module.css';
 
-export function TeamChat({ member, selfId }: { member: TeamMember | null; selfId: string | null }) {
-  return <TeamThread key={member?.id ?? 'none'} member={member} selfId={selfId} />;
+export function TeamChat({
+  member,
+  selfId,
+  onClose,
+}: {
+  member: TeamMember;
+  selfId: string | null;
+  onClose: () => void;
+}) {
+  const t = useTranslations('team');
+  return (
+    <OverlayPortal onDismiss={onClose}>
+      <SheetFrame label={t('chatTitle', { name: member.name })} closeLabel={t('close')}>
+        <TeamThread key={member.id} member={member} selfId={selfId} />
+      </SheetFrame>
+    </OverlayPortal>
+  );
 }
 
 function TeamThread({ member, selfId }: { member: TeamMember | null; selfId: string | null }) {

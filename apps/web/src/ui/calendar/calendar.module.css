@@ -90,7 +90,7 @@
   box-sizing: border-box;
   width: 292px;
   padding: 12px;
-  overflow: auto;
+  overflow: visible;
   border-radius: 15px;
   background: #fff;
   box-shadow: 0 16px 40px rgb(20 33 61 / 16%);

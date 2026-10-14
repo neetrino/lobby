@@ -94,50 +94,10 @@
 .violet {
   color: #7c3aed;
 }
-.filterPanel {
-  display: grid;
-  grid-template-columns:
-    minmax(220px, 2fr) repeat(3, minmax(130px, 1fr)) repeat(2, minmax(130px, 1fr))
-    auto auto;
-  gap: 10px;
-  align-items: end;
-  padding: 14px;
-  border: 1px solid rgb(255 255 255 / 85%);
-  border-radius: 18px;
-  background: rgb(255 255 255 / 62%);
-}
-.filterPanel label {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
-}
-.filterPanel input,
-.filterPanel select,
-.filterPanel button {
-  height: var(--control-height);
-  padding: 0 14px;
-  border: 0;
-  border-radius: var(--control-radius);
-  background: var(--control-fill);
-  color: inherit;
-  font: inherit;
-}
-.filterPanel .apply {
-  background: var(--shell-olive);
-  color: #1c2410;
-}
 .content {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
-  gap: 14px;
-  align-items: start;
+  display: block;
 }
-.tableCard,
-.detail,
-.emptyDetail {
+.tableCard {
   border: 1px solid rgb(255 255 255 / 85%);
   border-radius: 20px;
   background: rgb(255 255 255 / 72%);
@@ -221,8 +181,7 @@
   font-size: 13px;
   font-weight: 600;
 }
-.pager button,
-.detailHead button {
+.pager button {
   border: 1px solid #dce4f1;
   border-radius: 10px;
   background: #fff;
@@ -233,27 +192,21 @@
 .pager button:disabled {
   opacity: 0.4;
 }
-.detail,
-.emptyDetail {
-  position: sticky;
-  top: 20px;
-  padding: 20px;
-}
-.emptyDetail {
+.detail {
   display: flex;
-  min-height: 180px;
+  flex: 1;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  min-height: 0;
+  overflow: hidden;
 }
-.emptyDetail span {
-  margin-top: 7px;
-  color: #7b879b;
+.detailBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 4px 24px 24px;
 }
 .detailHead {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  padding: 16px 76px 8px 24px;
 }
 .detailHead span {
   color: #64748b;
@@ -331,16 +284,6 @@
   color: #b42318;
 }
 @media (max-width: 1180px) {
-  .filterPanel {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .content {
-    grid-template-columns: 1fr;
-  }
-  .detail,
-  .emptyDetail {
-    position: static;
-  }
   .metrics {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -353,8 +296,7 @@
     align-items: flex-start;
     flex-direction: column;
   }
-  .metrics,
-  .filterPanel {
+  .metrics {
     grid-template-columns: 1fr;
   }
   .tableWrap {

@@ -4,8 +4,9 @@ import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from 'next-intl';
 
 import type { Contact, ContactListFilters, SessionPrincipal } from './contact';
-import { ColumnsMenu, DensitySwitch, ExportButton } from './contacts-toolbar-menus';
+import { ColumnsMenu, ExportButton } from './contacts-toolbar-menus';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
+import { FilterField, SearchFilters } from '../../ui/search-filters/search-filters';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import glass from '../../ui/glass/glass.module.css';
 import styles from './contacts.module.css';
@@ -56,10 +57,15 @@ export function ContactsToolbar({
 }) {
   return (
     <div className={`${styles.toolbar} ${styles.glassTop} ${glass.panel} ${glass.soft}`}>
-      <SearchField search={search} onSearch={onSearch} />
-      <ListFilters filters={filters} rows={rows} session={session} onChange={onChange} />
+      <ContactSearch
+        filters={filters}
+        search={search}
+        rows={rows}
+        session={session}
+        onSearch={onSearch}
+        onChange={onChange}
+      />
       <div className={styles.toolbarControls}>
-        <DensitySwitch />
         <ExportButton onExport={onExport} />
         <ColumnsMenu />
       </div>
@@ -67,36 +73,55 @@ export function ContactsToolbar({
   );
 }
 
-function ListFilters({
+function ContactSearch({
   filters,
+  search,
   rows,
   session,
+  onSearch,
   onChange,
 }: {
   filters: ContactListFilters;
+  search: string;
   rows: readonly Contact[];
   session: SessionPrincipal | null;
+  onSearch: (search: string) => void;
   onChange: (filters: ContactListFilters) => void;
 }): ReactElement {
   const t = useTranslations('contacts');
   const owners = ownerChoices(rows, session, filters.owner);
   return (
     <>
-      <ArchiveSwitch
-        archived={filters.archived}
-        onChange={(archived) => onChange({ ...filters, archived })}
-      />
-      <FilterMenu
-        label={t('filterType')}
-        value={filters.type}
-        options={[
-          { value: 'all', label: t('typeAll') },
-          { value: 'person', label: t('type.person') },
-          { value: 'organization', label: t('type.organization') },
-        ]}
-        onChange={(type) => onChange({ ...filters, type: contactType(type) })}
-      />
+    <SearchFilters
+      value={search}
+      onChange={onSearch}
+      placeholder={t('searchContacts')}
+      label={t('searchContacts')}
+      maxLength={100}
+      resetLabel={t('reset')}
+      applyLabel={t('apply')}
+      onReset={() => resetContacts(filters, onSearch, onChange)}
+      onApply={() => undefined}
+    >
+      <FilterField label={t('filterType')}>
+        <FilterMenu
+          field
+          label={t('filterType')}
+          value={filters.type}
+          options={[
+            { value: 'all', label: t('typeAll') },
+            { value: 'person', label: t('type.person') },
+            { value: 'organization', label: t('type.organization') },
+          ]}
+          onChange={(type) => onChange({ ...filters, type: contactType(type) })}
+        />
+      </FilterField>
       <OwnerSortFilters filters={filters} owners={owners} onChange={onChange} />
+    </SearchFilters>
+    <ArchiveSwitch
+      archived={filters.archived}
+      onChange={(archived) => onChange({ ...filters, archived })}
+    />
     </>
   );
 }
@@ -113,7 +138,9 @@ function OwnerSortFilters({
   const t = useTranslations('contacts');
   return (
     <>
+      <FilterField label={t('filterOwner')}>
       <FilterMenu
+        field
         label={t('filterOwner')}
         value={filters.owner}
         options={[
@@ -122,7 +149,10 @@ function OwnerSortFilters({
         ]}
         onChange={(owner) => onChange({ ...filters, owner })}
       />
+      </FilterField>
+      <FilterField label={t('filterSort')}>
       <FilterMenu
+        field
         label={t('filterSort')}
         value={filters.sort}
         options={[
@@ -131,6 +161,7 @@ function OwnerSortFilters({
         ]}
         onChange={(sort) => onChange({ ...filters, sort: sort === 'desc' ? 'desc' : 'asc' })}
       />
+      </FilterField>
     </>
   );
 }
@@ -156,30 +187,13 @@ function ArchiveSwitch({
   );
 }
 
-function SearchField({ search, onSearch }: { search: string; onSearch: (search: string) => void }) {
-  const t = useTranslations('contacts');
-  return (
-    <label className={styles.search}>
-      <SearchIcon />
-      <input
-        value={search}
-        maxLength={100}
-        aria-label={t('searchContacts')}
-        placeholder={t('searchContacts')}
-        onChange={(event) => onSearch(event.target.value)}
-      />
-      {search.length === 0 ? null : (
-        <button
-          type="button"
-          className={styles.searchClear}
-          aria-label={t('clearSearch')}
-          onClick={() => onSearch('')}
-        >
-          ×
-        </button>
-      )}
-    </label>
-  );
+function resetContacts(
+  filters: ContactListFilters,
+  onSearch: (search: string) => void,
+  onChange: (filters: ContactListFilters) => void,
+): void {
+  onSearch('');
+  onChange({ ...filters, search: '', archived: false, type: 'all', owner: '', sort: 'asc' });
 }
 
 function ownerChoices(
@@ -229,15 +243,6 @@ function ArchiveIcon(): ReactElement {
       <path d="M4 5h16v4H4z" />
       <path d="M6 9v9h12V9" />
       <path d="M10 13h4" />
-    </svg>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="11" cy="11" r="6" />
-      <path d="M16 16l4 4" />
     </svg>
   );
 }

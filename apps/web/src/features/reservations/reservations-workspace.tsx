@@ -12,6 +12,7 @@ import { readTeamDirectory } from '../team/team-api';
 import glass from '../../ui/glass/glass.module.css';
 import { DateField } from '../../ui/calendar/calendar';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
+import { FilterField, SearchFilters } from '../../ui/search-filters/search-filters';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import {
   cancelReservation,
@@ -71,7 +72,7 @@ export function ReservationsWorkspace() {
     <div className={shell.app}>
       <ContactsShell session={session} current="reservations" />
       <main className={`${shell.main} ${glass.canvas}`}>
-        <div className={styles.page}>
+        <div className={board.view === 'calendar' ? `${styles.page} ${styles.pageFit}` : styles.page}>
           <Header
             day={board.fromDay}
             locationId={board.locationId}
@@ -457,44 +458,60 @@ function Filters(props: {
     return () => window.clearTimeout(timer);
   }, [draft, onSearch]);
   return (
-    <div className={styles.filters}>
-      <FilterMenu
-        label={t('status')}
-        value={props.status}
-        options={[
-          { value: '', label: t('allStatuses') },
-          ...RESERVATION_STATUSES.map((status) => ({
-            value: status,
-            label: t(`statuses.${status}`),
-          })),
-        ]}
-        onChange={props.onStatus}
-      />
-      <label>
-        {t('from')}
-        <DateField fit value={props.fromDay} onChange={props.onFrom} />
-      </label>
-      <label>
-        {t('to')}
-        <DateField fit value={props.toDay} onChange={props.onTo} />
-      </label>
-      <FilterMenu
-        label={t('assignee')}
-        value={props.assigneeId}
-        options={[
-          { value: '', label: t('allAssignees') },
-          ...props.members.map((member) => ({ value: member.id, label: member.name })),
-        ]}
-        onChange={props.onAssignee}
-      />
-      <input
-        aria-label={t('search')}
-        placeholder={t('search')}
-        value={draft}
-        onChange={(event) => setDraft(event.target.value)}
-      />
+    <div className={styles.searchRow}>
+    <SearchFilters
+      value={draft}
+      onChange={setDraft}
+      placeholder={t('search')}
+      label={t('search')}
+      resetLabel={t('reset')}
+      applyLabel={t('apply')}
+      onReset={() => resetReservationFilters(setDraft, props.onStatus, props.onAssignee)}
+      onApply={() => undefined}
+    >
+      <FilterField label={t('assignee')}>
+        <FilterMenu
+          field
+          label={t('assignee')}
+          value={props.assigneeId}
+          options={[
+            { value: '', label: t('allAssignees') },
+            ...props.members.map((member) => ({ value: member.id, label: member.name })),
+          ]}
+          onChange={props.onAssignee}
+        />
+      </FilterField>
+      <FilterField label={t('from')}>
+        <DateField label={t('from')} value={props.fromDay} onChange={props.onFrom} />
+      </FilterField>
+      <FilterField label={t('to')}>
+        <DateField label={t('to')} value={props.toDay} onChange={props.onTo} />
+      </FilterField>
+    </SearchFilters>
+    <FilterMenu
+      label={t('status')}
+      value={props.status}
+      options={[
+        { value: '', label: t('allStatuses') },
+        ...RESERVATION_STATUSES.map((status) => ({
+          value: status,
+          label: t(`statuses.${status}`),
+        })),
+      ]}
+      onChange={props.onStatus}
+    />
     </div>
   );
+}
+
+function resetReservationFilters(
+  setDraft: (value: string) => void,
+  onStatus: (status: string) => void,
+  onAssignee: (id: string) => void,
+): void {
+  setDraft('');
+  onStatus('');
+  onAssignee('');
 }
 
 function Pager({

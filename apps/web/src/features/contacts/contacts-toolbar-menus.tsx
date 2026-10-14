@@ -4,24 +4,7 @@ import { useEffect, useId, useRef, useState, type ReactElement, type RefObject }
 import { useTranslations } from 'next-intl';
 
 import { contactColumns, useContactsListUi, type ContactColumn } from './contacts-list-ui';
-import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import styles from './contacts.module.css';
-
-export function DensitySwitch(): ReactElement {
-  const t = useTranslations('contacts');
-  const ui = useContactsListUi();
-  return (
-    <SegmentedControl
-      label={t('density')}
-      value={ui.density}
-      options={[
-        { value: 'comfortable', label: t('densityComfortable') },
-        { value: 'compact', label: t('densityCompact') },
-      ]}
-      onChange={ui.setDensity}
-    />
-  );
-}
 
 export function ExportButton({ onExport }: { onExport: () => Promise<void> }): ReactElement {
   const t = useTranslations('contacts');

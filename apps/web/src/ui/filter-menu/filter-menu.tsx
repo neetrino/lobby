@@ -11,11 +11,14 @@ export function FilterMenu({
   value,
   options,
   onChange,
+  field = false,
 }: {
   label: string;
   value: string;
   options: ReadonlyArray<{ value: string; label: string }>;
   onChange: (value: string) => void;
+  /** Stretch the trigger and show only the current value. The field label sits above it. */
+  field?: boolean;
 }): ReactElement {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -26,7 +29,7 @@ export function FilterMenu({
   const current = options.find((option) => option.value === value)?.label ?? label;
 
   return (
-    <div className={styles.menu} ref={rootRef}>
+    <div className={field ? `${styles.menu} ${styles.field}` : styles.menu} ref={rootRef}>
       <button
         ref={buttonRef}
         type="button"
@@ -37,7 +40,7 @@ export function FilterMenu({
         aria-label={label}
         onClick={() => setOpen((next) => !next)}
       >
-        <span>{label}</span>
+        {field ? null : <span>{label}</span>}
         <strong>{current}</strong>
         <ChevronIcon />
       </button>

@@ -10,6 +10,7 @@ import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
 import { readTeamDirectory, type TeamDirectory, type TeamMember } from './team-api';
 import { AddMemberButton } from './team-add-member';
+import { SearchFilters } from '../../ui/search-filters/search-filters';
 import { TeamChat } from './team-chat';
 import { TeamMemberCard } from './team-member-card';
 import styles from './team.module.css';
@@ -42,18 +43,15 @@ export function TeamDirectoryPage() {
           <section className={styles.board}>
             <h1>{t('title')}</h1>
             <div className={styles.toolbar}>
-              <label className={styles.search}>
-                <SearchIcon />
-                <input
-                  value={query}
-                  placeholder={t('search')}
-                  aria-label={t('search')}
-                  onChange={(event) => {
-                    setQuery(event.target.value);
-                    setPage(0);
-                  }}
-                />
-              </label>
+              <SearchFilters
+                value={query}
+                placeholder={t('search')}
+                label={t('search')}
+                onChange={(value) => {
+                  setQuery(value);
+                  setPage(0);
+                }}
+              />
               {canEdit ? <AddMemberButton /> : null}
             </div>
             {failed ? <p className={styles.failed}>{t('failed')}</p> : null}
@@ -75,7 +73,13 @@ export function TeamDirectoryPage() {
             </div>
             <Pager page={visible.page} pageCount={visible.pageCount} onPage={setPage} />
           </section>
-          <TeamChat member={openMember} selfId={session?.user.id ?? null} />
+          {openMember === null ? null : (
+            <TeamChat
+              member={openMember}
+              selfId={session?.user.id ?? null}
+              onClose={() => setOpenMember(null)}
+            />
+          )}
         </div>
       </main>
     </div>
@@ -181,14 +185,5 @@ function isSignedOut(error: ContactsRequestError | null): boolean {
     error?.code === 'UNAUTHENTICATED' ||
     error?.code === 'SESSION_EXPIRED' ||
     error?.code === 'SESSION_REVOKED'
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="11" cy="11" r="6" />
-      <path d="m16 16 4 4" />
-    </svg>
   );
 }

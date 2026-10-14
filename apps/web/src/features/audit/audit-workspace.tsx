@@ -9,7 +9,10 @@ import { ContactsShell } from '../contacts/contacts-shell';
 import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
 import { DateField } from '../../ui/calendar/calendar';
+import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
+import { FilterField, SearchFilters } from '../../ui/search-filters/search-filters';
+import { OverlayPortal } from '../contacts/overlay-portal';
 import glass from '../../ui/glass/glass.module.css';
 import {
   AuditRequestError,
@@ -135,64 +138,73 @@ export function AuditWorkspace() {
                 <Metric label={t('denied')} value={counts.denied} tone="red" />
                 <Metric label={t('integrations')} value={counts.integrations} tone="violet" />
               </section>
-              <section className={styles.filterPanel}>
-                <input
-                  aria-label={t('search')}
-                  placeholder={t('search')}
-                  value={filters.search}
-                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                />
-                <FilterMenu
-                  label={t('outcome')}
-                  value={filters.outcome}
-                  options={[
-                    { value: '', label: t('allOutcomes') },
-                    { value: 'SUCCESS', label: outcomeText(t, 'SUCCESS') },
-                    { value: 'DENIED', label: outcomeText(t, 'DENIED') },
-                    { value: 'FAILURE', label: outcomeText(t, 'FAILURE') },
-                  ]}
-                  onChange={(outcome) => setFilters({ ...filters, outcome })}
-                />
-                <FilterMenu
-                  label={t('actorType')}
-                  value={filters.actorType}
-                  options={[
-                    { value: '', label: t('allActors') },
-                    { value: 'USER', label: t('user') },
-                    { value: 'INTEGRATION', label: t('integration') },
-                  ]}
-                  onChange={(actorType) => setFilters({ ...filters, actorType })}
-                />
-                <FilterMenu
-                  label={t('resourceType')}
-                  value={filters.resourceType}
-                  options={[
-                    { value: '', label: t('allResources') },
-                    ...auditResourceTypes.map((type) => ({
-                      value: type,
-                      label: resourceText(t, type),
-                    })),
-                  ]}
-                  onChange={(resourceType) => setFilters({ ...filters, resourceType })}
-                />
-                <label>
-                  {t('from')}
+              <SearchFilters
+                value={filters.search}
+                onChange={(search) => setFilters({ ...filters, search })}
+                placeholder={t('search')}
+                label={t('search')}
+                resetLabel={t('clear')}
+                applyLabel={t('apply')}
+                onReset={clear}
+                onApply={apply}
+              >
+                <FilterField label={t('outcome')}>
+                  <FilterMenu
+                    field
+                    label={t('outcome')}
+                    value={filters.outcome}
+                    options={[
+                      { value: '', label: t('allOutcomes') },
+                      { value: 'SUCCESS', label: outcomeText(t, 'SUCCESS') },
+                      { value: 'DENIED', label: outcomeText(t, 'DENIED') },
+                      { value: 'FAILURE', label: outcomeText(t, 'FAILURE') },
+                    ]}
+                    onChange={(outcome) => setFilters({ ...filters, outcome })}
+                  />
+                </FilterField>
+                <FilterField label={t('actorType')}>
+                  <FilterMenu
+                    field
+                    label={t('actorType')}
+                    value={filters.actorType}
+                    options={[
+                      { value: '', label: t('allActors') },
+                      { value: 'USER', label: t('user') },
+                      { value: 'INTEGRATION', label: t('integration') },
+                    ]}
+                    onChange={(actorType) => setFilters({ ...filters, actorType })}
+                  />
+                </FilterField>
+                <FilterField label={t('resourceType')} wide>
+                  <FilterMenu
+                    field
+                    label={t('resourceType')}
+                    value={filters.resourceType}
+                    options={[
+                      { value: '', label: t('allResources') },
+                      ...auditResourceTypes.map((type) => ({
+                        value: type,
+                        label: resourceText(t, type),
+                      })),
+                    ]}
+                    onChange={(resourceType) => setFilters({ ...filters, resourceType })}
+                  />
+                </FilterField>
+                <FilterField label={t('from')}>
                   <DateField
+                    label={t('from')}
                     value={filters.from}
                     onChange={(from) => setFilters({ ...filters, from })}
                   />
-                </label>
-                <label>
-                  {t('to')}
-                  <DateField value={filters.to} onChange={(to) => setFilters({ ...filters, to })} />
-                </label>
-                <button type="button" className={styles.apply} onClick={apply}>
-                  {t('apply')}
-                </button>
-                <button type="button" onClick={clear}>
-                  {t('clear')}
-                </button>
-              </section>
+                </FilterField>
+                <FilterField label={t('to')}>
+                  <DateField
+                    label={t('to')}
+                    value={filters.to}
+                    onChange={(to) => setFilters({ ...filters, to })}
+                  />
+                </FilterField>
+              </SearchFilters>
               <section className={styles.content}>
                 <div className={styles.tableCard}>
                   {status === 'loading' ? <p className={styles.state}>{t('loading')}</p> : null}
@@ -230,20 +242,15 @@ export function AuditWorkspace() {
                     </button>
                   </div>
                 </div>
-                {selected === null ? (
-                  <aside className={styles.emptyDetail}>
-                    <strong>{t('selectEvent')}</strong>
-                    <span>{t('selectHint')}</span>
-                  </aside>
-                ) : (
-                  <Detail
-                    event={selected}
-                    locale={locale}
-                    onClose={() => setSelected(null)}
-                    t={t}
-                  />
-                )}
               </section>
+              {selected === null ? null : (
+                <Detail
+                  event={selected}
+                  locale={locale}
+                  onClose={() => setSelected(null)}
+                  t={t}
+                />
+              )}
             </>
           ) : null}
         </div>
@@ -336,41 +343,43 @@ function Detail({
   onClose: () => void;
   t: ReturnType<typeof useTranslations<'audit'>>;
 }) {
+  const title = actionText(t, event.action);
   return (
-    <aside className={styles.detail}>
-      <div className={styles.detailHead}>
-        <div>
-          <span>{t('eventDetail')}</span>
-          <h2>{actionText(t, event.action)}</h2>
-        </div>
-        <button type="button" onClick={onClose} aria-label={t('close')}>
-          ×
-        </button>
-      </div>
-      <dl>
-        <dt>{t('time')}</dt>
-        <dd>
-          {new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeStyle: 'medium' }).format(
-            new Date(event.occurredAt),
-          )}
-        </dd>
-        <dt>{t('actor')}</dt>
-        <dd>{actorLine(t, event.actor)}</dd>
-        <dt>{t('resource')}</dt>
-        <dd>
-          {event.resource.label ?? resourceText(t, event.resource.type)}
-          {event.resource.label === null ? null : (
-            <small>{resourceText(t, event.resource.type)}</small>
-          )}
-        </dd>
-        <dt>{t('outcome')}</dt>
-        <dd>{outcomeText(t, event.outcome)}</dd>
-        <dt>{t('reason')}</dt>
-        <dd>{event.reason ?? t('noReason')}</dd>
-      </dl>
-      <h3>{t('changes')}</h3>
-      <ChangeList t={t} changes={event.changes} />
-    </aside>
+    <OverlayPortal onDismiss={onClose}>
+      <SheetFrame label={title} closeLabel={t('close')}>
+        <aside className={styles.detail}>
+          <header className={styles.detailHead}>
+            <span>{t('eventDetail')}</span>
+            <h2>{title}</h2>
+          </header>
+          <div className={styles.detailBody}>
+            <dl>
+              <dt>{t('time')}</dt>
+              <dd>
+                {new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeStyle: 'medium' }).format(
+                  new Date(event.occurredAt),
+                )}
+              </dd>
+              <dt>{t('actor')}</dt>
+              <dd>{actorLine(t, event.actor)}</dd>
+              <dt>{t('resource')}</dt>
+              <dd>
+                {event.resource.label ?? resourceText(t, event.resource.type)}
+                {event.resource.label === null ? null : (
+                  <small>{resourceText(t, event.resource.type)}</small>
+                )}
+              </dd>
+              <dt>{t('outcome')}</dt>
+              <dd>{outcomeText(t, event.outcome)}</dd>
+              <dt>{t('reason')}</dt>
+              <dd>{event.reason ?? t('noReason')}</dd>
+            </dl>
+            <h3>{t('changes')}</h3>
+            <ChangeList t={t} changes={event.changes} />
+          </div>
+        </aside>
+      </SheetFrame>
+    </OverlayPortal>
   );
 }
 

@@ -3,13 +3,10 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
 export type ContactColumn = 'details' | 'owner' | 'status' | 'created';
-export type ContactDensity = 'compact' | 'comfortable';
 
 const COLUMNS: ContactColumn[] = ['details', 'owner', 'status', 'created'];
 
 type ListUi = {
-  density: ContactDensity;
-  setDensity: (density: ContactDensity) => void;
   columns: Record<ContactColumn, boolean>;
   toggleColumn: (column: ContactColumn) => void;
 };
@@ -17,7 +14,6 @@ type ListUi = {
 const ListUiContext = createContext<ListUi | null>(null);
 
 export function ContactsListUi({ children }: { children: ReactNode }) {
-  const [density, setDensity] = useState<ContactDensity>('compact');
   const [columns, setColumns] = useState<Record<ContactColumn, boolean>>({
     details: true,
     owner: true,
@@ -30,7 +26,7 @@ export function ContactsListUi({ children }: { children: ReactNode }) {
   }
 
   return (
-    <ListUiContext.Provider value={{ density, setDensity, columns, toggleColumn }}>
+    <ListUiContext.Provider value={{ columns, toggleColumn }}>
       {children}
     </ListUiContext.Provider>
   );
@@ -41,8 +37,6 @@ export function useContactsListUi(): ListUi {
 }
 
 const fallbackUi: ListUi = {
-  density: 'compact',
-  setDensity: () => undefined,
   columns: { details: true, owner: true, status: true, created: true },
   toggleColumn: () => undefined,
 };
