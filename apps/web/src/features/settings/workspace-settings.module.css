@@ -1,5 +1,5 @@
 .page {
-  max-width: 720px;
+  max-width: 1040px;
   padding: 28px 32px 40px;
 }
 
@@ -23,8 +23,11 @@
   box-shadow: 0 10px 28px rgb(28 33 48 / 6%);
 }
 
-.page .card + .card {
-  margin-top: 14px;
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  align-items: stretch;
 }
 
 .signOutGroup {
@@ -32,30 +35,34 @@
 }
 
 .signOut {
-  min-width: 112px;
-  height: 42px;
+  height: var(--control-height);
   padding: 0 18px;
-  border: 1px solid #fecaca;
-  border-radius: var(--control-radius);
-  background: #fff5f5;
-  color: #b42318;
+  border: 0;
+  border-radius: 999px;
+  background: var(--danger-bg);
+  color: var(--danger);
   font: inherit;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .signOut:hover {
-  background: #fee2e2;
+  background: #ffd0d6;
 }
 
 .signOut:focus-visible {
-  outline: 2px solid #dc2626;
-  outline-offset: 3px;
+  outline: 2px solid var(--shell-blue);
+  outline-offset: 2px;
 }
 
 .signOut:disabled {
   cursor: wait;
   opacity: 0.65;
+}
+
+.card > div {
+  min-width: 0;
 }
 
 .card h2 {
@@ -75,81 +82,51 @@
 
 .switch {
   position: relative;
-  display: inline-flex;
   flex: none;
-  align-items: center;
   box-sizing: border-box;
-  min-width: 118px;
-  height: 56px;
-  padding: 4px;
-  border: 4px solid transparent;
+  width: 52px;
+  height: 32px;
+  padding: 0;
+  border: 0;
   border-radius: 999px;
-  background:
-    linear-gradient(180deg, #c5ccd3 0%, #8b939c 48%, #5c646c 100%) padding-box,
-    linear-gradient(180deg, #f7f8fa 0%, #d8dce1 28%, #a7adb4 58%, #6e757d 100%) border-box;
-  box-shadow:
-    inset 0 10px 8px rgb(255 255 255 / 28%),
-    inset 0 -8px 8px rgb(0 0 0 / 24%),
-    0 1px 0 rgb(255 255 255 / 80%),
-    0 2px 4px rgb(0 0 0 / 30%);
+  background: #d5dbe3;
   cursor: pointer;
 }
 
 .switchOn {
-  background:
-    linear-gradient(180deg, #9adf62 0%, #4fbe3d 36%, #2f9a34 72%, #27862d 100%) padding-box,
-    linear-gradient(180deg, #f7f8fa 0%, #d8dce1 28%, #a7adb4 58%, #6e757d 100%) border-box;
-}
-
-.face {
-  position: relative;
-  z-index: 1;
-  min-width: 46px;
-  padding: 0 14px 0 48px;
-  color: #fff;
-  font-size: 18px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  line-height: 1;
-  text-align: center;
-  text-shadow:
-    0 1px 0 rgb(255 255 255 / 35%),
-    0 2px 2px rgb(0 0 0 / 28%);
-  text-transform: uppercase;
-}
-
-.switch:not(.switchOn) .face {
-  padding: 0 48px 0 14px;
+  background: var(--shell-olive);
 }
 
 .knob {
   position: absolute;
-  z-index: 1;
-  top: 4px;
-  left: calc(100% - 48px);
-  width: 44px;
-  height: 44px;
+  top: 3px;
+  left: 3px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: radial-gradient(circle at 50% 28%, #fff 0%, #f7f8fa 36%, #e4e7eb 68%, #c5cbd2 100%);
-  box-shadow:
-    0 2px 4px rgb(0 0 0 / 40%),
-    inset 0 2px 2px #fff,
-    inset 0 -3px 4px rgb(90 98 108 / 28%);
-  transition: left 160ms ease;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(20 33 61 / 18%);
+  transition: transform 180ms ease;
 }
 
 .switchOn .knob {
-  left: 4px;
+  transform: translateX(20px);
 }
 
 .switch:focus-visible {
-  outline: 2px solid #1d4ed8;
-  outline-offset: 3px;
+  outline: 2px solid var(--shell-blue);
+  outline-offset: 2px;
 }
 
 .switch:disabled {
   cursor: wait;
   filter: saturate(0.65);
+}
+
+@media (max-width: 720px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

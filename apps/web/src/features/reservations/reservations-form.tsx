@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { listContacts } from '../contacts/contacts-api';
 import type { Contact } from '../contacts/contact';
+import { DateField } from '../../ui/calendar/calendar';
 import { Select, type SelectOption } from '../../ui/select/select';
 import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
@@ -139,11 +140,11 @@ export function ReservationForm({
               <div className={styles.fieldRow}>
                 <label>
                   {t('starts')}
-                  <input
-                    type="datetime-local"
+                  <DateField
+                    mode="datetime"
                     required
                     value={draft.startsAt}
-                    onChange={(event) => setDraft({ ...draft, startsAt: event.target.value })}
+                    onChange={(startsAt) => setDraft({ ...draft, startsAt })}
                   />
                 </label>
                 <label>

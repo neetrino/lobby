@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { ContactsShell } from '../contacts/contacts-shell';
 import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
+import { DateField } from '../../ui/calendar/calendar';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import glass from '../../ui/glass/glass.module.css';
 import {
@@ -176,19 +177,14 @@ export function AuditWorkspace() {
                 />
                 <label>
                   {t('from')}
-                  <input
-                    type="date"
+                  <DateField
                     value={filters.from}
-                    onChange={(e) => setFilters({ ...filters, from: e.target.value })}
+                    onChange={(from) => setFilters({ ...filters, from })}
                   />
                 </label>
                 <label>
                   {t('to')}
-                  <input
-                    type="date"
-                    value={filters.to}
-                    onChange={(e) => setFilters({ ...filters, to: e.target.value })}
-                  />
+                  <DateField value={filters.to} onChange={(to) => setFilters({ ...filters, to })} />
                 </label>
                 <button type="button" className={styles.apply} onClick={apply}>
                   {t('apply')}

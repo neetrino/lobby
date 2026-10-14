@@ -677,5 +677,16 @@
       "WHATSAPP": "WhatsApp",
       "TELEGRAM": "Telegram"
     }
+  },
+  "calendar": {
+    "previousMonth": "Previous month",
+    "nextMonth": "Next month",
+    "today": "Today",
+    "clear": "Clear",
+    "done": "Done",
+    "hour": "Hour",
+    "minute": "Minute",
+    "chooseDate": "Choose a date",
+    "chooseDateTime": "Choose date and time"
   }
 }

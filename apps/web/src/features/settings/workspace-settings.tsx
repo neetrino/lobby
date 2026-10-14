@@ -51,18 +51,20 @@ export function WorkspaceSettings() {
       <main className={`${shell.main} ${glass.canvas}`}>
         <section className={styles.page}>
           <h1>{t('settingsTitle')}</h1>
-          <LeadsBoardSwitch
-            enabled={enabled}
-            pending={pending || principal === null}
-            onToggle={() => void toggle()}
-          />
-          <article className={`${styles.card} ${glass.panel} ${glass.soft}`}>
-            <div>
-              <h2>{t('settingsAccountTitle')}</h2>
-              <p>{t('settingsAccountBody')}</p>
-            </div>
-            <SignOutButton className={styles.signOut} groupClassName={styles.signOutGroup} />
-          </article>
+          <div className={styles.row}>
+            <LeadsBoardSwitch
+              enabled={enabled}
+              pending={pending || principal === null}
+              onToggle={() => void toggle()}
+            />
+            <article className={`${styles.card} ${glass.panel} ${glass.soft}`}>
+              <div>
+                <h2>{t('settingsAccountTitle')}</h2>
+                <p>{t('settingsAccountBody')}</p>
+              </div>
+              <SignOutButton className={styles.signOut} groupClassName={styles.signOutGroup} />
+            </article>
+          </div>
           {failed ? <p className={styles.failed}>{t('settingsFailed')}</p> : null}
         </section>
       </main>
@@ -91,10 +93,10 @@ function LeadsBoardSwitch({
         className={enabled ? `${styles.switch} ${styles.switchOn}` : styles.switch}
         role="switch"
         aria-checked={enabled}
+        aria-label={enabled ? t('settingsOn') : t('settingsOff')}
         disabled={pending}
         onClick={onToggle}
       >
-        <span className={styles.face}>{enabled ? t('settingsOn') : t('settingsOff')}</span>
         <span className={styles.knob} />
       </button>
     </article>

@@ -7,6 +7,7 @@ import { listContacts } from '../contacts/contacts-api';
 import type { Contact } from '../contacts/contact';
 import glass from '../../ui/glass/glass.module.css';
 import { useSheetDismiss } from '../../ui/overlay/sheet-dismiss';
+import { DateField } from '../../ui/calendar/calendar';
 import { Select, type SelectOption } from '../../ui/select/select';
 import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
@@ -297,10 +298,9 @@ function CardEditor({
               label: t(outcomeLabel(outcome)),
             }))}
           />
-          <input
+          <DateField
             name="expectedCloseOn"
-            aria-label={t('expectedClose')}
-            type="date"
+            label={t('expectedClose')}
             defaultValue={card.expectedCloseOn ?? ''}
           />
           <Select

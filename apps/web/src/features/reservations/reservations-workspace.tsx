@@ -10,6 +10,7 @@ import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
 import { readTeamDirectory } from '../team/team-api';
 import glass from '../../ui/glass/glass.module.css';
+import { DateField } from '../../ui/calendar/calendar';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import {
@@ -394,12 +395,7 @@ function Header(props: {
           <button type="button" aria-label={t('previousDay')} onClick={() => props.onShift(-1)}>
             ‹
           </button>
-          <input
-            aria-label={t('date')}
-            type="date"
-            value={props.day}
-            onChange={(event) => props.onDay(event.target.value)}
-          />
+          <DateField fit label={t('date')} value={props.day} onChange={props.onDay} />
           <button type="button" aria-label={t('nextDay')} onClick={() => props.onShift(1)}>
             ›
           </button>
@@ -476,21 +472,11 @@ function Filters(props: {
       />
       <label>
         {t('from')}
-        <input
-          aria-label={t('from')}
-          type="date"
-          value={props.fromDay}
-          onChange={(event) => props.onFrom(event.target.value)}
-        />
+        <DateField fit value={props.fromDay} onChange={props.onFrom} />
       </label>
       <label>
         {t('to')}
-        <input
-          aria-label={t('to')}
-          type="date"
-          value={props.toDay}
-          onChange={(event) => props.onTo(event.target.value)}
-        />
+        <DateField fit value={props.toDay} onChange={props.onTo} />
       </label>
       <FilterMenu
         label={t('assignee')}

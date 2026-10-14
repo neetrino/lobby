@@ -375,6 +375,10 @@
     padding 280ms ease;
 }
 
+.sidebar:not(.sidebarWide) .account {
+  margin-bottom: 4px;
+}
+
 .sidebarWide .account {
   align-items: center;
   min-height: 60px;

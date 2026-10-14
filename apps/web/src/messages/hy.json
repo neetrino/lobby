@@ -677,5 +677,16 @@
       "WHATSAPP": "WhatsApp",
       "TELEGRAM": "Telegram"
     }
+  },
+  "calendar": {
+    "previousMonth": "Նախորդ ամիս",
+    "nextMonth": "Հաջորդ ամիս",
+    "today": "Այսօր",
+    "clear": "Մաքրել",
+    "done": "Պատրաստ է",
+    "hour": "Ժամ",
+    "minute": "Րոպե",
+    "chooseDate": "Ընտրել ամսաթիվ",
+    "chooseDateTime": "Ընտրել ամսաթիվ և ժամ"
   }
 }
