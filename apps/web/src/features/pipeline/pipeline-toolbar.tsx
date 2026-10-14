@@ -1,6 +1,6 @@
 'use client';
 
-import { Tags } from 'lucide-react';
+import { Tags, X } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 
@@ -198,7 +198,7 @@ function StatusEditor({
             aria-label={t('deleteStatus')}
             onClick={() => onDelete(status.id)}
           >
-            ×
+            <X aria-hidden="true" strokeWidth={2} />
           </button>
         </div>
       ))}

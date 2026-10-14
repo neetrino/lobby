@@ -290,12 +290,40 @@
 .statusRow input:not([type='color']) {
   flex: 1;
 }
+.statusEditor .iconButton {
+  border-radius: 999px;
+}
+
+.statusEditor .iconButton svg {
+  width: 18px;
+  height: 18px;
+  transform: translateY(1.5px);
+}
+
 .statusRow input[type='color'] {
-  width: 40px;
+  width: 32px;
   height: 32px;
   padding: 0;
   border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  appearance: none;
   background: transparent;
+  cursor: pointer;
+}
+
+.statusRow input[type='color']::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.statusRow input[type='color']::-webkit-color-swatch {
+  border: 0;
+  border-radius: 999px;
+}
+
+.statusRow input[type='color']::-moz-color-swatch {
+  border: 0;
+  border-radius: 999px;
 }
 
 .columnHead {
