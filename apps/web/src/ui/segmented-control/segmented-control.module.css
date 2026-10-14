@@ -3,8 +3,11 @@
   box-sizing: border-box;
   position: relative;
   display: inline-flex;
+  flex: 0 0 auto;
   align-items: center;
-  height: 42px;
+  width: fit-content;
+  max-width: 100%;
+  height: var(--control-height);
   padding: var(--segment-inset);
   gap: 2px;
   border-radius: 999px;
@@ -31,8 +34,8 @@
     width 380ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.off,
-.on {
+.track .off,
+.track .on {
   position: relative;
   z-index: 1;
   box-sizing: border-box;
@@ -40,7 +43,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 100%;
+  height: calc(var(--control-height) - 8px);
   margin: 0;
   padding: 0 14px;
   border: 0;
@@ -55,17 +58,17 @@
   transition: color 380ms ease;
 }
 
-.on {
+.track .on {
   background: var(--shell-olive);
   color: #1c2410;
 }
 
-.ready ~ .on {
+.track .ready ~ .on {
   background: transparent;
 }
 
-.off svg,
-.on svg {
+.track .off svg,
+.track .on svg {
   width: 16px;
   height: 16px;
   flex: none;
@@ -76,20 +79,20 @@
   stroke-linejoin: round;
 }
 
-.off:hover {
+.track .off:hover {
   background: #f3f5f8;
 }
 
-.off:focus-visible,
-.on:focus-visible {
+.track .off:focus-visible,
+.track .on:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
   .ready,
-  .off,
-  .on {
+  .track .off,
+  .track .on {
     transition: none;
   }
 }
