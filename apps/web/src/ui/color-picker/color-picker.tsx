@@ -103,7 +103,7 @@ function ColorPanel({
       className={styles.panel}
       role="dialog"
       aria-label={label}
-      style={panelStyle(box)}
+      style={panelStyle(box, anchor.current)}
     >
       <SaturationField hsv={hsv} onDraft={setHsv} onCommit={commit} />
       <HueSlider hsv={hsv} label={hueLabel} onDraft={setHsv} onCommit={commit} />
@@ -113,10 +113,16 @@ function ColorPanel({
   );
 }
 
-function panelStyle(box: AnchoredBox): CSSProperties {
-  const left = Math.max(8, Math.min(box.left, window.innerWidth - panelWidth - 8));
+function panelStyle(box: AnchoredBox, anchor: HTMLElement | null): CSSProperties {
+  const left = Math.max(8, sheetEdge(anchor) - panelWidth);
   if (!box.upward) return { top: box.top, left, width: panelWidth };
   return { top: 'auto', bottom: window.innerHeight - box.top, left, width: panelWidth };
+}
+
+function sheetEdge(anchor: HTMLElement | null): number {
+  const sheet = anchor?.closest('[role="dialog"]');
+  if (sheet instanceof HTMLElement) return sheet.getBoundingClientRect().right;
+  return window.innerWidth - 8;
 }
 
 function useEscapeClose(onClose: () => void): void {

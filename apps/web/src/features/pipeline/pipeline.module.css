@@ -10,24 +10,8 @@
   overflow-x: hidden;
   overflow-y: auto;
   padding: 28px 32px 12px;
-  scrollbar-color: #94a3b8 transparent;
-  scrollbar-width: thin;
   background: transparent;
   color: #1a1d24;
-}
-
-.page::-webkit-scrollbar {
-  display: block;
-  width: 8px;
-}
-
-.page::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: #94a3b8;
-}
-
-.page::-webkit-scrollbar-track {
-  background: transparent;
 }
 
 .head {
@@ -110,22 +94,6 @@
   overflow-y: hidden;
   overscroll-behavior-x: contain;
   padding-bottom: 6px;
-  scrollbar-color: #94a3b8 transparent;
-  scrollbar-width: thin;
-}
-
-.board::-webkit-scrollbar {
-  display: block;
-  height: 8px;
-}
-
-.board::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: #94a3b8;
-}
-
-.board::-webkit-scrollbar-track {
-  background: transparent;
 }
 
 .column {
@@ -333,23 +301,13 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 8px 4px 16px;
-  scrollbar-color: #94a3b8 transparent;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 
 .cards::-webkit-scrollbar {
-  display: block;
-  width: 8px;
-}
-
-.cards::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: #94a3b8;
-}
-
-.cards::-webkit-scrollbar-track {
-  background: transparent;
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .columnFoot {
@@ -600,17 +558,6 @@
   bottom: 0;
   width: 8px;
   cursor: col-resize;
-}
-
-.handle::after {
-  content: '';
-  position: absolute;
-  top: 16px;
-  bottom: 16px;
-  left: 3px;
-  width: 2px;
-  border-radius: 999px;
-  background: #d0d5dd;
 }
 
 .banner {
