@@ -3,6 +3,7 @@
 import { type FormEvent } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import type { PipelineStatus } from './pipeline-api';
 import styles from './pipeline.module.css';
 
@@ -42,18 +43,15 @@ export function PipelineToolbar({
         value={query}
         onChange={(event) => onQuery(event.currentTarget.value)}
       />
-      <select
-        aria-label={t('status')}
+      <FilterMenu
+        label={t('status')}
         value={statusId}
-        onChange={(event) => onStatus(event.currentTarget.value)}
-      >
-        <option value="">{t('allStatuses')}</option>
-        {statuses.map((status) => (
-          <option key={status.id} value={status.id}>
-            {status.name}
-          </option>
-        ))}
-      </select>
+        options={[
+          { value: '', label: t('allStatuses') },
+          ...statuses.map((status) => ({ value: status.id, label: status.name })),
+        ]}
+        onChange={onStatus}
+      />
       <button type="button" className={styles.add} onClick={onClear}>
         {t('clearFilters')}
       </button>

@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactElement } from 'react';
 import { useTranslations } from 'next-intl';
 
 import type { Contact, ContactListFilters, SessionPrincipal } from './contact';
 import { ColumnsMenu, DensitySwitch, ExportButton } from './contacts-toolbar-menus';
+import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import glass from '../../ui/glass/glass.module.css';
 import styles from './contacts.module.css';
@@ -85,15 +86,16 @@ function ListFilters({
         archived={filters.archived}
         onChange={(archived) => onChange({ ...filters, archived })}
       />
-      <FilterSelect
+      <FilterMenu
         label={t('filterType')}
         value={filters.type}
+        options={[
+          { value: 'all', label: t('typeAll') },
+          { value: 'person', label: t('type.person') },
+          { value: 'organization', label: t('type.organization') },
+        ]}
         onChange={(type) => onChange({ ...filters, type: contactType(type) })}
-      >
-        <option value="all">{t('typeAll')}</option>
-        <option value="person">{t('type.person')}</option>
-        <option value="organization">{t('type.organization')}</option>
-      </FilterSelect>
+      />
       <OwnerSortFilters filters={filters} owners={owners} onChange={onChange} />
     </>
   );
@@ -111,26 +113,24 @@ function OwnerSortFilters({
   const t = useTranslations('contacts');
   return (
     <>
-      <FilterSelect
+      <FilterMenu
         label={t('filterOwner')}
         value={filters.owner}
+        options={[
+          { value: '', label: t('ownerAll') },
+          ...owners.map((owner) => ({ value: owner.id, label: owner.name })),
+        ]}
         onChange={(owner) => onChange({ ...filters, owner })}
-      >
-        <option value="">{t('ownerAll')}</option>
-        {owners.map((owner) => (
-          <option key={owner.id} value={owner.id}>
-            {owner.name}
-          </option>
-        ))}
-      </FilterSelect>
-      <FilterSelect
+      />
+      <FilterMenu
         label={t('filterSort')}
         value={filters.sort}
+        options={[
+          { value: 'asc', label: t('sortAsc') },
+          { value: 'desc', label: t('sortDesc') },
+        ]}
         onChange={(sort) => onChange({ ...filters, sort: sort === 'desc' ? 'desc' : 'asc' })}
-      >
-        <option value="asc">{t('sortAsc')}</option>
-        <option value="desc">{t('sortDesc')}</option>
-      </FilterSelect>
+      />
     </>
   );
 }
@@ -178,27 +178,6 @@ function SearchField({ search, onSearch }: { search: string; onSearch: (search: 
           ×
         </button>
       )}
-    </label>
-  );
-}
-
-function FilterSelect({
-  label,
-  value,
-  onChange,
-  children,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  children: ReactNode;
-}) {
-  return (
-    <label className={styles.filterField}>
-      <span>{label}</span>
-      <select aria-label={label} value={value} onChange={(event) => onChange(event.target.value)}>
-        {children}
-      </select>
     </label>
   );
 }

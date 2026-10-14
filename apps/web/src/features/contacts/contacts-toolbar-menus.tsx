@@ -61,7 +61,6 @@ export function ColumnsMenu(): ReactElement {
     <div className={styles.menuWrap} ref={rootRef}>
       <button
         type="button"
-        className={styles.filterOff}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={menuId}

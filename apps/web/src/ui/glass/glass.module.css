@@ -16,11 +16,11 @@
 }
 
 .button {
-  height: 42px;
+  height: var(--control-height);
   padding: 0 18px;
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
 }

@@ -29,3 +29,56 @@ h6 {
 *::-webkit-scrollbar {
   display: none;
 }
+
+button,
+select {
+  box-sizing: border-box;
+  height: var(--control-height);
+  border: 0;
+  border-radius: var(--control-radius);
+  background: var(--control-fill);
+  color: var(--control-ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button {
+  padding: 0 14px;
+}
+
+button:not([class]):hover {
+  background: var(--control-fill-hover);
+}
+
+button[data-tone='primary'] {
+  background: var(--shell-olive);
+  color: #1c2410;
+}
+
+button[data-tone='primary']:hover {
+  background: var(--control-primary-hover);
+}
+
+button:disabled,
+select:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--shell-blue);
+  outline-offset: 2px;
+}
+
+select {
+  padding: 0 32px 0 14px;
+  background-color: var(--control-fill);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%238a909b' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px;
+  appearance: none;
+}

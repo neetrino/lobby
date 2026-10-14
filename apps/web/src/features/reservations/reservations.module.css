@@ -57,11 +57,11 @@
 .form select,
 .form textarea,
 .confirm input {
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #e7eaf0;
-  border-radius: 10px;
-  background: #fff;
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--control-radius);
+  background: var(--control-fill);
   color: inherit;
   font: inherit;
 }
@@ -78,15 +78,7 @@
 .formFoot button,
 .confirm button,
 .textButton {
-  height: 36px;
-  padding: 0 12px;
-  border: 1px solid #e7eaf0;
-  border-radius: 999px;
-  background: #fff;
-  color: #14213d;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
+  padding: 0 14px;
 }
 
 .table {

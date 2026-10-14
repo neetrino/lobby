@@ -779,7 +779,7 @@
 .primaryButton {
   background: var(--shell-olive);
   color: #1c2410;
-  padding: 10px 18px;
+  padding: 0 18px;
   font-weight: 600;
   box-shadow: 0 8px 18px rgb(42 74 49 / 28%);
 }
@@ -793,9 +793,9 @@
 .actions button,
 .editorHeader button,
 .warningActions button {
-  background: var(--low);
-  color: var(--ink);
-  padding: 8px 12px;
+  background: var(--control-fill);
+  color: var(--control-ink);
+  padding: 0 14px;
 }
 
 .dangerButton {
@@ -874,8 +874,8 @@ button:disabled {
 
 .search svg {
   position: absolute;
-  top: 10px;
-  left: 12px;
+  top: 13px;
+  left: 14px;
   width: 16px;
   height: 16px;
   fill: none;
@@ -887,10 +887,11 @@ button:disabled {
 
 .searchClear {
   position: absolute;
-  top: 6px;
-  right: 8px;
+  top: 9px;
+  right: 10px;
   width: 24px;
   height: 24px;
+  padding: 0;
   border: 0;
   border-radius: 6px;
   background: transparent;
@@ -902,7 +903,6 @@ button:disabled {
 }
 
 .search input,
-.toolbar select,
 .form input,
 .form select {
   width: 100%;
@@ -916,43 +916,13 @@ button:disabled {
 }
 
 .search input {
-  height: 36px;
+  height: 42px;
   padding: 0 36px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.filterField {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 36px;
-  padding: 0 8px 0 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-}
-
-.filterField span {
-  color: #64748b;
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.filterField select {
-  width: auto;
-  height: 34px;
-  padding: 0 22px 0 8px;
   border: 0;
-  border-left: 1px solid #e2e8f0;
-  background-color: transparent;
-  color: #0b1c30;
+  border-radius: 999px;
+  background: #eef1f4;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .toolbarControls {
@@ -965,33 +935,6 @@ button:disabled {
 
 .toolbar select {
   width: auto;
-  height: 36px;
-  padding: 0 30px 0 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background-color: #fff;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%2364748b' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 10px center;
-  background-size: 12px;
-  color: #0b1c30;
-  font-size: 14px;
-  font-weight: 600;
-  appearance: none;
-  cursor: pointer;
-}
-
-.toolbar .filterField select {
-  width: auto;
-  height: 34px;
-  padding: 0 22px 0 8px;
-  border: 0;
-  border-left: 1px solid #e2e8f0;
-  border-radius: 0;
-  background-color: transparent;
-  background-position: right 0 center;
-  font-size: 14px;
-  font-weight: 600;
 }
 
 .clearFilters {
@@ -1176,50 +1119,15 @@ button:focus-visible {
   font-weight: 500;
 }
 
-.pageSize select,
-.filterOff,
-.filterOn {
-  height: 36px;
-  padding: 0 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  color: #0b1c30;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.filterOn {
-  border-color: #bfdbfe;
-  background: #eff6ff;
-  color: #1d4ed8;
-}
-
-.filterOff,
-.filterOn {
-  cursor: pointer;
-}
-
 .exportButton {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 36px;
-  padding: 0 12px;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fff;
-  color: #0b1c30;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
   white-space: nowrap;
-  cursor: pointer;
 }
 
 .exportButton:hover {
-  background: #f8fafc;
+  background: var(--control-fill-hover);
 }
 
 .exportButton:disabled {
@@ -1355,9 +1263,10 @@ button:focus-visible {
   white-space: nowrap;
 }
 
-.warningClose {
+.warningActions .warningClose {
   width: 28px;
   height: 28px;
+  padding: 0;
   border-radius: 8px;
   background: transparent;
   color: #5c3b12;

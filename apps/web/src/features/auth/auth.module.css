@@ -198,28 +198,28 @@
 }
 
 .submit {
-  height: 44px;
+  height: var(--control-height);
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--control-radius);
   background: var(--shell-olive);
   color: #1c2410;
   font: inherit;
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .secondary {
-  height: 44px;
-  border-radius: 999px;
-  background: #f3f5f8;
-  color: #14213d;
+  height: var(--control-height);
+  border-radius: var(--control-radius);
+  background: var(--control-fill);
+  color: var(--control-ink);
   font-size: 14px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .secondary:hover {
-  background: #e7ebf2;
+  background: var(--control-fill-hover);
 }
 
 .submit:hover {

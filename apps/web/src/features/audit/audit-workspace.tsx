@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { ContactsShell } from '../contacts/contacts-shell';
 import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
+import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import glass from '../../ui/glass/glass.module.css';
 import {
   AuditRequestError,
@@ -140,37 +141,39 @@ export function AuditWorkspace() {
                   value={filters.search}
                   onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                 />
-                <select
-                  aria-label={t('outcome')}
+                <FilterMenu
+                  label={t('outcome')}
                   value={filters.outcome}
-                  onChange={(e) => setFilters({ ...filters, outcome: e.target.value })}
-                >
-                  <option value="">{t('allOutcomes')}</option>
-                  <option value="SUCCESS">{outcomeText(t, 'SUCCESS')}</option>
-                  <option value="DENIED">{outcomeText(t, 'DENIED')}</option>
-                  <option value="FAILURE">{outcomeText(t, 'FAILURE')}</option>
-                </select>
-                <select
-                  aria-label={t('actorType')}
+                  options={[
+                    { value: '', label: t('allOutcomes') },
+                    { value: 'SUCCESS', label: outcomeText(t, 'SUCCESS') },
+                    { value: 'DENIED', label: outcomeText(t, 'DENIED') },
+                    { value: 'FAILURE', label: outcomeText(t, 'FAILURE') },
+                  ]}
+                  onChange={(outcome) => setFilters({ ...filters, outcome })}
+                />
+                <FilterMenu
+                  label={t('actorType')}
                   value={filters.actorType}
-                  onChange={(e) => setFilters({ ...filters, actorType: e.target.value })}
-                >
-                  <option value="">{t('allActors')}</option>
-                  <option value="USER">{t('user')}</option>
-                  <option value="INTEGRATION">{t('integration')}</option>
-                </select>
-                <select
-                  aria-label={t('resourceType')}
+                  options={[
+                    { value: '', label: t('allActors') },
+                    { value: 'USER', label: t('user') },
+                    { value: 'INTEGRATION', label: t('integration') },
+                  ]}
+                  onChange={(actorType) => setFilters({ ...filters, actorType })}
+                />
+                <FilterMenu
+                  label={t('resourceType')}
                   value={filters.resourceType}
-                  onChange={(e) => setFilters({ ...filters, resourceType: e.target.value })}
-                >
-                  <option value="">{t('allResources')}</option>
-                  {auditResourceTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {resourceText(t, type)}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: t('allResources') },
+                    ...auditResourceTypes.map((type) => ({
+                      value: type,
+                      label: resourceText(t, type),
+                    })),
+                  ]}
+                  onChange={(resourceType) => setFilters({ ...filters, resourceType })}
+                />
                 <label>
                   {t('from')}
                   <input

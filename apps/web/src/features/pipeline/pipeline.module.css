@@ -183,9 +183,10 @@
   font-weight: 600;
 }
 
-.iconButton,
-.add {
+.iconButton {
+  width: 32px;
   height: 32px;
+  padding: 0;
   border: 1px solid #e7eaf0;
   border-radius: 8px;
   background: #fff;
@@ -195,10 +196,10 @@
   font-weight: 600;
 }
 
-.iconButton {
-  width: 32px;
-  padding: 0;
+.add {
+  color: var(--control-ink);
 }
+
 
 .tools {
   display: flex;
@@ -212,11 +213,11 @@
 .tools select,
 .statusRow input[type='text'],
 .statusRow input:not([type='color']) {
-  height: 40px;
-  padding: 0 12px;
-  border: 1px solid #e7eaf0;
-  border-radius: 10px;
-  background: #fff;
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--control-radius);
+  background: var(--control-fill);
   color: inherit;
   font: inherit;
 }
@@ -371,6 +372,7 @@
   display: grid;
   width: 32px;
   height: 32px;
+  padding: 0;
   place-items: center;
   border: 1px solid #e7eaf0;
   border-radius: 8px;
@@ -558,18 +560,12 @@
 }
 
 .addColumn .add {
-  height: 40px;
-  border: 0;
-  border-radius: 10px;
   background: var(--shell-olive);
   color: #1c2410;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 .addColumn .add:hover {
-  background: #1d4ed8;
+  background: var(--control-primary-hover);
 }
 
 .handle {

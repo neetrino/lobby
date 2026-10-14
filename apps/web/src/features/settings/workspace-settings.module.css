@@ -36,7 +36,7 @@
   height: 42px;
   padding: 0 18px;
   border: 1px solid #fecaca;
-  border-radius: 12px;
+  border-radius: var(--control-radius);
   background: #fff5f5;
   color: #b42318;
   font: inherit;

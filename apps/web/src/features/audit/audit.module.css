@@ -117,20 +117,15 @@
 .filterPanel input,
 .filterPanel select,
 .filterPanel button {
-  height: 42px;
-  padding: 0 12px;
-  border: 1px solid #dce4f1;
-  border-radius: 11px;
-  background: #fff;
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--control-radius);
+  background: var(--control-fill);
   color: inherit;
   font: inherit;
 }
-.filterPanel button {
-  font-weight: 600;
-  cursor: pointer;
-}
 .filterPanel .apply {
-  border-color: var(--shell-olive);
   background: var(--shell-olive);
   color: #1c2410;
 }

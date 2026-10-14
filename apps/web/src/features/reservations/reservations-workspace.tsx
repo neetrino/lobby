@@ -10,6 +10,7 @@ import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
 import { readTeamDirectory } from '../team/team-api';
 import glass from '../../ui/glass/glass.module.css';
+import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import {
   cancelReservation,
@@ -403,18 +404,15 @@ function Header(props: {
             ›
           </button>
         </div>
-        <select
-          aria-label={t('location')}
+        <FilterMenu
+          label={t('location')}
           value={props.locationId}
-          onChange={(event) => props.onLocation(event.target.value)}
-        >
-          <option value="">{t('allLocations')}</option>
-          {props.venues.map((venue) => (
-            <option key={venue.id} value={venue.id}>
-              {venue.name}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: t('allLocations') },
+            ...props.venues.map((venue) => ({ value: venue.id, label: venue.name })),
+          ]}
+          onChange={props.onLocation}
+        />
         {props.canCreate ? (
           <button
             type="button"
@@ -464,18 +462,18 @@ function Filters(props: {
   }, [draft, onSearch]);
   return (
     <div className={styles.filters}>
-      <select
-        aria-label={t('status')}
+      <FilterMenu
+        label={t('status')}
         value={props.status}
-        onChange={(event) => props.onStatus(event.target.value)}
-      >
-        <option value="">{t('allStatuses')}</option>
-        {RESERVATION_STATUSES.map((status) => (
-          <option key={status} value={status}>
-            {t(`statuses.${status}`)}
-          </option>
-        ))}
-      </select>
+        options={[
+          { value: '', label: t('allStatuses') },
+          ...RESERVATION_STATUSES.map((status) => ({
+            value: status,
+            label: t(`statuses.${status}`),
+          })),
+        ]}
+        onChange={props.onStatus}
+      />
       <label>
         {t('from')}
         <input
@@ -494,18 +492,15 @@ function Filters(props: {
           onChange={(event) => props.onTo(event.target.value)}
         />
       </label>
-      <select
-        aria-label={t('assignee')}
+      <FilterMenu
+        label={t('assignee')}
         value={props.assigneeId}
-        onChange={(event) => props.onAssignee(event.target.value)}
-      >
-        <option value="">{t('allAssignees')}</option>
-        {props.members.map((member) => (
-          <option key={member.id} value={member.id}>
-            {member.name}
-          </option>
-        ))}
-      </select>
+        options={[
+          { value: '', label: t('allAssignees') },
+          ...props.members.map((member) => ({ value: member.id, label: member.name })),
+        ]}
+        onChange={props.onAssignee}
+      />
       <input
         aria-label={t('search')}
         placeholder={t('search')}

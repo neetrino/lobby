@@ -16,4 +16,10 @@
   --shell-blue: #6eaff8;
   --shell-ink: #1a1d24;
   --shell-muted: #8a909b;
+  --control-height: 42px;
+  --control-radius: 999px;
+  --control-fill: #eef1f4;
+  --control-fill-hover: #e4e7ec;
+  --control-ink: var(--shell-ink);
+  --control-primary-hover: #8aaf4c;
 }
