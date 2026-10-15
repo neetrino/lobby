@@ -27,6 +27,7 @@ const sans = Noto_Sans({
 
 const armenian = Noto_Sans_Armenian({
   subsets: ['armenian'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-armenian',
 });
 

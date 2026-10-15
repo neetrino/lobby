@@ -50,9 +50,10 @@
   border-radius: 999px;
   background: transparent;
   color: #667085;
-  font: inherit;
+  font-family: var(--font-sans), var(--font-armenian), sans-serif;
   font-size: 13px;
   font-weight: 600;
+  font-synthesis: none;
   line-height: 1;
   cursor: pointer;
   transition: color 380ms ease;
