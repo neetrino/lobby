@@ -1,6 +1,8 @@
 type Layer = {
   element: HTMLElement;
   previous: Element | null;
+  /** ESC close: restore without a keyboard outline on the trigger. */
+  quiet: boolean;
 };
 
 const layers: Layer[] = [];
@@ -16,9 +18,17 @@ const FOCUSABLE = [
 
 /** Tracks open portals so only the top one is interactive. */
 export function pushLayer(element: HTMLElement): void {
-  layers.push({ element, previous: document.activeElement });
+  layers.push({ element, previous: document.activeElement, quiet: false });
   syncLayers();
   focusFirst(element);
+}
+
+/** Marks the top layer so unmount does not leave a :focus-visible ring. */
+export function quietRestore(element: HTMLElement): void {
+  const layer = layers.find((item) => item.element === element);
+  if (layer !== undefined) {
+    layer.quiet = true;
+  }
 }
 
 export function removeLayer(element: HTMLElement): void {
@@ -64,8 +74,11 @@ function syncLayers(): void {
 
 function restoreFocus(removed: Layer | undefined): void {
   const previous = removed?.previous;
+  if (removed?.quiet === true) {
+    return;
+  }
   if (previous instanceof HTMLElement && document.contains(previous)) {
-    previous.focus();
+    previous.focus({ preventScroll: true });
   }
 }
 

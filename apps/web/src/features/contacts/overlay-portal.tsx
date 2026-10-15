@@ -13,7 +13,7 @@ import { createPortal } from 'react-dom';
 
 import { SheetDismissProvider } from '../../ui/overlay/sheet-dismiss';
 import { SheetFrame } from '../../ui/side-sheet/side-sheet';
-import { isTopLayer, pushLayer, removeLayer, trapTab } from './portal-layer';
+import { isTopLayer, pushLayer, quietRestore, removeLayer, trapTab } from './portal-layer';
 import styles from './overlay-portal.module.css';
 
 /** Full-screen dimmed layer rendered on `document.body` through React's portal. */
@@ -87,6 +87,7 @@ export function OverlayPortal({
       }
       if (event.key === 'Escape' && dismissRef.current !== undefined) {
         event.preventDefault();
+        quietRestore(dialog);
         close();
         const node = document.activeElement;
         if (node instanceof HTMLElement) node.blur();
