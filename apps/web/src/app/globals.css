@@ -18,8 +18,9 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: var(--font-display), var(--font-outfit), var(--font-armenian), var(--font-sans),
-    sans-serif;
+  font-family: var(--font-display), var(--font-outfit), var(--font-heading), var(--font-armenian),
+    var(--font-sans), sans-serif;
+  font-weight: 800;
   font-synthesis: none;
 }
 
