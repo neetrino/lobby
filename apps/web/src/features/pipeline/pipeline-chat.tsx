@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 
 import { SheetChrome, SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
@@ -152,6 +152,7 @@ export function PipelineChat({
                   aria-label={t('chatMessage')}
                   placeholder={t('chatPlaceholder')}
                   onInput={(event) => growComposer(event.currentTarget)}
+                  onKeyDown={sendOnEnter}
                 />
                 <button type="submit" className={styles.send} disabled={sending} aria-label={t('chatSend')}>
                   <SendIcon />
@@ -167,6 +168,14 @@ export function PipelineChat({
 }
 
 const COMPOSER_MAX = 180;
+
+function sendOnEnter(event: KeyboardEvent<HTMLTextAreaElement>): void {
+  if (event.key !== 'Enter' || event.shiftKey) {
+    return;
+  }
+  event.preventDefault();
+  event.currentTarget.form?.requestSubmit();
+}
 
 function growComposer(field: HTMLTextAreaElement): void {
   field.style.height = 'auto';

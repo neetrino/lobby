@@ -7,6 +7,7 @@ import {
   useState,
   type Dispatch,
   type FormEvent,
+  type KeyboardEvent,
   type SetStateAction,
 } from 'react';
 import { useTranslations } from 'next-intl';
@@ -166,6 +167,7 @@ function TeamThread({ member, selfId }: { member: TeamMember | null; selfId: str
           aria-label={t('chatMessage')}
           placeholder={t('chatPlaceholder')}
           onInput={(event) => growComposer(event.currentTarget)}
+          onKeyDown={sendOnEnter}
         />
         <button
           type="submit"
@@ -257,6 +259,14 @@ function ChatBubble({ message, mine }: { message: DirectMessage; mine: boolean }
 }
 
 const COMPOSER_MAX = 180;
+
+function sendOnEnter(event: KeyboardEvent<HTMLTextAreaElement>): void {
+  if (event.key !== 'Enter' || event.shiftKey) {
+    return;
+  }
+  event.preventDefault();
+  event.currentTarget.form?.requestSubmit();
+}
 
 function growComposer(field: HTMLTextAreaElement): void {
   field.style.height = 'auto';

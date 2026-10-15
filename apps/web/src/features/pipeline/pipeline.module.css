@@ -753,22 +753,23 @@
   border-top: 1px solid #eef1f4;
   background: #fff;
 }
-.chatComposer textarea {
+.chatPanel .chatComposer textarea {
   box-sizing: border-box;
   flex: 1;
   height: var(--control-height);
   min-height: var(--control-height);
   max-height: 180px;
-  padding: 10px 16px;
+  padding: 9px 16px;
   overflow-y: auto;
   resize: none;
   border: 0;
   border-radius: 22px;
   background: #f4f5f7;
   font: inherit;
-  line-height: 1.4;
+  font-size: 14px;
+  line-height: 24px;
 }
-.chatComposer textarea:focus {
+.chatPanel .chatComposer textarea:focus {
   outline: none;
   box-shadow: none;
 }
