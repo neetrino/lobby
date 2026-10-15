@@ -8,7 +8,6 @@ import { ColumnsMenu, ExportButton } from './contacts-toolbar-menus';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import { FilterField, SearchFilters } from '../../ui/search-filters/search-filters';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
-import glass from '../../ui/glass/glass.module.css';
 import styles from './contacts.module.css';
 
 const SEARCH_DEBOUNCE_MS = 300;
@@ -56,7 +55,7 @@ export function ContactsToolbar({
   onExport: () => Promise<void>;
 }) {
   return (
-    <div className={`${styles.toolbar} ${styles.glassTop} ${glass.panel} ${glass.soft}`}>
+    <div className={styles.toolbar}>
       <ContactSearch
         filters={filters}
         search={search}
@@ -93,6 +92,7 @@ function ContactSearch({
   return (
     <>
     <SearchFilters
+      white
       value={search}
       onChange={onSearch}
       placeholder={t('searchContacts')}
