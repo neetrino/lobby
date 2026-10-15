@@ -200,6 +200,7 @@ export function useMenuDismiss(
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key === 'Escape') {
         close();
+        blurActive();
       }
     }
     document.addEventListener('pointerdown', onPointerDown);
@@ -209,4 +210,10 @@ export function useMenuDismiss(
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [close, menuRef, open, rootRef]);
+}
+
+/** Drops keyboard focus so ESC does not leave a colored ring on the trigger. */
+export function blurActive(): void {
+  const node = document.activeElement;
+  if (node instanceof HTMLElement) node.blur();
 }

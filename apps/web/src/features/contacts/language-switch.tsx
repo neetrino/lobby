@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useRef, useState, type RefObject } from 'react';
 
 import styles from './language-switch.module.css';
+import { blurActive } from '../../ui/select/anchored-menu';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 
 export function LanguageSwitch({ compact = false }: { compact?: boolean }) {
@@ -81,6 +82,7 @@ function useDismissWhenOpen(
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key === 'Escape') {
         close();
+        blurActive();
       }
     }
     document.addEventListener('pointerdown', onPointerDown);

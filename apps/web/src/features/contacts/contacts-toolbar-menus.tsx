@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState, type ReactElement, type RefObject }
 import { useTranslations } from 'next-intl';
 
 import { Checkbox } from '../../ui/checkbox/checkbox';
+import { blurActive } from '../../ui/select/anchored-menu';
 import { contactColumns, useContactsListUi, type ContactColumn } from './contacts-list-ui';
 import styles from './contacts.module.css';
 
@@ -112,6 +113,7 @@ function useDismiss(
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key === 'Escape') {
         close();
+        blurActive();
       }
     }
     document.addEventListener('pointerdown', onPointerDown);

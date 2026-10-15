@@ -13,7 +13,12 @@ import {
 import { createPortal } from 'react-dom';
 
 import { menuMotionClass, usePresence } from '../menu-motion/use-presence';
-import { anchoredStyle, useAnchoredBox, type AnchoredBox } from '../select/anchored-menu';
+import {
+  anchoredStyle,
+  blurActive,
+  useAnchoredBox,
+  type AnchoredBox,
+} from '../select/anchored-menu';
 import styles from './search-filters.module.css';
 
 const panelMinWidth = 520;
@@ -212,7 +217,10 @@ function useFilterDismiss(
       close();
     }
     function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') close();
+      if (event.key === 'Escape') {
+        close();
+        blurActive();
+      }
     }
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);

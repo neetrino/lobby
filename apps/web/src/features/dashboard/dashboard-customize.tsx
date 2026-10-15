@@ -17,6 +17,7 @@ import { createPortal } from 'react-dom';
 
 import type { DashboardBoard } from './dashboard-api';
 import { widgetLabel } from './dashboard-layout';
+import { blurActive } from '../../ui/select/anchored-menu';
 import chrome from '../../ui/side-sheet/side-sheet.module.css';
 import drawer from './dashboard-drawer.module.css';
 import styles from './dashboard-toolbar.module.css';
@@ -79,6 +80,7 @@ export function CustomizeDrawer({
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key === 'Escape') {
         close();
+        blurActive();
       }
     }
     document.addEventListener('keydown', onKeyDown);

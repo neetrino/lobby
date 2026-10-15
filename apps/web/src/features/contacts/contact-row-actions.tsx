@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { useTranslations } from 'next-intl';
 
+import { blurActive } from '../../ui/select/anchored-menu';
 import { canManageLifecycle, type Contact, type SessionPrincipal } from './contact';
 import styles from './contacts-table.module.css';
 
@@ -185,6 +186,7 @@ function useDismiss(
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key === 'Escape') {
         close();
+        blurActive();
       }
     }
     document.addEventListener('pointerdown', onPointerDown);

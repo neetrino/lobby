@@ -131,6 +131,8 @@ function useEscapeClose(onClose: () => void): void {
       if (event.key !== 'Escape') return;
       event.stopPropagation();
       onClose();
+      const node = document.activeElement;
+      if (node instanceof HTMLElement) node.blur();
     }
     document.addEventListener('keydown', onKey, true);
     return () => document.removeEventListener('keydown', onKey, true);

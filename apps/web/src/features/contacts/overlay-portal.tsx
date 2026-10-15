@@ -88,6 +88,8 @@ export function OverlayPortal({
       if (event.key === 'Escape' && dismissRef.current !== undefined) {
         event.preventDefault();
         close();
+        const node = document.activeElement;
+        if (node instanceof HTMLElement) node.blur();
       }
       if (event.key === 'Tab') {
         trapTab(event, dialog);

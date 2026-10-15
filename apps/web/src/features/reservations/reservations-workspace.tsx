@@ -79,25 +79,25 @@ export function ReservationsWorkspace() {
         >
           <Header
             day={board.fromDay}
-            locationId={board.locationId}
-            venues={board.venues}
             canCreate={canCreate}
             onDay={(day) => board.setRange(day, day)}
             onShift={board.shift}
-            onLocation={board.setLocationId}
             onCreate={() => board.setEditing('create')}
           />
           <Filters
             fromDay={board.fromDay}
             toDay={board.toDay}
             status={board.status}
+            locationId={board.locationId}
             view={board.view}
             assigneeId={board.assigneeId}
             search={board.search}
+            venues={board.venues}
             members={board.members}
             onFrom={(day) => board.setRange(day, board.toDay)}
             onTo={(day) => board.setRange(board.fromDay, day)}
             onStatus={board.setStatus}
+            onLocation={board.setLocationId}
             onView={board.setView}
             onAssignee={board.setAssigneeId}
             onSearch={board.setSearch}
@@ -381,12 +381,9 @@ function useDetail(
 
 function Header(props: {
   day: string;
-  locationId: string;
-  venues: Venue[];
   canCreate: boolean;
   onDay: (day: string) => void;
   onShift: (delta: number) => void;
-  onLocation: (id: string) => void;
   onCreate: () => void;
 }) {
   const t = useTranslations('reservations');
@@ -403,16 +400,6 @@ function Header(props: {
             ›
           </button>
         </div>
-        <FilterMenu
-          white
-          label={t('location')}
-          value={props.locationId}
-          options={[
-            { value: '', label: t('allLocations') },
-            ...props.venues.map((venue) => ({ value: venue.id, label: venue.name })),
-          ]}
-          onChange={props.onLocation}
-        />
         {props.canCreate ? (
           <button
             type="button"
@@ -444,13 +431,16 @@ function Filters(props: {
   fromDay: string;
   toDay: string;
   status: string;
+  locationId: string;
   view: ViewName;
   assigneeId: string;
   search: string;
+  venues: Venue[];
   members: Member[];
   onFrom: (day: string) => void;
   onTo: (day: string) => void;
   onStatus: (status: string) => void;
+  onLocation: (id: string) => void;
   onView: (view: ViewName) => void;
   onAssignee: (id: string) => void;
   onSearch: (search: string) => void;
@@ -495,6 +485,16 @@ function Filters(props: {
           />
         </FilterField>
       </SearchFilters>
+      <FilterMenu
+        white
+        label={t('location')}
+        value={props.locationId}
+        options={[
+          { value: '', label: t('allLocations') },
+          ...props.venues.map((venue) => ({ value: venue.id, label: venue.name })),
+        ]}
+        onChange={props.onLocation}
+      />
       <FilterMenu
         white
         label={t('status')}

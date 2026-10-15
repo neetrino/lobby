@@ -22,11 +22,11 @@
 }
 
 .white:focus-within {
-  box-shadow: 0 8px 18px var(--glass-shadow), 0 0 0 2px var(--shell-blue);
+  box-shadow: 0 8px 18px var(--glass-shadow), 0 0 0 2px var(--shell-olive);
 }
 
 .field:focus-within {
-  box-shadow: 0 0 0 2px var(--shell-blue);
+  box-shadow: 0 0 0 2px var(--shell-olive);
 }
 
 .field svg {

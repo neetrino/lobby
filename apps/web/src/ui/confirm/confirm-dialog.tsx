@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 
+import { blurActive } from '../select/anchored-menu';
 import styles from './confirm-dialog.module.css';
 
 type ConfirmDialogProps = {
@@ -113,7 +114,10 @@ function ConfirmPanel({
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => {
-          if (event.key === 'Escape') onDismiss();
+          if (event.key === 'Escape') {
+            onDismiss();
+            blurActive();
+          }
         }}
       >
         <h2 id="confirm-dialog-title">{title}</h2>

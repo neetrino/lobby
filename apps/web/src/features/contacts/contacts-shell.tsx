@@ -15,6 +15,7 @@ import {
 
 import { SignOutButton } from '../auth/sign-out-button';
 import { BrandLogo } from '../../ui/brand/brand-logo';
+import { blurActive } from '../../ui/select/anchored-menu';
 import type { SessionPrincipal } from './contact';
 import { rememberSession } from './remembered-session';
 import { BranchSwitch } from './branch-switch';
@@ -245,6 +246,7 @@ function useDismiss(
     function onKeyDown(event: KeyboardEvent): void {
       if (event.key === 'Escape') {
         close();
+        blurActive();
       }
     }
     document.addEventListener('pointerdown', onPointerDown);
