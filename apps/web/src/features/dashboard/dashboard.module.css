@@ -17,7 +17,7 @@
   padding: 28px 32px 32px;
   background: transparent;
   color: var(--text-primary);
-  font-family: inherit;
+  font-family: var(--font-inter), var(--font-armenian), var(--font-sans), sans-serif;
   font-size: 14px;
 }
 

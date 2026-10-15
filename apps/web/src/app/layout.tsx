@@ -1,4 +1,4 @@
-import { Noto_Sans, Noto_Sans_Armenian } from 'next/font/google';
+import { Inter, Noto_Sans, Noto_Sans_Armenian } from 'next/font/google';
 import localFont from 'next/font/local';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -17,6 +17,11 @@ const outfit = localFont({
   variable: '--font-outfit',
   weight: '100 900',
   display: 'swap',
+});
+
+const inter = Inter({
+  subsets: ['latin', 'cyrillic'],
+  variable: '--font-inter',
 });
 
 const sans = Noto_Sans({
@@ -43,7 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html
       lang="en"
-      className={`${display.variable} ${outfit.variable} ${armenian.variable} ${sans.variable}`}
+      className={`${display.variable} ${outfit.variable} ${inter.variable} ${armenian.variable} ${sans.variable}`}
     >
       <body>{children}</body>
     </html>

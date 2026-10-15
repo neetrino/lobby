@@ -2,9 +2,7 @@
 
 :root {
   color-scheme: light;
-  font-family: var(--font-display), var(--font-outfit), var(--font-armenian), var(--font-sans),
-    sans-serif;
-  font-synthesis: weight;
+  font-family: Arial, sans-serif;
 }
 
 html,
@@ -20,8 +18,9 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: inherit;
-  font-synthesis: weight;
+  font-family: var(--font-display), var(--font-outfit), var(--font-armenian), var(--font-sans),
+    sans-serif;
+  font-synthesis: none;
 }
 
 * {

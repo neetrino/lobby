@@ -219,7 +219,7 @@
   min-height: 0;
   overflow: hidden;
   color: #14213d;
-  font-family: inherit;
+  font-family: var(--font-inter), var(--font-armenian), system-ui, sans-serif;
 }
 
 .drawerHead {
@@ -504,7 +504,7 @@
   padding: 0;
   background: transparent;
   color: inherit;
-  font-family: inherit;
+  font-family: var(--font-inter), var(--font-armenian), system-ui, sans-serif;
 }
 
 .confirm {
@@ -519,7 +519,7 @@
   border-radius: 28px;
   background: #fff;
   color: #14213d;
-  font-family: inherit;
+  font-family: var(--font-inter), var(--font-armenian), system-ui, sans-serif;
   box-shadow: 0 24px 60px rgb(20 33 61 / 18%);
 }
 

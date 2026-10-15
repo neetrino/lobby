@@ -4,8 +4,8 @@
   gap: 18px;
   padding: 30px 34px 44px;
   color: #13213c;
-  font-family: inherit;
-  font-synthesis: weight;
+  font-family: var(--font-inter), var(--font-armenian), system-ui, sans-serif;
+  font-synthesis: none;
 }
 .header {
   display: flex;

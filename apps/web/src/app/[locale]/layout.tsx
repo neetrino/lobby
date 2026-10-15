@@ -24,7 +24,9 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LocaleDocumentLang locale={locale} />
-      <div lang={locale}>{children}</div>
+      <div lang={locale} style={{ fontFamily: 'var(--font-armenian), var(--font-sans), sans-serif' }}>
+        {children}
+      </div>
     </NextIntlClientProvider>
   );
 }
