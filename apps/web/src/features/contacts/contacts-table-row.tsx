@@ -1,12 +1,11 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import type { ReactElement } from 'react';
+import type { KeyboardEvent, ReactElement } from 'react';
 
 import { ContactAvatar, OwnerAvatar, TypeBadge } from './contact-avatar';
 import { Checkbox } from '../../ui/checkbox/checkbox';
-import type { Contact, SessionPrincipal } from './contact';
-import { ContactRowActions } from './contact-row-actions';
+import type { Contact } from './contact';
 import { formatContactStamp } from './contact-format';
 import { useContactsListUi } from './contacts-list-ui';
 import styles from './contacts.module.css';
@@ -17,42 +16,44 @@ export function ContactRow({
   locale,
   picked,
   open,
-  session,
   onToggle,
   onOpen,
-  onEdit,
-  onArchive,
-  onRestore,
 }: {
   contact: Contact;
   locale: string;
   picked: boolean;
   open: boolean;
-  session: SessionPrincipal | null;
   onToggle: () => void;
   onOpen: (contact: Contact) => void;
-  onEdit: (contact: Contact) => void;
-  onArchive: () => void;
-  onRestore: () => void;
 }): ReactElement {
   const archived = contact.archivedAt !== null;
   return (
-    <tr className={rowClass(picked || open, archived)}>
+    <tr
+      className={rowClass(picked || open, archived)}
+      tabIndex={0}
+      onClick={(event) => openRow(event.target, contact, onOpen)}
+      onKeyDown={(event) => openRowKey(event, contact, onOpen)}
+    >
       <CheckCell contact={contact} picked={picked} onToggle={onToggle} />
-      <NameCell contact={contact} archived={archived} onOpen={onOpen} />
+      <NameCell contact={contact} archived={archived} />
       <OptionalCells contact={contact} locale={locale} archived={archived} />
-      <td>
-        <ContactRowActions
-          contact={contact}
-          session={session}
-          onView={onOpen}
-          onEdit={onEdit}
-          onArchive={onArchive}
-          onRestore={onRestore}
-        />
-      </td>
     </tr>
   );
+}
+
+function openRow(target: EventTarget, contact: Contact, onOpen: (contact: Contact) => void): void {
+  if (target instanceof Element && target.closest('input, label, button, a')) return;
+  onOpen(contact);
+}
+
+function openRowKey(
+  event: KeyboardEvent<HTMLTableRowElement>,
+  contact: Contact,
+  onOpen: (contact: Contact) => void,
+): void {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  onOpen(contact);
 }
 
 function CheckCell({
@@ -66,7 +67,7 @@ function CheckCell({
 }): ReactElement {
   const t = useTranslations('contacts');
   return (
-    <td className={styles.checkCol}>
+    <td className={styles.checkCol} onClick={(event) => event.stopPropagation()}>
       <Checkbox checked={picked} label={t('selectRow', { name: contact.name })} onChange={onToggle} />
     </td>
   );
@@ -75,11 +76,9 @@ function CheckCell({
 function NameCell({
   contact,
   archived,
-  onOpen,
 }: {
   contact: Contact;
   archived: boolean;
-  onOpen: (contact: Contact) => void;
 }): ReactElement {
   const className = archived
     ? `${styles.nameButton} ${tableStyles.archivedName}`
@@ -88,10 +87,10 @@ function NameCell({
     <td className={styles.nameCol}>
       <div className={tableStyles.identity}>
         <ContactAvatar name={contact.name} type={contact.type} id={contact.id} />
-        <button type="button" className={className} onClick={() => onOpen(contact)}>
+        <div className={className}>
           <strong>{contact.name}</strong>
           <TypeBadge type={contact.type} />
-        </button>
+        </div>
       </div>
     </td>
   );

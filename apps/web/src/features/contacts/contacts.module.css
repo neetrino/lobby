@@ -229,7 +229,6 @@
 .brand,
 .pageHeader,
 .editorHeader,
-.warning,
 .pager,
 .editorActions {
   display: flex;
@@ -854,8 +853,7 @@
   letter-spacing: -0.015em;
 }
 
-.pageHeader p,
-.warning p {
+.pageHeader p {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 13px;
@@ -919,8 +917,7 @@ button:disabled {
   margin-top: 16px;
 }
 
-.editor,
-.warning {
+.editor {
   margin-top: 16px;
   border-radius: 12px;
   background: var(--card);
@@ -1042,6 +1039,7 @@ button:focus-visible {
 }
 
 .table tbody tr {
+  cursor: pointer;
   transition: background-color 120ms ease;
 }
 
@@ -1082,7 +1080,6 @@ button:focus-visible {
   border: 0;
   background: transparent;
   color: #12315c;
-  cursor: pointer;
   font: inherit;
   font-size: 16px;
   font-weight: 600;
@@ -1229,9 +1226,12 @@ button:focus-visible {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  background: #fff1e4;
-  color: #5c3b12;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 28px;
+  background: #fff;
+  color: #14213d;
+  box-shadow: 0 10px 28px rgb(28 33 48 / 8%);
 }
 
 .warningCopy {
@@ -1240,26 +1240,31 @@ button:focus-visible {
 
 .warningMark {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   flex: none;
   place-items: center;
-  border-radius: 50%;
-  background: #ffddb8;
-  font-weight: 700;
+  border-radius: 999px;
+  background: var(--shell-olive);
+  color: #1c2410;
+}
+
+.warningMark svg {
+  width: 24px;
+  height: 24px;
 }
 
 .warningTitle {
   display: block;
-  color: #5c3b12;
-  font-size: 14px;
-  font-weight: 600;
+  color: #14213d;
+  font-size: 15px;
+  font-weight: 650;
   line-height: 1.35;
 }
 
 .warning p {
   margin: 2px 0 0;
-  color: #5c3b12;
+  color: #667085;
   font-size: 13px;
   font-weight: 400;
   line-height: 1.4;
@@ -1267,6 +1272,7 @@ button:focus-visible {
 
 .warningView,
 .warningClose {
+  flex: none;
   border: 0;
   cursor: pointer;
   font: inherit;
@@ -1274,24 +1280,32 @@ button:focus-visible {
 
 .warningView {
   margin-left: auto;
-  padding: 8px 12px;
-  border: 1px solid #e6d3c0;
-  border-radius: 8px;
+  height: var(--control-height);
+  padding: 0 16px;
+  border-radius: 999px;
   background: #fff;
-  color: #5c3b12;
+  color: #1c2410;
+  box-shadow: inset 0 0 0 1px #e4e7ee;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 650;
   white-space: nowrap;
 }
 
-.warningActions .warningClose {
-  width: 28px;
-  height: 28px;
+.warningClose {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
   padding: 0;
-  border-radius: 8px;
-  background: transparent;
-  color: #5c3b12;
-  font-size: 18px;
+  border-radius: 999px;
+  background: #fff;
+  color: #14213d;
+  box-shadow: 0 4px 12px rgb(20 33 61 / 12%);
+}
+
+.warningClose svg {
+  width: 16px;
+  height: 16px;
 }
 
 .editor {
@@ -1307,7 +1321,7 @@ button:focus-visible {
   flex: 1;
   flex-direction: column;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .editor h2 {

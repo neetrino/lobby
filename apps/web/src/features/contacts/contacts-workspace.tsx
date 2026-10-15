@@ -1,5 +1,6 @@
 'use client';
 
+import { AlertTriangle, X } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
@@ -49,7 +50,8 @@ export function ContactsWorkspace() {
     setToast((current) => (current?.id === id ? null : current));
   }, []);
   const listError = list.error ?? editor.error;
-  const notices = visibleNotices(editor.warnings, duplicateNotices(list.rows), noticeHidden);
+  const listedDuplicates = duplicateNotices(list.rows);
+  const notices = visibleNotices(editor.warnings, listedDuplicates, noticeHidden);
   const { search, setSearch } = useContactSearch(filters, changeFilters);
 
   function changeFilters(next: ContactListFilters): void {
@@ -133,8 +135,12 @@ export function ContactsWorkspace() {
       <main className={`${styles.main} ${glass.canvas}`}>
         <ContactsTop
           activeCount={activeCount}
-          duplicateCount={notices.length}
+          duplicateCount={listedDuplicates.length}
           onCreate={editor.openCreate}
+          onDuplicates={() => {
+            const first = listedDuplicates[0];
+            if (first !== undefined) void editor.openDuplicate(first.contactId);
+          }}
         />
         <div className={styles.body}>
           <DuplicateNotice
@@ -164,7 +170,6 @@ export function ContactsWorkspace() {
               <ContactsTable
                 rows={list.rows}
                 selectedId={editor.contact?.id ?? null}
-                session={session}
                 status={list.status}
                 pending={list.pending}
                 nextCursor={list.nextCursor}
@@ -172,8 +177,6 @@ export function ContactsWorkspace() {
                 total={list.total}
                 page={filters.page ?? 1}
                 onOpen={editor.openContact}
-                onEdit={editor.openEditor}
-                onAskLifecycle={lifecycle.ask}
                 onPage={showPage}
               />
               {lifecycle.prompt === null ? null : (
@@ -281,7 +284,7 @@ function DuplicateNotice({
   return (
     <div className={styles.warning} role="status">
       <span className={styles.warningMark} aria-hidden="true">
-        !
+        <AlertTriangle strokeWidth={2.25} />
       </span>
       <div className={styles.warningCopy}>
         <strong className={styles.warningTitle}>{t('duplicateTitle')}</strong>
@@ -300,7 +303,7 @@ function DuplicateNotice({
         aria-label={t('dismiss')}
         onClick={onDismiss}
       >
-        ×
+        <X aria-hidden="true" />
       </button>
     </div>
   );

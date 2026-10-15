@@ -8,13 +8,20 @@ export function ContactsTop({
   activeCount,
   duplicateCount,
   onCreate,
+  onDuplicates,
 }: {
   activeCount: number | null;
   duplicateCount: number;
   onCreate: () => void;
+  onDuplicates: () => void;
 }) {
   return (
-    <PageHeader activeCount={activeCount} duplicateCount={duplicateCount} onCreate={onCreate} />
+    <PageHeader
+      activeCount={activeCount}
+      duplicateCount={duplicateCount}
+      onCreate={onCreate}
+      onDuplicates={onDuplicates}
+    />
   );
 }
 
@@ -22,10 +29,12 @@ function PageHeader({
   activeCount,
   duplicateCount,
   onCreate,
+  onDuplicates,
 }: {
   activeCount: number | null;
   duplicateCount: number;
   onCreate: () => void;
+  onDuplicates: () => void;
 }) {
   const t = useTranslations('contacts');
   return (
@@ -37,10 +46,10 @@ function PageHeader({
             <span className={styles.activeBadge}>{t('activeCount', { count: activeCount })}</span>
           )}
           {duplicateCount === 0 ? null : (
-            <span className={styles.duplicateBadge}>
+            <button type="button" className={styles.duplicateBadge} onClick={onDuplicates}>
               <i aria-hidden="true" />
               {t('duplicateCount', { count: duplicateCount })}
-            </span>
+            </button>
           )}
         </div>
         <p>{t('pageDescription')}</p>

@@ -98,7 +98,7 @@ export function ContactEditor({
         <EditorProfile mode={mode} contact={contact} draft={draft} onClose={onClose} />
       )}
       <form
-        className={inSheet ? sheetStyles.form : styles.form}
+        className={inSheet ? `${styles.form} ${panel.sheetForm}` : styles.form}
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
@@ -108,7 +108,7 @@ export function ContactEditor({
         {inSheet ? (
           <EditorProfile mode={mode} contact={contact} draft={draft} onClose={onClose} />
         ) : null}
-        <div className={inSheet ? sheetStyles.body : undefined}>
+        <div className={inSheet ? panel.sheetBody : undefined}>
         {contact === null ? null : (
           <DetailTabs
             tab={tab}
@@ -199,25 +199,27 @@ function EditorProfile({
   const archived = contact?.archivedAt !== null && contact !== null;
   const title = mode === 'create' ? t('newContact') : (contact?.name ?? draft.name);
   const header = inSheet
-    ? `${sheetStyles.head} ${panel.profile}`
+    ? `${panel.profile} ${panel.profileInSheet}`
     : `${styles.editorHeader} ${panel.profile}`;
 
   return (
     <header className={header}>
-      {contact === null ? null : (
-        <ContactAvatar name={contact.name} type={contact.type} id={contact.id} />
-      )}
-      <div>
-        <h2>{title}</h2>
-        <p>
-          <TypeBadge type={contact?.type ?? draft.type} />
-          {contact === null ? null : <small title={contact.id}>ID: {shortId(contact.id)}</small>}
-          {contact === null ? null : (
-            <span className={archived ? tableStyles.statusArchived : tableStyles.statusActive}>
-              {archived ? t('status.archived') : t('status.active')}
-            </span>
-          )}
-        </p>
+      <div className={panel.profileGroup}>
+        {contact === null ? null : (
+          <ContactAvatar name={contact.name} type={contact.type} id={contact.id} />
+        )}
+        <div>
+          <h2>{title}</h2>
+          <p>
+            <TypeBadge type={contact?.type ?? draft.type} />
+            {contact === null ? null : <small title={contact.id}>ID: {shortId(contact.id)}</small>}
+            {contact === null ? null : (
+              <span className={archived ? tableStyles.statusArchived : tableStyles.statusActive}>
+                {archived ? t('status.archived') : t('status.active')}
+              </span>
+            )}
+          </p>
+        </div>
       </div>
       {inSheet ? null : (
         <button type="button" className={panel.close} onClick={onClose}>

@@ -56,24 +56,26 @@ export function CustomizeDrawer({
             </>
           }
         >
-          {rows.map((widget, index) => (
-            <WidgetRowEditor
-              key={widget.key}
-              widget={widget}
-              onToggle={() => setRows((current) => toggle(current, widget.key))}
-              onDragStart={() => {
-                dragIndex.current = index;
-              }}
-              onDrop={() => {
-                const from = dragIndex.current;
-                dragIndex.current = null;
-                setRows((current) => move(current, from, index));
-              }}
-              onKeyMove={(direction) =>
-                setRows((current) => move(current, index, index + direction))
-              }
-            />
-          ))}
+          <div className={drawer.widgetList}>
+            {rows.map((widget, index) => (
+              <WidgetRowEditor
+                key={widget.key}
+                widget={widget}
+                onToggle={() => setRows((current) => toggle(current, widget.key))}
+                onDragStart={() => {
+                  dragIndex.current = index;
+                }}
+                onDrop={() => {
+                  const from = dragIndex.current;
+                  dragIndex.current = null;
+                  setRows((current) => move(current, from, index));
+                }}
+                onKeyMove={(direction) =>
+                  setRows((current) => move(current, index, index + direction))
+                }
+              />
+            ))}
+          </div>
         </SheetChrome>
       </SheetFrame>
     </OverlayPortal>
@@ -110,9 +112,9 @@ function WidgetRowEditor({
       >
         <DragIcon />
       </button>
-      <label>
-        <Checkbox checked={widget.enabled} onChange={onToggle} />
-        {widgetLabel(t, widget.key)}
+      <label className={drawer.widgetLabel}>
+        <Checkbox checked={widget.enabled} label={widgetLabel(t, widget.key)} onChange={onToggle} />
+        <span>{widgetLabel(t, widget.key)}</span>
       </label>
     </div>
   );

@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
 import { Checkbox } from '../../ui/checkbox/checkbox';
-import type { Contact, ContactListFilters, SessionPrincipal } from './contact';
+import type { Contact, ContactListFilters } from './contact';
 import { useContactsListUi } from './contacts-list-ui';
 import { ContactPager } from './contacts-table-pager';
 import { ContactRow } from './contacts-table-row';
@@ -15,7 +15,6 @@ import { usePageSelection } from './use-page-selection';
 export function ContactsTable({
   rows,
   selectedId,
-  session,
   status,
   pending,
   nextCursor,
@@ -23,13 +22,10 @@ export function ContactsTable({
   total,
   page,
   onOpen,
-  onEdit,
-  onAskLifecycle,
   onPage,
 }: {
   rows: readonly Contact[];
   selectedId: string | null;
-  session: SessionPrincipal | null;
   status: 'loading' | 'ready' | 'error';
   pending: boolean;
   nextCursor: string | null;
@@ -37,8 +33,6 @@ export function ContactsTable({
   total: number | null;
   page: number;
   onOpen: (contact: Contact) => void;
-  onEdit: (contact: Contact) => void;
-  onAskLifecycle: (contacts: readonly Contact[], action: 'archive' | 'restore') => void;
   onPage: (page: number) => void;
 }) {
   const t = useTranslations('contacts');
@@ -51,15 +45,12 @@ export function ContactsTable({
         rows={rows}
         locale={locale}
         selectedId={selectedId}
-        session={session}
         allPicked={selection.allPicked}
         somePicked={selection.somePicked}
         isPicked={selection.isPicked}
         onTogglePage={selection.togglePage}
         onToggle={selection.toggle}
         onOpen={onOpen}
-        onEdit={onEdit}
-        onAskLifecycle={onAskLifecycle}
       />
       {status === 'ready' && rows.length === 0 ? <p className={styles.note}>{t('empty')}</p> : null}
       <ContactPager
@@ -77,28 +68,22 @@ function ContactGrid({
   rows,
   locale,
   selectedId,
-  session,
   allPicked,
   somePicked,
   isPicked,
   onTogglePage,
   onToggle,
   onOpen,
-  onEdit,
-  onAskLifecycle,
 }: {
   rows: readonly Contact[];
   locale: string;
   selectedId: string | null;
-  session: SessionPrincipal | null;
   allPicked: boolean;
   somePicked: boolean;
   isPicked: (id: string) => boolean;
   onTogglePage: () => void;
   onToggle: (id: string) => void;
   onOpen: (contact: Contact) => void;
-  onEdit: (contact: Contact) => void;
-  onAskLifecycle: (contacts: readonly Contact[], action: 'archive' | 'restore') => void;
 }): ReactElement {
   const t = useTranslations('contacts');
   return (
@@ -113,12 +98,8 @@ function ContactGrid({
             locale={locale}
             picked={isPicked(contact.id)}
             open={contact.id === selectedId}
-            session={session}
             onToggle={() => onToggle(contact.id)}
             onOpen={onOpen}
-            onEdit={onEdit}
-            onArchive={() => onAskLifecycle([contact], 'archive')}
-            onRestore={() => onAskLifecycle([contact], 'restore')}
           />
         ))}
       </tbody>
@@ -153,7 +134,6 @@ function ContactHead({
         {ui.columns.owner ? <th>{t('columns.owner')}</th> : null}
         {ui.columns.status ? <th>{t('columns.status')}</th> : null}
         {ui.columns.created ? <th>{t('columns.registered')}</th> : null}
-        <th>{t('columns.actions')}</th>
       </tr>
     </thead>
   );
