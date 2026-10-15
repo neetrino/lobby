@@ -13,7 +13,7 @@
 
 .card {
   width: min(400px, 100%);
-  padding: 36px 24px 40px;
+  padding: 18px 24px 40px;
   border-radius: 24px;
   background: #fff;
   box-shadow: 0 8px 28px rgb(11 28 48 / 6%);
