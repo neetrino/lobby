@@ -1096,12 +1096,24 @@ button:focus-visible {
   padding-right: 4px;
   padding-left: 12px;
   white-space: nowrap;
+  line-height: 0;
+  vertical-align: middle;
+}
+
+.table td.checkCol {
+  vertical-align: top;
+  padding-top: 19px;
 }
 
 .table th.midCol,
 .table td.midCol {
   text-align: center;
   vertical-align: middle;
+}
+
+.table td.statusCol {
+  vertical-align: top;
+  padding-top: 19px;
 }
 
 .table th.nameCol,
@@ -1125,6 +1137,7 @@ button:focus-visible {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
   gap: 4px;
   height: auto;
   max-width: 320px;

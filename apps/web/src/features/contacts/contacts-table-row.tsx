@@ -147,7 +147,7 @@ function OwnerCell({ name }: { name: string }): ReactElement {
 
 function StatusCell({ archived, label }: { archived: boolean; label: string }): ReactElement {
   return (
-    <td className={styles.midCol}>
+    <td className={`${styles.midCol} ${styles.statusCol}`}>
       <span className={archived ? tableStyles.statusArchived : tableStyles.statusActive}>
         {label}
       </span>
