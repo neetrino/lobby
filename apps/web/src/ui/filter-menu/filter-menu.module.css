@@ -27,6 +27,7 @@
 .trigger.white,
 .trigger.white:hover {
   background: #fff;
+  box-shadow: 0 8px 18px var(--glass-shadow);
 }
 
 .trigger span {

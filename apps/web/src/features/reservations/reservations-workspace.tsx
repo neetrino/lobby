@@ -403,6 +403,7 @@ function Header(props: {
           </button>
         </div>
         <FilterMenu
+          white
           label={t('location')}
           value={props.locationId}
           options={[
@@ -463,6 +464,7 @@ function Filters(props: {
   return (
     <div className={styles.searchRow}>
     <SearchFilters
+      white
       value={draft}
       onChange={setDraft}
       placeholder={t('search')}
@@ -493,6 +495,7 @@ function Filters(props: {
       </FilterField>
     </SearchFilters>
     <FilterMenu
+      white
       label={t('status')}
       value={props.status}
       options={[

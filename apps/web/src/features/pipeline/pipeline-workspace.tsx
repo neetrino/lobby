@@ -210,7 +210,7 @@ function PipelineView({
         onRecolor={(id, color) => void onChange(() => updateStatus(board.kind, id, { color }))}
         onDelete={(id) => void onChange(() => deleteStatus(board.kind, id))}
         onCreateColumn={(name) => void onChange(() => createColumn(board.kind, name))}
-        whiteSearch={board.kind === 'deal'}
+        whiteSearch
       />
       <div className={styles.board}>
         {board.columns.map((column, stageIndex) => (

@@ -139,6 +139,7 @@ export function AuditWorkspace() {
                 <Metric label={t('integrations')} value={counts.integrations} tone="violet" />
               </section>
               <SearchFilters
+                white
                 value={filters.search}
                 onChange={(search) => setFilters({ ...filters, search })}
                 placeholder={t('search')}

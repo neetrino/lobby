@@ -18,6 +18,11 @@
 
 .white {
   background: #fff;
+  box-shadow: 0 8px 18px var(--glass-shadow);
+}
+
+.white:focus-within {
+  box-shadow: 0 8px 18px var(--glass-shadow), 0 0 0 2px var(--shell-blue);
 }
 
 .field:focus-within {

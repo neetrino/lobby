@@ -44,6 +44,7 @@ export function TeamDirectoryPage() {
             <h1>{t('title')}</h1>
             <div className={styles.toolbar}>
               <SearchFilters
+                white
                 value={query}
                 placeholder={t('search')}
                 label={t('search')}
