@@ -12,7 +12,7 @@ import {
 import { createPortal } from 'react-dom';
 
 import { SheetDismissProvider } from '../../ui/overlay/sheet-dismiss';
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetFrame, sheetStyles } from '../../ui/side-sheet/side-sheet';
 import { isTopLayer, pushLayer, quietRestore, removeLayer, trapTab } from './portal-layer';
 import styles from './overlay-portal.module.css';
 
@@ -144,7 +144,7 @@ export function EditorOverlay({
   }
   return (
     <OverlayPortal onDismiss={onDismiss}>
-      <SheetFrame label={label} closeLabel={closeLabel}>
+      <SheetFrame frameClassName={sheetStyles.frameTabs} label={label} closeLabel={closeLabel}>
         {children}
       </SheetFrame>
     </OverlayPortal>

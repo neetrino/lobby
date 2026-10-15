@@ -1387,7 +1387,12 @@ button:focus-visible {
   flex: 1;
   flex-direction: column;
   min-height: 0;
+  margin-top: 0;
   overflow: hidden;
+  scroll-margin-top: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
 }
 
 .editor h2 {

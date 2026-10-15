@@ -1,7 +1,8 @@
 'use client';
 
+import { Copy, Layers, ScrollText, UserRound } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useLayoutEffect, useRef, useState, type RefObject } from 'react';
+import type { ReactNode } from 'react';
 
 import { actionText, outcomeText } from '../audit/audit-labels';
 
@@ -23,69 +24,50 @@ export function DetailTabs({
   onTab: (tab: DetailTab) => void;
 }) {
   const t = useTranslations('contacts');
-  const listRef = useRef<HTMLDivElement>(null);
-  const line = useTabLine(listRef, tab);
   const duplicateLabel =
     duplicateCount > 0
       ? t('tabs.duplicatesCount', { count: duplicateCount })
       : t('tabs.duplicates');
 
   return (
-    <div ref={listRef} className={panel.tabs} role="tablist">
-      <TabButton active={tab === 'main'} label={t('tabs.main')} onClick={() => onTab('main')} />
+    <div className={panel.tabs} role="tablist">
+      <TabButton
+        active={tab === 'main'}
+        label={t('tabs.main')}
+        icon={<UserRound aria-hidden="true" />}
+        onClick={() => onTab('main')}
+      />
       <TabButton
         active={tab === 'modules'}
         label={t('tabs.modules')}
+        icon={<Layers aria-hidden="true" />}
         onClick={() => onTab('modules')}
       />
-      <TabButton active={tab === 'audit'} label={t('tabs.audit')} onClick={() => onTab('audit')} />
+      <TabButton
+        active={tab === 'audit'}
+        label={t('tabs.audit')}
+        icon={<ScrollText aria-hidden="true" />}
+        onClick={() => onTab('audit')}
+      />
       <TabButton
         active={tab === 'duplicates'}
         label={duplicateLabel}
+        icon={<Copy aria-hidden="true" />}
         onClick={() => onTab('duplicates')}
       />
-      <span className={panel.tabLine} style={line} />
     </div>
   );
-}
-
-function useTabLine(
-  listRef: RefObject<HTMLDivElement | null>,
-  tab: DetailTab,
-): { width: number; transform: string } {
-  const [line, setLine] = useState({ width: 0, transform: 'translateX(0)' });
-
-  useLayoutEffect(() => {
-    const list = listRef.current;
-    if (list === null) {
-      return undefined;
-    }
-    const place = (): void => {
-      const active = list.querySelector<HTMLElement>('[aria-selected="true"]');
-      if (active === null) {
-        return;
-      }
-      setLine({
-        width: active.offsetWidth,
-        transform: `translateX(${active.offsetLeft}px)`,
-      });
-    };
-    place();
-    const observer = new ResizeObserver(place);
-    observer.observe(list);
-    return () => observer.disconnect();
-  }, [listRef, tab]);
-
-  return line;
 }
 
 function TabButton({
   active,
   label,
+  icon,
   onClick,
 }: {
   active: boolean;
   label: string;
+  icon: ReactNode;
   onClick: () => void;
 }) {
   return (
@@ -96,6 +78,7 @@ function TabButton({
       className={active ? panel.tabActive : panel.tab}
       onClick={onClick}
     >
+      {icon}
       {label}
     </button>
   );
@@ -104,10 +87,8 @@ function TabButton({
 export function RelatedModules() {
   const t = useTranslations('contacts');
   return (
-    <section className={panel.block}>
-      <div className={panel.sectionHead}>
-        <h3>{t('relatedTitle')}</h3>
-      </div>
+    <fieldset className={panel.block}>
+      <legend>{t('relatedTitle')}</legend>
       <div className={panel.cards}>
         <article className={panel.card}>
           <span>{t('activeDeals')}</span>
@@ -120,7 +101,7 @@ export function RelatedModules() {
           <small>{t('relatedEmpty')}</small>
         </article>
       </div>
-    </section>
+    </fieldset>
   );
 }
 
@@ -134,13 +115,10 @@ export function AuditEvents({
   const t = useTranslations('contacts');
   const locale = useLocale();
   return (
-    <section className={panel.block}>
-      <div className={panel.sectionHead}>
-        <h3>{t('auditTitle')}</h3>
-        <span className={panel.hint}>{t('immutableLog')}</span>
-      </div>
+    <fieldset className={panel.block}>
+      <legend>{t('auditTitle')}</legend>
       <AuditBody events={events} status={status} locale={locale} />
-    </section>
+    </fieldset>
   );
 }
 
@@ -195,8 +173,8 @@ export function DuplicateList({ contact, rows }: { contact: Contact; rows: reado
   const t = useTranslations('contacts');
   const peers = duplicatePeers(contact, rows);
   return (
-    <section className={panel.block}>
-      <h3>{t('tabs.duplicates')}</h3>
+    <fieldset className={panel.block}>
+      <legend>{t('tabs.duplicates')}</legend>
       {peers.length === 0 ? <p className={panel.note}>{t('duplicatesEmpty')}</p> : null}
       <ul className={panel.events}>
         {peers.map((peer) => (
@@ -209,6 +187,6 @@ export function DuplicateList({ contact, rows }: { contact: Contact; rows: reado
           </li>
         ))}
       </ul>
-    </section>
+    </fieldset>
   );
 }

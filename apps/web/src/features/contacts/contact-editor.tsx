@@ -75,8 +75,11 @@ export function ContactEditor({
   const detailsClass = inSheet ? `${panel.sheet} ${panel.sheetInPanel}` : panel.sheet;
 
   useEffect(() => {
+    if (inSheet) {
+      return;
+    }
     panelRef.current?.scrollIntoView({ block: 'start' });
-  }, [mode, contact?.id]);
+  }, [inSheet, mode, contact?.id]);
 
   function submit(): void {
     if (draft.name.trim().length === 0) {
@@ -121,11 +124,8 @@ export function ContactEditor({
           />
         )}
         {contact !== null && tab !== 'main' ? null : (
-          <div className={detailsClass}>
-            <div className={panel.sectionHead}>
-              <h3>{t('columns.details')}</h3>
-              <span className={panel.hint}>{t('normalized')}</span>
-            </div>
+          <fieldset className={detailsClass}>
+            <legend>{t('columns.details')}</legend>
             <div className={panel.fields}>
               <EditorFields
                 draft={draft}
@@ -134,7 +134,7 @@ export function ContactEditor({
                 onDraft={onDraft}
               />
             </div>
-          </div>
+          </fieldset>
         )}
         {contact !== null && (tab === 'main' || tab === 'modules') ? <RelatedModules /> : null}
         {contact !== null && (tab === 'main' || tab === 'audit') ? (
@@ -244,16 +244,31 @@ function EditorFields({
   const t = useTranslations('contacts');
   return (
     <>
-      <label>
-        {t('detailName')}
-        <input
-          value={draft.name}
-          maxLength={200}
-          required
-          aria-invalid={nameMissing || error?.fields.includes('name')}
-          onChange={(event) => onDraft({ ...draft, name: event.target.value })}
-        />
-      </label>
+      <div className={panel.pair}>
+        <label>
+          {t('detailName')}
+          <input
+            value={draft.name}
+            maxLength={200}
+            required
+            aria-invalid={nameMissing || error?.fields.includes('name')}
+            onChange={(event) => onDraft({ ...draft, name: event.target.value })}
+          />
+        </label>
+        <label>
+          {t('detailPhone')}
+          <span className={panel.control}>
+            <input
+              type="tel"
+              value={draft.phone}
+              maxLength={32}
+              aria-invalid={error?.fields.includes('phone')}
+              onChange={(event) => onDraft({ ...draft, phone: event.target.value })}
+            />
+            <PhoneMark />
+          </span>
+        </label>
+      </div>
       <label>
         {t('detailEmail')}
         <span className={panel.control}>
@@ -265,19 +280,6 @@ function EditorFields({
             onChange={(event) => onDraft({ ...draft, email: event.target.value })}
           />
           {draft.email.includes('@') ? <CheckMark /> : null}
-        </span>
-      </label>
-      <label>
-        {t('detailPhone')}
-        <span className={panel.control}>
-          <input
-            type="tel"
-            value={draft.phone}
-            maxLength={32}
-            aria-invalid={error?.fields.includes('phone')}
-            onChange={(event) => onDraft({ ...draft, phone: event.target.value })}
-          />
-          <PhoneMark />
         </span>
       </label>
       <label>
