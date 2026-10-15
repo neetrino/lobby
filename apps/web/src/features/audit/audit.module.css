@@ -91,11 +91,12 @@
   box-shadow: 0 14px 38px rgb(32 65 120 / 8%);
 }
 .tableWrap {
-  overflow: auto;
+  overflow: visible;
 }
 .tableWrap table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 .tableWrap th,
 .tableWrap td {
@@ -110,11 +111,21 @@
   vertical-align: middle;
 }
 .tableWrap th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
   color: #64748b;
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
+}
+.tableWrap th:first-child {
+  border-top-left-radius: 26px;
+}
+.tableWrap th:last-child {
+  border-top-right-radius: 26px;
 }
 .tableWrap tbody tr {
   cursor: pointer;

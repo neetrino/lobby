@@ -1026,6 +1026,14 @@ button:focus-visible {
   box-shadow: inset 0 -1px 0 #e7eaf0;
 }
 
+.table th:first-child {
+  border-top-left-radius: 26px;
+}
+
+.table th:last-child {
+  border-top-right-radius: 26px;
+}
+
 .table td {
   padding: 8px 14px;
   border-top: 1px solid #eef2f6;
