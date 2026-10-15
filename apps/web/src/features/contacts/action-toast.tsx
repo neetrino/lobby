@@ -1,11 +1,13 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, type ReactElement, type ReactNode } from 'react';
+import { Check, X } from 'lucide-react';
+import { useEffect, useState, useSyncExternalStore, type ReactElement, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 import styles from './action-toast.module.css';
 
 const TOAST_VISIBLE_MS = 4000;
+const TOAST_LEAVE_MS = 200;
 
 export type ActionToast = {
   id: number;
@@ -13,7 +15,7 @@ export type ActionToast = {
   text: string;
 };
 
-/** Success and failure notice fixed at the top-right of the page. */
+/** Centered notice. It fades in, then fades out before `onDone`. */
 export function ActionToastView({
   toast,
   onDone,
@@ -22,51 +24,74 @@ export function ActionToastView({
   onDone: (id: number) => void;
 }): ReactNode {
   const mounted = useSyncExternalStore(subscribe, isClient, isServer);
-
-  useEffect(() => {
-    if (toast === null) {
-      return undefined;
-    }
-    const id = toast.id;
-    const timer = window.setTimeout(() => onDone(id), TOAST_VISIBLE_MS);
-    return () => window.clearTimeout(timer);
-  }, [toast, onDone]);
-
   if (!mounted || toast === null) {
     return null;
   }
+  return createPortal(<ToastCard key={toast.id} toast={toast} onDone={onDone} />, document.body);
+}
 
-  return createPortal(
-    <div className={toast.tone === 'ok' ? styles.ok : styles.danger} role="status">
-      {toast.tone === 'ok' ? <CheckMark /> : <BlockMark />}
-      <span>{toast.text}</span>
-    </div>,
-    document.body,
+function ToastCard({
+  toast,
+  onDone,
+}: {
+  toast: ActionToast;
+  onDone: (id: number) => void;
+}): ReactElement {
+  const [leaving, setLeaving] = useState(false);
+  useToastLifetime(toast.id, onDone, setLeaving);
+  useToastLeave(leaving, toast.id, onDone);
+  const tone = toast.tone === 'ok' ? styles.card : `${styles.card} ${styles.danger}`;
+  const layer = leaving ? `${styles.layer} ${styles.leaving}` : styles.layer;
+  return (
+    <div className={layer} role="status">
+      <div className={tone}>
+        <Mark tone={toast.tone} />
+        <span>{toast.text}</span>
+      </div>
+    </div>
   );
 }
 
-function CheckMark(): ReactElement {
+function useToastLifetime(
+  id: number,
+  onDone: (id: number) => void,
+  onLeave: (leaving: boolean) => void,
+): void {
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (prefersReducedMotion()) {
+        onDone(id);
+        return;
+      }
+      onLeave(true);
+    }, TOAST_VISIBLE_MS);
+    return () => window.clearTimeout(timer);
+  }, [id, onDone, onLeave]);
+}
+
+function useToastLeave(leaving: boolean, id: number, onDone: (id: number) => void): void {
+  useEffect(() => {
+    if (!leaving) {
+      return undefined;
+    }
+    const timer = window.setTimeout(() => onDone(id), TOAST_LEAVE_MS);
+    return () => window.clearTimeout(timer);
+  }, [id, leaving, onDone]);
+}
+
+function Mark({ tone }: { tone: ActionToast['tone'] }): ReactElement {
+  const Icon = tone === 'ok' ? Check : X;
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-      <circle cx="12" cy="12" r="10" fill="#fff" />
-      <path
-        d="M7.2 12.4l3.1 3.1 6.5-6.8"
-        fill="none"
-        stroke="#16a34a"
-        strokeWidth="2.4"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
+    <span className={styles.mark}>
+      <Icon aria-hidden="true" size={16} strokeWidth={2.4} />
+    </span>
   );
 }
 
-function BlockMark(): ReactElement {
+function prefersReducedMotion(): boolean {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-      <circle cx="12" cy="12" r="9" fill="none" stroke="#fff" strokeWidth="2.2" />
-      <path d="M7.5 16.5l9-9" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-    </svg>
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 }
 
