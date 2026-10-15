@@ -1,10 +1,16 @@
 'use client';
 
 import { Check, X } from 'lucide-react';
-import { useEffect, useState, useSyncExternalStore, type ReactElement, type ReactNode } from 'react';
+import {
+  useEffect,
+  useState,
+  useSyncExternalStore,
+  type ReactElement,
+  type ReactNode,
+} from 'react';
 import { createPortal } from 'react-dom';
 
-import styles from './action-toast.module.css';
+import styles from './toast.module.css';
 
 const TOAST_VISIBLE_MS = 4000;
 const TOAST_LEAVE_MS = 200;
@@ -15,33 +21,42 @@ export type ActionToast = {
   text: string;
 };
 
-/** Centered notice. It fades in, then fades out before `onDone`. */
+/** Short result notice. `center` rises in the middle. `top` drops in from the top. */
 export function ActionToastView({
   toast,
   onDone,
+  place = 'center',
 }: {
   toast: ActionToast | null;
   onDone: (id: number) => void;
+  place?: 'center' | 'top';
 }): ReactNode {
   const mounted = useSyncExternalStore(subscribe, isClient, isServer);
   if (!mounted || toast === null) {
     return null;
   }
-  return createPortal(<ToastCard key={toast.id} toast={toast} onDone={onDone} />, document.body);
+  return createPortal(
+    <ToastCard key={toast.id} toast={toast} place={place} onDone={onDone} />,
+    document.body,
+  );
 }
 
 function ToastCard({
   toast,
+  place,
   onDone,
 }: {
   toast: ActionToast;
+  place: 'center' | 'top';
   onDone: (id: number) => void;
 }): ReactElement {
   const [leaving, setLeaving] = useState(false);
   useToastLifetime(toast.id, onDone, setLeaving);
   useToastLeave(leaving, toast.id, onDone);
   const tone = toast.tone === 'ok' ? styles.card : `${styles.card} ${styles.danger}`;
-  const layer = leaving ? `${styles.layer} ${styles.leaving}` : styles.layer;
+  const layer = [styles.layer, place === 'top' ? styles.top : '', leaving ? styles.leaving : '']
+    .filter((name) => name !== '')
+    .join(' ');
   return (
     <div className={layer} role="status">
       <div className={tone}>

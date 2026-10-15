@@ -18,7 +18,6 @@ export function DashboardBoardView({
   range,
   scope,
   pending,
-  notice,
   onRange,
   onScope,
   onSaveLayout,
@@ -27,7 +26,6 @@ export function DashboardBoardView({
   range: DashboardRangeDays;
   scope: DashboardScope;
   pending: boolean;
-  notice: string | null;
   onRange: (range: DashboardRangeDays) => void;
   onScope: (scope: DashboardScope) => void;
   onSaveLayout: (widgets: string[]) => Promise<boolean>;
@@ -49,7 +47,6 @@ export function DashboardBoardView({
         onCustomize={() => setCustomizing(true)}
       />
       {board.failures.length === 0 ? null : <p className={styles.banner}>{t('failed')}</p>}
-      {notice === null ? null : <p className={styles.notice}>{notice}</p>}
       <div className={styles.grid}>
         {board.overview.map((card) => (
           <KpiCard key={card.key} card={card} locale={locale} span={span} />

@@ -7,7 +7,8 @@ import styles from './pagination.module.css';
 
 /**
  * List pager. `page` is 1-based.
- * The circles are the current page and the next two, clamped to `pageCount`.
+ * The circles are the previous page, the current page, and the next page.
+ * Hidden when the list has a single page and nothing can be changed.
  * `endKnown` stays false while a cursor list has not reached the last page.
  */
 export function Pagination({
@@ -20,10 +21,11 @@ export function Pagination({
   pageCount: number;
   endKnown?: boolean;
   onPage: (page: number) => void;
-}): ReactElement {
+}): ReactElement | null {
   const t = useTranslations('pagination');
   const count = Math.max(1, pageCount);
   const current = Math.min(Math.max(1, page), count);
+  if (count <= 1 && endKnown && current <= 1) return null;
   return (
     <nav className={styles.root} aria-label={t('pages')}>
       <button
@@ -58,8 +60,9 @@ export function Pagination({
 }
 
 function pageWindow(page: number, pageCount: number): number[] {
+  const start = Math.max(1, Math.min(page - 1, pageCount - 2));
+  const last = Math.min(pageCount, start + 2);
   const numbers: number[] = [];
-  const last = Math.min(pageCount, page + 2);
-  for (let number = page; number <= last; number += 1) numbers.push(number);
+  for (let number = start; number <= last; number += 1) numbers.push(number);
   return numbers;
 }

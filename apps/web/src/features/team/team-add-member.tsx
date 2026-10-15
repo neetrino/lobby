@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useCallback, useState, type FormEvent } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 
 import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { ActionToastView, type ActionToast } from '../../ui/toast/toast';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import { inviteMember } from '../members/members-api';
 import styles from './team.module.css';
@@ -13,17 +14,20 @@ export function AddMemberButton() {
   const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [toast, setToast] = useState<ActionToast | null>(null);
+  const dismissToast = useCallback((id: number) => {
+    setToast((current) => (current?.id === id ? null : current));
+  }, []);
 
   async function submit(email: string): Promise<void> {
     setPending(true);
-    setNotice(null);
+    setToast(null);
     try {
       await inviteMember(email, locale);
       setOpen(false);
-      setNotice(t('inviteSent'));
+      setToast({ id: Date.now(), tone: 'ok', text: t('inviteSent') });
     } catch {
-      setNotice(t('inviteFailed'));
+      setToast({ id: Date.now(), tone: 'danger', text: t('inviteFailed') });
     } finally {
       setPending(false);
     }
@@ -31,10 +35,10 @@ export function AddMemberButton() {
 
   return (
     <div>
+      <ActionToastView toast={toast} place="top" onDone={dismissToast} />
       <button type="button" className={styles.add} onClick={() => setOpen(true)}>
         {t('addShort')}
       </button>
-      {notice === null ? null : <p className={styles.notice}>{notice}</p>}
       {open ? (
         <InviteSheet pending={pending} onClose={() => setOpen(false)} onSubmit={submit} />
       ) : null}

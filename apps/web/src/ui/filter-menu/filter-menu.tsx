@@ -3,6 +3,7 @@
 import { useId, useRef, useState, type ReactElement, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 
+import { menuMotionClass, usePresence } from '../menu-motion/use-presence';
 import { anchoredStyle, useAnchoredBox, useMenuDismiss } from '../select/anchored-menu';
 import styles from './filter-menu.module.css';
 
@@ -28,6 +29,7 @@ export function FilterMenu({
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
   const menuId = useId();
+  const { present, leaving } = usePresence(open);
   useMenuDismiss(open, rootRef, menuRef, () => setOpen(false));
   const current = options.find((option) => option.value === value)?.label ?? label;
 
@@ -47,7 +49,7 @@ export function FilterMenu({
         <strong>{current}</strong>
         <ChevronIcon open={open} />
       </button>
-      {open ? (
+      {present ? (
         <FilterChoices
           menuRef={menuRef}
           anchor={buttonRef}
@@ -55,6 +57,7 @@ export function FilterMenu({
           label={label}
           value={value}
           options={options}
+          leaving={leaving}
           onChange={(next) => {
             onChange(next);
             setOpen(false);
@@ -72,6 +75,7 @@ function FilterChoices({
   label,
   value,
   options,
+  leaving,
   onChange,
 }: {
   menuRef: RefObject<HTMLUListElement | null>;
@@ -80,6 +84,7 @@ function FilterChoices({
   label: string;
   value: string;
   options: ReadonlyArray<{ value: string; label: string }>;
+  leaving: boolean;
   onChange: (value: string) => void;
 }): ReactElement | null {
   const box = useAnchoredBox(anchor, menuRef);
@@ -89,7 +94,7 @@ function FilterChoices({
   return createPortal(
     <ul
       ref={menuRef}
-      className={styles.list}
+      className={`${styles.list} ${menuMotionClass(leaving, box.upward)}`}
       id={menuId}
       role="listbox"
       aria-label={label}
@@ -124,4 +129,3 @@ function ChevronIcon({ open }: { open: boolean }): ReactElement {
     </svg>
   );
 }
-

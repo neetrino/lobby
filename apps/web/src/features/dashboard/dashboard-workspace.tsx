@@ -9,6 +9,7 @@ import type { SessionPrincipal } from '../contacts/contact';
 import { ContactsShell } from '../contacts/contacts-shell';
 import shell from '../contacts/contacts.module.css';
 import glass from '../../ui/glass/glass.module.css';
+import { ActionToastView, type ActionToast } from '../../ui/toast/toast';
 import {
   DashboardRequestError,
   readDashboard,
@@ -28,7 +29,10 @@ export function DashboardWorkspace() {
   const [range, setRange] = useState<DashboardRangeDays>(30);
   const [scope, setScope] = useState<DashboardScope>('all');
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [toast, setToast] = useState<ActionToast | null>(null);
+  const dismissToast = useCallback((id: number) => {
+    setToast((current) => (current?.id === id ? null : current));
+  }, []);
   const [pending, setPending] = useState(false);
 
   const load = useCallback(
@@ -77,7 +81,7 @@ export function DashboardWorkspace() {
 
   async function changeRange(next: DashboardRangeDays): Promise<void> {
     setPending(true);
-    setNotice(null);
+    setToast(null);
     try {
       await load({ range: next, scope });
     } catch {
@@ -103,7 +107,7 @@ export function DashboardWorkspace() {
     try {
       const next = await saveDashboardLayout({ rangeDays: range, scope, widgets });
       setBoard(next);
-      setNotice(t('saved'));
+      setToast({ id: Date.now(), tone: 'ok', text: t('saved') });
       return true;
     } catch {
       setError(t('failed'));
@@ -123,6 +127,7 @@ export function DashboardWorkspace() {
             : `${shell.main} ${glass.canvas}`
         }
       >
+        <ActionToastView toast={toast} place="top" onDone={dismissToast} />
         {error !== null ? <p className={styles.banner}>{t('failed')}</p> : null}
         {board === null && error === null ? <p className={shell.loading}>{t('loading')}</p> : null}
         {board === null ? null : (
@@ -131,7 +136,6 @@ export function DashboardWorkspace() {
             range={range}
             scope={scope}
             pending={pending}
-            notice={notice}
             onRange={(next) => void changeRange(next)}
             onScope={(next) => void changeScope(next)}
             onSaveLayout={save}

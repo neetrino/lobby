@@ -47,6 +47,10 @@
   padding-top: 8px;
 }
 
+.pages:empty {
+  display: none;
+}
+
 .header h1,
 .form h2,
 .drawer h2,

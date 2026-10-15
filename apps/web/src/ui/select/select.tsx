@@ -1,8 +1,16 @@
 'use client';
 
-import { useId, useRef, useState, type CSSProperties, type ReactElement, type RefObject } from 'react';
+import {
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+  type RefObject,
+} from 'react';
 import { createPortal } from 'react-dom';
 
+import { menuMotionClass, usePresence } from '../menu-motion/use-presence';
 import { anchoredStyle, useAnchoredBox, useMenuDismiss } from './anchored-menu';
 import styles from './select.module.css';
 
@@ -44,6 +52,7 @@ export function Select({
   const [stored, setStored] = useState(defaultValue);
   const current = value ?? stored;
   const selected = options.find((option) => option.value === current);
+  const { present, leaving } = usePresence(open);
   useMenuDismiss(open, rootRef, menuRef, () => setOpen(false));
 
   function commit(next: string): void {
@@ -76,7 +85,7 @@ export function Select({
       {name === undefined ? null : (
         <Fallback name={name} value={current} required={required} options={options} />
       )}
-      {open ? (
+      {present ? (
         <SelectMenu
           menuRef={menuRef}
           menuId={menuId}
@@ -84,6 +93,7 @@ export function Select({
           anchor={buttonRef}
           value={current}
           options={options}
+          leaving={leaving}
           onChange={commit}
         />
       ) : null}
@@ -128,6 +138,7 @@ function SelectMenu({
   anchor,
   value,
   options,
+  leaving,
   onChange,
 }: {
   menuRef: RefObject<HTMLUListElement | null>;
@@ -136,6 +147,7 @@ function SelectMenu({
   anchor: RefObject<HTMLButtonElement | null>;
   value: string;
   options: readonly SelectOption[];
+  leaving: boolean;
   onChange: (value: string) => void;
 }): ReactElement | null {
   const box = useAnchoredBox(anchor, menuRef);
@@ -146,7 +158,7 @@ function SelectMenu({
     <ul
       ref={menuRef}
       id={menuId}
-      className={styles.list}
+      className={`${styles.list} ${menuMotionClass(leaving, box.upward)}`}
       role="listbox"
       aria-label={label}
       style={anchoredStyle(box, 'width')}

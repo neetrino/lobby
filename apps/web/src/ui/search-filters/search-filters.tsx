@@ -1,8 +1,18 @@
 'use client';
 
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactElement, type ReactNode, type RefObject } from 'react';
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 import { createPortal } from 'react-dom';
 
+import { menuMotionClass, usePresence } from '../menu-motion/use-presence';
 import { anchoredStyle, useAnchoredBox, type AnchoredBox } from '../select/anchored-menu';
 import styles from './search-filters.module.css';
 
@@ -42,7 +52,9 @@ export function SearchFilters({
   const panelRef = useRef<HTMLDivElement>(null);
   const panelId = useId();
   const hasFilters = children != null && children !== false;
-  useFilterDismiss(open && hasFilters, rootRef, panelRef, () => setOpen(false));
+  const shown = open && hasFilters;
+  const { present, leaving } = usePresence(shown);
+  useFilterDismiss(shown, rootRef, panelRef, () => setOpen(false));
 
   return (
     <div className={styles.root} ref={rootRef}>
@@ -58,7 +70,7 @@ export function SearchFilters({
           if (hasFilters) setOpen(true);
         }}
       />
-      {open && hasFilters ? (
+      {present ? (
         <FilterPanel
           panelRef={panelRef}
           anchor={fieldRef}
@@ -67,6 +79,7 @@ export function SearchFilters({
           applyLabel={applyLabel ?? ''}
           onReset={onReset ?? noop}
           columns={columns}
+          leaving={leaving}
           onApply={() => {
             onApply?.();
             setOpen(false);
@@ -143,6 +156,7 @@ function FilterPanel({
   onReset,
   onApply,
   columns,
+  leaving,
   children,
 }: {
   panelRef: RefObject<HTMLDivElement | null>;
@@ -153,13 +167,21 @@ function FilterPanel({
   onReset: () => void;
   onApply: () => void;
   columns: 2 | 3;
+  leaving: boolean;
   children: ReactNode;
 }): ReactElement | null {
   const box = useAnchoredBox(anchor, panelRef, { limit: 640, clip: false, contain: true });
   const grid = columns === 3 ? `${styles.grid} ${styles.columns3}` : styles.grid;
   if (typeof document === 'undefined') return null;
+  const panelClass = `${styles.panel} ${menuMotionClass(leaving, box.upward)}`;
   return createPortal(
-    <div ref={panelRef} id={panelId} className={styles.panel} role="region" style={panelStyle(box, columns)}>
+    <div
+      ref={panelRef}
+      id={panelId}
+      className={panelClass}
+      role="region"
+      style={panelStyle(box, columns)}
+    >
       <div className={grid}>{children}</div>
       <div className={styles.actions}>
         <button type="button" className={styles.reset} onClick={onReset}>

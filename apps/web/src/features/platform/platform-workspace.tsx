@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import { AuthFrame } from '../auth/auth-frame';
 import { SignOutButton } from '../auth/sign-out-button';
@@ -14,6 +14,7 @@ import {
   type NewOrganization,
   type PlatformOrganization,
 } from './platform-api';
+import { ActionToastView, type ActionToast } from '../../ui/toast/toast';
 import styles from './platform.module.css';
 
 const EMPTY: NewOrganization = {
@@ -29,7 +30,10 @@ export function PlatformWorkspace() {
   const locale = useLocale();
   const router = useRouter();
   const [rows, setRows] = useState<PlatformOrganization[]>([]);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [toast, setToast] = useState<ActionToast | null>(null);
+  const dismissToast = useCallback((id: number) => {
+    setToast((current) => (current?.id === id ? null : current));
+  }, []);
   const [error, setError] = useState<string | null>(null);
   usePlatformSession(locale, router, t, setRows, setError);
 
@@ -41,21 +45,25 @@ export function PlatformWorkspace() {
         <SignOutButton className={auth.cornerSignOut} groupClassName={auth.cornerSignOutGroup} />
       }
     >
+      <ActionToastView toast={toast} place="top" onDone={dismissToast} />
       {error === null ? null : <p className={auth.banner}>{error}</p>}
-      {notice === null ? null : <p className={auth.success}>{notice}</p>}
       <OrganizationForm
-          onCreated={(created) => {
-            setRows((current) => [
-              created,
-              ...current.filter((row) => row.subdomain !== created.subdomain),
-            ]);
-            setNotice(t('created', { workspace: created.subdomain, email: created.ownerEmail }));
-            setError(null);
-          }}
-          onError={(message) => {
-            setNotice(null);
-            setError(message);
-          }}
+        onCreated={(created) => {
+          setRows((current) => [
+            created,
+            ...current.filter((row) => row.subdomain !== created.subdomain),
+          ]);
+          setToast({
+            id: Date.now(),
+            tone: 'ok',
+            text: t('created', { workspace: created.subdomain, email: created.ownerEmail }),
+          });
+          setError(null);
+        }}
+        onError={(message) => {
+          setToast(null);
+          setError(message);
+        }}
       />
       <OrganizationList rows={rows} empty={t('empty')} />
     </AuthFrame>

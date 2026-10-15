@@ -167,6 +167,10 @@
   justify-content: center;
   padding: 13px 16px;
 }
+
+.pager:empty {
+  display: none;
+}
 .detail {
   display: flex;
   flex: 1;

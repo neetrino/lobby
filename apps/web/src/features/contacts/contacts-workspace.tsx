@@ -4,7 +4,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { ActionToastView, type ActionToast } from './action-toast';
+import { ActionToastView, type ActionToast } from '../../ui/toast/toast';
 import type { ContactListFilters, ContactWarning } from './contact';
 import { duplicateNotices } from './duplicate-notices';
 import { ContactEditor } from './contact-editor';
