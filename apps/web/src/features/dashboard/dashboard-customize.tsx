@@ -2,25 +2,14 @@
 
 import { dashboardWidgetKeys } from '@lobby/contracts';
 import { Checkbox } from '../../ui/checkbox/checkbox';
-import { X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import {
-  useCallback,
-  useEffect,
-  useId,
-  useRef,
-  useState,
-  type AnimationEvent as ReactAnimationEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
-} from 'react';
-import { createPortal } from 'react-dom';
+import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 
 import type { DashboardBoard } from './dashboard-api';
 import { widgetLabel } from './dashboard-layout';
-import { blurActive } from '../../ui/select/anchored-menu';
-import chrome from '../../ui/side-sheet/side-sheet.module.css';
+import { OverlayPortal } from '../contacts/overlay-portal';
+import { SheetChrome, SheetFrame, sheetStyles } from '../../ui/side-sheet/side-sheet';
 import drawer from './dashboard-drawer.module.css';
-import styles from './dashboard-toolbar.module.css';
 
 type WidgetRow = DashboardBoard['layout']['widgets'][number];
 
@@ -36,186 +25,58 @@ export function CustomizeDrawer({
   onSave: (widgets: string[]) => Promise<boolean>;
 }) {
   const t = useTranslations('dashboard');
-  const titleId = useId();
   const dragIndex = useRef<number | null>(null);
-  const closed = useRef(false);
   const [rows, setRows] = useState(widgets);
-  const [leaving, setLeaving] = useState(false);
 
-  const close = useCallback(() => {
-    if (closed.current) {
-      return;
-    }
-    if (prefersReducedMotion()) {
-      closed.current = true;
-      onClose();
-      return;
-    }
-    setLeaving(true);
-  }, [onClose]);
-
-  function finishClose(event: ReactAnimationEvent<HTMLDivElement>): void {
-    if (event.target !== event.currentTarget || !leaving || closed.current) {
-      return;
-    }
-    closed.current = true;
-    onClose();
-  }
-
-  useEffect(() => {
-    if (!leaving) {
-      return undefined;
-    }
-    const timer = window.setTimeout(() => {
-      if (closed.current) {
-        return;
-      }
-      closed.current = true;
-      onClose();
-    }, 320);
-    return () => window.clearTimeout(timer);
-  }, [leaving, onClose]);
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent): void {
-      if (event.key === 'Escape') {
-        close();
-        blurActive();
-      }
-    }
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
-  }, [close]);
-
-  return createPortal(
-    <div
-      className={leaving ? `${drawer.backdrop} ${drawer.backdropLeaving}` : drawer.backdrop}
-      onClick={close}
-    >
-      <DrawerForm
-        titleId={titleId}
-        title={t('customizeTitle')}
-        rows={rows}
-        pending={pending}
-        leaving={leaving}
-        onMotionEnd={finishClose}
-        onClose={close}
-        onToggle={(key) => setRows((current) => toggle(current, key))}
-        onDragStart={(index) => {
-          dragIndex.current = index;
-        }}
-        onDrop={(index) => {
-          const from = dragIndex.current;
-          dragIndex.current = null;
-          setRows((current) => move(current, from, index));
-        }}
-        onKeyMove={(index, direction) =>
-          setRows((current) => move(current, index, index + direction))
-        }
-        onReset={() => setRows(resetRows(widgets))}
-        onSave={() => {
-          const enabled = rows.filter((widget) => widget.enabled).map((widget) => widget.key);
-          void onSave(enabled).then((saved) => {
-            if (saved) {
-              close();
-            }
-          });
-        }}
-      />
-    </div>,
-    document.body,
-  );
-}
-
-type DrawerFormProps = {
-  titleId: string;
-  title: string;
-  rows: WidgetRow[];
-  pending: boolean;
-  leaving: boolean;
-  onMotionEnd: (event: ReactAnimationEvent<HTMLDivElement>) => void;
-  onClose: () => void;
-  onToggle: (key: string) => void;
-  onDragStart: (index: number) => void;
-  onDrop: (index: number) => void;
-  onKeyMove: (index: number, direction: -1 | 1) => void;
-  onReset: () => void;
-  onSave: () => void;
-};
-
-function DrawerForm({
-  titleId,
-  title,
-  rows,
-  pending,
-  leaving,
-  onMotionEnd,
-  onClose,
-  onToggle,
-  onDragStart,
-  onDrop,
-  onKeyMove,
-  onReset,
-  onSave,
-}: DrawerFormProps) {
-  const t = useTranslations('dashboard');
-  const sheetClass = leaving ? `${drawer.sheet} ${drawer.sheetLeaving}` : drawer.sheet;
   return (
-    <div
-      className={sheetClass}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby={titleId}
-      onAnimationEnd={onMotionEnd}
-      onClick={(event) => event.stopPropagation()}
-    >
-      <button
-        type="button"
-        className={chrome.cornerClose}
-        onClick={onClose}
-        aria-label={t('close')}
-      >
-        <X aria-hidden="true" />
-      </button>
-      <form
-        className={`${chrome.notch} ${drawer.drawer}`}
-        onSubmit={(event) => {
-          event.preventDefault();
-          onSave();
-        }}
-      >
-        <header className={drawer.drawerHead}>
-          <h2 id={titleId}>{title}</h2>
-        </header>
-        <div className={drawer.widgetList}>
+    <OverlayPortal onDismiss={onClose}>
+      <SheetFrame label={t('customizeTitle')} closeLabel={t('close')}>
+        <SheetChrome
+          as="form"
+          title={t('customizeTitle')}
+          onSubmit={(event) => {
+            event.preventDefault();
+            const enabled = rows.filter((widget) => widget.enabled).map((widget) => widget.key);
+            void onSave(enabled).then((saved) => {
+              if (saved) onClose();
+            });
+          }}
+          footer={
+            <>
+              <button
+                type="button"
+                className={drawer.reset}
+                onClick={() => setRows(resetRows(widgets))}
+              >
+                {t('reset')}
+              </button>
+              <button type="submit" className={sheetStyles.save} disabled={pending}>
+                {t('saveChanges')}
+              </button>
+            </>
+          }
+        >
           {rows.map((widget, index) => (
             <WidgetRowEditor
               key={widget.key}
               widget={widget}
-              onToggle={() => onToggle(widget.key)}
-              onDragStart={() => onDragStart(index)}
-              onDrop={() => onDrop(index)}
-              onKeyMove={(direction) => onKeyMove(index, direction)}
+              onToggle={() => setRows((current) => toggle(current, widget.key))}
+              onDragStart={() => {
+                dragIndex.current = index;
+              }}
+              onDrop={() => {
+                const from = dragIndex.current;
+                dragIndex.current = null;
+                setRows((current) => move(current, from, index));
+              }}
+              onKeyMove={(direction) =>
+                setRows((current) => move(current, index, index + direction))
+              }
             />
           ))}
-        </div>
-        <DrawerActions pending={pending} onReset={onReset} />
-      </form>
-    </div>
-  );
-}
-
-function DrawerActions({ pending, onReset }: { pending: boolean; onReset: () => void }) {
-  const t = useTranslations('dashboard');
-  return (
-    <div className={drawer.drawerActions}>
-      <button type="button" className={drawer.reset} onClick={onReset}>
-        {t('reset')}
-      </button>
-      <button type="submit" className={styles.save} disabled={pending}>
-        {t('saveChanges')}
-      </button>
-    </div>
+        </SheetChrome>
+      </SheetFrame>
+    </OverlayPortal>
   );
 }
 
@@ -281,13 +142,6 @@ function DragIcon() {
       <circle cx="5" cy="12.5" r="1" />
       <circle cx="11" cy="12.5" r="1" />
     </svg>
-  );
-}
-
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
   );
 }
 

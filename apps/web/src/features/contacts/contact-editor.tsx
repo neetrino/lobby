@@ -23,6 +23,7 @@ import {
 import { duplicatePeers } from './duplicate-notices';
 import { useInSheet } from '../../ui/overlay/sheet-dismiss';
 import { Select } from '../../ui/select/select';
+import { sheetStyles } from '../../ui/side-sheet/side-sheet';
 import styles from './contacts.module.css';
 import tableStyles from './contacts-table.module.css';
 import panel from './contact-editor.module.css';
@@ -93,15 +94,21 @@ export function ContactEditor({
       className={inSheet ? `${styles.editor} ${styles.editorSheet}` : styles.editor}
       aria-label={mode === 'create' ? t('createTitle') : contact?.name}
     >
-      <EditorProfile mode={mode} contact={contact} draft={draft} onClose={onClose} />
+      {inSheet ? null : (
+        <EditorProfile mode={mode} contact={contact} draft={draft} onClose={onClose} />
+      )}
       <form
-        className={styles.form}
+        className={inSheet ? sheetStyles.form : styles.form}
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
           submit();
         }}
       >
+        {inSheet ? (
+          <EditorProfile mode={mode} contact={contact} draft={draft} onClose={onClose} />
+        ) : null}
+        <div className={inSheet ? sheetStyles.body : undefined}>
         {contact === null ? null : (
           <DetailTabs
             tab={tab}
@@ -140,7 +147,14 @@ export function ContactEditor({
         {error === null ? null : (
           <p className={styles.errorText}>{contactErrorText(t, error.code)}</p>
         )}
-        <footer className={`${styles.editorActions} ${panel.footer}`}>
+        </div>
+        <footer
+          className={
+            inSheet
+              ? `${styles.editorActions} ${sheetStyles.foot}`
+              : `${styles.editorActions} ${panel.footer}`
+          }
+        >
           {manageable && !archived ? (
             <button
               type="button"
@@ -156,7 +170,11 @@ export function ContactEditor({
               {t('restore')}
             </button>
           ) : null}
-          <button type="submit" className={styles.primaryButton} disabled={pending}>
+          <button
+            type="submit"
+            className={inSheet ? sheetStyles.save : styles.primaryButton}
+            disabled={pending}
+          >
             {t('save')}
           </button>
         </footer>
@@ -181,7 +199,7 @@ function EditorProfile({
   const archived = contact?.archivedAt !== null && contact !== null;
   const title = mode === 'create' ? t('newContact') : (contact?.name ?? draft.name);
   const header = inSheet
-    ? `${styles.editorHeader} ${panel.profile} ${panel.profileInSheet}`
+    ? `${sheetStyles.head} ${panel.profile}`
     : `${styles.editorHeader} ${panel.profile}`;
 
   return (

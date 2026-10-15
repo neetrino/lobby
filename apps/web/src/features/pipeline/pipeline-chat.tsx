@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 
 import {
@@ -106,16 +106,8 @@ export function PipelineChat({
       {open ? (
         <OverlayPortal onDismiss={() => setOpen(false)}>
           <SheetFrame label={t('chatTitle', { title: cardTitle })} closeLabel={t('closeChat')}>
+            <SheetChrome title={t('chatTitle', { title: cardTitle })}>
             <section className={styles.chatPanel}>
-              <header className={styles.chatHeader}>
-                <span>
-                  <Image src="/pipeline-chat.avif" alt="" width={38} height={38} />
-                </span>
-                <div>
-                  <strong>{t('chat')}</strong>
-                  <small>{cardTitle}</small>
-                </div>
-              </header>
               <div className={styles.chatMessages} aria-live="polite">
                 {loading ? <p className={styles.chatState}>{t('chatLoading')}</p> : null}
                 {!loading && messages.length === 0 ? (
@@ -149,6 +141,7 @@ export function PipelineChat({
                 </button>
               </form>
             </section>
+            </SheetChrome>
           </SheetFrame>
         </OverlayPortal>
       ) : null}

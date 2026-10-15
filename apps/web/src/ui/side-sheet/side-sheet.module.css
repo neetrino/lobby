@@ -78,6 +78,136 @@
 }
 
 .cornerClose:focus-visible {
-  outline: 2px solid #2563eb;
+  outline: 2px solid var(--shell-olive);
   outline-offset: 2px;
+}
+
+.form {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font-family: var(--font-inter), var(--font-armenian), system-ui, sans-serif;
+}
+
+.head,
+.foot {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #fff;
+}
+
+.head {
+  padding-right: 76px;
+  border-bottom: 1px solid #e6ebf5;
+}
+
+.form h2 {
+  margin: 0;
+  color: #14213d;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  overflow: auto;
+  padding: 28px 16px 16px;
+}
+
+.foot {
+  justify-content: flex-end;
+  border-top: 1px solid #e6ebf5;
+}
+
+.form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: #667085;
+  font-size: 13px;
+}
+
+.form input,
+.form select,
+.form textarea {
+  height: var(--control-height);
+  padding: 0 14px;
+  border: 0;
+  border-radius: 15px;
+  background: var(--control-fill);
+  color: inherit;
+  font: inherit;
+}
+
+.form textarea {
+  height: 80px;
+  padding: 10px 12px;
+  resize: vertical;
+}
+
+.form fieldset {
+  box-sizing: border-box;
+  width: 100%;
+  min-inline-size: 0;
+  margin: 0;
+  padding: 4px 16px 16px;
+  border: 1px solid #e6ebf5;
+  border-radius: 16px;
+  background: #fff;
+}
+
+.form legend {
+  float: none;
+  width: auto;
+  margin: 0 12px 14px;
+  padding: 0 8px;
+  color: #53647d;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: 0.075em;
+  text-transform: uppercase;
+}
+
+.form fieldset > label + label {
+  margin-top: 12px;
+}
+
+.save {
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--shell-olive);
+  color: #1c2410;
+  box-shadow: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.foot button {
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
 }

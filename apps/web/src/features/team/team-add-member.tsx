@@ -3,7 +3,7 @@
 import { useCallback, useState, type FormEvent } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame, sheetStyles } from '../../ui/side-sheet/side-sheet';
 import { ActionToastView, type ActionToast } from '../../ui/toast/toast';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import { inviteMember } from '../members/members-api';
@@ -59,25 +59,25 @@ function InviteSheet({
   return (
     <OverlayPortal onDismiss={onClose}>
       <SheetFrame label={t('addMember')} closeLabel={t('close')}>
-        <form
-          className={styles.invite}
+        <SheetChrome
+          as="form"
+          title={t('addMember')}
           onSubmit={(event) => {
             event.preventDefault();
             const email = readEmail(event);
             if (email !== '') void onSubmit(email);
           }}
+          footer={
+            <button type="submit" className={sheetStyles.save} disabled={pending}>
+              {t('addMember')}
+            </button>
+          }
         >
-          <header className={styles.inviteHead}>
-            <h2>{t('addMember')}</h2>
-          </header>
           <label>
             {t('inviteEmail')}
             <input type="email" name="email" required placeholder={t('inviteEmail')} />
           </label>
-          <button type="submit" disabled={pending}>
-            {t('addMember')}
-          </button>
-        </form>
+        </SheetChrome>
       </SheetFrame>
     </OverlayPortal>
   );

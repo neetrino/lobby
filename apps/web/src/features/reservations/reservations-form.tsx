@@ -7,7 +7,7 @@ import { listContacts } from '../contacts/contacts-api';
 import type { Contact } from '../contacts/contact';
 import { DateField } from '../../ui/calendar/calendar';
 import { Select, type SelectOption } from '../../ui/select/select';
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame, sheetStyles } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import {
   listAvailableTables,
@@ -88,17 +88,23 @@ export function ReservationForm({
   return (
     <OverlayPortal onDismiss={onClose}>
       <SheetFrame label={title} closeLabel={t('close')}>
-        <form
-          className={styles.form}
+        <SheetChrome
+          as="form"
+          title={title}
           onSubmit={(event) => {
             event.preventDefault();
             onSubmit(draft);
           }}
+          footer={
+            <button
+              type="submit"
+              className={sheetStyles.save}
+              disabled={pending || draft.tableId === ''}
+            >
+              {detail === null ? t('new') : t('save')}
+            </button>
+          }
         >
-          <header className={styles.formHead}>
-            <h2>{title}</h2>
-          </header>
-          <div className={styles.formBody}>
             <fieldset>
               <legend>{t('sections.guest')}</legend>
               <label>
@@ -237,17 +243,7 @@ export function ReservationForm({
               </fieldset>
             ) : null}
             {error === null ? null : <p className={styles.error}>{error}</p>}
-          </div>
-          <div className={styles.formFoot}>
-            <button
-              type="submit"
-              className={styles.primary}
-              disabled={pending || draft.tableId === ''}
-            >
-              {detail === null ? t('new') : t('save')}
-            </button>
-          </div>
-        </form>
+        </SheetChrome>
       </SheetFrame>
     </OverlayPortal>
   );

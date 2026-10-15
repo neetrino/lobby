@@ -4,9 +4,8 @@ import { useTranslations } from 'next-intl';
 import type { FormEvent } from 'react';
 
 import { useSheetDismiss } from '../../ui/overlay/sheet-dismiss';
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame, sheetStyles } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
-import styles from './pipeline.module.css';
 
 type CardDraft = { title: string; company: string; amount: number };
 
@@ -32,10 +31,16 @@ function NewCardForm({ onCreate }: { onCreate: (draft: CardDraft) => void }) {
   const t = useTranslations('pipeline');
   const dismiss = useSheetDismiss(() => undefined);
   return (
-    <form className={styles.cardSheet} onSubmit={(event) => submitNewCard(event, onCreate, dismiss)}>
-      <header>
-        <h2>{t('addCard')}</h2>
-      </header>
+    <SheetChrome
+      as="form"
+      title={t('addCard')}
+      onSubmit={(event) => submitNewCard(event, onCreate, dismiss)}
+      footer={
+        <button type="submit" className={sheetStyles.save}>
+          {t('save')}
+        </button>
+      }
+    >
       <label>
         {t('cardTitle')}
         <input name="title" aria-label={t('cardTitle')} placeholder={t('cardTitle')} required />
@@ -48,10 +53,7 @@ function NewCardForm({ onCreate }: { onCreate: (draft: CardDraft) => void }) {
         {t('amount')}
         <input name="amount" aria-label={t('amount')} placeholder={t('amount')} inputMode="numeric" />
       </label>
-      <button type="submit" data-tone="primary">
-        {t('save')}
-      </button>
-    </form>
+    </SheetChrome>
   );
 }
 

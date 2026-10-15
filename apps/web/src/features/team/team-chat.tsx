@@ -11,7 +11,7 @@ import {
 } from 'react';
 import { useTranslations } from 'next-intl';
 
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 
 import {
@@ -42,7 +42,9 @@ export function TeamChat({
   return (
     <OverlayPortal onDismiss={onClose}>
       <SheetFrame label={t('chatTitle', { name: member.name })} closeLabel={t('close')}>
-        <TeamThread key={member.id} member={member} selfId={selfId} />
+        <SheetChrome title={t('chatTitle', { name: member.name })}>
+          <TeamThread key={member.id} member={member} selfId={selfId} />
+        </SheetChrome>
       </SheetFrame>
     </OverlayPortal>
   );
@@ -121,10 +123,6 @@ function TeamThread({ member, selfId }: { member: TeamMember | null; selfId: str
       className={styles.chatPanel}
       aria-label={member === null ? t('chat') : t('chatTitle', { name: member.name })}
     >
-      <h2>
-        {t('chat')}
-        {member === null ? null : <small>{member.name}</small>}
-      </h2>
       <div
         ref={scroller}
         className={styles.chatMessages}

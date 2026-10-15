@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 
 import { ColorField } from '../../ui/color-picker/color-picker';
 import { ConfirmDialog } from '../../ui/confirm/confirm-dialog';
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame, sheetStyles } from '../../ui/side-sheet/side-sheet';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import { SearchFilters } from '../../ui/search-filters/search-filters';
 import { OverlayPortal } from '../contacts/overlay-portal';
@@ -135,18 +135,21 @@ function ColumnSheet({
   return (
     <OverlayPortal onDismiss={onClose}>
       <SheetFrame label={t('addColumn')} closeLabel={t('close')}>
-        <form className={styles.columnSheet} onSubmit={(event) => submitColumn(event, onCreate, onClose)}>
-          <header className={styles.statusHead}>
-            <h2>{t('addColumn')}</h2>
-          </header>
-          <label className={styles.field}>
+        <SheetChrome
+          as="form"
+          title={t('addColumn')}
+          onSubmit={(event) => submitColumn(event, onCreate, onClose)}
+          footer={
+            <button type="submit" className={sheetStyles.save}>
+              {t('save')}
+            </button>
+          }
+        >
+          <label>
             {t('columnName')}
             <input name="name" aria-label={t('columnName')} placeholder={t('columnName')} required maxLength={40} />
           </label>
-          <button type="submit" className={styles.add}>
-            {t('save')}
-          </button>
-        </form>
+        </SheetChrome>
       </SheetFrame>
     </OverlayPortal>
   );
@@ -181,10 +184,8 @@ function StatusEditor({
   const [pendingId, setPendingId] = useState<string | null>(null);
   const pending = statuses.find((status) => status.id === pendingId);
   return (
-    <div className={styles.statusEditor}>
-      <header className={styles.statusHead}>
-        <h2>{t('statuses')}</h2>
-      </header>
+    <SheetChrome title={t('statuses')}>
+      <div className={styles.statusEditor}>
       {statuses.map((status) => (
         <StatusRow
           key={status.id}
@@ -205,7 +206,8 @@ function StatusEditor({
           onClose={() => setPendingId(null)}
         />
       )}
-    </div>
+      </div>
+    </SheetChrome>
   );
 }
 

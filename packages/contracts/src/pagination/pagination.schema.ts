@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /** Default collection page size. */
-export const DEFAULT_PAGE_LIMIT = 50;
+export const DEFAULT_PAGE_LIMIT = 25;
 
 /** Maximum collection page size. */
 export const MAX_PAGE_LIMIT = 100;

@@ -16,7 +16,7 @@ import { TeamChat } from './team-chat';
 import { TeamMemberCard } from './team-member-card';
 import styles from './team.module.css';
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 25;
 
 export function TeamDirectoryPage() {
   const t = useTranslations('team');

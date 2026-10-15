@@ -20,14 +20,12 @@ export function ContactsTable({
   pending,
   nextCursor,
   filters,
-  activeCount,
   total,
   page,
   onOpen,
   onEdit,
   onAskLifecycle,
   onPage,
-  onLimit,
 }: {
   rows: readonly Contact[];
   selectedId: string | null;
@@ -36,14 +34,12 @@ export function ContactsTable({
   pending: boolean;
   nextCursor: string | null;
   filters: ContactListFilters;
-  activeCount: number | null;
   total: number | null;
   page: number;
   onOpen: (contact: Contact) => void;
   onEdit: (contact: Contact) => void;
   onAskLifecycle: (contacts: readonly Contact[], action: 'archive' | 'restore') => void;
   onPage: (page: number) => void;
-  onLimit: (limit: ContactListFilters['limit']) => void;
 }) {
   const t = useTranslations('contacts');
   const locale = useLocale();
@@ -67,15 +63,10 @@ export function ContactsTable({
       />
       {status === 'ready' && rows.length === 0 ? <p className={styles.note}>{t('empty')}</p> : null}
       <ContactPager
-        status={status}
-        count={rows.length}
         page={page}
-        filters={filters}
-        activeCount={activeCount}
         total={total}
         limit={filters.limit}
         hasNext={nextCursor !== null}
-        onLimit={onLimit}
         onPage={onPage}
       />
     </section>

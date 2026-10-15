@@ -9,7 +9,7 @@ import { ContactsShell } from '../contacts/contacts-shell';
 import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
 import { DateField } from '../../ui/calendar/calendar';
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import { Pagination } from '../../ui/pagination/pagination';
 import { FilterField, SearchFilters } from '../../ui/search-filters/search-filters';
@@ -331,12 +331,9 @@ function Detail({
   return (
     <OverlayPortal onDismiss={onClose}>
       <SheetFrame label={title} closeLabel={t('close')}>
-        <aside className={styles.detail}>
-          <header className={styles.detailHead}>
-            <span>{t('eventDetail')}</span>
-            <h2>{title}</h2>
-          </header>
-          <div className={styles.detailBody}>
+        <SheetChrome as="aside" title={title}>
+          <div className={styles.detail}>
+          <p className={styles.detailKicker}>{t('eventDetail')}</p>
             <dl>
               <dt>{t('time')}</dt>
               <dd>
@@ -361,7 +358,7 @@ function Detail({
             <h3>{t('changes')}</h3>
             <ChangeList t={t} changes={event.changes} />
           </div>
-        </aside>
+        </SheetChrome>
       </SheetFrame>
     </OverlayPortal>
   );

@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import {
   allowedActions,
@@ -53,14 +53,21 @@ export function ReservationDrawer({
   return (
     <OverlayPortal onDismiss={onClose}>
       <SheetFrame label={t('details')} closeLabel={t('close')}>
-        <aside className={styles.drawer}>
-          <header className={styles.drawerHead}>
-            <div>
-              <h2>{detail.customerName}</h2>
-              <StatusBadge status={detail.status} />
-            </div>
-          </header>
-          <div className={styles.drawerBody}>
+        <SheetChrome
+          as="aside"
+          title={detail.customerName}
+          footer={
+            <ReservationActions
+              status={detail.status}
+              canUpdate={canUpdate}
+              pending={pending}
+              onEdit={onEdit}
+              onCancel={() => setConfirming(true)}
+              onTransition={onTransition}
+            />
+          }
+        >
+          <StatusBadge status={detail.status} />
             <FactSection title={t('sections.guest')}>
               <Fact label={t('name')} value={detail.customerName} />
               <Fact label={t('phone')} value={detail.customerPhone ?? '—'} />
@@ -111,15 +118,6 @@ export function ReservationDrawer({
                 {error}
               </p>
             )}
-          </div>
-          <ReservationActions
-            status={detail.status}
-            canUpdate={canUpdate}
-            pending={pending}
-            onEdit={onEdit}
-            onCancel={() => setConfirming(true)}
-            onTransition={onTransition}
-          />
           {confirming ? (
             <CancelDialog
               pending={pending}
@@ -130,7 +128,7 @@ export function ReservationDrawer({
               }}
             />
           ) : null}
-        </aside>
+        </SheetChrome>
       </SheetFrame>
     </OverlayPortal>
   );

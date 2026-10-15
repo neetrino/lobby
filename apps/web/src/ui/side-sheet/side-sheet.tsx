@@ -1,7 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { FormEventHandler, ReactNode } from 'react';
 
 import { useSheetDismiss } from '../overlay/sheet-dismiss';
 import styles from './side-sheet.module.css';
@@ -42,6 +42,42 @@ export function SheetFrame({
     </div>
   );
 }
+
+/** Shared New-reservation layout: titled header, scroll body, optional footer. */
+export function SheetChrome({
+  title,
+  footer,
+  children,
+  as = 'div',
+  onSubmit,
+}: {
+  title: ReactNode;
+  footer?: ReactNode;
+  children: ReactNode;
+  as?: 'div' | 'form' | 'aside' | 'section';
+  onSubmit?: FormEventHandler<HTMLFormElement>;
+}): ReactNode {
+  const inner = (
+    <>
+      <header className={styles.head}>
+        <h2>{title}</h2>
+      </header>
+      <div className={styles.body}>{children}</div>
+      {footer === undefined ? null : <div className={styles.foot}>{footer}</div>}
+    </>
+  );
+  if (as === 'form') {
+    return (
+      <form className={styles.form} onSubmit={onSubmit}>
+        {inner}
+      </form>
+    );
+  }
+  const Tag = as;
+  return <Tag className={styles.form}>{inner}</Tag>;
+}
+
+export const sheetStyles = styles;
 
 function noop(): void {
   return undefined;

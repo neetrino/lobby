@@ -8,13 +8,13 @@ describe('contacts query', () => {
       search: '  Աննա  ',
       archived: false,
       sort: 'asc',
-      limit: 50,
+      limit: 25,
       type: 'person',
       owner: '11111111-1111-4111-8111-111111111111',
     });
 
     const params = new URLSearchParams(query);
-    expect(params.get('limit')).toBe('50');
+    expect(params.get('limit')).toBe('25');
     expect(params.get('sort')).toBe('asc');
     expect(params.get('archived')).toBe('false');
     expect(params.get('search')).toBe('Աննա');
@@ -49,7 +49,7 @@ describe('contacts query', () => {
       search: 'Ada',
       archived: true,
       sort: 'desc',
-      limit: 50,
+      limit: 25,
       type: 'all',
       owner: '',
       cursor: 'abc',

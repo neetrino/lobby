@@ -1,121 +1,3 @@
-.backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  display: flex;
-  box-sizing: border-box;
-  justify-content: flex-end;
-  align-items: stretch;
-  padding: 16px;
-  background: rgb(20 33 61 / 28%);
-  animation: fadeIn 280ms ease;
-}
-
-.backdropLeaving {
-  animation: fadeOut 240ms ease forwards;
-}
-
-.sheet {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-self: stretch;
-  width: min(420px, 100%);
-  min-height: 0;
-  animation: slideIn 320ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.sheetLeaving {
-  animation: slideOut 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.drawer {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 16px;
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 0;
-  margin: 0;
-  padding: 4px 24px 24px;
-  overflow: hidden;
-  border-radius: 28px;
-  background: #fff;
-  color: #14213d;
-  box-shadow: 0 24px 60px rgb(20 33 61 / 18%);
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateX(110%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideOut {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(110%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .backdrop,
-  .backdropLeaving,
-  .sheet,
-  .sheetLeaving {
-    animation: none;
-  }
-}
-
-.drawerHead {
-  display: flex;
-  align-items: center;
-  height: 42px;
-  margin-top: -3px;
-  padding-right: 48px;
-}
-
-.drawerHead h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1;
-  transform: translateY(8px);
-}
-
-.widgetList {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 0;
-  overflow: auto;
-}
-
 .widgetRow,
 .widgetRow label {
   display: flex;
@@ -150,31 +32,19 @@
   fill: currentColor;
 }
 
-.drawerActions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: auto;
-}
-
 .reset {
-  height: 42px;
+  height: var(--control-height);
   padding: 0 16px;
   border: 0;
   border-radius: 999px;
-  background: var(--shell-ink);
+  background: #1c2410;
   color: #fff;
   font: inherit;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 650;
   cursor: pointer;
 }
 
 .reset:hover {
   background: #2c313c;
-}
-
-.reset:focus-visible {
-  outline: 2px solid var(--shell-blue);
-  outline-offset: 2px;
 }

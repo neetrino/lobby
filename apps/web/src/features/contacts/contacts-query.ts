@@ -39,7 +39,7 @@ export function parseContactFilters(params: URLSearchParams): ContactListFilters
     search: search.trim().slice(0, SEARCH_MAX),
     archived: params.get('archived') === 'true',
     sort: sort === 'desc' ? 'desc' : 'asc',
-    limit: isPageLimit(limit) ? limit : 50,
+    limit: isPageLimit(limit) ? limit : PAGE_LIMITS[0],
     type: type === 'person' || type === 'organization' ? type : 'all',
     owner: isOwnerId(owner) ? owner : '',
     ...(page === undefined ? {} : { page }),

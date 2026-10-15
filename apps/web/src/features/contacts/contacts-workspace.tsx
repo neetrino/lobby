@@ -169,14 +169,12 @@ export function ContactsWorkspace() {
                 pending={list.pending}
                 nextCursor={list.nextCursor}
                 filters={filters}
-                activeCount={activeCount}
                 total={list.total}
                 page={filters.page ?? 1}
                 onOpen={editor.openContact}
                 onEdit={editor.openEditor}
                 onAskLifecycle={lifecycle.ask}
                 onPage={showPage}
-                onLimit={(limit) => changeFilters({ ...filters, limit })}
               />
               {lifecycle.prompt === null ? null : (
                 <LifecycleConfirm

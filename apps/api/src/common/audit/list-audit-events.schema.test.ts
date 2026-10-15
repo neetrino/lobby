@@ -14,7 +14,7 @@ const position = {
 };
 
 describe('auditEventListQuerySchema', () => {
-  it('defaults the page to 50 rows ordered by occurredAt descending', () => {
+  it('defaults the page to 25 rows ordered by occurredAt descending', () => {
     expect(auditEventListQuerySchema.parse({})).toEqual({
       limit: DEFAULT_PAGE_LIMIT,
       sort: 'desc',

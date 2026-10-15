@@ -10,7 +10,7 @@ import glass from '../../ui/glass/glass.module.css';
 import { useSheetDismiss } from '../../ui/overlay/sheet-dismiss';
 import { DateField } from '../../ui/calendar/calendar';
 import { Select, type SelectOption } from '../../ui/select/select';
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame, sheetStyles } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import type { CardUpdate, PipelineBoard, PipelineCard, PipelineKindName } from './pipeline-api';
 import styles from './pipeline.module.css';
@@ -250,11 +250,24 @@ function CardEditor({
   return (
     <OverlayPortal onDismiss={onClose}>
       <SheetFrame label={t('editCard')} closeLabel={t('close')}>
-        <form className={styles.cardEditor} onSubmit={(event) => submitCard(event, onSave, onClose)}>
-          <header>
-            <h2>{t('editCard')}</h2>
-          </header>
-          <div className={styles.cardEditorBody}>
+        <SheetChrome
+          as="form"
+          title={t('editCard')}
+          onSubmit={(event) => submitCard(event, onSave, onClose)}
+          footer={
+            <>
+              {kind === 'lead' && card.outcome !== 'CONVERTED' ? (
+                <button type="button" className={styles.convert} onClick={onConvert}>
+                  {t('convert')}
+                </button>
+              ) : null}
+              <SheetCancel label={t('cancel')} />
+              <button type="submit" className={sheetStyles.save}>
+                {t('save')}
+              </button>
+            </>
+          }
+        >
           <TextField name="title" label={t('cardTitle')} defaultValue={card.title} required />
           <TextField name="company" label={t('company')} defaultValue={card.company} />
           <TextField name="amount" label={t('amount')} defaultValue={String(card.amount)} inputMode="numeric" />
@@ -300,19 +313,7 @@ function CardEditor({
             defaultValue={card.ownerUserId ?? ''}
             options={ownerOptions(t('clearOwner'), t('assignToMe'), userId)}
           />
-          </div>
-          <footer className={styles.cardEditorFoot}>
-            {kind === 'lead' && card.outcome !== 'CONVERTED' ? (
-              <button type="button" className={styles.convert} onClick={onConvert}>
-                {t('convert')}
-              </button>
-            ) : null}
-            <SheetCancel label={t('cancel')} />
-            <button type="submit" className={styles.sheetSave}>
-              {t('save')}
-            </button>
-          </footer>
-        </form>
+        </SheetChrome>
       </SheetFrame>
     </OverlayPortal>
   );

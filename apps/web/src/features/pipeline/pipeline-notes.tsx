@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
-import { SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 
 import { addCardNote, readCardNotes, updateCardNote, type PipelineKindName } from './pipeline-api';
@@ -96,20 +96,8 @@ export function PipelineNotes({
       {open ? (
         <OverlayPortal onDismiss={() => setOpen(false)}>
           <SheetFrame label={t('notesTitle', { title: cardTitle })} closeLabel={t('closeNotes')}>
+            <SheetChrome title={t('notesTitle', { title: cardTitle })}>
             <section className={styles.stickyNotePanel}>
-              <header className={styles.chatHeader}>
-                <Image
-                  src="/pipeline-note.png"
-                  alt=""
-                  width={48}
-                  height={48}
-                  className={styles.noteHeaderIcon}
-                />
-                <div>
-                  <strong>{t('notes')}</strong>
-                  <small>{cardTitle}</small>
-                </div>
-              </header>
               <div className={styles.stickyCanvas} aria-live="polite">
                 {loading ? <p className={styles.chatState}>{t('notesLoading')}</p> : null}
                 {!loading ? (
@@ -127,6 +115,7 @@ export function PipelineNotes({
               {error ? <p className={styles.chatError}>{t('notesFailed')}</p> : null}
               {saving ? <p className={styles.stickySaving}>{t('notesSaving')}</p> : null}
             </section>
+            </SheetChrome>
           </SheetFrame>
         </OverlayPortal>
       ) : null}

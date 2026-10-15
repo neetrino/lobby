@@ -187,7 +187,8 @@
 .detailHead {
   padding: 16px 76px 8px 24px;
 }
-.detailHead span {
+.detailKicker {
+  margin: 0;
   color: #64748b;
   font-size: 13px;
   font-weight: 600;

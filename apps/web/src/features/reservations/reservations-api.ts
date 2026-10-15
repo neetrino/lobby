@@ -24,7 +24,7 @@ export class ReservationRequestError extends Error {
   }
 }
 
-export const reservationPageSize = 50;
+export const reservationPageSize = 25;
 
 export type ReservationPage = {
   rows: ReservationSummary[];

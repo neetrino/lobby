@@ -11,7 +11,7 @@ import {
 const page = z.strictObject({ limit: pageLimitSchema });
 
 describe('pagination primitives', () => {
-  it('defaults the page size to 50 and rejects a size outside 1..100', () => {
+  it('defaults the page size to 25 and rejects a size outside 1..100', () => {
     expect(page.parse({}).limit).toBe(DEFAULT_PAGE_LIMIT);
     expect(page.parse({ limit: '100' }).limit).toBe(MAX_PAGE_LIMIT);
     expect(page.safeParse({ limit: '0' }).success).toBe(false);
