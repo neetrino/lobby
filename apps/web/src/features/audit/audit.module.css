@@ -94,6 +94,10 @@
 .violet {
   color: #7c3aed;
 }
+.search {
+  flex: none;
+  width: 100%;
+}
 .content {
   display: block;
 }

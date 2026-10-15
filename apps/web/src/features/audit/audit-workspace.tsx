@@ -138,6 +138,7 @@ export function AuditWorkspace() {
                 <Metric label={t('denied')} value={counts.denied} tone="red" />
                 <Metric label={t('integrations')} value={counts.integrations} tone="violet" />
               </section>
+              <div className={styles.search}>
               <SearchFilters
                 white
                 value={filters.search}
@@ -206,6 +207,7 @@ export function AuditWorkspace() {
                   />
                 </FilterField>
               </SearchFilters>
+              </div>
               <section className={styles.content}>
                 <div className={styles.tableCard}>
                   {status === 'loading' ? <p className={styles.state}>{t('loading')}</p> : null}
