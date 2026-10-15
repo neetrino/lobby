@@ -269,6 +269,11 @@ async function seedReservations(client, tenantId, ownerId) {
     ['reservation-5', 2, 19, 0, 60, 'CANCELLED', 'PHONE', 'A2', 3],
     ['reservation-6', -1, 17, 0, 90, 'COMPLETED', 'WALK_IN', 'B1', 5],
     ['reservation-7', -1, 20, 0, 60, 'NO_SHOW', 'WEBSITE', 'A1', 2],
+    ['today-1', 0, 12, 0, 60, 'PENDING', 'PHONE', 'A2', 2],
+    ['today-2', 0, 13, 0, 90, 'CONFIRMED', 'WEBSITE', 'B1', 4],
+    ['today-3', 0, 18, 30, 60, 'CONFIRMED', 'INSTAGRAM', 'A1', 2],
+    ['today-4', 0, 19, 0, 120, 'SEATED', 'WALK_IN', 'Family 1', 6],
+    ['today-5', 0, 20, 30, 60, 'ARRIVED', 'WHATSAPP', 'A1', 2],
   ];
   const octoberNinthStatuses = ['COMPLETED', 'CONFIRMED', 'PENDING', 'CANCELLED', 'NO_SHOW'];
   const octoberNinthTables = [

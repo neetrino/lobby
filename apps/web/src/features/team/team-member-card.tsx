@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import type { KeyboardEvent, ReactElement } from 'react';
 import { useTranslations } from 'next-intl';
 
-import { updateJobTitle, type TeamMember } from './team-api';
+import type { TeamMember } from './team-api';
 import styles from './team.module.css';
 
 const AVATAR_COLORS = [
@@ -21,29 +21,31 @@ export function TeamMemberCard({
   member,
   isSelf,
   selected,
-  canEditProfession,
+  onOpen,
   onMessage,
-  onProfession,
 }: {
   member: TeamMember;
   isSelf: boolean;
   selected: boolean;
-  canEditProfession: boolean;
+  onOpen: (member: TeamMember) => void;
   onMessage: (member: TeamMember) => void;
-  onProfession: (member: TeamMember) => void;
-}) {
+}): ReactElement {
   const t = useTranslations('team');
   const roles = useTranslations('contacts');
   const subtitle = member.jobTitle ?? roles(`role.${member.role}`);
   return (
-    <article className={selected ? `${styles.card} ${styles.cardSelected}` : styles.card}>
-      {canEditProfession ? <ProfessionMenu member={member} onSaved={onProfession} /> : null}
+    <article
+      className={selected ? `${styles.card} ${styles.cardSelected}` : styles.card}
+      tabIndex={0}
+      onClick={() => onOpen(member)}
+      onKeyDown={(event) => openCardKey(event, () => onOpen(member))}
+    >
       <span
         className={styles.avatar}
-        style={{ background: avatarColor(member.id) }}
+        style={{ background: teamAvatarColor(member.id) }}
         aria-hidden="true"
       >
-        {initials(member.name)}
+        {teamInitials(member.name)}
       </span>
       <strong className={styles.name}>{member.name}</strong>
       <span className={styles.profession}>{subtitle}</span>
@@ -54,7 +56,10 @@ export function TeamMemberCard({
           type="button"
           className={styles.emailButton}
           aria-label={t('message', { name: member.name })}
-          onClick={() => onMessage(member)}
+          onClick={(event) => {
+            event.stopPropagation();
+            onMessage(member);
+          }}
         >
           <MailIcon />
           {t('emailAction')}
@@ -64,49 +69,7 @@ export function TeamMemberCard({
   );
 }
 
-function ProfessionMenu({
-  member,
-  onSaved,
-}: {
-  member: TeamMember;
-  onSaved: (member: TeamMember) => void;
-}) {
-  const t = useTranslations('team');
-  const [value, setValue] = useState(member.jobTitle ?? '');
-  const [pending, setPending] = useState(false);
-  const [failed, setFailed] = useState(false);
-
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    setPending(true);
-    setFailed(false);
-    try {
-      onSaved(await updateJobTitle(member.id, value.trim() === '' ? null : value.trim()));
-    } catch {
-      setFailed(true);
-    } finally {
-      setPending(false);
-    }
-  }
-
-  return (
-    <details className={styles.menu}>
-      <summary aria-label={t('more')}>⋯</summary>
-      <form className={styles.menuPanel} onSubmit={(event) => void submit(event)}>
-        <label>
-          {t('profession')}
-          <input value={value} maxLength={80} onChange={(event) => setValue(event.target.value)} />
-        </label>
-        <button type="submit" disabled={pending}>
-          {t('saveProfession')}
-        </button>
-        {failed ? <span className={styles.failed}>{t('professionFailed')}</span> : null}
-      </form>
-    </details>
-  );
-}
-
-function initials(name: string): string {
+export function teamInitials(name: string): string {
   const letters = name
     .trim()
     .split(/\s+/)
@@ -116,7 +79,7 @@ function initials(name: string): string {
   return mark.length > 0 ? mark : '?';
 }
 
-function avatarColor(id: string): string {
+export function teamAvatarColor(id: string): string {
   let hash = 0;
   for (const char of id) {
     hash = (hash + char.charCodeAt(0)) % AVATAR_COLORS.length;
@@ -124,7 +87,14 @@ function avatarColor(id: string): string {
   return AVATAR_COLORS[hash] ?? AVATAR_COLORS[0];
 }
 
-function MailIcon() {
+function openCardKey(event: KeyboardEvent<HTMLElement>, open: () => void): void {
+  if (event.target !== event.currentTarget) return;
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  event.preventDefault();
+  open();
+}
+
+function MailIcon(): ReactElement {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 6h16v12H4zM4 7l8 6 8-6" />

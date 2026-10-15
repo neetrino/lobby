@@ -116,6 +116,7 @@
   border-radius: 16px;
   background: white;
   box-shadow: 0 8px 24px rgba(76, 70, 120, 0.04);
+  cursor: pointer;
 }
 
 .cardSelected {
@@ -176,60 +177,51 @@
   stroke-width: 1.8;
 }
 
-.menu {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+.sheetSummary {
+  display: flex;
+  gap: 16px;
+  align-items: center;
 }
 
-.menu summary {
+.sheetAvatar {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 64px;
+  height: 64px;
+  flex: none;
   place-items: center;
-  border-radius: 8px;
-  color: #9aa0b5;
-  list-style: none;
-  cursor: pointer;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 650;
 }
 
-.menu summary::-webkit-details-marker {
-  display: none;
-}
-
-.menuPanel {
-  position: absolute;
-  right: 0;
-  z-index: 2;
+.sheetFacts {
   display: grid;
-  gap: 8px;
-  width: 220px;
-  padding: 12px;
-  border: 1px solid #eceaf4;
-  border-radius: 15px;
-  background: white;
-  box-shadow: 0 16px 40px rgb(20 33 61 / 16%);
+  gap: 10px;
+  margin: 0;
 }
 
-.menuPanel label {
+.sheetFacts div {
   display: grid;
-  gap: 4px;
+  gap: 2px;
+}
+
+.sheetFacts dt {
   color: #667085;
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 650;
 }
 
-.menuPanel input {
-  height: 36px;
-  padding: 0 10px;
-  border: 1px solid #e7e4f2;
-  border-radius: 10px;
-  font: inherit;
+.sheetFacts dd {
+  margin: 0;
+  color: #14213d;
+  font-size: 14px;
 }
 
-.menuPanel button {
-  background: var(--shell-olive);
-  color: #1c2410;
+.sheetProfession {
+  margin: 0;
+  color: #3e4c66;
+  font-size: 14px;
 }
 
 .pager {

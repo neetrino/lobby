@@ -24,15 +24,24 @@ afterEach(() => {
 describe('team member card', () => {
   it('shows the profession and opens messaging only for someone else', () => {
     const onMessage = vi.fn();
-    renderCard({ isSelf: false, onMessage });
+    const onOpen = vi.fn();
+    renderCard({ isSelf: false, onMessage, onOpen });
     expect(screen.getByText('Designer')).toBeTruthy();
     expect(screen.getByText('BS')).toBeTruthy();
     screen.getByRole('button', { name: 'Message Bea Stone' }).click();
     expect(onMessage).toHaveBeenCalledWith(member);
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('opens member info from the card', () => {
+    const onOpen = vi.fn();
+    renderCard({ isSelf: false, onMessage: vi.fn(), onOpen });
+    screen.getByText('Bea Stone').click();
+    expect(onOpen).toHaveBeenCalledWith(member);
   });
 
   it('hides messaging on the signed-in member', () => {
-    renderCard({ isSelf: true, onMessage: vi.fn() });
+    renderCard({ isSelf: true, onMessage: vi.fn(), onOpen: vi.fn() });
     expect(screen.queryByRole('button', { name: 'Message Bea Stone' })).toBeNull();
     expect(screen.getByText('You')).toBeTruthy();
   });
@@ -41,9 +50,11 @@ describe('team member card', () => {
 function renderCard({
   isSelf,
   onMessage,
+  onOpen,
 }: {
   isSelf: boolean;
   onMessage: (member: TeamMember) => void;
+  onOpen: (member: TeamMember) => void;
 }): void {
   render(
     <NextIntlClientProvider locale="en" messages={messages}>
@@ -51,9 +62,8 @@ function renderCard({
         member={member}
         isSelf={isSelf}
         selected={false}
-        canEditProfession={false}
+        onOpen={onOpen}
         onMessage={onMessage}
-        onProfession={vi.fn()}
       />
     </NextIntlClientProvider>,
   );

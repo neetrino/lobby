@@ -14,6 +14,7 @@ import { Pagination } from '../../ui/pagination/pagination';
 import { SearchFilters } from '../../ui/search-filters/search-filters';
 import { TeamChat } from './team-chat';
 import { TeamMemberCard } from './team-member-card';
+import { TeamMemberSheet } from './team-member-sheet';
 import styles from './team.module.css';
 
 const PAGE_SIZE = 25;
@@ -26,7 +27,8 @@ export function TeamDirectoryPage() {
   const { directory, failed, setDirectory } = useTeamDirectory();
   const [query, setQuery] = useState('');
   const [page, setPage] = useState(0);
-  const [openMember, setOpenMember] = useState<TeamMember | null>(null);
+  const [profile, setProfile] = useState<TeamMember | null>(null);
+  const [chat, setChat] = useState<TeamMember | null>(null);
   const canEdit = session?.user.role === 'OWNER' || session?.user.role === 'ADMIN';
   const visible = pageOf(directory?.members ?? [], query, page);
 
@@ -66,10 +68,9 @@ export function TeamDirectoryPage() {
                   key={member.id}
                   member={member}
                   isSelf={member.id === session?.user.id}
-                  selected={member.id === openMember?.id}
-                  canEditProfession={canEdit}
-                  onMessage={setOpenMember}
-                  onProfession={(saved) => replaceMember(setDirectory, setOpenMember, saved)}
+                  selected={member.id === profile?.id || member.id === chat?.id}
+                  onOpen={setProfile}
+                  onMessage={setChat}
                 />
               ))}
             </div>
@@ -81,11 +82,24 @@ export function TeamDirectoryPage() {
               />
             </div>
           </section>
-          {openMember === null ? null : (
+          {profile === null ? null : (
+            <TeamMemberSheet
+              member={profile}
+              isSelf={profile.id === session?.user.id}
+              canEditProfession={canEdit}
+              onClose={() => setProfile(null)}
+              onMessage={(member) => {
+                setProfile(null);
+                setChat(member);
+              }}
+              onProfession={(saved) => replaceMember(setDirectory, setProfile, saved)}
+            />
+          )}
+          {chat === null ? null : (
             <TeamChat
-              member={openMember}
+              member={chat}
               selfId={session?.user.id ?? null}
-              onClose={() => setOpenMember(null)}
+              onClose={() => setChat(null)}
             />
           )}
         </div>
@@ -139,7 +153,7 @@ function useTeamDirectory(): {
 
 function replaceMember(
   setDirectory: Dispatch<SetStateAction<TeamDirectory | null>>,
-  setOpenMember: Dispatch<SetStateAction<TeamMember | null>>,
+  setProfile: Dispatch<SetStateAction<TeamMember | null>>,
   saved: TeamMember,
 ): void {
   setDirectory((current) => {
@@ -151,7 +165,7 @@ function replaceMember(
       members: current.members.map((member) => (member.id === saved.id ? saved : member)),
     };
   });
-  setOpenMember((current) => (current?.id === saved.id ? saved : current));
+  setProfile((current) => (current?.id === saved.id ? saved : current));
 }
 
 function isSignedOut(error: ContactsRequestError | null): boolean {
