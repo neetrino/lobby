@@ -36,12 +36,12 @@
   mask-image: var(--notch), linear-gradient(#fff, #fff), linear-gradient(#fff, #fff);
   -webkit-mask-size:
     96px 96px,
-    calc(100% - 96px) 100%,
-    96px calc(100% - 96px);
+    calc(100% - 94px) 100%,
+    98px calc(100% - 94px);
   mask-size:
     96px 96px,
-    calc(100% - 96px) 100%,
-    96px calc(100% - 96px);
+    calc(100% - 94px) 100%,
+    98px calc(100% - 94px);
   -webkit-mask-position:
     right top,
     left top,
@@ -132,6 +132,12 @@
   min-height: 0;
   overflow: auto;
   padding: 28px 16px 16px;
+  scrollbar-width: none;
+}
+
+.body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .foot {
