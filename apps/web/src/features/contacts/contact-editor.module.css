@@ -55,7 +55,7 @@ header.profile h2 {
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px;
   min-height: 0;
   overflow: auto;
   padding-bottom: 12px;
@@ -173,15 +173,19 @@ header.profile h2 {
 }
 
 .tabs {
+  position: sticky;
+  top: 0;
+  z-index: 2;
   display: flex;
   flex: none;
   flex-wrap: nowrap;
   align-items: flex-end;
   gap: 4px;
-  margin: 16px 16px 0;
-  padding: 0 4px;
+  margin: 0;
+  padding: 8px 16px 0;
   overflow: visible;
   border-bottom: 1px solid #e6ebf5;
+  background: #fff;
 }
 
 .tab,
