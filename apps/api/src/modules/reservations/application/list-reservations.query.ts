@@ -35,7 +35,8 @@ export function reservationListOrder(
 export function toReservationPage(
   rows: readonly ReservationRecord[],
   query: ReservationListQuery,
-): CursorPage<ReservationRecord> {
+  total: number,
+): CursorPage<ReservationRecord> & { page: { total: number } } {
   const visible = rows.slice(0, query.limit);
   const last = visible.at(-1);
   return {
@@ -45,6 +46,7 @@ export function toReservationPage(
         rows.length > query.limit && last !== undefined
           ? encodeReservationCursor(last, query)
           : null,
+      total,
     },
   };
 }

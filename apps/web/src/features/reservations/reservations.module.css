@@ -17,7 +17,6 @@
 .controls,
 .searchRow,
 .actions,
-.pager,
 .drawerHead {
   display: flex;
   flex-wrap: wrap;
@@ -39,6 +38,13 @@
 
 .create {
   margin-left: auto;
+}
+
+.pages {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  padding-top: 8px;
 }
 
 .header h1,
@@ -85,7 +91,6 @@
 
 .dateControls button,
 .actions button,
-.pager button,
 .formFoot button,
 .confirm button {
   padding: 0 14px;

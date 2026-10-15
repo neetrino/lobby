@@ -45,7 +45,7 @@ export function FilterMenu({
       >
         {field ? null : <span>{label}</span>}
         <strong>{current}</strong>
-        <ChevronIcon />
+        <ChevronIcon open={open} />
       </button>
       {open ? (
         <FilterChoices
@@ -113,9 +113,13 @@ function FilterChoices({
   );
 }
 
-function ChevronIcon(): ReactElement {
+function ChevronIcon({ open }: { open: boolean }): ReactElement {
   return (
-    <svg viewBox="0 0 12 12" aria-hidden="true">
+    <svg
+      className={open ? styles.chevronOpen : styles.chevron}
+      viewBox="0 0 12 12"
+      aria-hidden="true"
+    >
       <path d="M2.5 4.5 6 8l3.5-3.5" />
     </svg>
   );

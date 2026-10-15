@@ -40,6 +40,7 @@ export type ContactListFilters = {
   type: 'all' | 'person' | 'organization';
   owner: string;
   cursor?: string;
+  page?: number;
 };
 
 export const EMPTY_DRAFT: ContactDraft = {

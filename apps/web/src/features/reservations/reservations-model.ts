@@ -69,7 +69,7 @@ export type ReservationFilters = {
   locationId: string;
   assigneeId: string;
   search: string;
-  cursor: string | null;
+  page: number;
 };
 
 type Role = SessionPrincipal['user']['role'];

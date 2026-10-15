@@ -139,6 +139,7 @@ type ReservationDb = PrismaClient | Prisma.TransactionClient;
 export type ReservationOperations = {
   findById(id: string): Promise<ReservationRecord | null>;
   list(query: ReservationListQuery): Promise<ReservationRecord[]>;
+  count(query: ReservationListQuery): Promise<number>;
   lock(id: string): Promise<void>;
   update(id: string, input: ReservationUpdate): Promise<ReservationRecord | null>;
   listLocations(): Promise<LocationListRecord[]>;
@@ -189,10 +190,20 @@ class ReservationQueries implements ReservationOperations {
     const rows = await this.db.reservation.findMany({
       where: { tenantId: this.tenantId, ...reservationListFilter(query) },
       orderBy: reservationListOrder(query.sort),
+      skip: pageSkip(query),
       take: query.limit + 1,
       select: reservationSelect,
     });
     return rows.map(toReservation);
+  }
+
+  count(query: ReservationListQuery): Promise<number> {
+    return this.db.reservation.count({
+      where: {
+        tenantId: this.tenantId,
+        ...reservationListFilter({ ...query, cursor: undefined }),
+      },
+    });
   }
 
   async lock(id: string): Promise<void> {
@@ -453,6 +464,11 @@ export class ReservationRepository {
     const tenantId = actor.type === 'USER' ? scopedTenantId(actor.context) : scopedTenantId(actor);
     return new TenantReservationScope(this.prisma, tenantId);
   }
+}
+
+function pageSkip(query: ReservationListQuery): number | undefined {
+  if (query.page === undefined) return undefined;
+  return (query.page - 1) * query.limit;
 }
 
 function toReservation(row: ReservationRecord): ReservationRecord {

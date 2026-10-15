@@ -165,58 +165,7 @@
 .pager {
   display: flex;
   justify-content: center;
-  align-items: center;
-  gap: 8px;
   padding: 13px 16px;
-}
-.pager span {
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
-}
-.pageStep,
-.pageNum,
-.pageOn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: var(--control-height);
-  border: 0;
-  border-radius: 999px;
-  font: inherit;
-  font-size: 13px;
-  font-weight: 650;
-  box-shadow: none;
-}
-.pageStep {
-  padding: 0 16px;
-  background: var(--shell-olive);
-  color: #1c2410;
-}
-.pageStep:hover {
-  background: #8aaf4c;
-}
-.pageNum,
-.pageOn {
-  width: var(--control-height);
-  padding: 0;
-}
-.pageNum {
-  background: #fff;
-  color: #1c2410;
-  box-shadow: inset 0 0 0 1px #e4e7ee;
-}
-.pageNum:hover {
-  background: #f7f8fa;
-}
-.pageOn {
-  background: var(--shell-olive);
-  color: #1c2410;
-}
-.pageStep:disabled,
-.pageNum:disabled,
-.pageOn:disabled {
-  opacity: 0.45;
 }
 .detail {
   display: flex;

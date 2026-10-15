@@ -13,6 +13,7 @@ import glass from '../../ui/glass/glass.module.css';
 import { DateField } from '../../ui/calendar/calendar';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
 import { FilterField, SearchFilters } from '../../ui/search-filters/search-filters';
+import { Pagination } from '../../ui/pagination/pagination';
 import { SegmentedControl } from '../../ui/segmented-control/segmented-control';
 import {
   cancelReservation,
@@ -20,6 +21,7 @@ import {
   listDiningTables,
   listReservations,
   listVenues,
+  reservationPageSize,
   readHistory,
   readReservation,
   ReservationRequestError,
@@ -72,7 +74,9 @@ export function ReservationsWorkspace() {
     <div className={shell.app}>
       <ContactsShell session={session} current="reservations" />
       <main className={`${shell.main} ${glass.canvas}`}>
-        <div className={board.view === 'calendar' ? `${styles.page} ${styles.pageFit}` : styles.page}>
+        <div
+          className={board.view === 'calendar' ? `${styles.page} ${styles.pageFit}` : styles.page}
+        >
           <Header
             day={board.fromDay}
             locationId={board.locationId}
@@ -117,12 +121,13 @@ export function ReservationsWorkspace() {
               onOpen: board.setSelectedId,
             }}
           />
-          <Pager
-            hasPrevious={board.cursorStack.length > 0}
-            hasNext={board.nextCursor !== null}
-            onPrevious={board.previousPage}
-            onNext={board.nextPage}
-          />
+          <div className={styles.pages}>
+            <Pagination
+              page={board.page}
+              pageCount={reservationPageCount(board.total)}
+              onPage={board.goToPage}
+            />
+          </div>
         </div>
         {detail.detail === null ? null : (
           <ReservationDrawer
@@ -174,10 +179,9 @@ function useBoard() {
   const [assigneeId, setAssigneeId] = useState('');
   const [search, setSearch] = useState('');
   const [view, setView] = useState<ViewName>('list');
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [cursorStack, setCursorStack] = useState<Array<string | null>>([]);
+  const [page, setPage] = useState(1);
   const [rows, setRows] = useState<ReservationSummary[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
   const [venues, setVenues] = useState<Venue[]>([]);
   const [tables, setTables] = useState<DiningTable[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
@@ -195,7 +199,7 @@ function useBoard() {
     locationId,
     assigneeId,
     search,
-    cursor ?? '',
+    String(page),
     String(revision),
   ].join('\0');
   const [requestedKey, setRequestedKey] = useState(listKey);
@@ -207,22 +211,25 @@ function useBoard() {
   useEffect(() => {
     const controller = new AbortController();
     void listReservations(
-      { fromDay, toDay, status, locationId, assigneeId, search, cursor },
+      { fromDay, toDay, status, locationId, assigneeId, search, page },
       controller.signal,
     )
-      .then((page) => {
-        setRows(page.rows);
-        setNextCursor(page.nextCursor);
+      .then((result) => {
+        setRows(result.rows);
+        setTotal(result.total ?? 0);
         setFailed(null);
       })
       .catch((reason: unknown) => {
-        if (!controller.signal.aborted) setFailed(codeOf(reason));
+        if (!controller.signal.aborted) {
+          setFailed(codeOf(reason));
+          setTotal(0);
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [assigneeId, cursor, fromDay, locationId, revision, search, status, toDay]);
+  }, [assigneeId, fromDay, locationId, page, revision, search, status, toDay]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -247,8 +254,7 @@ function useBoard() {
   }, [locationId, venues]);
 
   function resetPage(): void {
-    setCursor(null);
-    setCursorStack([]);
+    setPage(1);
   }
 
   async function run(action: () => Promise<unknown>): Promise<void> {
@@ -281,7 +287,8 @@ function useBoard() {
     search,
     view,
     rows,
-    nextCursor,
+    page,
+    total,
     venues,
     tables,
     members,
@@ -291,7 +298,6 @@ function useBoard() {
     failed,
     pending,
     actionError,
-    cursorStack,
     revision,
     setRange: (from: string, to: string) => {
       setFromDay(from);
@@ -324,17 +330,12 @@ function useBoard() {
     setEditing,
     run,
     save,
-    previousPage: () => {
-      const previous = cursorStack.at(-1) ?? null;
-      setCursorStack((stack) => stack.slice(0, -1));
-      setCursor(previous);
-    },
-    nextPage: () => {
-      if (nextCursor === null) return;
-      setCursorStack((stack) => [...stack, cursor]);
-      setCursor(nextCursor);
-    },
+    goToPage: setPage,
   };
+}
+
+function reservationPageCount(total: number): number {
+  return Math.max(1, Math.ceil(total / reservationPageSize));
 }
 
 function useDetail(
@@ -463,51 +464,51 @@ function Filters(props: {
   }, [draft, onSearch]);
   return (
     <div className={styles.searchRow}>
-    <SearchFilters
-      white
-      value={draft}
-      onChange={setDraft}
-      placeholder={t('search')}
-      label={t('search')}
-      resetLabel={t('reset')}
-      applyLabel={t('apply')}
-      columns={3}
-      onReset={() => resetReservationFilters(setDraft, props.onStatus, props.onAssignee)}
-      onApply={() => undefined}
-    >
-      <FilterField label={t('from')}>
-        <DateField fit label={t('from')} value={props.fromDay} onChange={props.onFrom} />
-      </FilterField>
-      <FilterField label={t('to')}>
-        <DateField fit label={t('to')} value={props.toDay} onChange={props.onTo} />
-      </FilterField>
-      <FilterField label={t('assignee')}>
-        <FilterMenu
-          field
-          label={t('assignee')}
-          value={props.assigneeId}
-          options={[
-            { value: '', label: t('allAssignees') },
-            ...props.members.map((member) => ({ value: member.id, label: member.name })),
-          ]}
-          onChange={props.onAssignee}
-        />
-      </FilterField>
-    </SearchFilters>
-    <FilterMenu
-      white
-      label={t('status')}
-      value={props.status}
-      options={[
-        { value: '', label: t('allStatuses') },
-        ...RESERVATION_STATUSES.map((status) => ({
-          value: status,
-          label: t(`statuses.${status}`),
-        })),
-      ]}
-      onChange={props.onStatus}
-    />
-    <ViewSwitch view={props.view} onView={props.onView} />
+      <SearchFilters
+        white
+        value={draft}
+        onChange={setDraft}
+        placeholder={t('search')}
+        label={t('search')}
+        resetLabel={t('reset')}
+        applyLabel={t('apply')}
+        columns={3}
+        onReset={() => resetReservationFilters(setDraft, props.onStatus, props.onAssignee)}
+        onApply={() => undefined}
+      >
+        <FilterField label={t('from')}>
+          <DateField fit label={t('from')} value={props.fromDay} onChange={props.onFrom} />
+        </FilterField>
+        <FilterField label={t('to')}>
+          <DateField fit label={t('to')} value={props.toDay} onChange={props.onTo} />
+        </FilterField>
+        <FilterField label={t('assignee')}>
+          <FilterMenu
+            field
+            label={t('assignee')}
+            value={props.assigneeId}
+            options={[
+              { value: '', label: t('allAssignees') },
+              ...props.members.map((member) => ({ value: member.id, label: member.name })),
+            ]}
+            onChange={props.onAssignee}
+          />
+        </FilterField>
+      </SearchFilters>
+      <FilterMenu
+        white
+        label={t('status')}
+        value={props.status}
+        options={[
+          { value: '', label: t('allStatuses') },
+          ...RESERVATION_STATUSES.map((status) => ({
+            value: status,
+            label: t(`statuses.${status}`),
+          })),
+        ]}
+        onChange={props.onStatus}
+      />
+      <ViewSwitch view={props.view} onView={props.onView} />
     </div>
   );
 }
@@ -520,30 +521,6 @@ function resetReservationFilters(
   setDraft('');
   onStatus('');
   onAssignee('');
-}
-
-function Pager({
-  hasPrevious,
-  hasNext,
-  onPrevious,
-  onNext,
-}: {
-  hasPrevious: boolean;
-  hasNext: boolean;
-  onPrevious: () => void;
-  onNext: () => void;
-}) {
-  const t = useTranslations('reservations');
-  return (
-    <div className={styles.pager}>
-      <button type="button" disabled={!hasPrevious} onClick={onPrevious}>
-        {t('previousPage')}
-      </button>
-      <button type="button" disabled={!hasNext} onClick={onNext}>
-        {t('nextPage')}
-      </button>
-    </div>
-  );
 }
 
 function messageFor(t: ReturnType<typeof useTranslations<'reservations'>>, code: string): string {

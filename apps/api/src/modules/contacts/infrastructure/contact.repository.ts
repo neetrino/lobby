@@ -71,6 +71,7 @@ export type ContactOperations = {
   findById(id: string): Promise<ContactRecord | null>;
   findSummaries(ids: readonly string[]): Promise<Array<{ id: string; name: string }>>;
   list(query: ContactListQuery): Promise<ContactRecord[]>;
+  count(query: ContactListQuery): Promise<number>;
   countActive(): Promise<number>;
   findDuplicateIds(probe: ContactDuplicateProbe): Promise<string[]>;
   update(id: string, input: ContactUpdateInput): Promise<number>;
@@ -113,10 +114,17 @@ class ContactQueries implements ContactOperations {
     const rows = await this.db.contact.findMany({
       where: { tenantId: this.tenantId, ...contactListFilter(query) },
       orderBy: contactListOrder(query.sort),
+      skip: pageSkip(query),
       take: query.limit + 1,
       select: contactSelect,
     });
     return rows.map(toContactRecord);
+  }
+
+  count(query: ContactListQuery): Promise<number> {
+    return this.db.contact.count({
+      where: { tenantId: this.tenantId, ...contactListFilter({ ...query, cursor: undefined }) },
+    });
   }
 
   countActive(): Promise<number> {
@@ -221,6 +229,11 @@ function toContactRecord(row: ContactRow): ContactRecord {
     ownerUserId: row.ownerUserId,
     ownerName: row.owner.name,
   };
+}
+
+function pageSkip(query: ContactListQuery): number | undefined {
+  if (query.page === undefined) return undefined;
+  return (query.page - 1) * query.limit;
 }
 
 function duplicateMatch(probe: ContactDuplicateProbe): Prisma.ContactWhereInput[] {

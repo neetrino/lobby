@@ -688,6 +688,11 @@
       "TELEGRAM": "Telegram"
     }
   },
+  "pagination": {
+    "pages": "Էջեր",
+    "first": "Առաջին",
+    "last": "Վերջին"
+  },
   "calendar": {
     "previousMonth": "Նախորդ ամիս",
     "nextMonth": "Հաջորդ ամիս",

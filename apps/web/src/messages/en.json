@@ -688,6 +688,11 @@
       "TELEGRAM": "Telegram"
     }
   },
+  "pagination": {
+    "pages": "Pages",
+    "first": "First",
+    "last": "Last"
+  },
   "calendar": {
     "previousMonth": "Previous month",
     "nextMonth": "Next month",

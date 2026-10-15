@@ -39,8 +39,9 @@ export class ContactAccessService {
     const tenantId = scopedTenantId(context);
     await this.entitlements.requireEnabled(tenantId, 'contacts');
     requirePermission(context, 'contacts:read');
-    const rows = await this.contacts.forTenant(context).list(input);
-    return toContactPage(rows, input);
+    const scope = this.contacts.forTenant(context);
+    const [rows, total] = await Promise.all([scope.list(input), scope.count(input)]);
+    return toContactPage(rows, input, total);
   }
 
   /** Active contacts in the caller's tenant. Archived rows are excluded. */

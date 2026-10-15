@@ -38,7 +38,8 @@ export function contactListOrder(
 export function toContactPage<T extends { id: string; name: string }>(
   rows: readonly T[],
   query: ContactListQuery,
-): CursorPage<T> {
+  total: number,
+): CursorPage<T> & { page: { total: number } } {
   const visible = rows.slice(0, query.limit);
   const last = visible.at(-1);
   return {
@@ -48,6 +49,7 @@ export function toContactPage<T extends { id: string; name: string }>(
         rows.length > query.limit && last !== undefined
           ? encodeContactCursor({ name: last.name, id: last.id }, query)
           : null,
+      total,
     },
   };
 }

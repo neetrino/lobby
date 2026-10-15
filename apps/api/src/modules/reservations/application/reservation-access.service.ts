@@ -38,8 +38,9 @@ export class ReservationAccessService {
     query: ReservationListQuery,
   ): Promise<CursorPage<ReservationRecord>> {
     await this.authorize(context);
-    const rows = await this.reservations.forTenant({ type: 'USER', context }).list(query);
-    return toReservationPage(rows, query);
+    const scope = this.reservations.forTenant({ type: 'USER', context });
+    const [rows, total] = await Promise.all([scope.list(query), scope.count(query)]);
+    return toReservationPage(rows, query, total);
   }
 
   async locations(context: RequestContext): Promise<LocationListRecord[]> {

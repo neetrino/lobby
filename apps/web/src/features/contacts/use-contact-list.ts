@@ -11,12 +11,14 @@ type ListSnapshot = {
   status: 'loading' | 'ready' | 'error';
   rows: Contact[];
   nextCursor: string | null;
+  total: number | null;
   error: ContactsRequestError | null;
 };
 
 export function useContactList(query: string): {
   rows: Contact[];
   nextCursor: string | null;
+  total: number | null;
   status: 'loading' | 'ready' | 'error';
   error: ContactsRequestError | null;
   pending: boolean;
@@ -30,6 +32,7 @@ export function useContactList(query: string): {
     status: 'loading',
     rows: [],
     nextCursor: null,
+    total: null,
     error: null,
   });
   const reload = useCallback(() => {
@@ -48,6 +51,7 @@ export function useContactList(query: string): {
           status: 'ready',
           rows: page.data,
           nextCursor: page.page.nextCursor,
+          total: page.page.total,
           error: null,
         });
       })
@@ -61,6 +65,7 @@ export function useContactList(query: string): {
           status: 'error',
           rows: [],
           nextCursor: null,
+          total: null,
           error: toRequestError(caught),
         });
       });
@@ -72,6 +77,7 @@ export function useContactList(query: string): {
   return {
     rows: snapshot.rows,
     nextCursor: settled ? snapshot.nextCursor : null,
+    total: settled ? snapshot.total : null,
     status: snapshot.token < 0 ? 'loading' : snapshot.status,
     error: snapshot.token < 0 ? null : snapshot.error,
     pending,

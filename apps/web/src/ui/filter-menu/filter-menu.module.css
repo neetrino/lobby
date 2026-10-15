@@ -45,7 +45,8 @@
   white-space: nowrap;
 }
 
-.trigger svg {
+.trigger svg.chevron,
+.trigger svg.chevronOpen {
   flex: 0 0 auto;
   width: 12px;
   height: 12px;
@@ -54,6 +55,18 @@
   stroke-width: 1.4;
   stroke-linecap: round;
   stroke-linejoin: round;
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.trigger svg.chevronOpen {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger svg.chevron,
+  .trigger svg.chevronOpen {
+    transition: none;
+  }
 }
 
 .list {

@@ -43,6 +43,7 @@ const contactListQueryFields = z.strictObject({
     .transform((value) => value === 'true'),
   type: z.enum(['person', 'organization']).optional(),
   owner: z.uuid().optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
 });
 
 /**
@@ -53,6 +54,9 @@ const contactListQueryFields = z.strictObject({
 export const contactListQuerySchema = contactListQueryFields.superRefine((query, context) => {
   if (query.cursor !== undefined && !contactCursorMatches(query.cursor, query)) {
     context.addIssue({ code: 'custom', path: ['cursor'], message: 'cursor query does not match' });
+  }
+  if (query.cursor !== undefined && query.page !== undefined) {
+    context.addIssue({ code: 'custom', path: ['page'], message: 'page and cursor cannot combine' });
   }
 });
 

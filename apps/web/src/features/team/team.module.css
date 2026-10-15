@@ -234,22 +234,8 @@
 
 .pager {
   display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  align-items: center;
+  justify-content: center;
   padding-top: 8px;
-}
-
-.pager button {
-  min-width: var(--control-height);
-  padding: 0 12px;
-  background: var(--control-fill);
-  color: var(--control-ink);
-}
-
-.pager .pageOn {
-  background: var(--shell-olive);
-  color: #1c2410;
 }
 
 .chatPanel {

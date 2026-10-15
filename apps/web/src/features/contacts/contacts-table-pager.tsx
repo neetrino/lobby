@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
+import { Pagination } from '../../ui/pagination/pagination';
 import { Select } from '../../ui/select/select';
 import type { ContactListFilters } from './contact';
 import styles from './contacts.module.css';
@@ -10,55 +11,70 @@ import styles from './contacts.module.css';
 export function ContactPager({
   status,
   count,
-  pageIndex,
+  page,
   filters,
   activeCount,
+  total,
   limit,
-  hasPrevious,
   hasNext,
   onLimit,
-  onPrevious,
-  onNext,
+  onPage,
 }: {
   status: 'loading' | 'ready' | 'error';
   count: number;
-  pageIndex: number;
+  page: number;
   filters: ContactListFilters;
   activeCount: number | null;
+  total: number | null;
   limit: ContactListFilters['limit'];
-  hasPrevious: boolean;
   hasNext: boolean;
   onLimit: (limit: ContactListFilters['limit']) => void;
-  onPrevious: () => void;
-  onNext: () => void;
+  onPage: (page: number) => void;
+}): ReactElement {
+  const t = useTranslations('contacts');
+  const pageCount =
+    total === null ? page + (hasNext ? 1 : 0) : Math.max(1, Math.ceil(total / limit));
+  return (
+    <footer className={styles.pager}>
+      <span className={styles.pageSummary}>
+        {pageSummary(status, t, count, page - 1, filters, activeCount)}
+      </span>
+      <Pagination
+        page={page}
+        pageCount={pageCount}
+        endKnown={total !== null || !hasNext}
+        onPage={onPage}
+      />
+      <PageSize limit={limit} onLimit={onLimit} />
+    </footer>
+  );
+}
+
+function PageSize({
+  limit,
+  onLimit,
+}: {
+  limit: ContactListFilters['limit'];
+  onLimit: (limit: ContactListFilters['limit']) => void;
 }): ReactElement {
   const t = useTranslations('contacts');
   return (
-    <footer className={styles.pager}>
-      <span>{pageSummary(status, t, count, pageIndex, filters, activeCount)}</span>
-      <div className={styles.pagerTools}>
-        <label className={styles.pageSize}>
-          {t('rows')}
-          <Select
-            fit
-            label={t('pageSize')}
-            value={String(limit)}
-            options={[
-              { value: '25', label: '25' },
-              { value: '50', label: '50' },
-              { value: '100', label: '100' },
-            ]}
-            onChange={(next) => onLimit(pageLimit(next))}
-          />
-        </label>
-        <button type="button" disabled={!hasPrevious} onClick={onPrevious}>
-          {t('previousPage')}
-        </button>
-        <button type="button" disabled={!hasNext} onClick={onNext}>
-          {t('nextPage')}
-        </button>
-      </div>
-    </footer>
+    <div className={styles.pagerTools}>
+      <label className={styles.pageSize}>
+        {t('rows')}
+        <Select
+          fit
+          label={t('pageSize')}
+          value={String(limit)}
+          options={[
+            { value: '25', label: '25' },
+            { value: '50', label: '50' },
+            { value: '100', label: '100' },
+          ]}
+          onChange={(next) => onLimit(pageLimit(next))}
+        />
+      </label>
+    </div>
   );
 }
 

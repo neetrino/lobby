@@ -24,9 +24,12 @@ export class ReservationRequestError extends Error {
   }
 }
 
+export const reservationPageSize = 50;
+
 export type ReservationPage = {
   rows: ReservationSummary[];
   nextCursor: string | null;
+  total: number | null;
 };
 
 export type ReservationDraft = {
@@ -150,7 +153,7 @@ export function transitionReservation(
 function listQuery(filters: ReservationFilters): string {
   const bounds = rangeBounds(filters.fromDay, filters.toDay);
   const params = new URLSearchParams({
-    limit: '50',
+    limit: String(reservationPageSize),
     sort: 'asc',
     from: bounds.from,
     to: bounds.to,
@@ -159,7 +162,7 @@ function listQuery(filters: ReservationFilters): string {
   if (filters.locationId !== '') params.set('locationId', filters.locationId);
   if (filters.assigneeId !== '') params.set('assignedUserId', filters.assigneeId);
   if (filters.search !== '') params.set('search', filters.search);
-  if (filters.cursor !== null) params.set('cursor', filters.cursor);
+  if (filters.page > 1) params.set('page', String(filters.page));
   return params.toString();
 }
 
@@ -246,7 +249,16 @@ function parsePage(body: unknown): ReservationPage {
   return {
     rows: page.data.map(parseSummary),
     nextCursor: typeof nextCursor === 'string' ? nextCursor : null,
+    total: readTotal(page.page.total),
   };
+}
+
+function readTotal(value: unknown): number | null {
+  if (value === undefined) return null;
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    throw new ReservationRequestError(200, 'REQUEST_FAILED');
+  }
+  return value;
 }
 
 function parseDetail(body: unknown): ReservationDetail {

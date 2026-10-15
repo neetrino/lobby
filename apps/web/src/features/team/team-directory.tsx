@@ -10,6 +10,7 @@ import shell from '../contacts/contacts.module.css';
 import { useSession } from '../contacts/use-contact-list';
 import { readTeamDirectory, type TeamDirectory, type TeamMember } from './team-api';
 import { AddMemberButton } from './team-add-member';
+import { Pagination } from '../../ui/pagination/pagination';
 import { SearchFilters } from '../../ui/search-filters/search-filters';
 import { TeamChat } from './team-chat';
 import { TeamMemberCard } from './team-member-card';
@@ -72,7 +73,13 @@ export function TeamDirectoryPage() {
                 />
               ))}
             </div>
-            <Pager page={visible.page} pageCount={visible.pageCount} onPage={setPage} />
+            <div className={styles.pager}>
+              <Pagination
+                page={visible.page + 1}
+                pageCount={visible.pageCount}
+                onPage={(next) => setPage(next - 1)}
+              />
+            </div>
           </section>
           {openMember === null ? null : (
             <TeamChat
@@ -84,40 +91,6 @@ export function TeamDirectoryPage() {
         </div>
       </main>
     </div>
-  );
-}
-
-function Pager({
-  page,
-  pageCount,
-  onPage,
-}: {
-  page: number;
-  pageCount: number;
-  onPage: (page: number) => void;
-}) {
-  const t = useTranslations('team');
-  const pages = Array.from({ length: pageCount }, (_, index) => index);
-  return (
-    <nav className={styles.pager} aria-label={t('pages')}>
-      <button type="button" disabled={page === 0} onClick={() => onPage(page - 1)}>
-        {t('prev')}
-      </button>
-      {pages.map((index) => (
-        <button
-          key={index}
-          type="button"
-          className={index === page ? styles.pageOn : undefined}
-          aria-current={index === page ? 'page' : undefined}
-          onClick={() => onPage(index)}
-        >
-          {index + 1}
-        </button>
-      ))}
-      <button type="button" disabled={page >= pageCount - 1} onClick={() => onPage(page + 1)}>
-        {t('next')}
-      </button>
-    </nav>
   );
 }
 

@@ -48,7 +48,7 @@ describe('downloadContactsCsv', () => {
   it('rejects instead of saving a file when another page remains after the cap', async () => {
     vi.mocked(listContacts).mockResolvedValue({
       data: [contact({})],
-      page: { nextCursor: 'next' },
+      page: { nextCursor: 'next', total: null },
     });
 
     await expect(

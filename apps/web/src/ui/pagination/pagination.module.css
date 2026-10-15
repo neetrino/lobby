@@ -1,0 +1,61 @@
+.root {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.root button.step,
+.root button.num,
+.root button.current {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-height);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  box-shadow: none;
+}
+
+.root button.step {
+  padding: 0 16px;
+  background: var(--shell-olive);
+  color: #1c2410;
+}
+
+.root button.step:hover {
+  background: #8aaf4c;
+}
+
+.root button.num,
+.root button.current {
+  width: var(--control-height);
+  padding: 0;
+}
+
+.root button.num {
+  background: #fff;
+  color: #1c2410;
+  box-shadow: inset 0 0 0 1px #e4e7ee;
+}
+
+.root button.num:hover {
+  background: #f7f8fa;
+}
+
+.root button.current {
+  background: var(--shell-olive);
+  color: #1c2410;
+}
+
+.root button.step:disabled,
+.root button.num:disabled,
+.root button.current:disabled {
+  opacity: 0.45;
+  cursor: default;
+}

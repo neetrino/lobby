@@ -18,7 +18,9 @@ export function contactsQueryString(filters: ContactListFilters): string {
   if (isOwnerId(filters.owner)) {
     params.set('owner', filters.owner);
   }
-  if (filters.cursor !== undefined && filters.cursor.length > 0) {
+  if (filters.page !== undefined && filters.page > 1) {
+    params.set('page', String(filters.page));
+  } else if (filters.cursor !== undefined && filters.cursor.length > 0) {
     params.set('cursor', filters.cursor);
   }
   return params.toString();
@@ -31,6 +33,7 @@ export function parseContactFilters(params: URLSearchParams): ContactListFilters
   const cursor = params.get('cursor');
   const type = params.get('type');
   const owner = params.get('owner') ?? '';
+  const page = pageNumber(params.get('page'));
 
   return {
     search: search.trim().slice(0, SEARCH_MAX),
@@ -39,7 +42,8 @@ export function parseContactFilters(params: URLSearchParams): ContactListFilters
     limit: isPageLimit(limit) ? limit : 50,
     type: type === 'person' || type === 'organization' ? type : 'all',
     owner: isOwnerId(owner) ? owner : '',
-    ...(cursor !== null && cursor.length > 0 ? { cursor } : {}),
+    ...(page === undefined ? {} : { page }),
+    ...(page !== undefined || cursor === null || cursor.length === 0 ? {} : { cursor }),
   };
 }
 
@@ -56,6 +60,12 @@ export function filtersWithoutCursor(filters: ContactListFilters): ContactListFi
 
 function isOwnerId(value: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
+function pageNumber(value: string | null): number | undefined {
+  const page = Number(value);
+  if (!Number.isInteger(page) || page <= 1) return undefined;
+  return page;
 }
 
 function isPageLimit(value: number): value is ContactListFilters['limit'] {

@@ -43,7 +43,6 @@ export function ContactsWorkspace() {
       router.replace(`/${locale}/login`);
     }
   }, [locale, router, signedOut]);
-  const [history, setHistory] = useState<Array<string | undefined>>([]);
   const [noticeHidden, setNoticeHidden] = useState(false);
   const [toast, setToast] = useState<ActionToast | null>(null);
   const dismissToast = useCallback((id: number) => {
@@ -54,25 +53,12 @@ export function ContactsWorkspace() {
   const { search, setSearch } = useContactSearch(filters, changeFilters);
 
   function changeFilters(next: ContactListFilters): void {
-    setHistory([]);
     replaceWithoutCursor(next);
   }
 
-  function showNext(): void {
-    if (list.nextCursor === null) {
-      return;
-    }
-    setHistory((stack) => [...stack, filters.cursor]);
-    replace({ ...filters, cursor: list.nextCursor });
-  }
-
-  function showPrevious(): void {
-    const prior = history.at(-1);
-    if (history.length === 0) {
-      return;
-    }
-    setHistory((stack) => stack.slice(0, -1));
-    replace(prior === undefined ? withoutCursor(filters) : { ...filters, cursor: prior });
+  function showPage(target: number): void {
+    const next = withoutCursor(filters);
+    replace(target > 1 ? { ...next, page: target } : next);
   }
 
   function showToast(tone: ActionToast['tone'], text: string): void {
@@ -182,15 +168,14 @@ export function ContactsWorkspace() {
                 status={list.status}
                 pending={list.pending}
                 nextCursor={list.nextCursor}
-                hasPrevious={history.length > 0}
                 filters={filters}
                 activeCount={activeCount}
-                pageIndex={history.length}
+                total={list.total}
+                page={filters.page ?? 1}
                 onOpen={editor.openContact}
                 onEdit={editor.openEditor}
                 onAskLifecycle={lifecycle.ask}
-                onNext={showNext}
-                onPrevious={showPrevious}
+                onPage={showPage}
                 onLimit={(limit) => changeFilters({ ...filters, limit })}
               />
               {lifecycle.prompt === null ? null : (

@@ -18,7 +18,10 @@ export class ContactsRequestError extends Error {
   }
 }
 
-export function listContacts(query: string, signal?: AbortSignal): Promise<CursorPage<Contact>> {
+export function listContacts(
+  query: string,
+  signal?: AbortSignal,
+): Promise<CursorPage<Contact> & { page: { total: number | null } }> {
   return requestJson(`/api/v1/contacts?${query}`, { method: 'GET' }, signal, parseContactPage);
 }
 
@@ -174,7 +177,7 @@ function fieldPath(field: unknown): string[] {
   return [field.path];
 }
 
-function parseContactPage(body: unknown): CursorPage<Contact> {
+function parseContactPage(body: unknown): CursorPage<Contact> & { page: { total: number | null } } {
   if (!isRecord(body) || !Array.isArray(body.data) || !isRecord(body.page)) {
     throw new ContactsRequestError(200, 'REQUEST_FAILED');
   }
@@ -182,7 +185,18 @@ function parseContactPage(body: unknown): CursorPage<Contact> {
   if (nextCursor !== null && typeof nextCursor !== 'string') {
     throw new ContactsRequestError(200, 'REQUEST_FAILED');
   }
-  return { data: body.data.map(parseContact), page: { nextCursor } };
+  return {
+    data: body.data.map(parseContact),
+    page: { nextCursor, total: readTotal(body.page.total) },
+  };
+}
+
+function readTotal(value: unknown): number | null {
+  if (value === undefined) return null;
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    throw new ContactsRequestError(200, 'REQUEST_FAILED');
+  }
+  return value;
 }
 
 function parseContactData(body: unknown): Contact {

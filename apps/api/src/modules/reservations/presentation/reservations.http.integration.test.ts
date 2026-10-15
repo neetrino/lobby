@@ -265,7 +265,7 @@ describe('Reservations HTTP', () => {
     expect(listed.body.page.nextCursor).toEqual(expect.any(String));
     expect(nextPage.body).toEqual({
       data: [secondCreated.body.data],
-      page: { nextCursor: null },
+      page: { nextCursor: null, total: 2 },
     });
     expect(conflictingUpdate.status).toBe(409);
     expect(conflictingUpdate.body.error.code).toBe('RESERVATION_TIME_CONFLICT');
@@ -282,7 +282,7 @@ describe('Reservations HTTP', () => {
     expect(hiddenTables.status).toBe(404);
     expect(JSON.stringify(listed.body)).not.toContain('+37400000000');
     expect(hiddenRead.status).toBe(404);
-    expect(otherList.body).toEqual({ data: [], page: { nextCursor: null } });
+    expect(otherList.body).toEqual({ data: [], page: { nextCursor: null, total: 0 } });
     expect(hidden.status).toBe(404);
     expect(hidden.body.error.code).toBe('RESERVATION_LOCATION_NOT_FOUND');
     expect(historyResponse.status).toBe(200);

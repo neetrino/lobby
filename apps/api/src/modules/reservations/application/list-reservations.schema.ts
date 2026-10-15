@@ -42,6 +42,7 @@ const reservationListQueryFields = z.strictObject({
   search: z.string().trim().max(100).optional(),
   from: z.iso.datetime({ offset: true }).optional(),
   to: z.iso.datetime({ offset: true }).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
 });
 
 export const reservationListQuerySchema = reservationListQueryFields.superRefine(
@@ -54,6 +55,13 @@ export const reservationListQuerySchema = reservationListQueryFields.superRefine
         code: 'custom',
         path: ['cursor'],
         message: 'cursor query does not match',
+      });
+    }
+    if (query.cursor !== undefined && query.page !== undefined) {
+      context.addIssue({
+        code: 'custom',
+        path: ['page'],
+        message: 'page and cursor cannot combine',
       });
     }
   },

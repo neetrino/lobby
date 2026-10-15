@@ -11,6 +11,7 @@ import { useSession } from '../contacts/use-contact-list';
 import { DateField } from '../../ui/calendar/calendar';
 import { SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { FilterMenu } from '../../ui/filter-menu/filter-menu';
+import { Pagination } from '../../ui/pagination/pagination';
 import { FilterField, SearchFilters } from '../../ui/search-filters/search-filters';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import glass from '../../ui/glass/glass.module.css';
@@ -136,72 +137,72 @@ export function AuditWorkspace() {
                 <Metric label={t('integrations')} value={counts.integrations} tone="violet" />
               </section>
               <div className={styles.search}>
-              <SearchFilters
-                white
-                value={filters.search}
-                onChange={(search) => setFilters({ ...filters, search })}
-                placeholder={t('search')}
-                label={t('search')}
-                resetLabel={t('clear')}
-                applyLabel={t('apply')}
-                onReset={clear}
-                onApply={apply}
-              >
-                <FilterField label={t('outcome')}>
-                  <FilterMenu
-                    field
-                    label={t('outcome')}
-                    value={filters.outcome}
-                    options={[
-                      { value: '', label: t('allOutcomes') },
-                      { value: 'SUCCESS', label: outcomeText(t, 'SUCCESS') },
-                      { value: 'DENIED', label: outcomeText(t, 'DENIED') },
-                      { value: 'FAILURE', label: outcomeText(t, 'FAILURE') },
-                    ]}
-                    onChange={(outcome) => setFilters({ ...filters, outcome })}
-                  />
-                </FilterField>
-                <FilterField label={t('actorType')}>
-                  <FilterMenu
-                    field
-                    label={t('actorType')}
-                    value={filters.actorType}
-                    options={[
-                      { value: '', label: t('allActors') },
-                      { value: 'USER', label: t('user') },
-                      { value: 'INTEGRATION', label: t('integration') },
-                    ]}
-                    onChange={(actorType) => setFilters({ ...filters, actorType })}
-                  />
-                </FilterField>
-                <FilterField label={t('from')}>
-                  <DateField
-                    label={t('from')}
-                    value={filters.from}
-                    onChange={(from) => setFilters({ ...filters, from })}
-                  />
-                </FilterField>
-                <FilterField label={t('to')}>
-                  <DateField
-                    label={t('to')}
-                    value={filters.to}
-                    onChange={(to) => setFilters({ ...filters, to })}
-                  />
-                </FilterField>
-              </SearchFilters>
-              <FilterMenu
-                white
-                label={t('resourceType')}
-                value={filters.resourceType}
-                options={[
-                  { value: '', label: t('allResources') },
-                  ...auditResourceTypes.map((type) => ({
-                    value: type,
-                    label: resourceText(t, type),
-                  })),
-                ]}
-                onChange={(resourceType) => setFilters({ ...filters, resourceType })}
-              />
+                <SearchFilters
+                  white
+                  value={filters.search}
+                  onChange={(search) => setFilters({ ...filters, search })}
+                  placeholder={t('search')}
+                  label={t('search')}
+                  resetLabel={t('clear')}
+                  applyLabel={t('apply')}
+                  onReset={clear}
+                  onApply={apply}
+                >
+                  <FilterField label={t('outcome')}>
+                    <FilterMenu
+                      field
+                      label={t('outcome')}
+                      value={filters.outcome}
+                      options={[
+                        { value: '', label: t('allOutcomes') },
+                        { value: 'SUCCESS', label: outcomeText(t, 'SUCCESS') },
+                        { value: 'DENIED', label: outcomeText(t, 'DENIED') },
+                        { value: 'FAILURE', label: outcomeText(t, 'FAILURE') },
+                      ]}
+                      onChange={(outcome) => setFilters({ ...filters, outcome })}
+                    />
+                  </FilterField>
+                  <FilterField label={t('actorType')}>
+                    <FilterMenu
+                      field
+                      label={t('actorType')}
+                      value={filters.actorType}
+                      options={[
+                        { value: '', label: t('allActors') },
+                        { value: 'USER', label: t('user') },
+                        { value: 'INTEGRATION', label: t('integration') },
+                      ]}
+                      onChange={(actorType) => setFilters({ ...filters, actorType })}
+                    />
+                  </FilterField>
+                  <FilterField label={t('from')}>
+                    <DateField
+                      label={t('from')}
+                      value={filters.from}
+                      onChange={(from) => setFilters({ ...filters, from })}
+                    />
+                  </FilterField>
+                  <FilterField label={t('to')}>
+                    <DateField
+                      label={t('to')}
+                      value={filters.to}
+                      onChange={(to) => setFilters({ ...filters, to })}
+                    />
+                  </FilterField>
+                </SearchFilters>
+                <FilterMenu
+                  white
+                  label={t('resourceType')}
+                  value={filters.resourceType}
+                  options={[
+                    { value: '', label: t('allResources') },
+                    ...auditResourceTypes.map((type) => ({
+                      value: type,
+                      label: resourceText(t, type),
+                    })),
+                  ]}
+                  onChange={(resourceType) => setFilters({ ...filters, resourceType })}
+                />
               </div>
               <section className={styles.content}>
                 <div className={styles.tableCard}>
@@ -212,25 +213,20 @@ export function AuditWorkspace() {
                   {events.length > 0 ? (
                     <AuditTable events={events} locale={locale} onOpen={open} t={t} />
                   ) : null}
-                  <AuditPager
-                    page={page}
-                    pageCount={pageCountOf(total)}
-                    firstLabel={t('first')}
-                    lastLabel={t('last')}
-                    onPage={(next) => {
-                      setStatus('loading');
-                      setPage(next);
-                    }}
-                  />
+                  <div className={styles.pager}>
+                    <Pagination
+                      page={page}
+                      pageCount={pageCountOf(total)}
+                      onPage={(next) => {
+                        setStatus('loading');
+                        setPage(next);
+                      }}
+                    />
+                  </div>
                 </div>
               </section>
               {selected === null ? null : (
-                <Detail
-                  event={selected}
-                  locale={locale}
-                  onClose={() => setSelected(null)}
-                  t={t}
-                />
+                <Detail event={selected} locale={locale} onClose={() => setSelected(null)} t={t} />
               )}
             </>
           ) : null}
@@ -402,54 +398,6 @@ function ChangeList({
 }
 
 const auditPageSize = 25;
-
-function AuditPager({
-  page,
-  pageCount,
-  firstLabel,
-  lastLabel,
-  onPage,
-}: {
-  page: number;
-  pageCount: number;
-  firstLabel: string;
-  lastLabel: string;
-  onPage: (page: number) => void;
-}) {
-  return (
-    <div className={styles.pager}>
-      <button type="button" className={styles.pageStep} disabled={page <= 1} onClick={() => onPage(1)}>
-        {firstLabel}
-      </button>
-      {pageWindow(page, pageCount).map((number) => (
-        <button
-          key={number}
-          type="button"
-          className={number === page ? styles.pageOn : styles.pageNum}
-          aria-current={number === page ? 'page' : undefined}
-          onClick={() => onPage(number)}
-        >
-          {number}
-        </button>
-      ))}
-      <button
-        type="button"
-        className={styles.pageStep}
-        disabled={page >= pageCount}
-        onClick={() => onPage(pageCount)}
-      >
-        {lastLabel}
-      </button>
-    </div>
-  );
-}
-
-function pageWindow(page: number, pageCount: number): number[] {
-  const numbers: number[] = [];
-  const last = Math.min(pageCount, page + 2);
-  for (let number = page; number <= last; number += 1) numbers.push(number);
-  return numbers;
-}
 
 function pageCountOf(total: number): number {
   return Math.max(1, Math.ceil(total / auditPageSize));
