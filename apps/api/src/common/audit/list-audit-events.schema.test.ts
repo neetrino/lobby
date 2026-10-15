@@ -47,7 +47,8 @@ describe('auditEventListQuerySchema', () => {
       false,
     );
     expect(auditEventListQuerySchema.safeParse({ sort: 'occurredAt' }).success).toBe(false);
-    expect(auditEventListQuerySchema.safeParse({ page: '10' }).success).toBe(false);
+    expect(auditEventListQuerySchema.safeParse({ skip: '10' }).success).toBe(false);
+    expect(auditEventListQuerySchema.parse({ page: '2' }).page).toBe(2);
     expect(auditEventListQuerySchema.safeParse({ tenantId: position.id }).success).toBe(false);
     expect(auditEventListQuerySchema.safeParse({ limit: '101' }).success).toBe(false);
     expect(

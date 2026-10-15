@@ -48,10 +48,9 @@ export function AuditWorkspace() {
   const { session, error: sessionError } = useSession();
   const [filters, setFilters] = useState(initialFilters);
   const [applied, setApplied] = useState(initialFilters);
-  const [cursor, setCursor] = useState<string | null>(null);
-  const [cursorStack, setCursorStack] = useState<Array<string | null>>([]);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [events, setEvents] = useState<AuditEvent[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'forbidden' | 'failed'>('loading');
   const [selected, setSelected] = useState<AuditDetail | null>(null);
 
@@ -67,10 +66,10 @@ export function AuditWorkspace() {
       return undefined;
     }
     const controller = new AbortController();
-    void listAuditEvents(queryOf(applied, cursor), controller.signal)
-      .then((page) => {
-        setEvents(page.data);
-        setNextCursor(page.page.nextCursor);
+    void listAuditEvents(queryOf(applied, page), controller.signal)
+      .then((result) => {
+        setEvents(result.data);
+        setTotal(result.page.total);
         setStatus('ready');
       })
       .catch((reason: unknown) => {
@@ -80,7 +79,7 @@ export function AuditWorkspace() {
         );
       });
     return () => controller.abort();
-  }, [applied, canRead, cursor, session]);
+  }, [applied, canRead, page, session]);
 
   const counts = useMemo(
     () => ({
@@ -94,8 +93,7 @@ export function AuditWorkspace() {
 
   function apply(): void {
     setStatus('loading');
-    setCursor(null);
-    setCursorStack([]);
+    setPage(1);
     setApplied(filters);
     setSelected(null);
   }
@@ -103,8 +101,7 @@ export function AuditWorkspace() {
   function clear(): void {
     setFilters(initialFilters);
     setStatus('loading');
-    setCursor(null);
-    setCursorStack([]);
+    setPage(1);
     setApplied(initialFilters);
   }
 
@@ -215,33 +212,16 @@ export function AuditWorkspace() {
                   {events.length > 0 ? (
                     <AuditTable events={events} locale={locale} onOpen={open} t={t} />
                   ) : null}
-                  <div className={styles.pager}>
-                    <button
-                      type="button"
-                      disabled={cursorStack.length === 0}
-                      onClick={() => {
-                        const previous = cursorStack.at(-1) ?? null;
-                        setStatus('loading');
-                        setCursorStack((items) => items.slice(0, -1));
-                        setCursor(previous);
-                      }}
-                    >
-                      {t('previous')}
-                    </button>
-                    <span>{t('pageSummary')}</span>
-                    <button
-                      type="button"
-                      disabled={nextCursor === null}
-                      onClick={() => {
-                        if (nextCursor === null) return;
-                        setStatus('loading');
-                        setCursorStack((items) => [...items, cursor]);
-                        setCursor(nextCursor);
-                      }}
-                    >
-                      {t('next')}
-                    </button>
-                  </div>
+                  <AuditPager
+                    page={page}
+                    pageCount={pageCountOf(total)}
+                    firstLabel={t('first')}
+                    lastLabel={t('last')}
+                    onPage={(next) => {
+                      setStatus('loading');
+                      setPage(next);
+                    }}
+                  />
                 </div>
               </section>
               {selected === null ? null : (
@@ -260,12 +240,19 @@ export function AuditWorkspace() {
   );
 }
 
-function Metric({ label, value, tone }: { label: string; value: number; tone: string }) {
+function Metric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: 'blue' | 'green' | 'red' | 'violet';
+}) {
   return (
-    <article className={`${styles.metric} ${styles[tone]}`}>
+    <article className={`${styles.metric} ${styles[tone]} ${glass.panel} ${glass.soft}`}>
       <span>{label}</span>
       <strong>{value}</strong>
-      <small>{label}</small>
     </article>
   );
 }
@@ -290,7 +277,7 @@ function AuditTable({
             <th>{t('actor')}</th>
             <th>{t('action')}</th>
             <th>{t('resource')}</th>
-            <th>{t('outcome')}</th>
+            <th className={styles.outcome}>{t('outcome')}</th>
           </tr>
         </thead>
         <tbody>
@@ -320,7 +307,7 @@ function AuditTable({
               <td>
                 <strong>{event.resource.label ?? resourceText(t, event.resource.type)}</strong>
               </td>
-              <td>
+              <td className={styles.outcome}>
                 <span className={`${styles.badge} ${styles[event.outcome.toLowerCase()]}`}>
                   {outcomeText(t, event.outcome)}
                 </span>
@@ -414,14 +401,68 @@ function ChangeList({
   );
 }
 
-function queryOf(filters: Filters, cursor: string | null): URLSearchParams {
-  const query = new URLSearchParams({ limit: '25', sort: 'desc' });
+const auditPageSize = 25;
+
+function AuditPager({
+  page,
+  pageCount,
+  firstLabel,
+  lastLabel,
+  onPage,
+}: {
+  page: number;
+  pageCount: number;
+  firstLabel: string;
+  lastLabel: string;
+  onPage: (page: number) => void;
+}) {
+  return (
+    <div className={styles.pager}>
+      <button type="button" className={styles.pageStep} disabled={page <= 1} onClick={() => onPage(1)}>
+        {firstLabel}
+      </button>
+      {pageWindow(page, pageCount).map((number) => (
+        <button
+          key={number}
+          type="button"
+          className={number === page ? styles.pageOn : styles.pageNum}
+          aria-current={number === page ? 'page' : undefined}
+          onClick={() => onPage(number)}
+        >
+          {number}
+        </button>
+      ))}
+      <button
+        type="button"
+        className={styles.pageStep}
+        disabled={page >= pageCount}
+        onClick={() => onPage(pageCount)}
+      >
+        {lastLabel}
+      </button>
+    </div>
+  );
+}
+
+function pageWindow(page: number, pageCount: number): number[] {
+  const numbers: number[] = [];
+  const last = Math.min(pageCount, page + 2);
+  for (let number = page; number <= last; number += 1) numbers.push(number);
+  return numbers;
+}
+
+function pageCountOf(total: number): number {
+  return Math.max(1, Math.ceil(total / auditPageSize));
+}
+
+function queryOf(filters: Filters, page: number): URLSearchParams {
+  const query = new URLSearchParams({ limit: String(auditPageSize), sort: 'desc' });
   if (filters.search.trim() !== '') query.set('search', filters.search.trim());
   if (filters.outcome !== '') query.set('outcome', filters.outcome);
   if (filters.actorType !== '') query.set('actorType', filters.actorType);
   if (filters.resourceType.trim() !== '') query.set('resourceType', filters.resourceType.trim());
   if (filters.from !== '') query.set('from', new Date(`${filters.from}T00:00:00`).toISOString());
   if (filters.to !== '') query.set('to', new Date(`${filters.to}T23:59:59.999`).toISOString());
-  if (cursor !== null) query.set('cursor', cursor);
+  if (page > 1) query.set('page', String(page));
   return query;
 }

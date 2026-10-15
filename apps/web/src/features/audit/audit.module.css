@@ -47,51 +47,30 @@
   gap: 12px;
 }
 .metric {
-  position: relative;
-  overflow: hidden;
-  min-height: 112px;
-  padding: 18px;
-  border: 0;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 10px 28px rgb(28 33 48 / 6%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: 16px;
 }
-.metric::after {
-  content: '';
-  position: absolute;
-  right: -18px;
-  bottom: -26px;
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.08;
-}
-.metric span,
-.metric small {
-  display: block;
-  color: #64748b;
+.metric span {
+  color: #667085;
   font-size: 13px;
-  font-weight: 600;
 }
 .metric strong {
-  display: block;
-  margin: 10px 0 4px;
-  font-size: 32px;
-  font-weight: 650;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  font-size: 22px;
+  letter-spacing: -0.03em;
 }
-.blue {
+.blue strong {
   color: #2563eb;
 }
-.green {
+.green strong {
   color: #059669;
 }
-.red {
+.red strong {
   color: #dc2626;
 }
-.violet {
+.violet strong {
   color: #7c3aed;
 }
 .search {
@@ -123,7 +102,12 @@
   padding: 14px 16px;
   border-bottom: 1px solid #e8edf5;
   text-align: left;
-  vertical-align: top;
+  vertical-align: middle;
+}
+.tableWrap th.outcome,
+.tableWrap td.outcome {
+  text-align: center;
+  vertical-align: middle;
 }
 .tableWrap th {
   color: #64748b;
@@ -180,8 +164,9 @@
 }
 .pager {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
+  gap: 8px;
   padding: 13px 16px;
 }
 .pager span {
@@ -189,16 +174,49 @@
   font-size: 13px;
   font-weight: 600;
 }
-.pager button {
-  border: 1px solid #dce4f1;
-  border-radius: 10px;
-  background: #fff;
-  padding: 8px 12px;
+.pageStep,
+.pageNum,
+.pageOn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-height);
+  border: 0;
+  border-radius: 999px;
   font: inherit;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 650;
+  box-shadow: none;
 }
-.pager button:disabled {
-  opacity: 0.4;
+.pageStep {
+  padding: 0 16px;
+  background: var(--shell-olive);
+  color: #1c2410;
+}
+.pageStep:hover {
+  background: #8aaf4c;
+}
+.pageNum,
+.pageOn {
+  width: var(--control-height);
+  padding: 0;
+}
+.pageNum {
+  background: #fff;
+  color: #1c2410;
+  box-shadow: inset 0 0 0 1px #e4e7ee;
+}
+.pageNum:hover {
+  background: #f7f8fa;
+}
+.pageOn {
+  background: var(--shell-olive);
+  color: #1c2410;
+}
+.pageStep:disabled,
+.pageNum:disabled,
+.pageOn:disabled {
+  opacity: 0.45;
 }
 .detail {
   display: flex;

@@ -589,9 +589,14 @@
 }
 
 .convert {
-  align-self: flex-start;
-  background: transparent;
-  color: var(--control-ink);
+  margin-right: auto;
+  background: #fff;
+  color: #1c2410;
+  box-shadow: inset 0 0 0 1px #e4e7ee;
+}
+
+.convert:hover {
+  background: #f7f8fa;
 }
 
 .field {

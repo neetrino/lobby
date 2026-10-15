@@ -19,7 +19,7 @@ export type AuditEvent = {
 };
 
 export type AuditDetail = AuditEvent & { requestId: string; changes: unknown };
-export type AuditPage = { data: AuditEvent[]; page: { nextCursor: string | null } };
+export type AuditPage = { data: AuditEvent[]; page: { nextCursor: string | null; total: number } };
 
 export class AuditRequestError extends Error {
   constructor(
@@ -62,8 +62,10 @@ async function request<T>(
 function parsePage(value: unknown): AuditPage {
   if (!isRecord(value) || !Array.isArray(value.data) || !isRecord(value.page)) invalid();
   const nextCursor = value.page.nextCursor;
+  const total = value.page.total;
   if (nextCursor !== null && typeof nextCursor !== 'string') invalid();
-  return { data: value.data.map(parseEvent), page: { nextCursor } };
+  if (typeof total !== 'number' || !Number.isInteger(total) || total < 0) invalid();
+  return { data: value.data.map(parseEvent), page: { nextCursor, total } };
 }
 
 function parseDetail(value: unknown): AuditDetail {

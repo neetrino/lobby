@@ -300,13 +300,13 @@ function CardEditor({
             defaultValue={card.ownerUserId ?? ''}
             options={ownerOptions(t('clearOwner'), t('assignToMe'), userId)}
           />
-          {kind === 'lead' && card.outcome !== 'CONVERTED' ? (
-            <button type="button" className={styles.convert} onClick={onConvert}>
-              {t('convert')}
-            </button>
-          ) : null}
           </div>
           <footer className={styles.cardEditorFoot}>
+            {kind === 'lead' && card.outcome !== 'CONVERTED' ? (
+              <button type="button" className={styles.convert} onClick={onConvert}>
+                {t('convert')}
+              </button>
+            ) : null}
             <SheetCancel label={t('cancel')} />
             <button type="submit" className={styles.sheetSave}>
               {t('save')}

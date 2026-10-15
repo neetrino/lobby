@@ -1,4 +1,3 @@
-import type { CursorPage } from '@lobby/contracts';
 import type { Prisma } from '@lobby/database' with { 'resolution-mode': 'import' };
 
 import type { TenantId } from '../tenant/tenant-id';
@@ -29,7 +28,10 @@ export const auditEventDetailSelect = {
 
 type AuditEventRow = Prisma.AuditEventGetPayload<{ select: typeof auditEventListSelect }>;
 
-export type AuditEventPage = CursorPage<AuditEventListItem>;
+export type AuditEventPage = {
+  data: AuditEventListItem[];
+  page: { nextCursor: string | null; total: number };
+};
 
 /** `occurredAt` direction only. `id` is the stable tie-breaker, not a client column. */
 export function auditEventOrderBy(
@@ -66,6 +68,7 @@ export function toAuditEventPage(
   rows: readonly AuditEventRow[],
   query: AuditEventListQuery,
   labels: ReadonlyMap<string, string>,
+  total: number,
 ): AuditEventPage {
   const visible = rows.slice(0, query.limit);
   const last = visible.at(-1);
@@ -73,7 +76,7 @@ export function toAuditEventPage(
     data: visible.map((row) =>
       toAuditListItem(row, labels.get(resourceKey(row.resourceType, row.resourceId)) ?? null),
     ),
-    page: { nextCursor: nextCursor(rows.length > query.limit, last, query) },
+    page: { nextCursor: nextCursor(rows.length > query.limit, last, query), total },
   };
 }
 

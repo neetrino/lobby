@@ -510,6 +510,8 @@
     "system": "System",
     "previous": "Previous",
     "next": "Next",
+    "first": "First",
+    "last": "Last",
     "selectEvent": "Select an event",
     "selectHint": "Open a row to inspect its safe audit details.",
     "eventDetail": "What happened",

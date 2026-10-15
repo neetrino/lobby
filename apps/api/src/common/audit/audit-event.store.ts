@@ -78,14 +78,17 @@ export class AuditEventStore {
   }
 
   async list(tenantId: TenantId, query: AuditEventListQuery): Promise<AuditEventPage> {
+    const where = auditEventListWhere(tenantId, { ...query, cursor: undefined });
+    const total = await this.prisma.auditEvent.count({ where });
     const rows = await this.prisma.auditEvent.findMany({
-      where: auditEventListWhere(tenantId, query),
+      where: listedWhere(tenantId, query),
       orderBy: auditEventOrderBy(query.sort),
+      skip: pageSkip(query),
       take: query.limit + 1,
       select: auditEventListSelect,
     });
     const labels = await resourceLabels(this.prisma, tenantId, rows);
-    return toAuditEventPage(rows, query, labels);
+    return toAuditEventPage(rows, query, labels, total);
   }
 
   async findOne(tenantId: TenantId, id: string): Promise<AuditEventDetail | null> {
@@ -99,6 +102,18 @@ export class AuditEventStore {
     const labels = await resourceLabels(this.prisma, tenantId, [row]);
     return toAuditDetail(row, labels.get(resourceKey(row.resourceType, row.resourceId)) ?? null);
   }
+}
+
+function listedWhere(tenantId: TenantId, query: AuditEventListQuery) {
+  return auditEventListWhere(
+    tenantId,
+    query.page === undefined ? query : { ...query, cursor: undefined },
+  );
+}
+
+function pageSkip(query: AuditEventListQuery): number | undefined {
+  if (query.page === undefined) return undefined;
+  return (query.page - 1) * query.limit;
 }
 
 function parseAuditWrite(

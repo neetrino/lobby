@@ -52,6 +52,7 @@ const auditEventListQueryFields = z.strictObject({
   from: z.iso.datetime().optional(),
   to: z.iso.datetime().optional(),
   search: z.string().trim().min(1).max(100).optional(),
+  page: z.coerce.number().int().min(1).max(10_000).optional(),
 });
 
 /**
@@ -68,6 +69,9 @@ export const auditEventListQuerySchema = auditEventListQueryFields.superRefine((
   }
   if (query.cursor !== undefined && !auditCursorMatches(query.cursor, query)) {
     context.addIssue({ code: 'custom', path: ['cursor'], message: 'cursor query does not match' });
+  }
+  if (query.cursor !== undefined && query.page !== undefined) {
+    context.addIssue({ code: 'custom', path: ['page'], message: 'page and cursor cannot combine' });
   }
 });
 
