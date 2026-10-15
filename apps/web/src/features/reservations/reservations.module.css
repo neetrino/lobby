@@ -116,6 +116,12 @@
   vertical-align: top;
 }
 
+.table th.midCol,
+.table td.midCol {
+  text-align: center;
+  vertical-align: middle;
+}
+
 .table tbody tr {
   cursor: pointer;
 }
@@ -352,6 +358,35 @@
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr);
   gap: 12px;
+}
+
+.fieldRow + label {
+  margin-top: 12px;
+}
+
+.sheetTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.sheetTitle .badge {
+  flex: none;
+}
+
+.readout {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: var(--control-height);
+  padding: 8px 14px;
+  border-radius: 15px;
+  background: var(--control-fill);
+  color: #14213d;
+  font-size: 14px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .fieldRow label,

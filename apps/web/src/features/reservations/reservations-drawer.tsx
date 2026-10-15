@@ -3,7 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 
-import { SheetChrome, SheetFrame } from '../../ui/side-sheet/side-sheet';
+import { SheetChrome, SheetFrame, sheetStyles } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
 import {
   allowedActions,
@@ -55,7 +55,12 @@ export function ReservationDrawer({
       <SheetFrame label={t('details')} closeLabel={t('close')}>
         <SheetChrome
           as="aside"
-          title={detail.customerName}
+          title={
+            <span className={styles.sheetTitle}>
+              {detail.customerName}
+              <StatusBadge status={detail.status} />
+            </span>
+          }
           footer={
             <ReservationActions
               status={detail.status}
@@ -67,33 +72,34 @@ export function ReservationDrawer({
             />
           }
         >
-          <StatusBadge status={detail.status} />
-            <FactSection title={t('sections.guest')}>
-              <Fact label={t('name')} value={detail.customerName} />
-              <Fact label={t('phone')} value={detail.customerPhone ?? '—'} />
+          <FactSection title={t('sections.guest')}>
+              <div className={styles.fieldRow}>
+                <Fact label={t('name')} value={detail.customerName} />
+                <Fact label={t('phone')} value={detail.customerPhone ?? '—'} />
+              </div>
               <Fact label={t('email')} value={detail.customerEmail ?? '—'} />
               <Fact label={t('note')} value={detail.customerNote ?? '—'} />
             </FactSection>
             <FactSection title={t('sections.when')}>
-              <Fact label={t('starts')} value={formatWhen(detail.startsAt, locale)} />
+              <div className={styles.fieldRow}>
+                <Fact label={t('starts')} value={formatWhen(detail.startsAt, locale)} />
+                <Fact label={t('duration')} value={t('minutes', { count: detail.durationMinutes })} />
+              </div>
               <Fact label={t('ends')} value={formatWhen(detail.endsAt, locale)} />
-              <Fact label={t('duration')} value={t('minutes', { count: detail.durationMinutes })} />
             </FactSection>
             <FactSection title={t('sections.seating')}>
               <Fact label={t('location')} value={venueName} />
-              <Fact label={t('table')} value={tableName} />
               <Fact label={t('party')} value={String(detail.guestCount)} />
+              <Fact label={t('table')} value={tableName} />
             </FactSection>
             <FactSection title={t('sections.people')}>
               <Fact label={t('contact')} value={contactName} />
               <Fact label={t('assignee')} value={assigneeName} />
             </FactSection>
-            <section className={styles.section}>
-              <h3>{t('source')}</h3>
-              <p className={styles.source}>{sourceLabel(t, detail.source)}</p>
-            </section>
-            <section className={styles.section}>
-              <h3>{t('history')}</h3>
+            <FactSection title={t('source')}>
+              <Fact label={t('source')} value={sourceLabel(t, detail.source)} />
+            </FactSection>
+            <FactSection title={t('history')}>
               {history.length === 0 ? (
                 <p className={styles.muted}>{t('historyEmpty')}</p>
               ) : (
@@ -112,7 +118,7 @@ export function ReservationDrawer({
                   ))}
                 </ol>
               )}
-            </section>
+            </FactSection>
             {error === null ? null : (
               <p className={styles.error} role="alert">
                 {error}
@@ -154,12 +160,18 @@ export function ReservationActions({
   return (
     <div className={styles.actions}>
       {allowedActions(status).map((action) => (
-        <button key={action} type="button" disabled={pending} onClick={() => onTransition(action)}>
+        <button
+          key={action}
+          type="button"
+          className={sheetStyles.save}
+          disabled={pending}
+          onClick={() => onTransition(action)}
+        >
           {t(`transition.${action === 'no-show' ? 'noShow' : action}`)}
         </button>
       ))}
       {canEditReservation(status) ? (
-        <button type="button" disabled={pending} onClick={onEdit}>
+        <button type="button" className={sheetStyles.save} disabled={pending} onClick={onEdit}>
           {t('edit')}
         </button>
       ) : null}
@@ -216,19 +228,19 @@ function CancelDialog({
 
 function FactSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <section className={styles.section}>
-      <h3>{title}</h3>
-      <dl className={styles.facts}>{children}</dl>
-    </section>
+    <fieldset>
+      <legend>{title}</legend>
+      {children}
+    </fieldset>
   );
 }
 
-function Fact({ label, value }: { label: string; value: string }) {
+function Fact({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div>
-      <dt>{label}</dt>
-      <dd>{value}</dd>
-    </div>
+    <label>
+      {label}
+      {typeof value === 'string' ? <span className={styles.readout}>{value}</span> : value}
+    </label>
   );
 }
 

@@ -40,10 +40,10 @@ function List({ rows, names }: { rows: ReservationSummary[]; names: Names }) {
         <tr>
           <th>{t('time')}</th>
           <th>{t('guest')}</th>
-          <th>{t('party')}</th>
-          <th>{t('status')}</th>
+          <th className={styles.midCol}>{t('party')}</th>
+          <th className={styles.midCol}>{t('status')}</th>
           <th>{t('location')}</th>
-          <th>{t('table')}</th>
+          <th className={styles.midCol}>{t('table')}</th>
         </tr>
       </thead>
       <tbody>
@@ -51,12 +51,12 @@ function List({ rows, names }: { rows: ReservationSummary[]; names: Names }) {
           <tr key={row.id} onClick={() => names.onOpen(row.id)}>
             <td>{formatTime(row.startsAt, names.locale)}</td>
             <td>{row.customerName}</td>
-            <td>{row.guestCount}</td>
-            <td>
+            <td className={styles.midCol}>{row.guestCount}</td>
+            <td className={styles.midCol}>
               <StatusBadge status={row.status} />
             </td>
             <td>{venueName(names.venues, row.locationId)}</td>
-            <td>{tableName(names.tables, row.tableId)}</td>
+            <td className={styles.midCol}>{tableName(names.tables, row.tableId)}</td>
           </tr>
         ))}
       </tbody>

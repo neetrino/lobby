@@ -107,23 +107,25 @@ export function ReservationForm({
         >
             <fieldset>
               <legend>{t('sections.guest')}</legend>
-              <label>
-                {t('name')}
-                <input
-                  required
-                  maxLength={200}
-                  value={draft.customerName}
-                  onChange={(event) => setDraft({ ...draft, customerName: event.target.value })}
-                />
-              </label>
-              <label>
-                {t('phone')}
-                <input
-                  value={draft.phone}
-                  maxLength={32}
-                  onChange={(event) => setDraft({ ...draft, phone: event.target.value })}
-                />
-              </label>
+              <div className={styles.fieldRow}>
+                <label>
+                  {t('name')}
+                  <input
+                    required
+                    maxLength={200}
+                    value={draft.customerName}
+                    onChange={(event) => setDraft({ ...draft, customerName: event.target.value })}
+                  />
+                </label>
+                <label>
+                  {t('phone')}
+                  <input
+                    value={draft.phone}
+                    maxLength={32}
+                    onChange={(event) => setDraft({ ...draft, phone: event.target.value })}
+                  />
+                </label>
+              </div>
               <label>
                 {t('email')}
                 <input
