@@ -91,6 +91,10 @@ function TeamThread({ member, selfId }: { member: TeamMember | null; selfId: str
       const message = await sendDirectMessage(member.id, body);
       setMessages((current) => [...current, message]);
       form.reset();
+      const field = form.elements.namedItem('body');
+      if (field instanceof HTMLTextAreaElement) {
+        growComposer(field);
+      }
     } catch {
       setError(true);
     } finally {
@@ -155,11 +159,13 @@ function TeamThread({ member, selfId }: { member: TeamMember | null; selfId: str
       <form className={styles.chatComposer} onSubmit={(event) => void submit(event)}>
         <textarea
           name="body"
+          rows={1}
           maxLength={2000}
           required
           disabled={member === null || sending}
           aria-label={t('chatMessage')}
           placeholder={t('chatPlaceholder')}
+          onInput={(event) => growComposer(event.currentTarget)}
         />
         <button
           type="submit"
@@ -237,27 +243,24 @@ function rememberOffset(
 }
 
 function ChatBubble({ message, mine }: { message: DirectMessage; mine: boolean }) {
-  const t = useTranslations('team');
   return (
     <article className={mine ? styles.outgoing : styles.incoming}>
-      <div className={styles.meta}>
-        {mine ? null : (
-          <span className={styles.mini} aria-hidden="true">
-            {mark(message.authorName)}
-          </span>
-        )}
-        <strong>{mine ? t('you') : message.authorName}</strong>
-        <time className={styles.time} dateTime={message.createdAt}>
+      {mine ? null : <span className={styles.author}>{message.authorName}</span>}
+      <p className={styles.bubble}>
+        {message.body}
+        <time className={styles.clock} dateTime={message.createdAt}>
           {formatClock(message.createdAt)}
         </time>
-      </div>
-      <p className={styles.bubble}>{message.body}</p>
+      </p>
     </article>
   );
 }
 
-function mark(name: string): string {
-  return name.trim().charAt(0).toUpperCase() || '?';
+const COMPOSER_MAX = 180;
+
+function growComposer(field: HTMLTextAreaElement): void {
+  field.style.height = 'auto';
+  field.style.height = `${Math.min(Math.max(field.scrollHeight, 42), COMPOSER_MAX)}px`;
 }
 
 function formatClock(value: string): string {
@@ -271,7 +274,7 @@ function formatClock(value: string): string {
 function SendIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M4 12 20 4l-6 16-2.5-6.5z" />
+      <path d="M3.4 20.6 21 12 3.4 3.4 3 10l11 2-11 2z" />
     </svg>
   );
 }

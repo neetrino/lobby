@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { SheetChrome, SheetFrame } from '../../ui/side-sheet/side-sheet';
 import { OverlayPortal } from '../contacts/overlay-portal';
+import { useSession } from '../contacts/use-contact-list';
 
 import {
   addCardMessage,
@@ -27,6 +28,8 @@ export function PipelineChat({
   initialCount: number;
 }) {
   const t = useTranslations('pipeline');
+  const { session } = useSession();
+  const selfId = session?.user.id ?? null;
   const [open, setOpen] = useState(false);
   const [count, setCount] = useState(initialCount);
   const [messages, setMessages] = useState<PipelineMessage[]>([]);
@@ -71,6 +74,10 @@ export function PipelineChat({
       setMessages((current) => [...current, message]);
       setCount((current) => current + 1);
       form.reset();
+      const field = form.elements.namedItem('body');
+      if (field instanceof HTMLTextAreaElement) {
+        growComposer(field);
+      }
     } catch {
       setError(true);
     } finally {
@@ -113,17 +120,25 @@ export function PipelineChat({
                 {!loading && messages.length === 0 ? (
                   <p className={styles.chatState}>{t('chatEmpty')}</p>
                 ) : null}
-                {messages.map((message) => (
-                  <article key={message.id} className={styles.chatMessage}>
-                    <div>
-                      <strong>{message.authorName}</strong>
-                      <time dateTime={message.createdAt}>
-                        {formatMessageTime(message.createdAt)}
-                      </time>
-                    </div>
-                    <p>{message.body}</p>
-                  </article>
-                ))}
+                {messages.map((message) => {
+                  const mine = message.authorUserId === selfId;
+                  return (
+                    <article
+                      key={message.id}
+                      className={mine ? styles.outgoing : styles.incoming}
+                    >
+                      {mine ? null : (
+                        <span className={styles.author}>{message.authorName}</span>
+                      )}
+                      <p className={styles.bubble}>
+                        {message.body}
+                        <time className={styles.clock} dateTime={message.createdAt}>
+                          {formatClock(message.createdAt)}
+                        </time>
+                      </p>
+                    </article>
+                  );
+                })}
                 <div ref={end} />
               </div>
               {error ? <p className={styles.chatError}>{t('chatFailed')}</p> : null}
@@ -131,13 +146,15 @@ export function PipelineChat({
                 <textarea
                   autoFocus
                   name="body"
+                  rows={1}
                   maxLength={2000}
                   required
                   aria-label={t('chatMessage')}
                   placeholder={t('chatPlaceholder')}
+                  onInput={(event) => growComposer(event.currentTarget)}
                 />
-                <button type="submit" disabled={sending}>
-                  {sending ? t('chatSending') : t('chatSend')}
+                <button type="submit" className={styles.send} disabled={sending} aria-label={t('chatSend')}>
+                  <SendIcon />
                 </button>
               </form>
             </section>
@@ -149,10 +166,25 @@ export function PipelineChat({
   );
 }
 
-function formatMessageTime(value: string): string {
+const COMPOSER_MAX = 180;
+
+function growComposer(field: HTMLTextAreaElement): void {
+  field.style.height = 'auto';
+  field.style.height = `${Math.min(Math.max(field.scrollHeight, 42), COMPOSER_MAX)}px`;
+}
+
+function formatClock(value: string): string {
   return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
     hourCycle: 'h23',
   }).format(new Date(value));
+}
+
+function SendIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M3.4 20.6 21 12 3.4 3.4 3 10l11 2-11 2z" />
+    </svg>
+  );
 }
