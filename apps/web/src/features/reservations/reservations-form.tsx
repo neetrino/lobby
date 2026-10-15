@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 import { listContacts } from '../contacts/contacts-api';
 import type { Contact } from '../contacts/contact';
@@ -15,6 +15,7 @@ import {
   type ReservationDraft,
 } from './reservations-api';
 import {
+  formatWhen,
   STAFF_SOURCES,
   toLocalInput,
   type DiningTable,
@@ -44,6 +45,7 @@ export function ReservationForm({
   onSubmit: (draft: ReservationDraft) => void;
 }) {
   const t = useTranslations('reservations');
+  const locale = useLocale();
   const [draft, setDraft] = useState<ReservationDraft>(draftFrom(detail, venues[0]?.id ?? ''));
   const [tables, setTables] = useState<DiningTable[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -87,7 +89,7 @@ export function ReservationForm({
   const title = detail === null ? t('createTitle') : t('editTitle');
   return (
     <OverlayPortal onDismiss={onClose}>
-      <SheetFrame label={title} closeLabel={t('close')}>
+      <SheetFrame frameClassName={sheetStyles.framePlus} label={title} closeLabel={t('close')}>
         <SheetChrome
           as="form"
           title={title}
@@ -145,7 +147,7 @@ export function ReservationForm({
             </fieldset>
             <fieldset>
               <legend>{t('sections.when')}</legend>
-              <div className={styles.fieldRow}>
+              <div className={styles.whenRow}>
                 <label>
                   {t('starts')}
                   <DateField
@@ -154,6 +156,12 @@ export function ReservationForm({
                     value={draft.startsAt}
                     onChange={(startsAt) => setDraft({ ...draft, startsAt })}
                   />
+                </label>
+                <label>
+                  {t('ends')}
+                  <span className={styles.readout}>
+                    {endsPreview(draft.startsAt, draft.durationMinutes, locale)}
+                  </span>
                 </label>
                 <label>
                   {t('duration')}
@@ -180,28 +188,30 @@ export function ReservationForm({
                   onChange={(locationId) => setDraft({ ...draft, locationId, tableId: '' })}
                 />
               </label>
-              <label>
-                {t('guests')}
-                <input
-                  type="number"
-                  min={1}
-                  max={100}
-                  required
-                  value={draft.guestCount}
-                  onChange={(event) =>
-                    setDraft({ ...draft, guestCount: Number(event.target.value) })
-                  }
-                />
-              </label>
-              <label>
-                {t('table')}
-                <Select
-                  required
-                  value={draft.tableId}
-                  options={tableOptions(t('chooseTable'), tables)}
-                  onChange={(tableId) => setDraft({ ...draft, tableId })}
-                />
-              </label>
+              <div className={styles.seatRow}>
+                <label>
+                  {t('guests')}
+                  <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    required
+                    value={draft.guestCount}
+                    onChange={(event) =>
+                      setDraft({ ...draft, guestCount: Number(event.target.value) })
+                    }
+                  />
+                </label>
+                <label>
+                  {t('table')}
+                  <Select
+                    required
+                    value={draft.tableId}
+                    options={tableOptions(t('chooseTable'), tables)}
+                    onChange={(tableId) => setDraft({ ...draft, tableId })}
+                  />
+                </label>
+              </div>
               {tablesNote === null ? null : <p className={styles.muted}>{tablesNote}</p>}
             </fieldset>
             <fieldset>
@@ -269,6 +279,18 @@ function tableOptions(emptyLabel: string, tables: readonly DiningTable[]): Selec
       label: `${table.name} · ${table.minCapacity}–${table.capacity}`,
     })),
   ];
+}
+
+function endsPreview(startsAt: string, durationMinutes: number, locale: string): string {
+  if (startsAt === '') {
+    return '—';
+  }
+  const date = new Date(startsAt);
+  if (Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  date.setMinutes(date.getMinutes() + durationMinutes);
+  return formatWhen(date.toISOString(), locale);
 }
 
 function staffSource(value: string): StaffSource | null {

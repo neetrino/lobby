@@ -12,19 +12,23 @@ export function SheetFrame({
   closeLabel,
   onClose,
   className,
+  frameClassName,
   children,
 }: {
   label: string;
   closeLabel: string;
   onClose?: () => void;
   className?: string;
+  frameClassName?: string;
   children: ReactNode;
 }): ReactNode {
   const dismiss = useSheetDismiss(onClose ?? noop);
   const surface = className === undefined ? styles.surface : `${styles.surface} ${className}`;
+  const frame =
+    frameClassName === undefined ? styles.frame : `${styles.frame} ${frameClassName}`;
   return (
     <div
-      className={styles.frame}
+      className={frame}
       role="dialog"
       aria-modal="true"
       aria-label={label}

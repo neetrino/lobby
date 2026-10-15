@@ -127,9 +127,11 @@ export function toLocalInput(iso: string): string {
 }
 
 export function formatTime(iso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' }).format(
-    new Date(iso),
-  );
+  return new Intl.DateTimeFormat(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(iso));
 }
 
 export function formatWhen(iso: string, locale: string): string {
@@ -138,6 +140,7 @@ export function formatWhen(iso: string, locale: string): string {
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hourCycle: 'h23',
   }).format(new Date(iso));
 }
 

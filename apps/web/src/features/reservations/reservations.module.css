@@ -360,8 +360,60 @@
   gap: 12px;
 }
 
-.fieldRow + label {
+.whenRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 88px;
+  gap: 8px;
+  align-items: end;
+}
+
+.whenRow .readout,
+.seatRow .readout {
+  box-sizing: border-box;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+.seatRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: end;
   margin-top: 12px;
+}
+
+.seatRow + p {
+  margin-top: 12px;
+}
+
+.fieldRow + label,
+.whenRow + label {
+  margin-top: 12px;
+}
+
+.sheetActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 8px;
+}
+
+.sheetActions button,
+.sheetActions button[type='button'] {
+  flex: none;
+  height: 36px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
 }
 
 .sheetTitle {

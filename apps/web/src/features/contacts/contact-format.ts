@@ -6,6 +6,7 @@ export function formatContactDate(iso: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, {
     dateStyle: 'medium',
     timeStyle: 'short',
+    hourCycle: 'h23',
     timeZone: 'UTC',
   }).format(date);
 }

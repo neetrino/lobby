@@ -261,9 +261,11 @@ function mark(name: string): string {
 }
 
 function formatClock(value: string): string {
-  return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(
-    new Date(value),
-  );
+  return new Intl.DateTimeFormat(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).format(new Date(value));
 }
 
 function SendIcon() {

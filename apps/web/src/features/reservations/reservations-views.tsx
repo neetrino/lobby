@@ -38,8 +38,8 @@ function List({ rows, names }: { rows: ReservationSummary[]; names: Names }) {
     <table className={styles.table}>
       <thead>
         <tr>
-          <th>{t('time')}</th>
           <th>{t('guest')}</th>
+          <th>{t('time')}</th>
           <th className={styles.midCol}>{t('party')}</th>
           <th className={styles.midCol}>{t('status')}</th>
           <th>{t('location')}</th>
@@ -49,8 +49,8 @@ function List({ rows, names }: { rows: ReservationSummary[]; names: Names }) {
       <tbody>
         {rows.map((row) => (
           <tr key={row.id} onClick={() => names.onOpen(row.id)}>
-            <td>{formatTime(row.startsAt, names.locale)}</td>
             <td>{row.customerName}</td>
+            <td>{formatTime(row.startsAt, names.locale)}</td>
             <td className={styles.midCol}>{row.guestCount}</td>
             <td className={styles.midCol}>
               <StatusBadge status={row.status} />

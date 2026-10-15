@@ -8,6 +8,10 @@
   max-height: 100%;
 }
 
+.framePlus {
+  width: min(520px, 100%);
+}
+
 .surface {
   display: flex;
   flex: 1;

@@ -113,7 +113,14 @@ export function formatDisplay(value: string, locale: string, mode: CalendarMode)
   const date = new Date(parsed.year, parsed.month, parsed.day, parsed.hour, parsed.minute);
   const options: Intl.DateTimeFormatOptions =
     mode === 'datetime'
-      ? { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+      ? {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23',
+        }
       : { day: 'numeric', month: 'short', year: 'numeric' };
   return new Intl.DateTimeFormat(locale, options).format(date);
 }

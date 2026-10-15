@@ -290,6 +290,7 @@ function AuditTable({
                 {new Intl.DateTimeFormat(locale, {
                   dateStyle: 'medium',
                   timeStyle: 'short',
+                  hourCycle: 'h23',
                 }).format(new Date(event.occurredAt))}
               </td>
               <td>
@@ -337,9 +338,11 @@ function Detail({
             <dl>
               <dt>{t('time')}</dt>
               <dd>
-                {new Intl.DateTimeFormat(locale, { dateStyle: 'full', timeStyle: 'medium' }).format(
-                  new Date(event.occurredAt),
-                )}
+                {new Intl.DateTimeFormat(locale, {
+                  dateStyle: 'full',
+                  timeStyle: 'medium',
+                  hourCycle: 'h23',
+                }).format(new Date(event.occurredAt))}
               </dd>
               <dt>{t('actor')}</dt>
               <dd>{actorLine(t, event.actor)}</dd>

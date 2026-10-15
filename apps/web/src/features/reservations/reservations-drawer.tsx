@@ -52,7 +52,11 @@ export function ReservationDrawer({
   const [confirming, setConfirming] = useState(false);
   return (
     <OverlayPortal onDismiss={onClose}>
-      <SheetFrame label={t('details')} closeLabel={t('close')}>
+      <SheetFrame
+          frameClassName={sheetStyles.framePlus}
+          label={t('details')}
+          closeLabel={t('close')}
+        >
         <SheetChrome
           as="aside"
           title={
@@ -81,16 +85,18 @@ export function ReservationDrawer({
               <Fact label={t('note')} value={detail.customerNote ?? '—'} />
             </FactSection>
             <FactSection title={t('sections.when')}>
-              <div className={styles.fieldRow}>
+              <div className={styles.whenRow}>
                 <Fact label={t('starts')} value={formatWhen(detail.startsAt, locale)} />
+                <Fact label={t('ends')} value={formatWhen(detail.endsAt, locale)} />
                 <Fact label={t('duration')} value={t('minutes', { count: detail.durationMinutes })} />
               </div>
-              <Fact label={t('ends')} value={formatWhen(detail.endsAt, locale)} />
             </FactSection>
             <FactSection title={t('sections.seating')}>
               <Fact label={t('location')} value={venueName} />
-              <Fact label={t('party')} value={String(detail.guestCount)} />
-              <Fact label={t('table')} value={tableName} />
+              <div className={styles.seatRow}>
+                <Fact label={t('party')} value={String(detail.guestCount)} />
+                <Fact label={t('table')} value={tableName} />
+              </div>
             </FactSection>
             <FactSection title={t('sections.people')}>
               <Fact label={t('contact')} value={contactName} />
@@ -158,7 +164,7 @@ export function ReservationActions({
   const t = useTranslations('reservations');
   if (!canUpdate) return null;
   return (
-    <div className={styles.actions}>
+    <div className={styles.sheetActions}>
       {allowedActions(status).map((action) => (
         <button
           key={action}
