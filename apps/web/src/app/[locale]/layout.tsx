@@ -1,5 +1,3 @@
-import { Inter, Noto_Sans, Noto_Sans_Armenian } from 'next/font/google';
-import localFont from 'next/font/local';
 import { notFound } from 'next/navigation';
 import { hasLocale, NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
@@ -8,29 +6,6 @@ import type { ReactNode } from 'react';
 import { supportedLocales, type Locale } from '@lobby/contracts';
 
 import { LocaleDocumentLang } from './locale-document-lang';
-
-const sans = Noto_Sans({
-  subsets: ['latin', 'cyrillic'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-sans',
-});
-
-const armenian = Noto_Sans_Armenian({
-  subsets: ['armenian'],
-  variable: '--font-armenian',
-});
-
-const display = localFont({
-  src: '../../fonts/MomoTrustDisplay-Regular.ttf',
-  variable: '--font-display',
-  weight: '400',
-  display: 'swap',
-});
-
-const inter = Inter({
-  subsets: ['latin', 'cyrillic'],
-  variable: '--font-inter',
-});
 
 type LocaleLayoutProps = {
   children: ReactNode;
@@ -49,13 +24,7 @@ export default async function LocaleLayout({ children, params }: LocaleLayoutPro
   return (
     <NextIntlClientProvider locale={locale} messages={messages}>
       <LocaleDocumentLang locale={locale} />
-      <div
-        lang={locale}
-        className={`${display.variable} ${inter.variable} ${armenian.variable} ${sans.variable}`}
-        style={{ fontFamily: 'var(--font-armenian), var(--font-sans), sans-serif' }}
-      >
-        {children}
-      </div>
+      <div lang={locale}>{children}</div>
     </NextIntlClientProvider>
   );
 }

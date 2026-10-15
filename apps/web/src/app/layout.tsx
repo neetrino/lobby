@@ -1,7 +1,34 @@
+import { Noto_Sans, Noto_Sans_Armenian } from 'next/font/google';
+import localFont from 'next/font/local';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 
 import './globals.css';
+
+const display = localFont({
+  src: '../fonts/MomoTrustDisplay-Regular.ttf',
+  variable: '--font-display',
+  weight: '400',
+  display: 'swap',
+});
+
+const outfit = localFont({
+  src: '../fonts/Outfit-VariableFont_wght.ttf',
+  variable: '--font-outfit',
+  weight: '100 900',
+  display: 'swap',
+});
+
+const sans = Noto_Sans({
+  subsets: ['latin', 'cyrillic'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sans',
+});
+
+const armenian = Noto_Sans_Armenian({
+  subsets: ['armenian'],
+  variable: '--font-armenian',
+});
 
 export const metadata: Metadata = {
   title: 'lobi',
@@ -13,7 +40,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      className={`${display.variable} ${outfit.variable} ${armenian.variable} ${sans.variable}`}
+    >
       <body>{children}</body>
     </html>
   );
