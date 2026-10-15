@@ -178,6 +178,7 @@ export function ContactsWorkspace() {
                 page={filters.page ?? 1}
                 onOpen={editor.openContact}
                 onPage={showPage}
+                onAskLifecycle={lifecycle.ask}
               />
               {lifecycle.prompt === null ? null : (
                 <LifecycleConfirm

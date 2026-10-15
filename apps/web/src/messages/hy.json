@@ -146,6 +146,8 @@
     "selectAll": "Ընտրել էջի բոլորը",
     "selectRow": "Ընտրել {name}",
     "clearSelection": "Հանել ընտրությունը",
+    "deleteCount": "Ջնջել {count}",
+    "restoreCount": "Վերականգնել {count}",
     "status": {
       "active": "Ակտիվ",
       "archived": "Արխիվացված"

@@ -989,6 +989,65 @@ button:focus-visible {
   overflow: visible;
 }
 
+.selectionBar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  border-radius: 22px 22px 0 0;
+  box-shadow: 0 8px 18px rgb(28 33 48 / 6%);
+}
+
+.selectionAction,
+.selectionRestore {
+  height: var(--control-height);
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.selectionAction {
+  background: #fef2f2;
+  color: #b42318;
+}
+
+.selectionRestore {
+  background: var(--shell-olive);
+  color: #1c2410;
+}
+
+.selectionClose {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #14213d;
+  box-shadow: 0 4px 12px rgb(20 33 61 / 12%);
+  cursor: pointer;
+}
+
+.selectionClose svg {
+  width: 16px;
+  height: 16px;
+}
+
+.tableCardPicked .table th {
+  top: 62px;
+}
+
 .table {
   width: 100%;
   border-collapse: separate;
@@ -1037,6 +1096,12 @@ button:focus-visible {
   padding-right: 4px;
   padding-left: 12px;
   white-space: nowrap;
+}
+
+.table th.midCol,
+.table td.midCol {
+  text-align: center;
+  vertical-align: middle;
 }
 
 .table th.nameCol,

@@ -3,8 +3,11 @@
 import { useLocale, useTranslations } from 'next-intl';
 import type { ReactElement } from 'react';
 
+import { X } from 'lucide-react';
+
 import { Checkbox } from '../../ui/checkbox/checkbox';
 import type { Contact, ContactListFilters } from './contact';
+import type { LifecycleAction } from './use-lifecycle-prompt';
 import { useContactsListUi } from './contacts-list-ui';
 import { ContactPager } from './contacts-table-pager';
 import { ContactRow } from './contacts-table-row';
@@ -23,6 +26,7 @@ export function ContactsTable({
   page,
   onOpen,
   onPage,
+  onAskLifecycle,
 }: {
   rows: readonly Contact[];
   selectedId: string | null;
@@ -34,13 +38,25 @@ export function ContactsTable({
   page: number;
   onOpen: (contact: Contact) => void;
   onPage: (page: number) => void;
+  onAskLifecycle: (contacts: readonly Contact[], action: LifecycleAction) => void;
 }) {
   const t = useTranslations('contacts');
   const locale = useLocale();
   const selection = usePageSelection(rows);
 
   return (
-    <section className={`${styles.tableCard} ${glass.panel} ${glass.soft}`} aria-busy={pending}>
+    <section
+      className={tableCardClass(selection.picked.length > 0)}
+      aria-busy={pending}
+    >
+      <SelectionCard
+        count={selection.picked.length}
+        archived={filters.archived}
+        onClear={selection.clear}
+        onAction={() =>
+          onAskLifecycle(selection.picked, filters.archived ? 'restore' : 'archive')
+        }
+      />
       <ContactGrid
         rows={rows}
         locale={locale}
@@ -132,9 +148,49 @@ function ContactHead({
         <th className={styles.nameCol}>{t('columns.name')}</th>
         {ui.columns.details ? <th>{t('columns.details')}</th> : null}
         {ui.columns.owner ? <th>{t('columns.owner')}</th> : null}
-        {ui.columns.status ? <th>{t('columns.status')}</th> : null}
-        {ui.columns.created ? <th>{t('columns.registered')}</th> : null}
+        {ui.columns.status ? <th className={styles.midCol}>{t('columns.status')}</th> : null}
+        {ui.columns.created ? <th className={styles.midCol}>{t('columns.registered')}</th> : null}
       </tr>
     </thead>
   );
+}
+
+function SelectionCard({
+  count,
+  archived,
+  onClear,
+  onAction,
+}: {
+  count: number;
+  archived: boolean;
+  onClear: () => void;
+  onAction: () => void;
+}): ReactElement | null {
+  const t = useTranslations('contacts');
+  if (count === 0) return null;
+  return (
+    <div className={styles.selectionBar} role="status">
+      <button
+        type="button"
+        className={archived ? styles.selectionRestore : styles.selectionAction}
+        onClick={onAction}
+      >
+        {archived ? t('restoreCount', { count }) : t('deleteCount', { count })}
+      </button>
+      <button
+        type="button"
+        className={styles.selectionClose}
+        aria-label={t('clearSelection')}
+        onClick={onClear}
+      >
+        <X aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+function tableCardClass(picked: boolean): string {
+  const names = [`${styles.tableCard} ${glass.panel} ${glass.soft}`];
+  if (picked) names.push(styles.tableCardPicked);
+  return names.join(' ');
 }

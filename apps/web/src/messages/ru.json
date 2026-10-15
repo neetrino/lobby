@@ -146,6 +146,8 @@
     "selectAll": "Выбрать всех на странице",
     "selectRow": "Выбрать {name}",
     "clearSelection": "Снять выбор",
+    "deleteCount": "Удалить {count}",
+    "restoreCount": "Восстановить {count}",
     "status": {
       "active": "Активен",
       "archived": "В архиве"

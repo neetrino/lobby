@@ -146,6 +146,8 @@
     "selectAll": "Select all on this page",
     "selectRow": "Select {name}",
     "clearSelection": "Clear selection",
+    "deleteCount": "Delete {count}",
+    "restoreCount": "Restore {count}",
     "status": {
       "active": "Active",
       "archived": "Archived"
