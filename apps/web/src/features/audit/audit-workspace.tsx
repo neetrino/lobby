@@ -177,21 +177,6 @@ export function AuditWorkspace() {
                     onChange={(actorType) => setFilters({ ...filters, actorType })}
                   />
                 </FilterField>
-                <FilterField label={t('resourceType')} wide>
-                  <FilterMenu
-                    field
-                    label={t('resourceType')}
-                    value={filters.resourceType}
-                    options={[
-                      { value: '', label: t('allResources') },
-                      ...auditResourceTypes.map((type) => ({
-                        value: type,
-                        label: resourceText(t, type),
-                      })),
-                    ]}
-                    onChange={(resourceType) => setFilters({ ...filters, resourceType })}
-                  />
-                </FilterField>
                 <FilterField label={t('from')}>
                   <DateField
                     label={t('from')}
@@ -207,6 +192,19 @@ export function AuditWorkspace() {
                   />
                 </FilterField>
               </SearchFilters>
+              <FilterMenu
+                white
+                label={t('resourceType')}
+                value={filters.resourceType}
+                options={[
+                  { value: '', label: t('allResources') },
+                  ...auditResourceTypes.map((type) => ({
+                    value: type,
+                    label: resourceText(t, type),
+                  })),
+                ]}
+                onChange={(resourceType) => setFilters({ ...filters, resourceType })}
+              />
               </div>
               <section className={styles.content}>
                 <div className={styles.tableCard}>

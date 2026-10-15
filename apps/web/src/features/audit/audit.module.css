@@ -95,7 +95,11 @@
   color: #7c3aed;
 }
 .search {
+  display: flex;
   flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   width: 100%;
 }
 .content {
